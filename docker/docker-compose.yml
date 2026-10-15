@@ -1,0 +1,24 @@
+# Format compatible docker-compose v1 (pas de clé name ni profiles).
+version: "3.7"
+services:
+  mariadb:
+    image: mariadb:11.4
+    command: [--character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --skip-character-set-client-handshake]
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes: [mariadb-data:/var/lib/mysql]
+    restart: unless-stopped
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+  app:
+    build: { context: .., dockerfile: docker/Dockerfile }
+    image: openlab-academy:0.1.0
+    env_file: .env
+    depends_on: [mariadb, redis]
+    ports: ["8000:8000", "9000:9000"]
+    volumes: [sites:/home/frappe/frappe-bench/sites]
+    restart: unless-stopped
+volumes:
+  mariadb-data:
+  sites:
