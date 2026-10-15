@@ -248,7 +248,7 @@ portfolio:
       - Les sources sont citées dans l'application
       - Tests et CI verts
     exigences_specifiques:
-      - Accessibilité : palettes lisibles par les daltoniens
+      - "Accessibilité : palettes lisibles par les daltoniens"
     livrables: [Dépôt Git, Démo déployée ou vidéo, README]
 
   - titre: Base DuckDB des ventes d'une PME et API de lecture

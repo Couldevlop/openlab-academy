@@ -1,0 +1,393 @@
+title: Développeur Python
+short_introduction: >-
+  Parcours I · de la base au niveau confirmé, orienté data — un code testé, packagé et conteneurisé,
+  prêt pour les parcours AI Engineer et Data Engineer.
+description: >-
+  <p><b>Prérequis :</b> aucun — le parcours démarre au niveau zéro.</p>
+  <p><b>Format :</b> 1 module par semaine (~8 h), un livrable par module, 10 semaines projet intercalées
+  et un capstone devant jury.</p>
+  <p><b>Trajectoire :</b> de la syntaxe de base jusqu'à un code confirmé, testé et packagé.</p>
+  <p><b>Évaluation :</b> livrables hebdomadaires 20 %, portfolio 40 %, capstone 40 %.</p>
+tags: [Python, Tests, Packaging, API, SQL]
+card_gradient: Green
+
+blocs:
+  - title: "Bloc 1 — Bases du langage (S1–S3)"
+    modules:
+      - num: "01"
+        title: Premiers pas
+        contenu: >-
+          Installation (uv), interpréteur, variables, types, opérateurs, entrées/sorties, premiers scripts.
+          Pensée algorithmique.
+        livrable: Suite de petits programmes (calculs, conditions, boucles).
+      - num: "02"
+        title: Structures de données
+        contenu: Listes, tuples, dictionnaires, sets, compréhensions, slicing, manipulation de chaînes.
+        livrable: Programme de traitement de données en mémoire.
+      - num: "03"
+        title: Fonctions & modularité
+        contenu: Fonctions, portée, arguments, *args/**kwargs, modules, imports, organisation d'un projet.
+        livrable: Petit utilitaire structuré en modules.
+  - title: "Bloc 2 — Python intermédiaire (S4–S7)"
+    modules:
+      - num: "04"
+        title: Programmation orientée objet
+        contenu: >-
+          Classes, objets, attributs, méthodes, héritage, composition, encapsulation, dataclasses,
+          méthodes spéciales (dunder).
+        livrable: Modélisation objet d'un domaine métier.
+      - num: "05"
+        title: Gestion des erreurs & fichiers
+        contenu: >-
+          Exceptions, try/except, context managers, lecture/écriture (texte, CSV, JSON), pathlib et OS.
+        livrable: Outil de traitement de fichiers robuste.
+      - num: "06"
+        title: Python idiomatique
+        contenu: >-
+          Itérateurs, générateurs, décorateurs, lambda, typage statique (mypy/pyright), PEP 8, ruff.
+        livrable: Refactorisation d'un code existant en style idiomatique.
+      - num: "07"
+        title: Environnements & packaging
+        contenu: >-
+          uv, pyproject.toml, dépendances verrouillées, structure d'un package, publication interne, pre-commit.
+        livrable: Package installable avec ses dépendances.
+  - title: "Bloc 3 — Niveau confirmé & data (S8–S12)"
+    modules:
+      - num: "08"
+        title: Tests & qualité
+        contenu: >-
+          pytest, fixtures, tests paramétrés, Hypothesis, couverture, linting, intégration continue
+          (GitHub Actions).
+        livrable: Suite de tests sur un projet existant avec CI.
+      - num: "09"
+        title: Python asynchrone & API
+        contenu: >-
+          httpx, async/await, consommation d'API REST, limites de débit, pagination, reprises sur erreur.
+        livrable: Client d'API résilient avec gestion d'erreurs.
+      - num: "10"
+        title: Bases de données
+        contenu: SQL depuis Python, SQLAlchemy 2, ORM vs requêtes, migrations Alembic, bonnes pratiques.
+        livrable: Couche d'accès aux données d'une petite application.
+      - num: "11"
+        title: Python pour la data
+        contenu: >-
+          NumPy, pandas et Polars, nettoyage, agrégations, Parquet, premières visualisations — le pont vers
+          les parcours Data et AI.
+        livrable: Pipeline d'analyse de données de bout en bout.
+      - num: "12"
+        title: Projet & industrialisation
+        contenu: >-
+          Architecture d'un projet réel (hexagonale), logging structuré, configuration, Docker multi-stage,
+          documentation.
+        livrable: Application Python complète, testée et conteneurisée.
+
+portfolio:
+  - titre: Carnet de contacts en ligne de commande
+    apres_module: "02"
+    duree_h: 10
+    niveau: guide
+    contexte: >-
+      Un commerçant de Treichville gère ses clients et fournisseurs dans son téléphone et sur papier.
+      On lui construit un carnet de contacts en ligne de commande, persistant et fiable.
+    objectifs:
+      - Manipuler les structures de données Python
+      - Persister des données en JSON
+      - Valider des saisies utilisateur
+    fonctionnalites:
+      - Ajouter, modifier, supprimer et rechercher un contact (nom, téléphone, commune, étiquettes)
+      - Normalisation des numéros ivoiriens au format +225 XX XX XX XX XX
+      - Recherche floue sur le nom et filtre par étiquette
+      - Export CSV et import avec détection des doublons
+      - Sauvegarde atomique du fichier JSON
+    stack: [Python 3.12+, uv, Typer, pytest, ruff]
+    criteres_acceptation:
+      - "`uv run contacts --help` documente toutes les commandes"
+      - Un numéro invalide est refusé avec un message explicite
+      - Une coupure pendant l'écriture ne corrompt pas le carnet (test)
+      - "`docker compose run contacts lister` fonctionne"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Aucune donnée personnelle réelle dans le dépôt
+    livrables: [Dépôt Git, Démo vidéo ≤ 3 min, README]
+
+  - titre: Convertisseur FCFA / EUR / USD modulaire
+    apres_module: "03"
+    duree_h: 10
+    niveau: guide
+    contexte: >-
+      Les commerçants qui importent depuis l'Europe ou la Chine jonglent entre franc CFA, euro et dollar.
+      Le FCFA a une parité fixe avec l'euro ; les autres taux viennent d'une API publique.
+    objectifs:
+      - Découper un programme en modules cohérents
+      - Séparer la logique métier de l'accès réseau
+      - Gérer les arrondis monétaires correctement
+    fonctionnalites:
+      - Conversion entre XOF, EUR, USD et CNY avec parité fixe XOF/EUR (655,957)
+      - Récupération des autres taux via API avec cache local et date de fraîcheur
+      - Mode hors ligne sur le dernier taux connu
+      - Historique des conversions
+      - Montants en Decimal, arrondis au franc
+    stack: [Python, uv, httpx, Typer, pytest, ruff]
+    criteres_acceptation:
+      - La parité XOF/EUR est exacte (tests sur plusieurs montants)
+      - Le mode hors ligne fonctionne sans réseau (test sans accès API)
+      - Aucun flottant pour les montants
+      - "`docker compose run convertir 10000 XOF EUR` répond"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Logique de conversion sans dépendance réseau (testable isolément)
+    livrables: [Dépôt Git, README]
+
+  - titre: Gestion de stock d'une boutique
+    apres_module: "04"
+    duree_h: 12
+    niveau: guide
+    contexte: >-
+      Une boutique de quartier à Yopougon vend au détail et au carton. On modélise son stock en objets
+      pour suivre entrées, ventes, ruptures et valeur du stock.
+    objectifs:
+      - Concevoir un modèle objet riche (entités, valeurs, règles)
+      - Préférer la composition à l'héritage quand c'est pertinent
+      - Protéger les invariants métier
+    fonctionnalites:
+      - Produits vendus à l'unité et au carton avec conversion automatique
+      - Entrées de stock, ventes, retours et inventaires
+      - Alerte de seuil de rupture
+      - Valorisation du stock (coût moyen pondéré)
+      - Rapport des meilleures ventes
+    stack: [Python, uv, dataclasses, Typer, pytest, ruff, mypy]
+    criteres_acceptation:
+      - Impossible de vendre plus que le stock disponible (invariant testé)
+      - La valorisation au coût moyen pondéré est vérifiée sur un cas chiffré
+      - Le domaine n'importe aucune bibliothèque d'entrée/sortie
+      - "`docker compose run stock rapport` fonctionne"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Diagramme de classes dans le README
+    livrables: [Dépôt Git, README avec diagramme]
+
+  - titre: Rapprochement de relevés Mobile Money
+    apres_module: "05"
+    duree_h: 12
+    niveau: semi-guide
+    contexte: >-
+      Une PME reçoit ses paiements par Orange Money, MTN MoMo, Moov Money et Wave. Chaque opérateur fournit
+      un relevé CSV différent ; il faut les rapprocher des factures émises.
+    objectifs:
+      - Lire des fichiers hétérogènes de façon robuste
+      - Gérer les erreurs sans perdre de données
+      - Produire un rapport exploitable par un comptable
+    fonctionnalites:
+      - Lecteurs dédiés par opérateur vers un format commun
+      - Rapprochement par référence, montant et date avec tolérance
+      - Liste des paiements orphelins et des factures impayées
+      - Rejet des lignes illisibles dans un fichier d'anomalies
+      - Rapport Excel de rapprochement
+    stack: [Python, uv, pathlib, csv, openpyxl, pytest, ruff, mypy]
+    criteres_acceptation:
+      - Les 4 formats d'exemple sont lus correctement (tests)
+      - Aucune ligne n'est perdue silencieusement (total lu = rapproché + orphelin + anomalie)
+      - Un fichier corrompu ne fait pas planter l'outil
+      - "`docker compose run rapprocher relevés/ factures.csv` produit le rapport"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Nouvel opérateur ajoutable sans modifier le code existant (principe ouvert/fermé)
+    livrables: [Dépôt Git, Jeux de données d'exemple anonymisés, README]
+
+  - titre: Bibliothèque de validation des identifiants ouest-africains
+    apres_module: "06"
+    duree_h: 12
+    niveau: semi-guide
+    contexte: >-
+      Les formulaires en ligne ivoiriens valident mal les numéros de téléphone, les CNI ou les RIB UEMOA.
+      On écrit une bibliothèque réutilisable, idiomatique et entièrement typée.
+    objectifs:
+      - Écrire du Python idiomatique et typé
+      - Utiliser décorateurs et générateurs à bon escient
+      - Concevoir une API de bibliothèque agréable
+    fonctionnalites:
+      - Validation et normalisation des numéros mobiles des pays UEMOA
+      - Validation du format de la CNI ivoirienne et du RIB UEMOA (clé de contrôle)
+      - Décorateur de validation des arguments de fonction
+      - Validation en flux de gros fichiers (générateurs)
+      - Messages d'erreur en français
+    stack: [Python, uv, typing, pytest, Hypothesis, ruff, pyright]
+    criteres_acceptation:
+      - "Typage strict : pyright sans erreur"
+      - Tests par propriétés (Hypothesis) sur la normalisation
+      - Un fichier d'un million de lignes est validé en mémoire constante
+      - Documentation d'usage avec exemples exécutés en test (doctest)
+      - Tests et CI verts
+    exigences_specifiques:
+      - Aucune dépendance d'exécution externe
+    livrables: [Dépôt Git, Documentation, README]
+
+  - titre: Package publié « fcfa » — montants et formatage
+    apres_module: "07"
+    duree_h: 12
+    niveau: semi-guide
+    contexte: >-
+      Factures, reçus et contrats ivoiriens exigent les montants en chiffres et en lettres. On publie un
+      package Python installable qui formate les montants en francs CFA.
+    objectifs:
+      - Structurer et publier un package
+      - Gérer versions et changelog
+      - Automatiser la qualité avec pre-commit
+    fonctionnalites:
+      - Formatage « 1 250 000 FCFA » avec séparateurs configurables
+      - Montant en toutes lettres en français (jusqu'aux milliards)
+      - Ventilation d'un montant en billets et pièces
+      - Interface en ligne de commande
+      - Publication sur un index de test (TestPyPI) via la CI
+    stack: [Python, uv, pyproject.toml, pre-commit, pytest, ruff, mypy, GitHub Actions]
+    criteres_acceptation:
+      - "`pip install` depuis l'index de test fonctionne dans un environnement vierge"
+      - Les montants en lettres respectent l'orthographe (vingt, cent, mille au pluriel) — tests
+      - Version sémantique et changelog tenus à jour
+      - Publication déclenchée par un tag Git
+      - Tests et CI verts
+    exigences_specifiques:
+      - Hooks pre-commit actifs (ruff, mypy, tests rapides)
+    livrables: [Dépôt Git, Package publié, README]
+
+  - titre: Moteur de réservation de cars interurbains
+    apres_module: "08"
+    duree_h: 14
+    niveau: semi-guide
+    contexte: >-
+      Les compagnies de cars Abidjan–Bouaké–Yamoussoukro vendent encore beaucoup de billets au guichet.
+      On construit le cœur métier d'un système de réservation, piloté par les tests.
+    objectifs:
+      - Pratiquer le TDD de bout en bout
+      - Couvrir les cas limites et la concurrence
+      - Mettre en place une CI exigeante
+    fonctionnalites:
+      - Trajets, horaires, cars et plans de sièges
+      - Réservation, annulation avec pénalité, liste d'attente
+      - Prévention de la double réservation d'un siège
+      - Tarifs par trajet et réductions (étudiants, groupes)
+      - Édition du billet avec code de vérification
+    stack: [Python, uv, pytest, Hypothesis, coverage, ruff, mypy, GitHub Actions]
+    criteres_acceptation:
+      - Couverture ≥ 90 % mesurée en CI
+      - "Deux réservations simultanées du même siège : une seule réussit (test)"
+      - Historique Git montrant le cycle test → code
+      - "`docker compose run reservation demo` joue un scénario complet"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Code de vérification du billet non devinable (secrets)
+    livrables: [Dépôt Git, Rapport de couverture, README]
+
+  - titre: Agrégateur asynchrone de météo et de prix agricoles
+    apres_module: "09"
+    duree_h: 12
+    niveau: autonome
+    contexte: >-
+      Les coopératives veulent, chaque matin, la météo de leurs zones et les prix indicatifs des produits.
+      On agrège plusieurs API publiques en parallèle, sans les surcharger.
+    objectifs:
+      - Maîtriser async/await et httpx
+      - Respecter limites de débit et pagination
+      - Rendre un client réseau résilient
+    fonctionnalites:
+      - Appels concurrents à plusieurs API avec limite de débit par source
+      - Reprises avec backoff exponentiel et délai maximal
+      - Pagination et cache des réponses
+      - Synthèse quotidienne par zone (JSON + texte court pour SMS)
+      - Planification de l'exécution quotidienne
+    stack: [Python, uv, httpx, asyncio, Pydantic v2, pytest, respx]
+    criteres_acceptation:
+      - La limite de débit est respectée (test avec serveur simulé)
+      - Une source en panne n'empêche pas la synthèse des autres
+      - Les réponses invalides sont rejetées par validation Pydantic
+      - "`docker compose up` lance l'agrégation planifiée"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Clés d'API uniquement via variables d'environnement
+    livrables: [Dépôt Git, Exemple de synthèse, README]
+
+  - titre: API de gestion scolaire
+    apres_module: "10"
+    duree_h: 16
+    niveau: autonome
+    contexte: >-
+      Une école privée d'Abidjan gère élèves, classes, notes et paiements des frais de scolarité dans des
+      tableurs. On construit une API sécurisée pour centraliser ces données.
+    objectifs:
+      - Concevoir une API REST propre
+      - Persister avec SQLAlchemy 2 et migrer avec Alembic
+      - Sécuriser authentification et autorisations
+    fonctionnalites:
+      - Élèves, classes, matières, notes et bulletins
+      - Échéancier et suivi des paiements de scolarité
+      - Authentification JWT et rôles (direction, enseignant, parent)
+      - Un parent ne voit que ses enfants
+      - Documentation OpenAPI
+    stack: [Python, uv, FastAPI, SQLAlchemy 2, Alembic, PostgreSQL, Pydantic v2, pytest]
+    criteres_acceptation:
+      - Tests d'autorisation pour chaque rôle (OWASP A01)
+      - Migrations Alembic rejouables de zéro
+      - Mots de passe hachés (argon2 ou bcrypt)
+      - "`docker compose up` lance API + PostgreSQL"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Données des mineurs protégées (accès journalisés)
+    livrables: [Dépôt Git, Collection de requêtes, README]
+
+  - titre: Pipeline d'analyse des ventes d'un e-commerce
+    apres_module: "11"
+    duree_h: 12
+    niveau: autonome
+    contexte: >-
+      Une boutique en ligne ivoirienne exporte commandes, paiements et livraisons. On construit un pipeline
+      qui transforme ces exports en indicateurs de pilotage.
+    objectifs:
+      - Industrialiser un traitement de données en Python
+      - Choisir entre pandas et Polars en le mesurant
+      - Livrer des indicateurs fiables
+    fonctionnalites:
+      - Ingestion des exports et stockage Parquet
+      - Nettoyage, jointures et calcul des indicateurs (CA, panier moyen, délai de livraison, taux de retour)
+      - Comparaison de performance pandas / Polars
+      - Graphiques des tendances
+      - Rapport hebdomadaire généré automatiquement
+    stack: [Python, uv, Polars, pandas, Parquet, Plotly, pytest]
+    criteres_acceptation:
+      - Chaque indicateur est vérifié par un test sur données connues
+      - Le pipeline est idempotent (rejouer = même résultat)
+      - Benchmark documenté dans le README
+      - "`docker compose run pipeline` produit le rapport"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Données clients pseudonymisées
+    livrables: [Dépôt Git, Rapport d'exemple, README]
+
+capstone:
+  titre: SaaS de gestion de tontines
+  duree_h: 60
+  niveau: autonome
+  contexte: >-
+    Les tontines rassemblent des millions de personnes en Afrique de l'Ouest, souvent gérées sur cahier ou
+    WhatsApp. Projet de fin de parcours présenté au jury : une application complète pour les gérer en
+    toute transparence.
+  objectifs:
+    - Livrer un produit complet en architecture hexagonale
+    - Combiner API, base de données, données et industrialisation
+    - Défendre ses choix devant un jury
+  fonctionnalites:
+    - Création de tontines (montant, fréquence, ordre de passage)
+    - Membres, cotisations, retards et pénalités
+    - Calendrier des tours et notifications
+    - Tableau de bord du gestionnaire et historique auditable
+    - Authentification, rôles et export des comptes
+  stack: [Python, uv, FastAPI, SQLAlchemy 2, PostgreSQL, Polars, Docker, GitHub Actions]
+  criteres_acceptation:
+    - "`docker compose up` lance l'application complète"
+    - Couverture ≥ 80 % et tests d'autorisation par rôle
+    - Toute opération financière est tracée et non modifiable
+    - Soutenance de 20 minutes + 10 minutes de questions
+    - Tests et CI verts
+  exigences_specifiques:
+    - Journal de décisions (ADR) d'au moins 5 entrées
+    - Montants en entiers (francs CFA)
+  livrables: [Dépôt Git, Application déployée ou vidéo, Rapport final, Support de soutenance]

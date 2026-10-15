@@ -43,6 +43,12 @@ class TestConversion(unittest.TestCase):
         with self.assertRaisesRegex(FormatInvalide, r"capstone\.exigences_specifiques manquant"):
             depuis_dict(brut, "t.yaml")
 
+    def test_element_de_liste_non_texte_refuse(self):
+        brut = parcours_brut()
+        brut["portfolio"][1]["criteres_acceptation"] = ["ok", {"Deux réservations": "une seule réussit"}]
+        with self.assertRaisesRegex(FormatInvalide, r"portfolio\[1\]\.criteres_acceptation\[1\] doit être un texte"):
+            depuis_dict(brut, "t.yaml")
+
     def test_niveau_inconnu(self):
         brut = parcours_brut()
         brut["portfolio"][0]["niveau"] = "facile"

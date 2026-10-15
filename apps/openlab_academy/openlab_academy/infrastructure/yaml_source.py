@@ -23,11 +23,17 @@ class _Lecteur:
             raise FormatInvalide(f"{self.source}: {chemin}{champ} manquant")
         return valeur
 
+    def textes(self, valeurs, chemin: str) -> tuple[str, ...]:
+        for i, v in enumerate(valeurs):
+            if not isinstance(v, str):
+                raise FormatInvalide(f"{self.source}: {chemin}[{i}] doit être un texte (« : » non quoté ?)")
+        return tuple(valeurs)
+
     def module(self, m: dict, chemin: str) -> Module:
         return Module(*(str(self.exiger(m, c, chemin)) for c in ("num", "title", "contenu", "livrable")))
 
     def projet(self, p: dict, chemin: str, portfolio: bool) -> Projet:
-        listes = {c: tuple(map(str, self.exiger(p, c, chemin))) for c in _LISTES_PROJET}
+        listes = {c: self.textes(self.exiger(p, c, chemin), f"{chemin}{c}") for c in _LISTES_PROJET}
         if "exigences_specifiques" not in p:
             raise FormatInvalide(f"{self.source}: {chemin}exigences_specifiques manquant")
         niveau = self.exiger(p, "niveau", chemin)
@@ -42,7 +48,7 @@ class _Lecteur:
         return Projet(
             titre=str(self.exiger(p, "titre", chemin)), duree_h=duree, niveau=niveau,
             contexte=str(self.exiger(p, "contexte", chemin)),
-            exigences_specifiques=tuple(map(str, p["exigences_specifiques"] or ())),
+            exigences_specifiques=self.textes(p["exigences_specifiques"] or (), f"{chemin}exigences_specifiques"),
             apres_module=None if apres is None else str(apres), **listes,
         )
 
@@ -60,7 +66,7 @@ class _Lecteur:
             title=str(self.exiger(d, "title", "")),
             short_introduction=str(self.exiger(d, "short_introduction", "")),
             description=str(self.exiger(d, "description", "")),
-            tags=tuple(map(str, d.get("tags") or ())), card_gradient=str(d.get("card_gradient", "Blue")),
+            tags=self.textes(d.get("tags") or (), "tags"), card_gradient=str(d.get("card_gradient", "Blue")),
             blocs=blocs, portfolio=portfolio,
             capstone=self.projet(self.exiger(d, "capstone", ""), "capstone.", False),
         )
