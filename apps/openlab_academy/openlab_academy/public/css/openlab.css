@@ -1,0 +1,56 @@
+/* Charte OpenLab (source : openlabconsulting/docs/reference/brand-identity.md).
+   Orange réservé aux accents (< 15 % de surface) ; navy pour les actions principales. */
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap");
+
+:root {
+  --ol-orange: #ff5a00;
+  --ol-orange-light: #ff7a33;
+  --ol-orange-dark: #cc4800;
+  --ol-night: #0a0e1a;
+  --ol-navy: #0b1b3d;
+  --ol-navy-soft: #142654;
+  --ol-ivory: #faf8f5;
+  --ol-graphite: #1a1d24;
+  --ol-mist: #e8eaf0;
+  --ol-font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --ol-font-body: "Geist", system-ui, sans-serif;
+  --ol-font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* Thème clair : surfaces ivoire, boutons principaux navy, texte graphite */
+:root,
+[data-theme="light"] {
+  --surface-base: #ffffff;
+  --surface-gray-1: var(--ol-ivory);
+  --surface-gray-7: var(--ol-navy);
+  --surface-gray-8: var(--ol-navy-soft);
+  --ink-gray-9: var(--ol-graphite);
+  --outline-gray-1: var(--ol-mist);
+}
+
+/* Thème sombre : fonds nuit, boutons principaux orange */
+[data-theme="dark"] {
+  --surface-base: var(--ol-night);
+  --surface-gray-7: var(--ol-orange-dark);
+  --surface-gray-8: var(--ol-orange);
+}
+
+body,
+#app {
+  font-family: var(--ol-font-body);
+}
+
+h1, h2, h3,
+.text-2xl, .text-3xl, .text-4xl {
+  font-family: var(--ol-font-display);
+  letter-spacing: -0.01em;
+}
+
+code, pre, kbd {
+  font-family: var(--ol-font-mono);
+}
+
+/* Accents orange : liens actifs, barres de progression, focus clavier visible */
+a:hover { color: var(--ol-orange-dark); }
+[role="progressbar"] > div { background-color: var(--ol-orange); }
+:focus-visible { outline: 2px solid var(--ol-orange); outline-offset: 2px; }
