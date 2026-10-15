@@ -1,0 +1,207 @@
+{
+ "doctype": "DocType",
+ "name": "Reglages OpenLab Academy",
+ "module": "OpenLab Academy",
+ "custom": 0,
+ "engine": "InnoDB",
+ "issingle": 1,
+ "istable": 0,
+ "editable_grid": 0,
+ "field_order": [
+  "section_pedagogie",
+  "projets_par_portfolio",
+  "heures_par_module",
+  "col_pedagogie",
+  "delai_ouverture_semaines",
+  "jour_ouverture",
+  "section_bareme",
+  "bareme",
+  "section_exigences",
+  "exigences",
+  "section_rythmes",
+  "rythmes",
+  "section_seances",
+  "heure_debut",
+  "heure_fin",
+  "col_seances",
+  "fuseau",
+  "section_cohorte",
+  "parcours_pilote",
+  "formateur",
+  "section_plateforme",
+  "nom_plateforme",
+  "logo",
+  "col_plateforme",
+  "langue",
+  "devise"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_pedagogie",
+   "fieldtype": "Section Break",
+   "label": "Pédagogie"
+  },
+  {
+   "fieldname": "projets_par_portfolio",
+   "fieldtype": "Int",
+   "label": "Projets par portfolio",
+   "reqd": 1,
+   "default": "10"
+  },
+  {
+   "fieldname": "heures_par_module",
+   "fieldtype": "Int",
+   "label": "Heures par module",
+   "reqd": 1,
+   "default": "8"
+  },
+  {
+   "fieldname": "col_pedagogie",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "delai_ouverture_semaines",
+   "fieldtype": "Int",
+   "label": "Délai d'ouverture d'une cohorte (semaines)",
+   "default": "2"
+  },
+  {
+   "fieldname": "jour_ouverture",
+   "fieldtype": "Select",
+   "label": "Jour de démarrage des cohortes",
+   "options": "Lundi\nMardi\nMercredi\nJeudi\nVendredi\nSamedi\nDimanche",
+   "default": "Lundi"
+  },
+  {
+   "fieldname": "section_bareme",
+   "fieldtype": "Section Break",
+   "label": "Barème des projets (total 100 %)"
+  },
+  {
+   "fieldname": "bareme",
+   "fieldtype": "Table",
+   "label": "Barème",
+   "options": "Critere Bareme OpenLab"
+  },
+  {
+   "fieldname": "section_exigences",
+   "fieldtype": "Section Break",
+   "label": "Exigences qualité communes à tous les projets"
+  },
+  {
+   "fieldname": "exigences",
+   "fieldtype": "Table",
+   "label": "Exigences",
+   "options": "Exigence Qualite OpenLab"
+  },
+  {
+   "fieldname": "section_rythmes",
+   "fieldtype": "Section Break",
+   "label": "Rythmes de cohorte (heures par jour)"
+  },
+  {
+   "fieldname": "rythmes",
+   "fieldtype": "Table",
+   "label": "Rythmes",
+   "options": "Rythme OpenLab"
+  },
+  {
+   "fieldname": "section_seances",
+   "fieldtype": "Section Break",
+   "label": "Séances"
+  },
+  {
+   "fieldname": "heure_debut",
+   "fieldtype": "Time",
+   "label": "Début des séances",
+   "default": "18:30:00"
+  },
+  {
+   "fieldname": "heure_fin",
+   "fieldtype": "Time",
+   "label": "Fin des séances",
+   "default": "20:30:00"
+  },
+  {
+   "fieldname": "col_seances",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "fuseau",
+   "fieldtype": "Data",
+   "label": "Fuseau horaire",
+   "default": "Africa/Abidjan"
+  },
+  {
+   "fieldname": "section_cohorte",
+   "fieldtype": "Section Break",
+   "label": "Cohorte pilote"
+  },
+  {
+   "fieldname": "parcours_pilote",
+   "fieldtype": "Data",
+   "label": "Titre du parcours pilote",
+   "default": "Fondamentaux de la Data Science"
+  },
+  {
+   "fieldname": "formateur",
+   "fieldtype": "Link",
+   "label": "Formateur par défaut",
+   "options": "User",
+   "default": "Administrator"
+  },
+  {
+   "fieldname": "section_plateforme",
+   "fieldtype": "Section Break",
+   "label": "Plateforme"
+  },
+  {
+   "fieldname": "nom_plateforme",
+   "fieldtype": "Data",
+   "label": "Nom",
+   "default": "OpenLab Academy"
+  },
+  {
+   "fieldname": "logo",
+   "fieldtype": "Data",
+   "label": "Logo (URL)",
+   "default": "/assets/openlab_academy/images/logo.svg"
+  },
+  {
+   "fieldname": "col_plateforme",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "langue",
+   "fieldtype": "Link",
+   "label": "Langue",
+   "options": "Language",
+   "default": "fr"
+  },
+  {
+   "fieldname": "devise",
+   "fieldtype": "Link",
+   "label": "Devise",
+   "options": "Currency",
+   "default": "XOF"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1
+  }
+ ],
+ "track_changes": 1,
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-16 00:00:00",
+ "modified": "2026-10-16 00:00:00",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

@@ -4,6 +4,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy.domain.cohorte import Cohorte
+from openlab_academy.domain.reglages import Reglages
 from openlab_academy.entrypoints import cohorte as commande
 from openlab_academy.entrypoints import seed
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
@@ -11,6 +12,7 @@ from openlab_academy.infrastructure.depot_frappe import DepotFrappe
 from openlab_academy.tests.fabriques import parcours
 
 LUNDI = datetime.date(2026, 11, 2)
+STANDARD = Reglages().rythme("standard")
 TITRE_PILOTE = "Promo 1 — Fondamentaux de la Data Science · Standard 12 h"
 
 
@@ -22,7 +24,7 @@ class TestDepotCohortesFrappe(FrappeTestCase):
         p = parcours(title="Parcours cohorte test")
         cours = DepotFrappe(commit=False).creer(p)
         depot = DepotCohortesFrappe()
-        nom = depot.creer(Cohorte.pilote(p, LUNDI))
+        nom = depot.creer(Cohorte.pilote(p, LUNDI, STANDARD, Reglages()))
         self.assertEqual(depot.trouver("Promo 1 — Parcours cohorte test · Standard 12 h"), nom)
         b = frappe.get_doc("LMS Batch", nom)
         self.assertEqual([c.course for c in b.courses], [cours])
@@ -34,7 +36,7 @@ class TestDepotCohortesFrappe(FrappeTestCase):
 
     def test_cours_absent_refuse(self):
         with self.assertRaisesRegex(ValueError, "cours « Inconnu » introuvable"):
-            DepotCohortesFrappe().creer(Cohorte.pilote(parcours(title="Inconnu"), LUNDI))
+            DepotCohortesFrappe().creer(Cohorte.pilote(parcours(title="Inconnu"), LUNDI, STANDARD, Reglages()))
 
     def test_inconnue(self):
         self.assertIsNone(DepotCohortesFrappe().trouver("Promo 1 — rien"))

@@ -45,3 +45,20 @@ docker-compose -p ol-academy up -d
 - Ajouter ou modifier un parcours : éditer `data/parcours/NN-<slug>.yaml` (10 projets + 1 capstone obligatoires),
   reconstruire l'image, puis `bench --site <site> execute openlab_academy.entrypoints.seed.run`.
   Un cours qui a déjà des inscrits n'est jamais modifié.
+
+## Réglages (écran « Reglages OpenLab Academy »)
+
+Desk → `/app/reglages-openlab-academy` (System Manager uniquement). Tout réglage incohérent est refusé à l'enregistrement.
+
+| Section | Réglages |
+|---|---|
+| Pédagogie | projets par portfolio, heures par module, délai et jour d'ouverture des cohortes |
+| Barème | critères et poids (total 100 %) |
+| Exigences qualité | textes ajoutés à chaque énoncé de projet |
+| Rythmes | code, libellé, heures du lundi au dimanche (ex. standard 12 h, intensif 16 h, week-end…) |
+| Séances | heures de début et de fin, fuseau |
+| Cohorte pilote | parcours, formateur par défaut |
+| Plateforme | nom, logo, langue, devise |
+
+Un parcours peut surcharger `projets_par_portfolio` et `heures_par_module` dans son YAML (`parametres:`).
+Les changements s'appliquent aux prochaines publications et cohortes, jamais rétroactivement.

@@ -4,9 +4,12 @@ import pathlib
 import yaml
 
 from openlab_academy.domain.parcours import Bloc, Module, Niveau, Parcours, ParcoursInvalide, Projet
+from openlab_academy.domain.reglages import Reglages
 
 PARCOURS_DIR = pathlib.Path(__file__).parents[1] / "data" / "parcours"
 _LISTES_PROJET = ("objectifs", "fonctionnalites", "stack", "criteres_acceptation", "livrables")
+# Paramètres qu'un parcours peut surcharger : clé YAML -> champ du domaine Parcours
+_PARAMETRES = {"projets_par_portfolio": "projets_attendus", "heures_par_module": "heures_par_module"}
 
 
 class FormatInvalide(ValueError):
@@ -14,8 +17,23 @@ class FormatInvalide(ValueError):
 
 
 class _Lecteur:
-    def __init__(self, source: str):
+    def __init__(self, source: str, reglages: Reglages):
         self.source = source
+        self.reglages = reglages
+
+    def parametres(self, d: dict) -> dict:
+        valeurs = {"projets_attendus": self.reglages.projets_par_portfolio,
+                   "heures_par_module": self.reglages.heures_par_module}
+        surcharges = d.get("parametres") or {}
+        if not isinstance(surcharges, dict):
+            raise FormatInvalide(f"{self.source}: parametres doit être un dictionnaire")
+        for cle, valeur in surcharges.items():
+            if cle not in _PARAMETRES:
+                raise FormatInvalide(f"{self.source}: parametres.{cle} inconnu ({sorted(_PARAMETRES)})")
+            if not isinstance(valeur, int):
+                raise FormatInvalide(f"{self.source}: parametres.{cle} doit être un entier")
+            valeurs[_PARAMETRES[cle]] = valeur
+        return valeurs
 
     def exiger(self, obj: dict, champ: str, chemin: str):
         valeur = obj.get(champ)
@@ -69,22 +87,23 @@ class _Lecteur:
             tags=self.textes(d.get("tags") or (), "tags"), card_gradient=str(d.get("card_gradient", "Blue")),
             blocs=blocs, portfolio=portfolio,
             capstone=self.projet(self.exiger(d, "capstone", ""), "capstone.", False),
+            **self.parametres(d),
         )
 
 
-def depuis_dict(d, source: str) -> Parcours:
+def depuis_dict(d, source: str, reglages: Reglages = Reglages()) -> Parcours:
     try:
-        return _Lecteur(source).parcours(d)
+        return _Lecteur(source, reglages).parcours(d)
     except ParcoursInvalide as e:
         raise FormatInvalide(f"{source}: {e}") from e
 
 
-def charger_dossier(dossier: pathlib.Path) -> list[Parcours]:
+def charger_dossier(dossier: pathlib.Path, reglages: Reglages = Reglages()) -> list[Parcours]:
     lot = []
     for fichier in sorted(dossier.glob("*.yaml")):
         try:
             data = yaml.safe_load(fichier.read_text(encoding="utf-8"))
         except yaml.YAMLError as e:
             raise FormatInvalide(f"{fichier.name}: YAML invalide ou non sûr ({e.__class__.__name__})") from e
-        lot.append(depuis_dict(data, fichier.name))
+        lot.append(depuis_dict(data, fichier.name, reglages))
     return lot

@@ -4,14 +4,13 @@ import contextlib
 import frappe
 
 from openlab_academy.domain.parcours import Chapitre, Parcours
+from openlab_academy.domain.reglages import Reglages
 from openlab_academy.infrastructure import editorjs
 
-INSTRUCTEUR = "Administrator"
-
-
 class DepotFrappe:
-    def __init__(self, commit: bool = True):
+    def __init__(self, commit: bool = True, reglages: Reglages | None = None):
         self._commit = commit
+        self._reglages = reglages or Reglages()
 
     # --- port DepotCatalogue -------------------------------------------------
     def trouver(self, titre: str) -> str | None:
@@ -21,7 +20,7 @@ class DepotFrappe:
         return bool(frappe.db.count("LMS Enrollment", {"course": cours_id}))
 
     def creer(self, parcours: Parcours) -> str:
-        cours = frappe.get_doc({"doctype": "LMS Course", "instructors": [{"instructor": INSTRUCTEUR}],
+        cours = frappe.get_doc({"doctype": "LMS Course", "instructors": [{"instructor": self._reglages.formateur}],
                                 **self._champs(parcours)}).insert(ignore_permissions=True)
         self._ecrire_chapitres(cours.name, parcours)
         return cours.name
@@ -60,22 +59,22 @@ class DepotFrappe:
         frappe.db.delete("LMS Assignment", {"course": cours_id})
 
     def _ecrire_chapitres(self, cours_id: str, parcours: Parcours) -> None:
-        noms = [self._chapitre(cours_id, c) for c in parcours.chapitres()]
+        noms = [self._chapitre(cours_id, c, parcours.heures_par_module) for c in parcours.chapitres()]
         cours = frappe.get_doc("LMS Course", cours_id)
         cours.set("chapters", [{"chapter": n} for n in noms])
         cours.save(ignore_permissions=True)
 
-    def _chapitre(self, cours_id: str, chapitre: Chapitre) -> str:
+    def _chapitre(self, cours_id: str, chapitre: Chapitre, heures_module: int) -> str:
         doc = frappe.get_doc({"doctype": "Course Chapter", "course": cours_id, "title": chapitre.titre}).insert(
             ignore_permissions=True)
         if chapitre.projet is None:
             lecons = [(f"{m.num} · {m.title}", f"Livrable {m.num} — {m.title}",
-                       editorjs.consigne_module(m), lambda d, m=m: editorjs.lecon_module(m, d))
+                       editorjs.consigne_module(m), lambda d, m=m: editorjs.lecon_module(m, d, heures_module))
                       for m in chapitre.modules]
         else:
             p = chapitre.projet
             lecons = [(f"Énoncé — {p.titre}", chapitre.titre, editorjs.consigne_projet(p),
-                       lambda d: editorjs.lecon_projet(p, d))]
+                       lambda d: editorjs.lecon_projet(p, d, self._reglages))]
         noms = [self._lecon(cours_id, doc.name, *lecon) for lecon in lecons]
         doc.reload()
         doc.set("lessons", [{"lesson": n} for n in noms])

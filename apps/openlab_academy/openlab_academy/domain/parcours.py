@@ -7,9 +7,6 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 
-PROJETS_PAR_PORTFOLIO = 10
-HEURES_PAR_MODULE = 8
-RYTHME_HEBDO = 12  # heures de travail apprenant par semaine
 TITRE_MAX = 120  # laisse la place aux préfixes (« Projet 10 — ») sous la limite LMS de 140
 _SALAIRE = re.compile(r"\d+\s*k\s*€", re.IGNORECASE)
 
@@ -86,8 +83,12 @@ class Parcours:
     blocs: tuple[Bloc, ...]
     portfolio: tuple[Projet, ...]
     capstone: Projet
+    projets_attendus: int = 10
+    heures_par_module: int = 8
 
     def __post_init__(self):
+        if self.heures_par_module <= 0:
+            raise ParcoursInvalide("heures_par_module doit être positif")
         for champ in ("title", "short_introduction", "description"):
             if _SALAIRE.search(getattr(self, champ)):
                 raise ParcoursInvalide(f"{champ}: rémunération en k€ interdite")
@@ -99,9 +100,9 @@ class Parcours:
         doublons = sorted({n for n in nums if nums.count(n) > 1})
         if doublons:
             raise ParcoursInvalide(f"module '{doublons[0]}' en double")
-        if len(self.portfolio) != PROJETS_PAR_PORTFOLIO:
+        if len(self.portfolio) != self.projets_attendus:
             raise ParcoursInvalide(
-                f"portfolio: {PROJETS_PAR_PORTFOLIO} projets attendus, {len(self.portfolio)} trouvés")
+                f"portfolio: {self.projets_attendus} projets attendus, {len(self.portfolio)} trouvés")
         for i, p in enumerate(self.portfolio):
             if p.apres_module is None:
                 raise ParcoursInvalide(f"portfolio[{i}].apres_module manquant")
@@ -112,10 +113,10 @@ class Parcours:
 
     def charge_horaire(self) -> int:
         """Heures de travail apprenant : modules hebdomadaires + portfolio + capstone."""
-        modules = sum(len(b.modules) for b in self.blocs) * HEURES_PAR_MODULE
+        modules = sum(len(b.modules) for b in self.blocs) * self.heures_par_module
         return modules + sum(p.duree_h for p in self.portfolio) + self.capstone.duree_h
 
-    def duree_semaines(self, heures_par_semaine: int = RYTHME_HEBDO) -> int:
+    def duree_semaines(self, heures_par_semaine: int) -> int:
         if heures_par_semaine <= 0:
             raise ValueError("heures_par_semaine doit être positif")
         return math.ceil(self.charge_horaire() / heures_par_semaine)

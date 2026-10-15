@@ -16,7 +16,7 @@ class TestReglages(FrappeTestCase):
                          ("fr", "Africa/Abidjan", "XOF", "dd-mm-yyyy"))
         self.assertEqual(frappe.db.get_single_value("LMS Settings", "default_currency"), "XOF")
         w = frappe.get_single("Website Settings")
-        self.assertEqual((w.app_name, w.app_logo), ("OpenLab Academy", reglages_frappe.LOGO))
+        self.assertEqual((w.app_name, w.app_logo), ("OpenLab Academy", "/assets/openlab_academy/images/logo.svg"))
 
     def test_devise_xof_sans_decimales(self):
         frappe.db.delete("Currency", {"name": "XOF"})

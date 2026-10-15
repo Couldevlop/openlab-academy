@@ -3,10 +3,10 @@ import frappe
 
 from openlab_academy.domain.cohorte import Cohorte
 
-INSTRUCTEUR = "Administrator"
-
-
 class DepotCohortesFrappe:
+    def __init__(self, formateur: str = "Administrator"):
+        self._formateur = formateur
+
     def trouver(self, titre: str) -> str | None:
         return frappe.db.get_value("LMS Batch", {"title": titre})
 
@@ -21,6 +21,6 @@ class DepotCohortesFrappe:
             "description": "Cohorte pilote en soirée : modules hebdomadaires, semaines projet, capstone devant jury.",
             "batch_details": (f"<p><b>Format {cohorte.rythme.libelle.lower()}</b> — {cohorte.rythme.descriptif}.</p>"
                               "<p>Séances du soir de 18 h 30 à 20 h 30 (heure d'Abidjan).</p>"),
-            "instructors": [{"instructor": INSTRUCTEUR}], "courses": [{"course": cours}],
+            "instructors": [{"instructor": self._formateur}], "courses": [{"course": cours}],
             "allow_self_enrollment": 1, "certification": 1, "evaluation": 1,
         }).insert(ignore_permissions=True).name

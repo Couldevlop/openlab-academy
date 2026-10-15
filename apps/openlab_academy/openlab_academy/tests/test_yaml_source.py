@@ -5,6 +5,7 @@ import unittest
 import yaml
 
 from openlab_academy.domain.parcours import Niveau
+from openlab_academy.domain.reglages import Reglages
 from openlab_academy.infrastructure.yaml_source import PARCOURS_DIR, FormatInvalide, charger_dossier, depuis_dict
 from openlab_academy.tests.fabriques import parcours_brut
 
@@ -17,6 +18,35 @@ class TestConversion(unittest.TestCase):
         self.assertEqual(p.portfolio[0].objectifs, ("o",))
         self.assertIsNone(p.capstone.apres_module)
         self.assertEqual(p.card_gradient, "Blue")
+
+    def test_reglages_injectes_par_defaut(self):
+        p = depuis_dict(parcours_brut(), "t.yaml", Reglages(heures_par_module=6))
+        self.assertEqual((p.projets_attendus, p.heures_par_module), (10, 6))
+
+    def test_parametres_du_parcours_surchargent_les_reglages(self):
+        brut = parcours_brut()
+        brut["parametres"] = {"projets_par_portfolio": 3, "heures_par_module": 10}
+        brut["portfolio"] = brut["portfolio"][:3]
+        p = depuis_dict(brut, "t.yaml", Reglages())
+        self.assertEqual((p.projets_attendus, p.heures_par_module, len(p.portfolio)), (3, 10, 3))
+
+    def test_parametre_inconnu_refuse(self):
+        brut = parcours_brut()
+        brut["parametres"] = {"bonus": 1}
+        with self.assertRaisesRegex(FormatInvalide, r"t\.yaml: parametres\.bonus inconnu"):
+            depuis_dict(brut, "t.yaml")
+
+    def test_parametre_non_entier_refuse(self):
+        brut = parcours_brut()
+        brut["parametres"] = {"heures_par_module": "huit"}
+        with self.assertRaisesRegex(FormatInvalide, r"parametres\.heures_par_module doit être un entier"):
+            depuis_dict(brut, "t.yaml")
+
+    def test_parametres_doivent_etre_un_dictionnaire(self):
+        brut = parcours_brut()
+        brut["parametres"] = ["heures_par_module"]
+        with self.assertRaisesRegex(FormatInvalide, r"parametres doit être un dictionnaire"):
+            depuis_dict(brut, "t.yaml")
 
     def test_numero_de_module_numerique_normalise(self):
         brut = parcours_brut()
@@ -96,6 +126,17 @@ class TestChargementDossier(unittest.TestCase):
     def test_yaml_malforme(self):
         with self.assertRaisesRegex(FormatInvalide, r"x\.yaml: YAML invalide"):
             self._charger(**{"x.yaml": "title: [non fermé"})
+
+    def test_reglages_transmis_au_chargement(self):
+        a = parcours_brut()
+        lot = self._charger_avec(Reglages(heures_par_module=5), **{"a.yaml": yaml.safe_dump(a)})
+        self.assertEqual(lot[0].heures_par_module, 5)
+
+    def _charger_avec(self, reglages, **fichiers):
+        with tempfile.TemporaryDirectory() as d:
+            for nom, texte in fichiers.items():
+                pathlib.Path(d, nom).write_text(texte, encoding="utf-8")
+            return charger_dossier(pathlib.Path(d), reglages)
 
     def test_parcours_livres_valides(self):
         lot = charger_dossier(PARCOURS_DIR)

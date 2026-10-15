@@ -1,0 +1,30 @@
+{
+ "doctype": "DocType",
+ "name": "Exigence Qualite OpenLab",
+ "module": "OpenLab Academy",
+ "custom": 0,
+ "engine": "InnoDB",
+ "issingle": 0,
+ "istable": 1,
+ "editable_grid": 1,
+ "field_order": [
+  "texte"
+ ],
+ "fields": [
+  {
+   "fieldname": "texte",
+   "fieldtype": "Small Text",
+   "label": "Exigence",
+   "reqd": 1,
+   "in_list_view": 1
+  }
+ ],
+ "permissions": [],
+ "track_changes": 0,
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-16 00:00:00",
+ "modified": "2026-10-16 00:00:00",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

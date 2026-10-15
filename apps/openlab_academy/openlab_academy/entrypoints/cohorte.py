@@ -1,22 +1,20 @@
-"""Commande : bench --site <site> execute openlab_academy.entrypoints.cohorte.ouvrir_pilote"""
+"""Commande : bench --site <site> execute openlab_academy.entrypoints.cohorte.ouvrir_pilote
+             [--kwargs "{'rythme': '<code réglé dans l'écran>'}"]"""
 import frappe
 
 from openlab_academy.application.ouvrir_cohorte import OuvrirCohorte
-from openlab_academy.domain.cohorte import Rythme
+from openlab_academy.infrastructure import reglages_source_frappe
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
 from openlab_academy.infrastructure.yaml_source import PARCOURS_DIR, charger_dossier
 
-PARCOURS_PILOTE = "Fondamentaux de la Data Science"
 
-
-def ouvrir_pilote(rythme: str = "standard", commit: bool = True) -> dict:
-    """bench execute ... --kwargs "{'rythme': 'intensif'}" pour une cohorte intensive."""
-    try:
-        format_ = Rythme(rythme)
-    except ValueError:
-        raise ValueError(f"rythme « {rythme} » inconnu : {[r.value for r in Rythme]}") from None
-    parcours = next(p for p in charger_dossier(PARCOURS_DIR) if p.title == PARCOURS_PILOTE)
-    nom, creee = OuvrirCohorte(DepotCohortesFrappe()).executer(parcours, rythme=format_)
+def ouvrir_pilote(rythme: str | None = None, commit: bool = True) -> dict:
+    reglages = reglages_source_frappe.charger()
+    format_ = reglages.rythme(rythme) if rythme else reglages.rythmes[0]
+    parcours = next((p for p in charger_dossier(PARCOURS_DIR, reglages) if p.title == reglages.parcours_pilote), None)
+    if parcours is None:
+        raise ValueError(f"parcours pilote « {reglages.parcours_pilote} » introuvable dans les fichiers de parcours")
+    nom, creee = OuvrirCohorte(DepotCohortesFrappe(reglages.formateur), reglages).executer(parcours, rythme=format_)
     if commit:
         frappe.db.commit()
     return {"cohorte": nom, "creee": creee}
