@@ -109,15 +109,15 @@ le capstone est un produit complet choisi par l'apprenant dans une liste, prése
 
 Hors périmètre du socle : corrigés de référence des 55 projets (sous-projet ultérieur si souhaité).
 
-### 4.5 Cohorte pilote
+### 4.4 Cohorte pilote
 - `LMS Batch` « Promo 1 — Fondamentaux Data Science », contenant le Parcours 0, dates paramétrables,
   évaluateur = rôle jury. Pas de prix (gratuit jusqu'au sous-projet 2).
 
-### 4.6 Rôles
+### 4.5 Rôles
 Rôles natifs LMS : `Course Creator` (formateur), `Batch Evaluator` (jury), `LMS Student` (apprenant).
 Aucun rôle maison.
 
-### 4.7 Docker
+### 4.6 Docker
 - Image unique construite depuis `frappe/bench` pinné sur un digest, `bench init --frappe-branch version-15`,
   `get-app payments --branch version-15`, `get-app lms --branch main` **pinné sur un commit/tag**,
   `openlab_academy` copié, `bench build` à la construction.
