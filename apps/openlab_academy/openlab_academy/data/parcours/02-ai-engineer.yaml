@@ -1,0 +1,398 @@
+title: AI Engineer
+short_introduction: >-
+  Parcours II · ingénierie des applications LLM — RAG, agents, MCP, evals, guardrails et observabilité,
+  jusqu'à la mise en production.
+description: >-
+  <p><b>Prérequis :</b> bases de programmation Python, Git, notions HTTP/JSON (ou parcours Développeur Python).</p>
+  <p><b>Format :</b> 1 module par semaine (~8 h), un livrable par module, 10 semaines projet intercalées
+  et un capstone devant jury.</p>
+  <p><b>Fil conducteur :</b> des applications IA utiles en Afrique de l'Ouest, souveraines quand c'est
+  nécessaire (modèles open source hébergés localement).</p>
+  <p><b>Évaluation :</b> livrables hebdomadaires 20 %, portfolio 40 %, capstone 40 %.</p>
+tags: [IA, LLM, RAG, Agents, MCP, LangGraph, Evals]
+card_gradient: Purple
+
+blocs:
+  - title: "Bloc 1 — Fondations (S1–S3)"
+    modules:
+      - num: "01"
+        title: Python pour l'IA
+        contenu: Typage, async/await, Pydantic v2, gestion d'environnement (uv), tests (pytest), packaging.
+        livrable: Client HTTP asynchrone typé et testé.
+      - num: "02"
+        title: API LLM
+        contenu: >-
+          API Anthropic, OpenAI et modèles open source (Ollama, vLLM). Tokens, température, streaming,
+          sorties structurées, coûts, latence, limites de débit.
+        livrable: Wrapper multi-fournisseurs avec retry et suivi des coûts.
+      - num: "03"
+        title: Prompt Engineering
+        contenu: >-
+          Rôles système, few-shot, raisonnement pas à pas, balises XML, sorties JSON, gestion des refus et
+          des injections de prompt.
+        livrable: Bibliothèque de prompts versionnée.
+  - title: "Bloc 2 — Connaissance & données (S4–S5)"
+    modules:
+      - num: "04"
+        title: RAG
+        contenu: >-
+          Découpage, embeddings, recherche hybride (BM25 + vectorielle), reranking, citations, RAG agentique.
+        livrable: Assistant documentaire sur un corpus métier.
+      - num: "05"
+        title: Bases vectorielles
+        contenu: >-
+          pgvector, Qdrant, Chroma. Index HNSW, filtres de métadonnées, mise à jour incrémentale,
+          compromis coût / latence / rappel.
+        livrable: Benchmark de 2 bases sur le même corpus.
+  - title: "Bloc 3 — Agents (S6–S9)"
+    modules:
+      - num: "06"
+        title: Tool Calling
+        contenu: Schémas de fonctions, boucle agentique, gestion d'erreurs, appels parallèles.
+        livrable: Agent connecté à 3 outils réels (API, base SQL, fichiers).
+      - num: "07"
+        title: MCP (Model Context Protocol)
+        contenu: >-
+          Architecture client/serveur, tools, resources et prompts, transports stdio et HTTP, authentification.
+        livrable: Serveur MCP exposant un système interne.
+      - num: "08"
+        title: LangGraph
+        contenu: >-
+          Graphes d'état, nœuds et arêtes conditionnelles, persistance, validation humaine, multi-agents
+          (superviseur, swarm).
+        livrable: Workflow multi-agents avec validation humaine.
+      - num: "09"
+        title: Context Engineering
+        contenu: >-
+          Budget de contexte, compaction et résumé, mémoire court et long terme, sous-agents, prompt caching.
+        livrable: Agent long-running stable sur plus de 50 tours.
+  - title: "Bloc 4 — Production (S10–S12)"
+    modules:
+      - num: "10"
+        title: Evals
+        contenu: >-
+          Jeux de test de référence, LLM-as-judge, métriques RAG (fidélité, pertinence), tests de régression en CI.
+        livrable: Suite d'évaluation automatisée dans le pipeline.
+      - num: "11"
+        title: Guardrails
+        contenu: >-
+          Validation d'entrée et de sortie, détection d'injection, filtrage des données personnelles, garde-fous
+          de permissions sur les outils, conformité (loi ivoirienne sur les données personnelles, RGPD, AI Act).
+        livrable: Couche de sécurité branchée sur l'agent du module 08.
+      - num: "12"
+        title: Observabilité
+        contenu: >-
+          Traces (Langfuse, OpenTelemetry), suivi des coûts et de la latence, retours utilisateurs, tableaux
+          de bord et alertes.
+        livrable: Dashboard de monitoring en production.
+
+portfolio:
+  - titre: Client asynchrone typé pour une API publique
+    apres_module: "01"
+    duree_h: 10
+    niveau: guide
+    contexte: >-
+      Avant de parler aux LLM, il faut savoir parler proprement à une API. On écrit un client asynchrone pour
+      une API publique (open data, météo ou taux de change) réutilisable dans les projets suivants.
+    objectifs:
+      - Écrire du Python asynchrone typé
+      - Modéliser des réponses avec Pydantic v2
+      - Tester un client réseau sans réseau
+    fonctionnalites:
+      - Client asynchrone avec timeouts, reprises et backoff
+      - Modèles Pydantic pour chaque réponse
+      - Pagination transparente (itérateur asynchrone)
+      - Journalisation structurée des appels
+      - CLI de démonstration
+    stack: [Python 3.12+, uv, httpx, Pydantic v2, pytest, respx, ruff, pyright]
+    criteres_acceptation:
+      - "pyright en mode strict sans erreur"
+      - Les erreurs réseau et les réponses invalides sont testées
+      - Aucune requête réelle dans les tests
+      - "`docker compose run client demo` fonctionne"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Clés d'API via variables d'environnement uniquement
+    livrables: [Dépôt Git, README]
+
+  - titre: Passerelle LLM multi-fournisseurs avec suivi des coûts
+    apres_module: "02"
+    duree_h: 14
+    niveau: guide
+    contexte: >-
+      Une startup abidjanaise veut pouvoir passer d'un fournisseur de LLM à un autre (ou à un modèle local)
+      sans réécrire son code, et suivre ses dépenses en francs CFA.
+    objectifs:
+      - Abstraire plusieurs fournisseurs derrière une interface commune
+      - Gérer streaming, sorties structurées et limites de débit
+      - Mesurer coûts et latence
+    fonctionnalites:
+      - Interface unique pour au moins deux fournisseurs cloud et un modèle local (Ollama)
+      - Streaming et sorties structurées validées par schéma
+      - Reprises sur erreurs temporaires et bascule vers un fournisseur de secours
+      - Compteur de tokens et coût par requête converti en FCFA
+      - API HTTP de la passerelle et tableau des dépenses
+    stack: [Python, uv, FastAPI, httpx, Pydantic v2, Ollama, SQLite, pytest]
+    criteres_acceptation:
+      - Changement de fournisseur par configuration, sans modifier le code appelant
+      - La bascule est testée avec un fournisseur simulé en panne
+      - Le coût calculé correspond aux tarifs configurés (tests)
+      - "`docker compose up` lance la passerelle et le modèle local"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Aucune clé d'API journalisée
+    livrables: [Dépôt Git, Démo vidéo ≤ 3 min, README]
+
+  - titre: Extracteur structuré de factures et de reçus
+    apres_module: "03"
+    duree_h: 12
+    niveau: guide
+    contexte: >-
+      Les cabinets comptables ivoiriens ressaisissent des centaines de factures et reçus par mois. On extrait
+      automatiquement les champs utiles en JSON validé, avec un taux d'erreur mesuré.
+    objectifs:
+      - Concevoir des prompts robustes et versionnés
+      - Obtenir des sorties structurées fiables
+      - Mesurer la qualité d'extraction
+    fonctionnalites:
+      - Extraction (fournisseur, NCC, date, montant HT/TTC, TVA 18 %) depuis texte ou image
+      - Sortie JSON validée par schéma, avec contrôle de cohérence des montants
+      - Bibliothèque de prompts versionnée avec exemples
+      - Jeu de test annoté et score d'exactitude par champ
+      - Rejet explicite des documents illisibles
+    stack: [Python, uv, SDK LLM, Pydantic v2, pytest, Jinja2]
+    criteres_acceptation:
+      - Exactitude mesurée sur au moins 30 documents annotés
+      - HT + TVA = TTC vérifié, sinon document signalé
+      - Les prompts sont versionnés et chaque version a son score
+      - "`docker compose run extraire facture.pdf` renvoie le JSON"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Documents de test anonymisés
+    livrables: [Dépôt Git, Rapport de qualité, README]
+
+  - titre: Assistant documentaire du Code du travail ivoirien
+    apres_module: "04"
+    duree_h: 16
+    niveau: semi-guide
+    contexte: >-
+      Salariés et RH cherchent souvent une réponse rapide sur les congés, préavis ou heures supplémentaires.
+      On construit un assistant RAG qui répond à partir du Code du travail et cite l'article exact.
+    objectifs:
+      - Construire une chaîne RAG complète
+      - Combiner recherche lexicale et vectorielle
+      - Garantir des réponses sourcées
+    fonctionnalites:
+      - Ingestion et découpage du texte par article
+      - Recherche hybride BM25 + embeddings et reranking
+      - Réponse avec citations cliquables des articles
+      - Refus explicite quand le corpus ne contient pas la réponse
+      - Interface web de questions-réponses
+    stack: [Python, uv, FastAPI, pgvector, modèle d'embeddings, SDK LLM, pytest]
+    criteres_acceptation:
+      - Chaque réponse cite au moins un article existant (test sur 30 questions)
+      - Hors corpus, l'assistant le dit au lieu d'inventer
+      - Rappel de la recherche mesuré sur un jeu de questions annotées
+      - "`docker compose up` lance l'assistant et sa base"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Mention claire que l'assistant ne remplace pas un conseil juridique
+    livrables: [Dépôt Git, Démo, Rapport d'évaluation, README]
+
+  - titre: Benchmark pgvector vs Qdrant sur un corpus OHADA
+    apres_module: "05"
+    duree_h: 12
+    niveau: semi-guide
+    contexte: >-
+      Les actes uniformes OHADA s'appliquent dans 17 pays. Avant de choisir une base vectorielle pour un
+      cabinet juridique, on les compare objectivement sur ce corpus.
+    objectifs:
+      - Mesurer rappel, latence et coût
+      - Comprendre les paramètres d'index HNSW
+      - Recommander un choix argumenté
+    fonctionnalites:
+      - Ingestion identique du corpus dans pgvector et Qdrant
+      - Jeu de requêtes annotées et calcul du rappel@k
+      - Mesure de latence (p50, p95) et d'empreinte mémoire
+      - Variation des paramètres HNSW et des filtres de métadonnées
+      - Rapport comparatif généré automatiquement
+    stack: [Python, uv, pgvector, Qdrant, Docker Compose, pandas, pytest]
+    criteres_acceptation:
+      - Le benchmark est rejouable en une commande avec résultats stables
+      - Au moins 3 configurations d'index comparées
+      - La recommandation finale s'appuie sur les mesures
+      - "`docker compose up` lance les deux bases et le banc"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Méthodologie de mesure documentée (ADR)
+    livrables: [Dépôt Git, Rapport de benchmark, README]
+
+  - titre: Agent de service client e-commerce
+    apres_module: "06"
+    duree_h: 14
+    niveau: semi-guide
+    contexte: >-
+      Une boutique en ligne reçoit les mêmes questions à longueur de journée : « où est ma commande ? »,
+      « puis-je changer d'adresse ? ». On construit un agent qui répond en utilisant de vrais outils.
+    objectifs:
+      - Implémenter une boucle agentique fiable
+      - Concevoir des schémas d'outils sûrs
+      - Gérer les erreurs d'outils
+    fonctionnalites:
+      - Outil 1 — base SQL des commandes (lecture seule, requêtes paramétrées)
+      - Outil 2 — API de suivi de livraison
+      - Outil 3 — FAQ et conditions générales (fichiers)
+      - Appels d'outils parallèles et reprise sur erreur
+      - Escalade vers un humain si l'agent ne sait pas
+    stack: [Python, uv, SDK LLM (tool use), SQLite ou PostgreSQL, FastAPI, pytest]
+    criteres_acceptation:
+      - L'agent ne peut lire que les commandes du client authentifié (test OWASP A01)
+      - Aucune requête SQL construite à partir du texte du modèle
+      - 20 scénarios de conversation testés automatiquement
+      - "`docker compose up` lance l'agent et ses outils"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Outils en lecture seule sauf validation humaine
+    livrables: [Dépôt Git, Démo vidéo, README]
+
+  - titre: Serveur MCP exposant l'ERP d'une PME
+    apres_module: "07"
+    duree_h: 12
+    niveau: semi-guide
+    contexte: >-
+      Une PME veut que ses assistants IA consultent son ERP (clients, stocks, factures) de façon standard et
+      contrôlée. On expose l'ERP via le Model Context Protocol.
+    objectifs:
+      - Concevoir un serveur MCP (tools, resources, prompts)
+      - Sécuriser l'accès aux données
+      - Tester un serveur MCP
+    fonctionnalites:
+      - Tools de consultation (clients, stocks, factures impayées)
+      - Resources documentaires (catalogue, conditions de vente)
+      - Prompts prêts à l'emploi (relance client, état des stocks)
+      - Transports stdio et HTTP avec authentification
+      - Journal d'audit des appels
+    stack: [Python, uv, SDK MCP, FastAPI, PostgreSQL, pytest]
+    criteres_acceptation:
+      - Le serveur fonctionne avec un client MCP standard
+      - Requête sans jeton refusée en HTTP (test)
+      - Chaque appel d'outil est journalisé
+      - "`docker compose up` lance le serveur et un ERP de démonstration"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Principe du moindre privilège pour chaque tool
+    livrables: [Dépôt Git, README]
+
+  - titre: Instruction multi-agents d'un dossier de crédit
+    apres_module: "08"
+    duree_h: 16
+    niveau: autonome
+    contexte: >-
+      Une microfinance instruit des dossiers de crédit PME : collecte des pièces, analyse financière, avis de
+      risque, décision. On orchestre ces étapes avec des agents et une validation humaine obligatoire.
+    objectifs:
+      - Orchestrer un graphe d'agents avec LangGraph
+      - Persister l'état et reprendre après interruption
+      - Placer l'humain aux points de décision
+    fonctionnalites:
+      - Agents spécialisés (collecte, analyse, risque) sous un superviseur
+      - Vérification de complétude des pièces
+      - Ratios financiers calculés par du code, pas par le modèle
+      - Validation humaine avant toute décision
+      - Historique complet et reprise d'un dossier
+    stack: [Python, uv, LangGraph, SDK LLM, PostgreSQL, FastAPI, pytest]
+    criteres_acceptation:
+      - Aucune décision sans validation humaine (test)
+      - Un dossier interrompu reprend à la bonne étape
+      - Les ratios sont vérifiés par des tests déterministes
+      - "`docker compose up` lance le workflow et son interface"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Analyse d'équité des avis de risque documentée
+    livrables: [Dépôt Git, Démo vidéo, README]
+
+  - titre: Suite d'évals en CI pour l'assistant RAG
+    apres_module: "10"
+    duree_h: 12
+    niveau: autonome
+    contexte: >-
+      Changer de modèle ou de prompt peut dégrader un assistant sans que personne ne s'en aperçoive. On met
+      l'assistant du projet 4 sous évaluation continue.
+    objectifs:
+      - Construire un jeu de test de référence
+      - Combiner métriques automatiques et LLM-as-judge
+      - Bloquer les régressions en CI
+    fonctionnalites:
+      - Jeu de 50 questions annotées avec réponses et sources attendues
+      - Métriques de fidélité, pertinence et exactitude des citations
+      - Juge LLM calibré sur des annotations humaines
+      - Seuils de non-régression dans la CI
+      - Rapport comparatif entre deux versions
+    stack: [Python, uv, pytest, RAGAS ou équivalent, SDK LLM, GitHub Actions]
+    criteres_acceptation:
+      - Une régression volontaire fait échouer la CI (démonstration)
+      - Accord du juge LLM avec les annotations humaines mesuré
+      - Coût d'une campagne d'évals connu et maîtrisé
+      - "`docker compose run evals` produit le rapport"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Jeu de test versionné séparément des prompts
+    livrables: [Dépôt Git, Rapport d'évals, README]
+
+  - titre: Assistant agricole WhatsApp avec guardrails et observabilité
+    apres_module: "12"
+    duree_h: 16
+    niveau: autonome
+    contexte: >-
+      Les producteurs utilisent massivement WhatsApp. On construit un assistant qui conseille sur les
+      maladies du cacao et les bonnes pratiques, protégé contre les abus et observé en production.
+    objectifs:
+      - Protéger un agent en entrée et en sortie
+      - Observer coûts, latence et qualité en production
+      - Concevoir pour une faible bande passante
+    fonctionnalites:
+      - Webhook WhatsApp Business (ou simulateur) et réponses courtes
+      - Base de connaissances agronomique avec citations
+      - Détection d'injection de prompt et filtrage des données personnelles
+      - Traces, coûts et retours utilisateurs dans un tableau de bord
+      - Alertes sur dérive des coûts ou des erreurs
+    stack: [Python, uv, FastAPI, SDK LLM, Langfuse ou OpenTelemetry, PostgreSQL, pytest]
+    criteres_acceptation:
+      - 20 tentatives d'injection connues sont bloquées (tests)
+      - Aucune donnée personnelle dans les traces (test)
+      - Tableau de bord des coûts et de la latence fonctionnel
+      - "`docker compose up` lance l'assistant, l'observabilité et le simulateur"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Conformité à la loi ivoirienne sur la protection des données personnelles documentée
+    livrables: [Dépôt Git, Démo vidéo, README]
+
+capstone:
+  titre: Copilote IA métier en production
+  duree_h: 60
+  niveau: autonome
+  contexte: >-
+    Projet de fin de parcours présenté au jury. L'apprenant choisit un métier (banque, assurance, santé,
+    administration, agriculture…) et livre un agent complet : connaissance, outils, orchestration,
+    évaluations, garde-fous et observabilité.
+  objectifs:
+    - Livrer un agent fiable de bout en bout
+    - Prouver sa qualité par des mesures
+    - Défendre ses choix d'architecture et de souveraineté
+  fonctionnalites:
+    - RAG sur un corpus métier avec citations
+    - Outils exposés via un serveur MCP
+    - Orchestration LangGraph avec validation humaine
+    - Suite d'évals en CI et garde-fous en entrée et en sortie
+    - Observabilité (traces, coûts, alertes) et déploiement conteneurisé
+  stack: [Python, uv, LangGraph, SDK MCP, pgvector, FastAPI, Langfuse, Docker, GitHub Actions]
+  criteres_acceptation:
+    - "`docker compose up` lance l'ensemble"
+    - Les evals bloquent une régression en CI
+    - Les tentatives d'injection du jeu de test sont bloquées
+    - Soutenance de 20 minutes + 10 minutes de questions
+    - Tests et CI verts
+  exigences_specifiques:
+    - Journal de décisions (ADR) d'au moins 5 entrées
+    - Option de fonctionnement avec un modèle open source hébergé localement
+  livrables: [Dépôt Git, Application déployée ou vidéo, Rapport final, Support de soutenance]

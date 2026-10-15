@@ -1,0 +1,393 @@
+title: Data Engineer
+short_introduction: >-
+  Parcours III · pipelines et plateformes de données — SQL avancé, modélisation, dbt, Spark, Kafka,
+  orchestration, cloud et qualité des données.
+description: >-
+  <p><b>Prérequis :</b> logique de programmation, notions de bases de données (ou parcours Développeur Python).</p>
+  <p><b>Format :</b> 1 module par semaine (~8 h), un livrable par module, 10 semaines projet intercalées
+  et un capstone devant jury.</p>
+  <p><b>Fil conducteur :</b> des plateformes de données pour les filières et entreprises d'Afrique de l'Ouest,
+  avec une attention constante aux coûts.</p>
+  <p><b>Évaluation :</b> livrables hebdomadaires 20 %, portfolio 40 %, capstone 40 %.</p>
+tags: [Data Engineering, SQL, dbt, Spark, Kafka, Airflow, Cloud]
+card_gradient: Amber
+
+blocs:
+  - title: "Bloc 1 — Fondamentaux (S1–S3)"
+    modules:
+      - num: "01"
+        title: SQL
+        contenu: >-
+          Jointures, CTE, fonctions de fenêtrage, agrégations avancées, plans d'exécution, index.
+        livrable: 30 requêtes analytiques optimisées sur un jeu de données réel.
+      - num: "02"
+        title: Python data
+        contenu: pandas et Polars, typage, lecture/écriture (CSV, Parquet, JSON), appels d'API, tests.
+        livrable: Script d'ingestion API vers Parquet, testé.
+      - num: "03"
+        title: Git
+        contenu: >-
+          Branches, merge et rebase, pull requests, revue de code, commits conventionnels, CI de base.
+        livrable: Dépôt avec workflow de pull requests et CI.
+  - title: "Bloc 2 — Modélisation & transformation (S4–S5)"
+    modules:
+      - num: "04"
+        title: Data Modeling
+        contenu: >-
+          Modélisation dimensionnelle (Kimball), schémas en étoile et en flocon, SCD, Data Vault,
+          architecture médaillon (bronze, silver, gold).
+        livrable: Modèle d'entrepôt documenté pour un cas métier.
+      - num: "05"
+        title: dbt
+        contenu: >-
+          Modèles, sources, refs, tests, macros Jinja, modèles incrémentaux, documentation et lignage.
+        livrable: Projet dbt complet sur le modèle du module 04.
+  - title: "Bloc 3 — Traitement à grande échelle (S6–S8)"
+    modules:
+      - num: "06"
+        title: Apache Spark
+        contenu: >-
+          Architecture (driver, executors), DataFrames, Spark SQL, partitionnement, shuffles, optimisation,
+          Delta Lake.
+        livrable: Job Spark traitant plus de 10 Go avec un tuning mesuré.
+      - num: "07"
+        title: Kafka
+        contenu: >-
+          Topics, partitions, consumer groups, garanties de livraison, Schema Registry, Kafka Connect,
+          streaming avec Spark ou Flink.
+        livrable: Pipeline temps réel de bout en bout.
+      - num: "08"
+        title: Airflow
+        contenu: DAGs, opérateurs, sensors, XCom, TaskFlow API, backfills, gestion des échecs et alertes.
+        livrable: Orchestration complète d'un pipeline.
+  - title: "Bloc 4 — Cloud & industrialisation (S9–S12)"
+    modules:
+      - num: "09"
+        title: Docker
+        contenu: Images, Dockerfile multi-stage, volumes, réseaux, Docker Compose.
+        livrable: Stack locale conteneurisée (Airflow, Postgres, Kafka).
+      - num: "10"
+        title: AWS / GCP
+        contenu: >-
+          Stockage objet (S3, GCS), IAM, services managés (Glue, EMR, Dataproc, Composer), Terraform.
+        livrable: Infrastructure d'un pipeline en Terraform.
+      - num: "11"
+        title: Snowflake / BigQuery
+        contenu: >-
+          Architecture, warehouses et slots, partitionnement et clustering, maîtrise des coûts, sécurité et RBAC.
+        livrable: Migration d'une couche gold dans un entrepôt cloud.
+      - num: "12"
+        title: Data Quality
+        contenu: >-
+          Tests dbt, Great Expectations et Soda, contrats de données, SLA de fraîcheur, observabilité et alertes.
+        livrable: Framework qualité branché sur un pipeline.
+
+portfolio:
+  - titre: Modèle SQL et requêtes analytiques du transport urbain abidjanais
+    apres_module: "01"
+    duree_h: 12
+    niveau: guide
+    contexte: >-
+      Bus, gbaka, wôrô-wôrô et bateaux-bus transportent des millions d'Abidjanais. À partir de données de
+      validations simulées réalistes, on construit le modèle relationnel et les requêtes de pilotage.
+    objectifs:
+      - Modéliser un domaine en SQL relationnel
+      - Écrire des requêtes analytiques avancées
+      - Optimiser avec plans d'exécution et index
+    fonctionnalites:
+      - Schéma normalisé (lignes, arrêts, véhicules, validations)
+      - Générateur de données réaliste et reproductible
+      - Requêtes d'affluence par heure et par ligne (fenêtrage)
+      - Détection des trajets anormalement longs
+      - Comparaison avant/après index avec EXPLAIN ANALYZE
+    stack: [PostgreSQL 16, SQL, Python (générateur), Docker Compose, pytest]
+    criteres_acceptation:
+      - Chaque requête a un résultat attendu vérifié par un test
+      - Gain de performance mesuré et documenté pour au moins 3 requêtes
+      - Contraintes d'intégrité (clés, CHECK) présentes
+      - "`docker compose up` crée la base, la peuple et lance les tests"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Migrations SQL versionnées
+    livrables: [Dépôt Git, Rapport de performance, README]
+
+  - titre: Ingestion idempotente d'API open data vers Parquet
+    apres_module: "02"
+    duree_h: 12
+    niveau: guide
+    contexte: >-
+      Les portails de données ouvertes changent leurs formats sans prévenir. On construit une ingestion
+      robuste qui alimente une zone bronze en Parquet, sans doublons même rejouée.
+    objectifs:
+      - Ingérer des API paginées de façon fiable
+      - Typer et valider les données à l'entrée
+      - Rendre une ingestion idempotente
+    fonctionnalites:
+      - Extraction paginée avec reprise sur erreur
+      - Validation de schéma et quarantaine des lignes invalides
+      - Écriture Parquet partitionnée par date
+      - Ingestion incrémentale par curseur (dernière date chargée)
+      - Journal d'exécution et métriques (lignes lues, écrites, rejetées)
+    stack: [Python, uv, httpx, Polars, Pandera, Parquet, pytest]
+    criteres_acceptation:
+      - Rejouer l'ingestion ne crée aucun doublon (test)
+      - Lignes lues = écrites + rejetées (test)
+      - Un changement de schéma est détecté et signalé
+      - "`docker compose run ingestion` fonctionne"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Licence des données vérifiée et citée
+    livrables: [Dépôt Git, README]
+
+  - titre: Entrepôt en étoile d'un distributeur
+    apres_module: "04"
+    duree_h: 12
+    niveau: guide
+    contexte: >-
+      Un distributeur de produits de grande consommation livre des boutiques dans tout le pays. On conçoit
+      son entrepôt de données pour analyser ventes, marges et tournées.
+    objectifs:
+      - Appliquer la modélisation dimensionnelle
+      - Gérer l'historique des dimensions (SCD type 2)
+      - Organiser les couches bronze, silver, gold
+    fonctionnalites:
+      - Faits ventes et livraisons, dimensions produit, client, temps, zone
+      - SCD type 2 sur les clients (changement de zone ou de catégorie)
+      - Couches médaillon matérialisées
+      - Requêtes de marge par zone et par période
+      - Dictionnaire de données
+    stack: [DuckDB, SQL, Python, Parquet, pytest]
+    criteres_acceptation:
+      - L'historique SCD2 restitue la bonne zone à une date passée (test)
+      - Le grain de chaque table de faits est documenté et testé (unicité)
+      - Diagramme du modèle dans le README
+      - "`docker compose run entrepot` construit les trois couches"
+      - Tests et CI verts
+    exigences_specifiques:
+      - ADR sur le choix du grain
+    livrables: [Dépôt Git, Dictionnaire de données, README]
+
+  - titre: Projet dbt complet avec tests, documentation et snapshots
+    apres_module: "05"
+    duree_h: 14
+    niveau: semi-guide
+    contexte: >-
+      On industrialise les transformations de l'entrepôt du projet 3 avec dbt, pour que l'équipe data puisse
+      les faire évoluer en sécurité.
+    objectifs:
+      - Structurer un projet dbt professionnel
+      - Tester et documenter chaque modèle
+      - Maîtriser les modèles incrémentaux
+    fonctionnalites:
+      - Sources, staging, intermediate et marts
+      - Tests génériques et singuliers sur chaque modèle
+      - Snapshots pour l'historique des clients
+      - Modèles incrémentaux pour les faits
+      - Documentation et lignage publiés
+    stack: [dbt-core, DuckDB ou PostgreSQL, SQL, Jinja, sqlfluff, GitHub Actions]
+    criteres_acceptation:
+      - "`dbt build` passe en CI à chaque pull request"
+      - Chaque modèle a au moins un test et une description
+      - Le chargement incrémental donne le même résultat qu'un rechargement complet (test)
+      - "`docker compose run dbt build` fonctionne"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Lint SQL (sqlfluff) en CI
+    livrables: [Dépôt Git, Documentation dbt, README]
+
+  - titre: Traitement Spark de transactions Mobile Money à volume
+    apres_module: "06"
+    duree_h: 14
+    niveau: semi-guide
+    contexte: >-
+      Un opérateur de Mobile Money traite des millions de transactions par jour. On calcule, sur plus de
+      10 Go de transactions simulées, les indicateurs de fraude et d'usage par agent.
+    objectifs:
+      - Écrire des jobs Spark efficaces
+      - Diagnostiquer et réduire les shuffles
+      - Mesurer l'effet de chaque optimisation
+    fonctionnalites:
+      - Générateur de transactions réalistes à grande échelle
+      - Agrégats par agent, zone et heure
+      - Détection de schémas suspects (fractionnement, allers-retours)
+      - Écriture Delta Lake partitionnée
+      - Rapport de tuning (partitionnement, broadcast, cache)
+    stack: [PySpark, Delta Lake, Docker Compose, pytest, chispa]
+    criteres_acceptation:
+      - Les règles de détection sont testées sur de petits jeux connus
+      - Gain de temps mesuré entre version naïve et optimisée
+      - Le job tourne en local sur un cluster conteneurisé
+      - "`docker compose up` lance le cluster et le job"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Données entièrement synthétiques
+    livrables: [Dépôt Git, Rapport de tuning, README]
+
+  - titre: Suivi de colis en temps réel avec Kafka
+    apres_module: "07"
+    duree_h: 14
+    niveau: semi-guide
+    contexte: >-
+      Une société de livraison suit ses coursiers moto à Abidjan. Chaque scan de colis et position GPS est un
+      événement ; on construit le pipeline temps réel qui calcule les retards.
+    objectifs:
+      - Concevoir des topics et des schémas d'événements
+      - Garantir l'ordre et la livraison des messages
+      - Calculer des agrégats en flux
+    fonctionnalites:
+      - Producteurs simulant scans et positions
+      - Schémas d'événements versionnés (Schema Registry)
+      - Consommateur de flux calculant l'état et le retard de chaque colis
+      - Gestion des messages en double et en retard
+      - Tableau de bord des colis en retard
+    stack: [Kafka, Schema Registry, Python ou Spark Structured Streaming, PostgreSQL, Docker Compose]
+    criteres_acceptation:
+      - Un message rejoué n'est pas compté deux fois (test)
+      - Un changement de schéma incompatible est refusé
+      - Latence de bout en bout mesurée
+      - "`docker compose up` lance toute la chaîne"
+      - Tests et CI verts
+    exigences_specifiques:
+      - ADR sur les garanties de livraison retenues
+    livrables: [Dépôt Git, Démo vidéo, README]
+
+  - titre: Orchestration du pipeline de bout en bout
+    apres_module: "08"
+    duree_h: 12
+    niveau: semi-guide
+    contexte: >-
+      Les briques des projets précédents tournent à la main. On les orchestre pour qu'elles s'exécutent
+      chaque nuit, dans le bon ordre, avec alertes et reprises.
+    objectifs:
+      - Écrire des DAG maintenables
+      - Gérer échecs, reprises et backfills
+      - Alerter utilement
+    fonctionnalites:
+      - DAG ingestion → transformations dbt → contrôles qualité
+      - Reprises automatiques et tâches idempotentes
+      - Backfill sur une période passée
+      - Alertes (e-mail ou messagerie) en cas d'échec
+      - Tests des DAG (import, structure, logique)
+    stack: [Apache Airflow (TaskFlow) ou Dagster, dbt, Docker Compose, pytest]
+    criteres_acceptation:
+      - Tous les DAG s'importent sans erreur en CI
+      - Un backfill de 7 jours fonctionne et reste idempotent
+      - Une tâche en échec déclenche une alerte (démonstration)
+      - "`docker compose up` lance l'orchestrateur et les pipelines"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Secrets dans un gestionnaire de connexions, jamais dans le code des DAG
+    livrables: [Dépôt Git, README]
+
+  - titre: Plateforme data locale conteneurisée
+    apres_module: "09"
+    duree_h: 12
+    niveau: autonome
+    contexte: >-
+      Beaucoup d'entreprises ouest-africaines veulent garder leurs données sur leurs propres serveurs.
+      On assemble une plateforme data souveraine, déployable sur une seule machine.
+    objectifs:
+      - Assembler une plateforme cohérente
+      - Optimiser des images Docker
+      - Documenter l'exploitation
+    fonctionnalites:
+      - Stockage objet (MinIO), base PostgreSQL, orchestrateur, outil de visualisation
+      - Images multi-stage minimales et non root
+      - Réseaux isolés et volumes persistants
+      - Sauvegarde et restauration
+      - Guide d'exploitation
+    stack: [Docker, Docker Compose, MinIO, PostgreSQL, Airflow ou Dagster, Metabase ou Superset]
+    criteres_acceptation:
+      - "`docker compose up` démarre la plateforme complète"
+      - Aucun conteneur ne tourne en root
+      - Une restauration depuis sauvegarde est démontrée
+      - Images analysées (Trivy) sans vulnérabilité critique
+      - Tests et CI verts
+    exigences_specifiques:
+      - Aucun port d'administration exposé publiquement
+    livrables: [Dépôt Git, Guide d'exploitation, README]
+
+  - titre: Lakehouse cloud à coûts maîtrisés
+    apres_module: "11"
+    duree_h: 14
+    niveau: autonome
+    contexte: >-
+      Une entreprise migre sa couche gold dans le cloud mais craint la facture. On déploie un entrepôt cloud
+      en Terraform, sécurisé et avec des garde-fous de coûts.
+    objectifs:
+      - Décrire une infrastructure en code
+      - Appliquer le moindre privilège
+      - Maîtriser les coûts d'un entrepôt cloud
+    fonctionnalites:
+      - Stockage objet et entrepôt (BigQuery ou Snowflake) provisionnés en Terraform
+      - Rôles et permissions minimaux
+      - Tables partitionnées et clusterisées
+      - Budgets, alertes et quotas de requêtes
+      - Comparaison des coûts avant/après optimisation
+    stack: [Terraform, BigQuery ou Snowflake, dbt, GitHub Actions, Checkov]
+    criteres_acceptation:
+      - "`terraform plan` est propre et versionné ; Checkov sans alerte critique"
+      - Aucun compte de service avec droits administrateur
+      - Gain de coût mesuré sur des requêtes types
+      - Infrastructure détruisible et recréable en une commande
+      - Tests et CI verts
+    exigences_specifiques:
+      - Secrets cloud uniquement dans le gestionnaire de secrets de la CI
+    livrables: [Dépôt Git, Rapport de coûts, README]
+
+  - titre: Qualité et observabilité des données avec alertes
+    apres_module: "12"
+    duree_h: 12
+    niveau: autonome
+    contexte: >-
+      Un tableau de bord faux est pire qu'aucun tableau de bord. On branche un cadre de qualité sur la
+      plateforme : contrats de données, fraîcheur, volumes et alertes.
+    objectifs:
+      - Définir des contrats de données
+      - Automatiser les contrôles
+      - Alerter avant les utilisateurs
+    fonctionnalites:
+      - Contrats de données entre producteurs et consommateurs
+      - Contrôles de schéma, de volume, d'unicité et de distribution
+      - SLA de fraîcheur par table
+      - Alertes et tableau de bord de santé des données
+      - Blocage de la publication si un contrôle critique échoue
+    stack: [Great Expectations ou Soda, dbt tests, Airflow ou Dagster, PostgreSQL]
+    criteres_acceptation:
+      - Une anomalie injectée est détectée et alerte (démonstration)
+      - Une donnée non conforme n'atteint pas la couche gold (test)
+      - Chaque table critique a un SLA de fraîcheur
+      - "`docker compose up` lance contrôles et tableau de bord"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Responsable désigné par contrat de données
+    livrables: [Dépôt Git, README]
+
+capstone:
+  titre: Plateforme data d'une filière agricole
+  duree_h: 60
+  niveau: autonome
+  contexte: >-
+    Projet de fin de parcours présenté au jury. Pour une filière (cacao, anacarde, hévéa…), on construit une
+    plateforme de données complète : collecte terrain, prix, météo, exportations, du flux temps réel
+    jusqu'au tableau de bord décisionnel.
+  objectifs:
+    - Concevoir et livrer une plateforme data de bout en bout
+    - Industrialiser qualité, orchestration et infrastructure
+    - Défendre ses choix devant un jury
+  fonctionnalites:
+    - Ingestion batch (prix, météo, exportations) et streaming (pesées en coopérative)
+    - Modélisation médaillon et transformations dbt
+    - Orchestration avec alertes
+    - Cadre qualité et contrats de données
+    - Tableau de bord décisionnel et infrastructure en code
+  stack: [Python, Kafka, dbt, Airflow ou Dagster, PostgreSQL ou entrepôt cloud, Terraform, Docker, GitHub Actions]
+  criteres_acceptation:
+    - "`docker compose up` lance la plateforme de démonstration"
+    - Ingestion idempotente et qualité bloquante démontrées
+    - Coûts estimés pour un déploiement réel
+    - Soutenance de 20 minutes + 10 minutes de questions
+    - Tests et CI verts
+  exigences_specifiques:
+    - Journal de décisions (ADR) d'au moins 5 entrées
+  livrables: [Dépôt Git, Plateforme de démonstration, Rapport final, Support de soutenance]
