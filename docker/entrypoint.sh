@@ -13,9 +13,16 @@ until bash -c "</dev/tcp/mariadb/3306" 2>/dev/null; do echo "Attente de MariaDB�
 if [ ! -f "sites/${SITE_NAME}/site_config.json" ]; then
   bench new-site "$SITE_NAME" --mariadb-root-password "$DB_ROOT_PASSWORD" \
     --admin-password "$ADMIN_PASSWORD" --mariadb-user-host-login-scope='%'
-  for app in payments lms openlab_academy; do bench --site "$SITE_NAME" install-app "$app"; done
 else
   bench --site "$SITE_NAME" migrate
 fi
+# Répare un premier démarrage interrompu : installe toute app attendue encore absente du site.
+installees="$(bench --site "$SITE_NAME" list-apps 2>/dev/null | awk '{print $1}')"
+for app in payments lms openlab_academy; do
+  if ! grep -qx "$app" <<<"$installees"; then
+    echo "Installation de $app sur $SITE_NAME"
+    bench --site "$SITE_NAME" install-app "$app"
+  fi
+done
 bench use "$SITE_NAME"
 exec bench start
