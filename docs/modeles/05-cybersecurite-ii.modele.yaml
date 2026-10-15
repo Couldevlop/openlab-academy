@@ -1,0 +1,234 @@
+# =====================================================================================
+# MODÈLE — Parcours Ingénieur Cybersécurité II (à compléter par l'équipe pédagogique)
+# Destination une fois rempli : apps/openlab_academy/openlab_academy/data/parcours/05-cybersecurite-ii.yaml
+# Publication : bench --site <site> execute openlab_academy.entrypoints.seed.run
+#
+# Calibrage : 12 modules × 8 h + 10 projets × 15 h + capstone 60 h = 306 h
+#   → 26 semaines au rythme standard (12 h), ~20 semaines en intensif (16 h).
+#   Parcours I + II ≈ 52 semaines, soit 1 an au rythme standard.
+#
+# Règles vérifiées au chargement (fichier refusé sinon) :
+#   - 10 projets dans « portfolio » + 1 « capstone » ; apres_module = numéro d'un module existant
+#   - niveau ∈ guide | semi-guide | autonome ; duree_h entier > 0 ; titres ≤ 120 caractères
+#   - listes non vides (exigences_specifiques peut valoir []) ; éléments contenant « : » entre guillemets
+# Exigences qualité communes et barème /20 ajoutés automatiquement à chaque énoncé.
+# Rappel légal : pratique offensive uniquement sur labs fournis ou avec autorisation écrite.
+#
+# Modules du catalogue actuel, à répartir entre les parcours I et II puis à compléter :
+#   - 01 Réseaux TCP/IP
+#   - 02 Linux
+#   - 03 Python sécurité
+#   - 04 OWASP Top 10
+#   - 05 Nmap
+#   - 06 Wireshark
+#   - 07 Burp Suite
+#   - 08 Pentest
+#   - 09 Active Directory
+#   - 10 SIEM
+#   - 11 Cloud Security
+#   - 12 Réponse à incident
+# =====================================================================================
+
+title: Ingénieur Cybersécurité II
+short_introduction: >-
+  Parcours Cybersécurité II — à compléter (une phrase d'accroche, sans rémunération).
+description: >-
+  <p><b>Prérequis :</b> avoir validé le parcours Ingénieur Cybersécurité I.</p>
+  <p><b>Format :</b> modules hebdomadaires en labs isolés, un livrable par module, 10 semaines projet
+  intercalées et un capstone devant jury.</p>
+  <p><b>Suite :</b> parcours de spécialisation avancée, aboutissement du cursus cybersécurité (1 an avec le parcours I).</p>
+  <p><b>Cadre légal :</b> toute pratique offensive se fait uniquement sur les labs fournis ou sur des
+  systèmes dont on a l'autorisation écrite (loi ivoirienne n° 2013-451 relative à la cybercriminalité).</p>
+  <p><b>Évaluation :</b> livrables hebdomadaires 20 %, portfolio 40 %, capstone 40 %.</p>
+tags: [Cybersécurité]
+card_gradient: Red
+
+blocs:
+  - title: ""                          # Bloc 1 — intitulé (S1–S4)
+    modules:
+      - num: "01"
+        title: ""
+        contenu: ""                 # notions couvertes (~8 h, 40 % théorie / 60 % pratique)
+        livrable: ""                # livrable hebdomadaire
+      - num: "02"
+        title: ""
+        contenu: ""                 # notions couvertes (~8 h, 40 % théorie / 60 % pratique)
+        livrable: ""                # livrable hebdomadaire
+      - num: "03"
+        title: ""
+        contenu: ""                 # notions couvertes (~8 h, 40 % théorie / 60 % pratique)
+        livrable: ""                # livrable hebdomadaire
+      - num: "04"
+        title: ""
+        contenu: ""                 # notions couvertes (~8 h, 40 % théorie / 60 % pratique)
+        livrable: ""                # livrable hebdomadaire
+  - title: ""                          # Bloc 2 — intitulé (S5–S8)
+    modules:
+      - num: "05"
+        title: ""
+        contenu: ""                 # notions couvertes (~8 h, 40 % théorie / 60 % pratique)
+        livrable: ""                # livrable hebdomadaire
+      - num: "06"
+        title: ""
+        contenu: ""                 # notions couvertes (~8 h, 40 % théorie / 60 % pratique)
+        livrable: ""                # livrable hebdomadaire
+      - num: "07"
+        title: ""
+        contenu: ""                 # notions couvertes (~8 h, 40 % théorie / 60 % pratique)
+        livrable: ""                # livrable hebdomadaire
+      - num: "08"
+        title: ""
+        contenu: ""                 # notions couvertes (~8 h, 40 % théorie / 60 % pratique)
+        livrable: ""                # livrable hebdomadaire
+  - title: ""                          # Bloc 3 — intitulé (S9–S12)
+    modules:
+      - num: "09"
+        title: ""
+        contenu: ""                 # notions couvertes (~8 h, 40 % théorie / 60 % pratique)
+        livrable: ""                # livrable hebdomadaire
+      - num: "10"
+        title: ""
+        contenu: ""                 # notions couvertes (~8 h, 40 % théorie / 60 % pratique)
+        livrable: ""                # livrable hebdomadaire
+      - num: "11"
+        title: ""
+        contenu: ""                 # notions couvertes (~8 h, 40 % théorie / 60 % pratique)
+        livrable: ""                # livrable hebdomadaire
+      - num: "12"
+        title: ""
+        contenu: ""                 # notions couvertes (~8 h, 40 % théorie / 60 % pratique)
+        livrable: ""                # livrable hebdomadaire
+
+portfolio:
+  # --- Projet 1 ---
+  - titre: ""
+    apres_module: ""              # "01" … "12"
+    duree_h: 15
+    niveau: guide
+    contexte: ""                  # cas réel Côte d'Ivoire / Afrique de l'Ouest, sur lab fourni
+    objectifs: []
+    fonctionnalites: []
+    stack: []
+    criteres_acceptation: []       # ≥ 5 critères vérifiables
+    exigences_specifiques: []
+    livrables: [Dépôt Git, README]
+  # --- Projet 2 ---
+  - titre: ""
+    apres_module: ""              # "01" … "12"
+    duree_h: 15
+    niveau: guide
+    contexte: ""                  # cas réel Côte d'Ivoire / Afrique de l'Ouest, sur lab fourni
+    objectifs: []
+    fonctionnalites: []
+    stack: []
+    criteres_acceptation: []       # ≥ 5 critères vérifiables
+    exigences_specifiques: []
+    livrables: [Dépôt Git, README]
+  # --- Projet 3 ---
+  - titre: ""
+    apres_module: ""              # "01" … "12"
+    duree_h: 15
+    niveau: guide
+    contexte: ""                  # cas réel Côte d'Ivoire / Afrique de l'Ouest, sur lab fourni
+    objectifs: []
+    fonctionnalites: []
+    stack: []
+    criteres_acceptation: []       # ≥ 5 critères vérifiables
+    exigences_specifiques: []
+    livrables: [Dépôt Git, README]
+  # --- Projet 4 ---
+  - titre: ""
+    apres_module: ""              # "01" … "12"
+    duree_h: 15
+    niveau: semi-guide
+    contexte: ""                  # cas réel Côte d'Ivoire / Afrique de l'Ouest, sur lab fourni
+    objectifs: []
+    fonctionnalites: []
+    stack: []
+    criteres_acceptation: []       # ≥ 5 critères vérifiables
+    exigences_specifiques: []
+    livrables: [Dépôt Git, README]
+  # --- Projet 5 ---
+  - titre: ""
+    apres_module: ""              # "01" … "12"
+    duree_h: 15
+    niveau: semi-guide
+    contexte: ""                  # cas réel Côte d'Ivoire / Afrique de l'Ouest, sur lab fourni
+    objectifs: []
+    fonctionnalites: []
+    stack: []
+    criteres_acceptation: []       # ≥ 5 critères vérifiables
+    exigences_specifiques: []
+    livrables: [Dépôt Git, README]
+  # --- Projet 6 ---
+  - titre: ""
+    apres_module: ""              # "01" … "12"
+    duree_h: 15
+    niveau: semi-guide
+    contexte: ""                  # cas réel Côte d'Ivoire / Afrique de l'Ouest, sur lab fourni
+    objectifs: []
+    fonctionnalites: []
+    stack: []
+    criteres_acceptation: []       # ≥ 5 critères vérifiables
+    exigences_specifiques: []
+    livrables: [Dépôt Git, README]
+  # --- Projet 7 ---
+  - titre: ""
+    apres_module: ""              # "01" … "12"
+    duree_h: 15
+    niveau: semi-guide
+    contexte: ""                  # cas réel Côte d'Ivoire / Afrique de l'Ouest, sur lab fourni
+    objectifs: []
+    fonctionnalites: []
+    stack: []
+    criteres_acceptation: []       # ≥ 5 critères vérifiables
+    exigences_specifiques: []
+    livrables: [Dépôt Git, README]
+  # --- Projet 8 ---
+  - titre: ""
+    apres_module: ""              # "01" … "12"
+    duree_h: 15
+    niveau: autonome
+    contexte: ""                  # cas réel Côte d'Ivoire / Afrique de l'Ouest, sur lab fourni
+    objectifs: []
+    fonctionnalites: []
+    stack: []
+    criteres_acceptation: []       # ≥ 5 critères vérifiables
+    exigences_specifiques: []
+    livrables: [Dépôt Git, README]
+  # --- Projet 9 ---
+  - titre: ""
+    apres_module: ""              # "01" … "12"
+    duree_h: 15
+    niveau: autonome
+    contexte: ""                  # cas réel Côte d'Ivoire / Afrique de l'Ouest, sur lab fourni
+    objectifs: []
+    fonctionnalites: []
+    stack: []
+    criteres_acceptation: []       # ≥ 5 critères vérifiables
+    exigences_specifiques: []
+    livrables: [Dépôt Git, README]
+  # --- Projet 10 ---
+  - titre: ""
+    apres_module: ""              # "01" … "12"
+    duree_h: 15
+    niveau: autonome
+    contexte: ""                  # cas réel Côte d'Ivoire / Afrique de l'Ouest, sur lab fourni
+    objectifs: []
+    fonctionnalites: []
+    stack: []
+    criteres_acceptation: []       # ≥ 5 critères vérifiables
+    exigences_specifiques: []
+    livrables: [Dépôt Git, README]
+
+capstone:
+  titre: ""
+  duree_h: 60
+  niveau: autonome
+  contexte: ""
+  objectifs: []
+  fonctionnalites: []
+  stack: []
+  criteres_acceptation: []
+  exigences_specifiques: ["Journal de décisions (ADR) d'au moins 5 entrées"]
+  livrables: [Dépôt Git, Rapport final, Support de soutenance]
