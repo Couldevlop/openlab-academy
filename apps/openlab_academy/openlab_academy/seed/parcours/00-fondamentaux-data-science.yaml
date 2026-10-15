@@ -1,0 +1,392 @@
+title: Fondamentaux de la Data Science
+short_introduction: >-
+  Parcours 0 · socle commun — les bases mathématiques, statistiques et l'outillage
+  avant toute spécialisation AI, Data ou Cybersécurité.
+description: >-
+  <p><b>Prérequis :</b> aucun — un niveau lycée en mathématiques suffit.</p>
+  <p><b>Format :</b> 1 module par semaine (~8 h, 40 % théorie, 60 % pratique), un livrable par module,
+  10 semaines projet intercalées et un capstone devant jury.</p>
+  <p><b>Rôle :</b> installer le vocabulaire, les maths et l'outillage communs aux parcours
+  Développeur Python, AI Engineer, Data Engineer et Cybersécurité.</p>
+  <p><b>Évaluation :</b> livrables hebdomadaires 20 %, portfolio 40 %, capstone 40 %.</p>
+tags: [Data Science, Python, Statistiques, SQL, Machine Learning]
+card_gradient: Blue
+
+blocs:
+  - title: "Bloc 1 — Outils & méthode (S1–S3)"
+    modules:
+      - num: "01"
+        title: Écosystème & méthode
+        contenu: >-
+          Qu'est-ce que la data science : rôles (analyst, engineer, scientist), cycle de vie d'un projet
+          (CRISP-DM), notions d'IA, de ML et de données. Panorama de l'outillage.
+        livrable: Note de cadrage d'un problème métier traduit en question data.
+      - num: "02"
+        title: Ligne de commande & Git
+        contenu: >-
+          Terminal, navigation fichiers, environnements (uv, venv), bases de Git et GitHub,
+          notebooks Jupyter.
+        livrable: Dépôt versionné contenant un premier notebook exécutable.
+      - num: "03"
+        title: Python pour l'analyse
+        contenu: >-
+          Variables, types, structures de données, boucles, fonctions ; NumPy pour le calcul vectoriel.
+          Orienté manipulation de données, sans prérequis de développement.
+        livrable: Notebook d'analyse chiffrée sur un petit jeu de données.
+  - title: "Bloc 2 — Mathématiques utiles (S4–S6)"
+    modules:
+      - num: "04"
+        title: Statistiques descriptives
+        contenu: >-
+          Moyenne, médiane, variance, distributions, corrélation, échantillonnage, biais courants.
+          Lecture critique d'un chiffre.
+        livrable: Rapport statistique commenté sur un dataset réel.
+      - num: "05"
+        title: Probabilités & inférence
+        contenu: >-
+          Probabilités de base, loi normale, intervalles de confiance, tests d'hypothèse,
+          p-value et ses pièges.
+        livrable: Test A/B interprété de bout en bout.
+      - num: "06"
+        title: Algèbre linéaire & calcul
+        contenu: >-
+          Vecteurs, matrices, produit matriciel, notion de dérivée et de gradient — le minimum
+          pour comprendre le ML et le deep learning.
+        livrable: Fiche de synthèse appliquée (régression linéaire à la main).
+  - title: "Bloc 3 — Données & restitution (S7–S10)"
+    modules:
+      - num: "07"
+        title: Manipulation avec pandas
+        contenu: >-
+          Chargement, nettoyage, valeurs manquantes, jointures, agrégations, pivots — avec pandas
+          et une ouverture sur Polars. Le cœur du métier au quotidien.
+        livrable: Jeu de données brut nettoyé et documenté.
+      - num: "08"
+        title: Visualisation
+        contenu: >-
+          Matplotlib, seaborn et Plotly, choix du bon graphique, lisibilité, storytelling visuel,
+          erreurs à éviter.
+        livrable: Mini-dashboard d'exploration d'un jeu de données.
+      - num: "09"
+        title: SQL de base
+        contenu: >-
+          SELECT, WHERE, GROUP BY, jointures simples, agrégations. Interroger une base relationnelle
+          (SQLite, DuckDB) sans intermédiaire.
+        livrable: 20 requêtes sur une base d'exemple.
+      - num: "10"
+        title: Introduction au machine learning
+        contenu: >-
+          Apprentissage supervisé vs non supervisé, train/test, sur-apprentissage, première régression
+          et première classification avec scikit-learn.
+        livrable: Modèle prédictif simple évalué correctement.
+
+portfolio:
+  - titre: Calculateur de budget ménage en FCFA
+    apres_module: "03"
+    duree_h: 12
+    niveau: guide
+    contexte: >-
+      Beaucoup de ménages abidjanais suivent leurs dépenses de tête ou sur un cahier. On construit
+      un outil en ligne de commande qui tient un budget mensuel en FCFA et alerte en cas de dépassement.
+    objectifs:
+      - Structurer un petit programme Python en fonctions testables
+      - Lire et écrire des données (CSV) de façon fiable
+      - Écrire ses premiers tests automatisés
+    fonctionnalites:
+      - Saisie de revenus et dépenses par catégorie (transport, nourriture, loyer, tontine, santé…)
+      - Plafonds par catégorie avec alerte de dépassement
+      - Bilan mensuel (total, solde, top 3 des postes) affiché en tableau
+      - Import et export CSV
+      - Montants formatés en FCFA (séparateur de milliers, sans décimales)
+    stack: [Python 3.12+, uv, Typer, Rich, pytest, ruff]
+    criteres_acceptation:
+      - "`uv run budget --help` liste les commandes"
+      - Un CSV d'exemple fourni produit un bilan correct (vérifié par test)
+      - Les saisies invalides (montant négatif, catégorie inconnue) sont refusées avec un message clair
+      - "`docker compose run budget bilan` fonctionne"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Les montants sont des entiers (pas de flottants pour l'argent)
+    livrables: [Dépôt Git, Démo vidéo ≤ 3 min, README]
+
+  - titre: Rapport statistique des prix des denrées sur les marchés d'Abidjan
+    apres_module: "04"
+    duree_h: 12
+    niveau: guide
+    contexte: >-
+      Les prix du riz, de l'attiéké, de l'huile ou de la tomate varient selon les marchés (Adjamé,
+      Treichville, Yopougon) et les saisons. On produit un rapport statistique reproductible à partir
+      de relevés de prix (données ouvertes ou générateur fourni).
+    objectifs:
+      - Calculer et interpréter des statistiques descriptives
+      - Repérer valeurs aberrantes et biais d'échantillonnage
+      - Produire un rapport reproductible
+    fonctionnalites:
+      - Chargement et contrôle des relevés de prix
+      - Statistiques par produit, marché et mois (moyenne, médiane, écart-type, quantiles)
+      - Détection des valeurs aberrantes (IQR) avec justification
+      - Comparaison entre marchés et évolution mensuelle
+      - Rapport HTML généré en une commande
+    stack: [Python, uv, pandas, Quarto ou Jupyter + nbconvert, matplotlib, pytest]
+    criteres_acceptation:
+      - "`make report` (ou équivalent) régénère le rapport à l'identique"
+      - Chaque chiffre clé du rapport est recalculé par un test
+      - Les limites et biais des données sont explicités dans le rapport
+      - "Le projet tourne avec `docker compose up` et sert le rapport"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Source des données citée et licence vérifiée
+    livrables: [Dépôt Git, Rapport HTML, README]
+
+  - titre: Test A/B d'un SMS de relance de paiement Mobile Money
+    apres_module: "05"
+    duree_h: 12
+    niveau: guide
+    contexte: >-
+      Une microfinance teste deux formulations de SMS pour relancer les échéances payées par Mobile Money.
+      On simule l'expérience, puis on conclut statistiquement sur la meilleure version.
+    objectifs:
+      - Concevoir une expérience (taille d'échantillon, puissance)
+      - Appliquer un test d'hypothèse et un intervalle de confiance
+      - Communiquer une décision et ses incertitudes
+    fonctionnalites:
+      - Générateur de données simulées paramétrable (taux de base, effet, taille)
+      - Calcul de taille d'échantillon et de puissance
+      - Test de proportions + intervalle de confiance de la différence
+      - Simulation de l'erreur de « peeking » (arrêt prématuré)
+      - Note de décision d'une page générée automatiquement
+    stack: [Python, uv, NumPy, SciPy, statsmodels, pytest, Hypothesis]
+    criteres_acceptation:
+      - Avec un effet nul simulé, le taux de faux positifs mesuré est proche de 5 % (test)
+      - La taille d'échantillon calculée est vérifiée contre une valeur de référence
+      - La note de décision indique l'effet, l'IC et la recommandation
+      - "`docker compose run ab` produit la note"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Graines aléatoires fixées pour la reproductibilité
+    livrables: [Dépôt Git, Note de décision, README]
+
+  - titre: Régression linéaire from scratch — loyers à Cocody
+    apres_module: "06"
+    duree_h: 12
+    niveau: semi-guide
+    contexte: >-
+      Une agence immobilière veut estimer le loyer d'un appartement à Cocody selon la surface, le nombre
+      de pièces et le quartier. On implémente la régression linéaire soi-même, puis on la compare à scikit-learn.
+    objectifs:
+      - Relier algèbre linéaire et apprentissage
+      - Implémenter la descente de gradient et l'équation normale
+      - Valider son implémentation contre une référence
+    fonctionnalites:
+      - Régression par équation normale et par descente de gradient (NumPy uniquement)
+      - Encodage des variables catégorielles (quartier)
+      - Courbe d'apprentissage et suivi de la perte
+      - Comparaison des coefficients et des erreurs avec scikit-learn
+      - CLI d'estimation d'un loyer
+    stack: [Python, uv, NumPy, scikit-learn (comparaison), matplotlib, pytest]
+    criteres_acceptation:
+      - Les coefficients diffèrent de scikit-learn de moins de 1e-6 (équation normale), vérifié par test
+      - La descente de gradient converge sur les données fournies
+      - Les entrées invalides de la CLI sont refusées
+      - "`docker compose run loyer estimer --surface 80 --pieces 3 --quartier Riviera` répond"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Fonctions mathématiques pures, sans état global
+    livrables: [Dépôt Git, Notebook explicatif, README]
+
+  - titre: Pipeline de nettoyage de données publiques
+    apres_module: "07"
+    duree_h: 12
+    niveau: semi-guide
+    contexte: >-
+      Les jeux de données publics (INS, portails open data) arrivent souvent avec des colonnes mal nommées,
+      des formats de dates hétérogènes et des doublons. On construit un pipeline de nettoyage réutilisable
+      et documenté.
+    objectifs:
+      - Industrialiser un nettoyage de données
+      - Valider un schéma de sortie
+      - Documenter la provenance et les transformations
+    fonctionnalites:
+      - Ingestion de fichiers CSV/Excel bruts
+      - Normalisation des noms de colonnes, dates, communes et régions
+      - Déduplication et gestion explicite des valeurs manquantes
+      - Validation du schéma de sortie (types, plages, unicité)
+      - Rapport de qualité avant/après et export Parquet
+    stack: [Python, uv, pandas ou Polars, Pandera, Parquet, pytest]
+    criteres_acceptation:
+      - "`uv run nettoyer brut/ propre/` produit des Parquet valides"
+      - Une ligne non conforme est rejetée dans un fichier d'anomalies, jamais silencieusement
+      - Rejouer le pipeline donne un résultat identique (idempotence testée)
+      - "`docker compose run pipeline` fonctionne"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Package installable (pyproject.toml), pas de notebook en production
+    livrables: [Dépôt Git, Rapport de qualité, README]
+
+  - titre: Dashboard pluviométrie × production de cacao
+    apres_module: "08"
+    duree_h: 12
+    niveau: semi-guide
+    contexte: >-
+      La Côte d'Ivoire est le premier producteur mondial de cacao. On construit un tableau de bord qui
+      croise pluviométrie régionale et production pour aider une coopérative à lire ses campagnes.
+    objectifs:
+      - Choisir les bonnes visualisations
+      - Construire une application interactive
+      - Raconter une histoire avec des données
+    fonctionnalites:
+      - Carte et séries temporelles par région
+      - Filtres par campagne, région et indicateur
+      - Graphique de corrélation pluie / production avec avertissement sur la causalité
+      - Export PNG/CSV des vues
+      - Page « méthodologie » et sources
+    stack: [Python, uv, Streamlit, Plotly, pandas ou Polars, pytest]
+    criteres_acceptation:
+      - "`docker compose up` sert le dashboard sur http://localhost:8501"
+      - Les fonctions de préparation des données sont testées (hors UI)
+      - Le dashboard reste lisible sur mobile
+      - Les sources sont citées dans l'application
+      - Tests et CI verts
+    exigences_specifiques:
+      - Accessibilité : palettes lisibles par les daltoniens
+    livrables: [Dépôt Git, Démo déployée ou vidéo, README]
+
+  - titre: Base DuckDB des ventes d'une PME et API de lecture
+    apres_module: "09"
+    duree_h: 12
+    niveau: semi-guide
+    contexte: >-
+      Une PME de distribution de boissons à Abidjan suit ses ventes dans des fichiers Excel. On les charge
+      dans une base analytique, on écrit les requêtes métier et on les expose via une petite API.
+    objectifs:
+      - Modéliser simplement des ventes en SQL
+      - Écrire des requêtes analytiques justes
+      - Exposer des données sans injection SQL
+    fonctionnalites:
+      - Chargement des fichiers dans DuckDB (clients, produits, ventes)
+      - 20 requêtes métier (CA par mois, top clients, panier moyen, saisonnalité…)
+      - API REST en lecture (FastAPI) avec filtres et pagination
+      - Documentation OpenAPI
+    stack: [Python, uv, DuckDB, FastAPI, Pydantic v2, pytest, httpx]
+    criteres_acceptation:
+      - Chaque requête métier a un test avec résultat attendu
+      - Les filtres de l'API utilisent des requêtes paramétrées (test d'injection SQL fourni)
+      - "`docker compose up` expose l'API et sa documentation /docs"
+      - Les erreurs renvoient des codes HTTP corrects (400, 404)
+      - Tests et CI verts
+    exigences_specifiques:
+      - Aucune concaténation de chaîne dans les requêtes SQL
+    livrables: [Dépôt Git, Collection de requêtes documentée, README]
+
+  - titre: Scoring de risque de microcrédit
+    apres_module: "10"
+    duree_h: 12
+    niveau: autonome
+    contexte: >-
+      Une institution de microfinance veut prioriser l'accompagnement des emprunteurs à risque de défaut.
+      On construit un modèle de scoring évalué honnêtement, avec attention aux biais.
+    objectifs:
+      - Construire un pipeline de ML reproductible
+      - Choisir des métriques adaptées au déséquilibre de classes
+      - Analyser l'équité du modèle
+    fonctionnalites:
+      - Pipeline scikit-learn (prétraitement + modèle) sérialisé
+      - Validation croisée, courbes ROC/PR, matrice de confusion
+      - Choix d'un seuil selon un coût métier
+      - Analyse de performance par sous-groupe (genre, région)
+      - CLI de scoring d'un dossier
+    stack: [Python, uv, scikit-learn, pandas, matplotlib, pytest]
+    criteres_acceptation:
+      - Aucune fuite de données entre entraînement et test (test dédié)
+      - Les métriques rapportées sont recalculées par la CI
+      - Le seuil retenu est justifié par le coût métier
+      - "`docker compose run scoring dossier.json` renvoie un score"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Modèle versionné avec ses métriques
+    livrables: [Dépôt Git, Rapport d'évaluation, README]
+
+  - titre: Segmentation des clients d'un opérateur télécom
+    apres_module: "10"
+    duree_h: 12
+    niveau: autonome
+    contexte: >-
+      Un opérateur veut adapter ses forfaits data et voix. On segmente ses clients à partir de leurs
+      usages (données simulées réalistes) et on traduit les segments en recommandations marketing.
+    objectifs:
+      - Appliquer l'apprentissage non supervisé
+      - Évaluer et interpréter des clusters
+      - Transformer une analyse en décisions
+    fonctionnalites:
+      - Préparation et normalisation des variables d'usage
+      - Clustering (k-means et un second algorithme) avec choix argumenté de k
+      - Profils de segments visualisés
+      - Recommandation d'offre par segment
+      - Affectation d'un nouveau client à un segment (CLI)
+    stack: [Python, uv, scikit-learn, Polars ou pandas, Plotly, pytest]
+    criteres_acceptation:
+      - Le choix de k est justifié par au moins deux critères
+      - Les segments sont stables d'une exécution à l'autre (graine fixée, test)
+      - L'affectation d'un nouveau client est testée
+      - "`docker compose run segments` produit le rapport"
+      - Tests et CI verts
+    exigences_specifiques:
+      - Données personnelles pseudonymisées
+    livrables: [Dépôt Git, Rapport de segmentation, README]
+
+  - titre: Prédiction de rendement agricole servie en API
+    apres_module: "10"
+    duree_h: 14
+    niveau: autonome
+    contexte: >-
+      Une coopérative de maïs veut estimer ses rendements selon la pluviométrie, les intrants et la surface.
+      On entraîne un modèle et on le met à disposition des agents de terrain via une API.
+    objectifs:
+      - Passer d'un notebook à un service
+      - Valider les entrées d'une API
+      - Livrer un modèle conteneurisé
+    fonctionnalites:
+      - Entraînement reproductible et sauvegarde du modèle
+      - API FastAPI /predict avec validation Pydantic
+      - Endpoint /health et version du modèle
+      - Journalisation des prédictions (sans données personnelles)
+      - Tests d'API et de non-régression du modèle
+    stack: [Python, uv, scikit-learn, FastAPI, Pydantic v2, Docker, pytest]
+    criteres_acceptation:
+      - "`docker compose up` expose l'API ; /docs documente /predict"
+      - Une entrée hors plage renvoie 422 avec un message clair
+      - La performance du modèle ne régresse pas sous un seuil fixé (test CI)
+      - Image Docker sans secret ni outil de build inutile
+      - Tests et CI verts
+    exigences_specifiques:
+      - Limitation de débit sur /predict
+    livrables: [Dépôt Git, Démo de l'API, README]
+
+capstone:
+  titre: Observatoire data d'un secteur au choix
+  duree_h: 60
+  niveau: autonome
+  contexte: >-
+    Projet de fin de parcours présenté au jury. L'apprenant choisit un secteur ivoirien ou ouest-africain
+    (santé, éducation, transport, agriculture, finance inclusive…) et livre une étude data complète,
+    de la question métier à une application de restitution.
+  objectifs:
+    - Mener un projet data de bout en bout en autonomie
+    - Justifier chaque choix méthodologique
+    - Convaincre un jury non technique et technique
+  fonctionnalites:
+    - Note de cadrage (question métier, indicateurs, sources)
+    - Pipeline de collecte et de nettoyage reproductible
+    - Analyse statistique et au moins un modèle prédictif évalué
+    - Application de restitution (dashboard ou API + page)
+    - Rapport final et support de soutenance
+  stack: [Python, uv, Polars ou pandas, DuckDB, scikit-learn, Streamlit ou FastAPI, Docker, GitHub Actions]
+  criteres_acceptation:
+    - "`docker compose up` lance l'ensemble (pipeline + application)"
+    - Chaque résultat du rapport est reproductible par une commande
+    - Les limites, biais et aspects éthiques sont traités
+    - Soutenance de 20 minutes + 10 minutes de questions
+    - Tests et CI verts
+  exigences_specifiques:
+    - Journal de décisions (ADR) d'au moins 5 entrées
+  livrables: [Dépôt Git, Application, Rapport final, Support de soutenance]
