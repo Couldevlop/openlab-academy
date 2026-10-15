@@ -1,9 +1,10 @@
 """Adaptateur de sortie : implémente le port DepotCatalogue sur les doctypes Frappe LMS."""
 import contextlib
+import html
 
 import frappe
 
-from openlab_academy.domain.parcours import Chapitre, Parcours
+from openlab_academy.domain.parcours import Chapitre, Module, Parcours, Question
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.infrastructure import editorjs
 
@@ -53,6 +54,12 @@ class DepotFrappe:
 
     @staticmethod
     def _purger(cours_id: str) -> None:
+        for quiz in frappe.get_all("LMS Quiz", {"course": cours_id}, pluck="name"):
+            questions = frappe.get_all("LMS Quiz Question", {"parent": quiz}, pluck="question")
+            frappe.db.delete("LMS Quiz Question", {"parent": quiz})
+            frappe.db.delete("LMS Quiz", {"name": quiz})
+            if questions:
+                frappe.db.delete("LMS Question", {"name": ["in", questions]})
         for chapitre in frappe.get_all("Course Chapter", {"course": cours_id}, pluck="name"):
             frappe.db.delete("Course Lesson", {"chapter": chapitre})
             frappe.db.delete("Course Chapter", {"name": chapitre})
@@ -68,27 +75,63 @@ class DepotFrappe:
         doc = frappe.get_doc({"doctype": "Course Chapter", "course": cours_id, "title": chapitre.titre}).insert(
             ignore_permissions=True)
         if chapitre.projet is None:
-            lecons = [(f"{m.num} · {m.title}", f"Livrable {m.num} — {m.title}",
-                       editorjs.consigne_module(m), lambda d, m=m: editorjs.lecon_module(m, d, heures_module))
-                      for m in chapitre.modules]
+            noms = [self._lecon_module(cours_id, doc.name, m, heures_module) for m in chapitre.modules]
         else:
-            p = chapitre.projet
-            lecons = [(f"Énoncé — {p.titre}", chapitre.titre, editorjs.consigne_projet(p),
-                       lambda d: editorjs.lecon_projet(p, d, self._reglages))]
-        noms = [self._lecon(cours_id, doc.name, *lecon) for lecon in lecons]
+            noms = [self._lecon_projet(cours_id, doc.name, chapitre)]
         doc.reload()
         doc.set("lessons", [{"lesson": n} for n in noms])
         doc.save(ignore_permissions=True)
         return doc.name
 
     @staticmethod
-    def _lecon(cours_id: str, chapitre: str, titre: str, titre_devoir: str, consigne: str, rendu) -> str:
-        devoir = frappe.get_doc({
-            "doctype": "LMS Assignment", "title": titre_devoir, "question": consigne,
-            "type": "URL", "course": cours_id, "grade_assignment": 1,
+    def _devoir(cours_id: str, titre: str, consigne: str, type_: str = "URL") -> str:
+        return frappe.get_doc({
+            "doctype": "LMS Assignment", "title": titre, "question": consigne,
+            "type": type_, "course": cours_id, "grade_assignment": 1,
         }).insert(ignore_permissions=True).name
+
+    @staticmethod
+    def _nouvelle_lecon(cours_id: str, chapitre: str, titre: str, contenu: str, evaluations: list[dict]):
         return frappe.get_doc({
             "doctype": "Course Lesson", "course": cours_id, "chapter": chapitre,
-            "title": titre, "content": rendu(devoir),
-            "assessments": [{"assessment_type": "LMS Assignment", "assessment_name": devoir}],
+            "title": titre, "content": contenu, "assessments": evaluations,
+        }).insert(ignore_permissions=True)
+
+    def _lecon_projet(self, cours_id: str, chapitre: str, ch: Chapitre) -> str:
+        devoir = self._devoir(cours_id, ch.titre, editorjs.consigne_projet(ch.projet))
+        return self._nouvelle_lecon(cours_id, chapitre, f"Énoncé — {ch.projet.titre}",
+                                    editorjs.lecon_projet(ch.projet, devoir, self._reglages),
+                                    [{"assessment_type": "LMS Assignment", "assessment_name": devoir}]).name
+
+    def _lecon_module(self, cours_id: str, chapitre: str, m: Module, heures: int) -> str:
+        devoir = self._devoir(cours_id, f"Livrable {m.num} — {m.title}", editorjs.consigne_module(m))
+        evaluations = [{"assessment_type": "LMS Assignment", "assessment_name": devoir}]
+        lecon = self._nouvelle_lecon(cours_id, chapitre, f"{m.num} · {m.title}",
+                                     editorjs.lecon_module(m, devoir, heures), evaluations)
+        if m.quiz:
+            quiz = self._quiz(cours_id, lecon.name, m)
+            cas = self._devoir(cours_id, f"Mise en situation {m.num} — {m.title}", editorjs.consigne_cas(m), "Text")
+            lecon.content = editorjs.lecon_module(m, devoir, heures, quiz, cas, self._reglages)
+            lecon.set("assessments", evaluations + [{"assessment_type": "LMS Quiz", "assessment_name": quiz},
+                                                    {"assessment_type": "LMS Assignment", "assessment_name": cas}])
+            lecon.save(ignore_permissions=True)
+        return lecon.name
+
+    def _quiz(self, cours_id: str, lecon: str, m: Module) -> str:
+        questions = [self._question(q) for q in m.quiz]
+        return frappe.get_doc({
+            "doctype": "LMS Quiz", "title": f"Quiz {m.num} — {m.title}", "course": cours_id, "lesson": lecon,
+            "max_attempts": self._reglages.tentatives_max, "passing_percentage": self._reglages.score_min,
+            "show_answers": 1, "show_submission_history": 1,
+            "questions": [{"question": q, "marks": 1} for q in questions],
         }).insert(ignore_permissions=True).name
+
+    @staticmethod
+    def _question(q: Question) -> str:
+        champs = {"doctype": "LMS Question", "type": "Choices", "question": html.escape(q.enonce),
+                  "multiple": int(q.choix_multiple), "marks": 1}
+        for i, option in enumerate(q.options, start=1):
+            bonne = i in q.bonnes
+            champs.update({f"option_{i}": html.escape(option), f"is_correct_{i}": int(bonne),
+                           f"explanation_{i}": html.escape(q.explication) if bonne else ""})
+        return frappe.get_doc(champs).insert(ignore_permissions=True).name

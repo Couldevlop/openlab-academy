@@ -31,11 +31,45 @@ class Niveau(Enum):
 
 
 @dataclass(frozen=True)
+class Question:
+    """Question de quiz de fin de leçon ; les bonnes réponses sont numérotées à partir de 1."""
+
+    enonce: str
+    options: tuple[str, ...]
+    bonnes: tuple[int, ...]
+    explication: str
+
+    def __post_init__(self):
+        if not self.enonce.strip():
+            raise ParcoursInvalide("question : énoncé manquant")
+        if not self.explication.strip():
+            raise ParcoursInvalide(f"« {self.enonce[:40]} » : explication manquante")
+        if not 2 <= len(self.options) <= 6:
+            raise ParcoursInvalide(f"« {self.enonce[:40]} » : 2 à 6 options attendues")
+        if any(not o.strip() for o in self.options):
+            raise ParcoursInvalide(f"« {self.enonce[:40]} » : option vide")
+        if len(set(self.options)) != len(self.options):
+            raise ParcoursInvalide(f"« {self.enonce[:40]} » : options en double")
+        if not self.bonnes:
+            raise ParcoursInvalide(f"« {self.enonce[:40]} » : au moins une bonne réponse")
+        for b in self.bonnes:
+            if not 1 <= b <= len(self.options):
+                raise ParcoursInvalide(
+                    f"« {self.enonce[:40]} » : bonne réponse {b} hors des options 1 à {len(self.options)}")
+
+    @property
+    def choix_multiple(self) -> bool:
+        return len(self.bonnes) > 1
+
+
+@dataclass(frozen=True)
 class Module:
     num: str
     title: str
     contenu: str
     livrable: str
+    quiz: tuple[Question, ...] = ()
+    mise_en_situation: str = ""
 
 
 @dataclass(frozen=True)
@@ -85,6 +119,7 @@ class Parcours:
     capstone: Projet
     projets_attendus: int = 10
     heures_par_module: int = 8
+    questions_par_quiz: int = 0  # 0 = exercices de fin de leçon non exigés
 
     def __post_init__(self):
         if self.heures_par_module <= 0:
@@ -96,6 +131,8 @@ class Parcours:
             _titre_court(bloc.title)
             for module in bloc.modules:
                 _titre_court(module.title)
+        if self.questions_par_quiz:
+            self._verifier_exercices()
         nums = [m.num for b in self.blocs for m in b.modules]
         doublons = sorted({n for n in nums if nums.count(n) > 1})
         if doublons:
@@ -110,6 +147,14 @@ class Parcours:
                 raise ParcoursInvalide(f"portfolio[{i}].apres_module: module '{p.apres_module}' inexistant")
         if self.capstone.apres_module is not None:
             raise ParcoursInvalide("capstone.apres_module doit être vide")
+
+    def _verifier_exercices(self) -> None:
+        for module in (m for b in self.blocs for m in b.modules):
+            if len(module.quiz) != self.questions_par_quiz:
+                raise ParcoursInvalide(f"module {module.num} : {self.questions_par_quiz} questions attendues, "
+                                       f"{len(module.quiz)} trouvées")
+            if not module.mise_en_situation.strip():
+                raise ParcoursInvalide(f"module {module.num} : mise en situation manquante")
 
     def charge_horaire(self) -> int:
         """Heures de travail apprenant : modules hebdomadaires + portfolio + capstone."""

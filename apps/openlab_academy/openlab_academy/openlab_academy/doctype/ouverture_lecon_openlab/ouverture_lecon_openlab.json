@@ -1,0 +1,58 @@
+{
+ "doctype": "DocType",
+ "name": "Ouverture Lecon OpenLab",
+ "module": "OpenLab Academy",
+ "custom": 0,
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "istable": 0,
+ "issingle": 0,
+ "track_changes": 0,
+ "field_order": [
+  "apprenant",
+  "lecon",
+  "ouvert_le"
+ ],
+ "fields": [
+  {
+   "fieldname": "apprenant",
+   "fieldtype": "Link",
+   "label": "Apprenant",
+   "options": "User",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "lecon",
+   "fieldtype": "Link",
+   "label": "Leçon",
+   "options": "Course Lesson",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "ouvert_le",
+   "fieldtype": "Datetime",
+   "label": "Première ouverture",
+   "reqd": 1,
+   "in_list_view": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1
+  }
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-16 01:30:00",
+ "modified": "2026-10-16 01:30:00",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "in_create": 1
+}

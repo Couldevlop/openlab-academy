@@ -29,15 +29,30 @@ def _doc(blocks: list[dict]) -> str:
     return json.dumps({"time": 0, "blocks": blocks, "version": "2.29.0"}, ensure_ascii=False)
 
 
-def lecon_module(module: Module, devoir: str, heures: int) -> str:
-    return _doc([
+def lecon_module(module: Module, devoir: str, heures: int, quiz: str | None = None,
+                 devoir_cas: str | None = None, reglages: Reglages | None = None) -> str:
+    blocs = [
         _titre("Contenu du module"),
         _bloc("paragraph", text=_e(module.contenu)),
         _bloc("paragraph", text=f"Format : ~{heures} h — 40 % théorie, 60 % pratique."),
         _titre("Livrable"),
         _bloc("paragraph", text=f"<b>{_e(module.livrable)}</b>"),
         _bloc("assignment", assignment=devoir),
-    ])
+    ]
+    if quiz and devoir_cas and reglages:
+        blocs += [
+            _titre("Exercices"),
+            _bloc("paragraph", text=(
+                f"Les exercices s'ouvrent {reglages.delai_exercices_minutes} minutes après l'ouverture de la leçon. "
+                f"Quiz de {len(module.quiz)} questions : {reglages.score_min} % de bonnes réponses exigé pour valider "
+                f"la leçon, {reglages.tentatives_max} tentatives au maximum. Après {reglages.tentatives_max} échecs, "
+                "relisez le cours puis demandez à votre formateur de rouvrir le quiz.")),
+            _bloc("quiz", quiz=quiz),
+            _titre("Mise en situation"),
+            _bloc("paragraph", text=_e(module.mise_en_situation)),
+            _bloc("assignment", assignment=devoir_cas),
+        ]
+    return _doc(blocs)
 
 
 def lecon_projet(projet: Projet, devoir: str, reglages: Reglages) -> str:
@@ -57,6 +72,10 @@ def lecon_projet(projet: Projet, devoir: str, reglages: Reglages) -> str:
 
 def consigne_module(module: Module) -> str:
     return f"<p>{_e(module.livrable)}</p><p>Rendez le lien vers votre dépôt Git ou document.</p>"
+
+
+def consigne_cas(module: Module) -> str:
+    return f"<p>{_e(module.mise_en_situation)}</p><p>Rédigez votre réponse argumentée.</p>"
 
 
 def consigne_projet(projet: Projet) -> str:

@@ -15,6 +15,11 @@ TITRE = "Parcours réglages test"
 
 
 def regler(**valeurs):
+    """Repart des réglages par défaut (la base de dev peut contenir des réglages modifiés) puis applique."""
+    doc = frappe.get_single("Reglages OpenLab Academy")
+    doc.set("rythmes", [])
+    doc.flags.ignore_validate = True
+    doc.save(ignore_permissions=True)
     reglages_source_frappe.initialiser()
     doc = frappe.get_single("Reglages OpenLab Academy")
     rythmes = valeurs.pop("rythmes", [])

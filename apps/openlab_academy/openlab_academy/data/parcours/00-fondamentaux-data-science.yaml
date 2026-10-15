@@ -21,18 +21,84 @@ blocs:
           Qu'est-ce que la data science : rôles (analyst, engineer, scientist), cycle de vie d'un projet
           (CRISP-DM), notions d'IA, de ML et de données. Panorama de l'outillage.
         livrable: Note de cadrage d'un problème métier traduit en question data.
+        mise_en_situation: "Le directeur commercial d'une société de distribution à Abidjan constate une baisse des ventes à Bouaké et vous demande « de faire de la data ». Rédigez en une demi-page la question data précise que vous poseriez, les données nécessaires et l'indicateur qui permettra de mesurer le succès."
+        quiz:
+          - question: "Dans CRISP-DM, quelle phase vient en premier ?"
+            options: ["Préparation des données", "Compréhension du métier", "Modélisation", "Déploiement"]
+            bonnes: [2]
+            explication: "Tout projet commence par la compréhension du problème métier : sans question claire, les données ne servent à rien."
+          - question: "Quel rôle construit et maintient les pipelines qui alimentent les analyses ?"
+            options: ["Data analyst", "Data engineer", "Data scientist", "Product owner"]
+            bonnes: [2]
+            explication: "Le data engineer industrialise la collecte, le stockage et la transformation des données."
+          - question: "Le machine learning est :"
+            options: ["un sous-domaine de l'IA", "un synonyme exact de l'IA", "un outil de visualisation", "un langage de programmation"]
+            bonnes: [1]
+            explication: "Le ML est une famille de méthodes de l'IA qui apprennent à partir de données."
+          - question: "Quelle formulation est une bonne question data ?"
+            options: ["Améliorer les ventes", "Quels facteurs expliquent la baisse de 15 % des ventes à Bouaké depuis janvier ?", "Faire un tableau de bord", "Utiliser l'IA"]
+            bonnes: [2]
+            explication: "Une bonne question est précise, mesurable et liée à une décision."
+          - question: "Pourquoi CRISP-DM est-il dit itératif ?"
+            options: ["Parce qu'on revient souvent aux phases précédentes", "Parce qu'il se fait en une seule fois", "Parce qu'il est réservé aux grandes entreprises", "Parce qu'il n'a pas de fin"]
+            bonnes: [1]
+            explication: "Les découvertes faites en modélisation ou en évaluation renvoient souvent à la compréhension métier ou aux données."
       - num: "02"
         title: Ligne de commande & Git
         contenu: >-
           Terminal, navigation fichiers, environnements (uv, venv), bases de Git et GitHub,
           notebooks Jupyter.
         livrable: Dépôt versionné contenant un premier notebook exécutable.
+        mise_en_situation: "Votre collègue a modifié un notebook partagé et le projet ne fonctionne plus. Décrivez les commandes Git qui vous permettent de voir ce qui a changé et de revenir à la dernière version fonctionnelle sans perdre son travail."
+        quiz:
+          - question: "Quelle commande crée un environnement Python isolé ?"
+            options: ["python -m venv .venv", "git init", "pip freeze", "cd .venv"]
+            bonnes: [1]
+            explication: "venv crée un environnement isolé pour installer les dépendances du projet."
+          - question: "Quelle commande enregistre localement des modifications indexées ?"
+            options: ["git push", "git commit", "git clone", "git pull"]
+            bonnes: [2]
+            explication: "git commit enregistre un instantané dans l'historique local ; git push l'envoie au serveur."
+          - question: "À quoi sert un fichier .gitignore ?"
+            options: ["À supprimer des fichiers", "À exclure des fichiers du suivi Git", "À compresser le dépôt", "À créer une branche"]
+            bonnes: [2]
+            explication: "Il évite de versionner les fichiers générés, les secrets ou les environnements virtuels."
+          - question: "Quelle commande affiche les différences non encore indexées ?"
+            options: ["git log", "git diff", "git status --short", "git branch"]
+            bonnes: [2]
+            explication: "git diff montre ligne à ligne ce qui a changé depuis le dernier index."
+          - question: "Pourquoi travailler sur une branche ?"
+            options: ["Pour isoler une évolution sans casser la version principale", "Pour accélérer Python", "Pour chiffrer le code", "Pour éviter les commits"]
+            bonnes: [1]
+            explication: "Une branche permet de développer et tester avant d'intégrer à la branche principale."
       - num: "03"
         title: Python pour l'analyse
         contenu: >-
           Variables, types, structures de données, boucles, fonctions ; NumPy pour le calcul vectoriel.
           Orienté manipulation de données, sans prérequis de développement.
         livrable: Notebook d'analyse chiffrée sur un petit jeu de données.
+        mise_en_situation: "Une coopérative vous transmet la liste des pesées de cacao de la semaine (une valeur en kg par livraison). Écrivez en Python le calcul du total, de la moyenne et du nombre de livraisons supérieures à 500 kg, puis expliquez votre démarche."
+        quiz:
+          - question: "Quel est le type de la valeur 3.5 en Python ?"
+            options: ["int", "float", "str", "bool"]
+            bonnes: [2]
+            explication: "Un nombre à virgule est un float."
+          - question: "Quelle structure associe des clés à des valeurs ?"
+            options: ["list", "tuple", "dict", "set"]
+            bonnes: [3]
+            explication: "Le dictionnaire associe une clé unique à une valeur."
+          - question: "Que renvoie len([4, 8, 15]) ?"
+            options: ["2", "3", "15", "27"]
+            bonnes: [2]
+            explication: "len renvoie le nombre d'éléments."
+          - question: "Quel avantage principal apporte NumPy ?"
+            options: ["Le calcul vectoriel rapide sur des tableaux", "La création de sites web", "La gestion de versions", "L'envoi d'e-mails"]
+            bonnes: [1]
+            explication: "NumPy applique des opérations à tout un tableau sans boucle Python, beaucoup plus vite."
+          - question: "Que vaut np.array([1, 2, 3]) * 2 ?"
+            options: ["[1, 2, 3, 1, 2, 3]", "array([2, 4, 6])", "Une erreur", "6"]
+            bonnes: [2]
+            explication: "Avec NumPy, la multiplication s'applique élément par élément."
   - title: "Bloc 2 — Mathématiques utiles (S4–S6)"
     modules:
       - num: "04"
@@ -41,18 +107,84 @@ blocs:
           Moyenne, médiane, variance, distributions, corrélation, échantillonnage, biais courants.
           Lecture critique d'un chiffre.
         livrable: Rapport statistique commenté sur un dataset réel.
+        mise_en_situation: "Un journal annonce que « le salaire moyen à Abidjan a augmenté de 20 % ». Expliquez en quelques lignes pourquoi ce chiffre peut être trompeur et quelles statistiques complémentaires vous demanderiez."
+        quiz:
+          - question: "Quelle mesure est la moins sensible aux valeurs extrêmes ?"
+            options: ["La moyenne", "La médiane", "L'étendue", "La variance"]
+            bonnes: [2]
+            explication: "La médiane coupe la série en deux et n'est pas tirée par quelques très grandes valeurs."
+          - question: "Une corrélation de -0,9 indique :"
+            options: ["une forte relation négative", "aucune relation", "une relation causale", "une erreur de calcul"]
+            bonnes: [1]
+            explication: "Proche de -1, les deux variables varient fortement en sens inverse ; cela ne prouve pas la causalité."
+          - question: "L'écart-type mesure :"
+            options: ["la valeur centrale", "la dispersion autour de la moyenne", "le nombre d'observations", "la valeur maximale"]
+            bonnes: [2]
+            explication: "Plus il est grand, plus les valeurs sont dispersées."
+          - question: "Un sondage réalisé uniquement sur Facebook présente surtout un risque de :"
+            options: ["biais d'échantillonnage", "valeur aberrante", "surapprentissage", "doublon"]
+            bonnes: [1]
+            explication: "L'échantillon ne représente pas toute la population (personnes sans accès ou non actives sur ce réseau)."
+          - question: "Corrélation n'implique pas causalité signifie :"
+            options: ["deux variables liées n'ont pas forcément de lien de cause à effet", "la corrélation est toujours fausse", "il faut ignorer les corrélations", "la causalité se calcule avec la moyenne"]
+            bonnes: [1]
+            explication: "Un facteur caché ou le hasard peut expliquer une corrélation."
       - num: "05"
         title: Probabilités & inférence
         contenu: >-
           Probabilités de base, loi normale, intervalles de confiance, tests d'hypothèse,
           p-value et ses pièges.
         livrable: Test A/B interprété de bout en bout.
+        mise_en_situation: "Une banque teste deux messages de relance. Le message B obtient 12 % de paiements contre 10 % pour A, sur 300 clients chacun. Le directeur veut généraliser B dès demain. Que lui répondez-vous et quelles vérifications faites-vous ?"
+        quiz:
+          - question: "Une p-value de 0,03 avec un seuil de 5 % conduit à :"
+            options: ["rejeter l'hypothèse nulle", "accepter l'hypothèse nulle avec certitude", "prouver l'hypothèse alternative à 97 %", "refaire le test obligatoirement"]
+            bonnes: [1]
+            explication: "La p-value est sous le seuil : le résultat observé serait peu probable si H0 était vraie."
+          - question: "Dans une loi normale, environ quelle part des valeurs est à moins d'un écart-type de la moyenne ?"
+            options: ["50 %", "68 %", "95 %", "99,7 %"]
+            bonnes: [2]
+            explication: "Règle 68-95-99,7."
+          - question: "Un intervalle de confiance à 95 % plus étroit s'obtient surtout avec :"
+            options: ["un échantillon plus grand", "un seuil de 99 %", "moins de données", "une moyenne plus élevée"]
+            bonnes: [1]
+            explication: "La largeur diminue quand la taille d'échantillon augmente."
+          - question: "Regarder les résultats d'un test A/B chaque jour et s'arrêter dès qu'il est significatif :"
+            options: ["augmente le risque de faux positif", "réduit le risque d'erreur", "est la méthode recommandée", "n'a aucun effet"]
+            bonnes: [1]
+            explication: "Ce « peeking » multiplie les occasions de conclure à tort."
+          - question: "L'hypothèse nulle d'un test A/B est généralement :"
+            options: ["il n'y a pas de différence entre A et B", "B est meilleur que A", "A est meilleur que B", "les données sont fausses"]
+            bonnes: [1]
+            explication: "On cherche à voir si les données contredisent l'absence de différence."
       - num: "06"
         title: Algèbre linéaire & calcul
         contenu: >-
           Vecteurs, matrices, produit matriciel, notion de dérivée et de gradient — le minimum
           pour comprendre le ML et le deep learning.
         livrable: Fiche de synthèse appliquée (régression linéaire à la main).
+        mise_en_situation: "On vous donne trois appartements (surface, loyer) : (40 m², 150 000 FCFA), (60, 210 000), (80, 270 000). Calculez à la main la droite loyer = a × surface + b et estimez le loyer d'un 70 m². Montrez vos calculs."
+        quiz:
+          - question: "Le produit d'une matrice 2×3 par une matrice 3×4 donne une matrice :"
+            options: ["2×4", "3×3", "4×2", "Impossible"]
+            bonnes: [1]
+            explication: "Le nombre de colonnes de la première doit égaler le nombre de lignes de la seconde ; le résultat a 2 lignes et 4 colonnes."
+          - question: "La dérivée de f(x) = x² est :"
+            options: ["x", "2x", "x²/2", "2"]
+            bonnes: [2]
+            explication: "La dérivée de x^n est n·x^(n-1)."
+          - question: "La descente de gradient met à jour les paramètres :"
+            options: ["dans le sens opposé au gradient", "dans le sens du gradient", "au hasard", "jamais"]
+            bonnes: [1]
+            explication: "On descend la pente de la fonction de perte pour la minimiser."
+          - question: "Un taux d'apprentissage trop grand peut :"
+            options: ["faire diverger l'algorithme", "garantir la convergence", "supprimer le besoin de données", "réduire les calculs à zéro"]
+            bonnes: [1]
+            explication: "Des pas trop grands sautent par-dessus le minimum et peuvent faire exploser la perte."
+          - question: "Le produit scalaire de (1, 2) et (3, 4) vaut :"
+            options: ["10", "11", "7", "24"]
+            bonnes: [2]
+            explication: "1×3 + 2×4 = 11."
   - title: "Bloc 3 — Données & restitution (S7–S10)"
     modules:
       - num: "07"
@@ -61,24 +193,112 @@ blocs:
           Chargement, nettoyage, valeurs manquantes, jointures, agrégations, pivots — avec pandas
           et une ouverture sur Polars. Le cœur du métier au quotidien.
         livrable: Jeu de données brut nettoyé et documenté.
+        mise_en_situation: "Vous recevez un fichier Excel de ventes avec des dates dans trois formats, des montants écrits « 15 000 F » et des clients en double. Décrivez étape par étape le nettoyage pandas que vous appliquez et comment vous vérifiez le résultat."
+        quiz:
+          - question: "Quelle méthode pandas supprime les lignes en double ?"
+            options: ["drop_duplicates()", "dropna()", "fillna()", "merge()"]
+            bonnes: [1]
+            explication: "drop_duplicates retire les lignes identiques (ou identiques sur des colonnes choisies)."
+          - question: "Que fait df.groupby('ville')['ventes'].sum() ?"
+            options: ["Total des ventes par ville", "Nombre de villes", "Moyenne générale", "Tri des villes"]
+            bonnes: [1]
+            explication: "On regroupe par ville puis on additionne les ventes de chaque groupe."
+          - question: "Une jointure « left » conserve :"
+            options: ["toutes les lignes de la table de gauche", "seulement les lignes communes", "toutes les lignes des deux tables", "seulement la table de droite"]
+            bonnes: [1]
+            explication: "Les lignes de gauche sans correspondance reçoivent des valeurs manquantes."
+          - question: "Remplacer toutes les valeurs manquantes par 0 est :"
+            options: ["parfois dangereux car cela fausse les statistiques", "toujours la bonne pratique", "interdit par pandas", "sans effet sur la moyenne"]
+            bonnes: [1]
+            explication: "Un 0 n'est pas une absence : il faut choisir selon le sens de la donnée."
+          - question: "Quelle fonction convertit une colonne de texte en dates ?"
+            options: ["pd.to_datetime", "pd.to_numeric", "astype(str)", "pd.concat"]
+            bonnes: [1]
+            explication: "pd.to_datetime interprète les dates, avec un paramètre format si besoin."
       - num: "08"
         title: Visualisation
         contenu: >-
           Matplotlib, seaborn et Plotly, choix du bon graphique, lisibilité, storytelling visuel,
           erreurs à éviter.
         livrable: Mini-dashboard d'exploration d'un jeu de données.
+        mise_en_situation: "Un responsable vous présente un camembert à 12 parts pour comparer les ventes de 12 produits et un graphique dont l'axe vertical commence à 90. Expliquez les problèmes et proposez de meilleurs graphiques."
+        quiz:
+          - question: "Pour comparer des valeurs entre catégories, on privilégie :"
+            options: ["un diagramme en barres", "un camembert à 15 parts", "un nuage de points 3D", "un tableau sans tri"]
+            bonnes: [1]
+            explication: "Les barres permettent une comparaison précise des longueurs."
+          - question: "Pour montrer une évolution dans le temps :"
+            options: ["une courbe", "un camembert", "une carte", "un histogramme de catégories"]
+            bonnes: [1]
+            explication: "La courbe met en évidence la tendance chronologique."
+          - question: "Tronquer l'axe vertical d'un diagramme en barres :"
+            options: ["exagère visuellement les différences", "améliore toujours la lisibilité", "est obligatoire", "n'a pas d'effet"]
+            bonnes: [1]
+            explication: "Les barres doivent partir de zéro pour que leurs longueurs restent proportionnelles."
+          - question: "Pour visualiser la distribution d'une variable numérique :"
+            options: ["un histogramme", "un camembert", "une jauge", "un tableau croisé"]
+            bonnes: [1]
+            explication: "L'histogramme montre la forme de la distribution."
+          - question: "Une palette adaptée aux daltoniens sert à :"
+            options: ["rendre le graphique lisible par tous", "réduire la taille du fichier", "accélérer l'affichage", "cacher des données"]
+            bonnes: [1]
+            explication: "Environ 8 % des hommes ont une forme de daltonisme."
       - num: "09"
         title: SQL de base
         contenu: >-
           SELECT, WHERE, GROUP BY, jointures simples, agrégations. Interroger une base relationnelle
           (SQLite, DuckDB) sans intermédiaire.
         livrable: 20 requêtes sur une base d'exemple.
+        mise_en_situation: "La direction veut connaître les cinq meilleurs clients de l'année et leur chiffre d'affaires, à partir des tables clients et ventes. Écrivez la requête SQL et expliquez chaque clause."
+        quiz:
+          - question: "Quelle clause filtre les lignes avant le regroupement ?"
+            options: ["WHERE", "HAVING", "ORDER BY", "LIMIT"]
+            bonnes: [1]
+            explication: "WHERE filtre les lignes, HAVING filtre les groupes après GROUP BY."
+          - question: "COUNT(*) renvoie :"
+            options: ["le nombre de lignes", "la somme d'une colonne", "la valeur maximale", "le nombre de colonnes"]
+            bonnes: [1]
+            explication: "COUNT(*) compte toutes les lignes du groupe ou de la table."
+          - question: "Une INNER JOIN conserve :"
+            options: ["les lignes ayant une correspondance dans les deux tables", "toutes les lignes de gauche", "toutes les lignes des deux tables", "aucune ligne"]
+            bonnes: [1]
+            explication: "Seules les lignes appariées sont gardées."
+          - question: "Pour obtenir les 5 premiers résultats triés par montant décroissant :"
+            options: ["ORDER BY montant DESC LIMIT 5", "ORDER BY montant LIMIT 5", "GROUP BY montant LIMIT 5", "WHERE montant > 5"]
+            bonnes: [1]
+            explication: "On trie en ordre décroissant puis on limite."
+          - question: "Pour filtrer les clients dont le total dépasse 1 000 000 FCFA après GROUP BY :"
+            options: ["HAVING SUM(montant) > 1000000", "WHERE SUM(montant) > 1000000", "LIMIT 1000000", "ORDER BY 1000000"]
+            bonnes: [1]
+            explication: "Les conditions sur des agrégats se placent dans HAVING."
       - num: "10"
         title: Introduction au machine learning
         contenu: >-
           Apprentissage supervisé vs non supervisé, train/test, sur-apprentissage, première régression
           et première classification avec scikit-learn.
         livrable: Modèle prédictif simple évalué correctement.
+        mise_en_situation: "Votre modèle prédit le défaut de paiement avec 99 % d'exactitude, alors que seulement 1 % des clients font défaut. Votre manager est ravi. Expliquez-lui pourquoi ce chiffre ne suffit pas et quelles métriques regarder."
+        quiz:
+          - question: "Prédire un prix de vente est un problème de :"
+            options: ["régression", "classification", "clustering", "réduction de dimension"]
+            bonnes: [1]
+            explication: "La cible est une valeur numérique continue."
+          - question: "Le surapprentissage se traduit par :"
+            options: ["d'excellents résultats en entraînement et de mauvais en test", "de mauvais résultats partout", "des résultats identiques partout", "un modèle trop simple"]
+            bonnes: [1]
+            explication: "Le modèle a mémorisé les données d'entraînement au lieu de généraliser."
+          - question: "Pourquoi séparer jeu d'entraînement et jeu de test ?"
+            options: ["Pour évaluer le modèle sur des données jamais vues", "Pour doubler les données", "Pour accélérer l'entraînement", "Par obligation légale"]
+            bonnes: [1]
+            explication: "L'évaluation doit refléter la performance sur de nouvelles données."
+          - question: "Regrouper des clients sans étiquette connue relève de :"
+            options: ["l'apprentissage non supervisé", "l'apprentissage supervisé", "la régression linéaire", "la validation croisée"]
+            bonnes: [1]
+            explication: "Sans variable cible, on parle d'apprentissage non supervisé (ex. k-means)."
+          - question: "Sur des classes très déséquilibrées, quelles métriques sont plus informatives que l'exactitude ?"
+            options: ["Précision et rappel", "Nombre de colonnes", "Temps d'entraînement", "Taille du fichier"]
+            bonnes: [1]
+            explication: "Elles mesurent la capacité à détecter réellement la classe rare."
 
 portfolio:
   - titre: Calculateur de budget ménage en FCFA

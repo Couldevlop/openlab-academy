@@ -33,13 +33,19 @@ def _projet_brut(num="01"):
     }
 
 
+def question_brute() -> dict:
+    return {"question": "Q ?", "options": ["a", "b", "c"], "bonnes": [2], "explication": "Parce que b."}
+
+
 def parcours_brut() -> dict:
     cap = _projet_brut()
     cap.pop("apres_module")
     cap.update(titre="Cap", duree_h=60, niveau="autonome")
     return copy.deepcopy({
         "title": "T", "short_introduction": "s", "description": "d", "tags": ["x"],
-        "blocs": [{"title": "B1", "modules": [{"num": "01", "title": "M", "contenu": "c", "livrable": "l"}]}],
+        "blocs": [{"title": "B1", "modules": [{"num": "01", "title": "M", "contenu": "c", "livrable": "l",
+                                               "quiz": [question_brute() for _ in range(5)],
+                                               "mise_en_situation": "Cas pratique"}]}],
         "portfolio": [_projet_brut() for _ in range(10)],
         "capstone": cap,
     })

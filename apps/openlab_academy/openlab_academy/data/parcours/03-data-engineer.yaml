@@ -20,15 +20,81 @@ blocs:
         contenu: >-
           Jointures, CTE, fonctions de fenêtrage, agrégations avancées, plans d'exécution, index.
         livrable: 30 requêtes analytiques optimisées sur un jeu de données réel.
+        mise_en_situation: "Une requête de tableau de bord qui calcule le chiffre d'affaires cumulé par agence prend 3 minutes. Décrivez comment vous l'analysez (plan d'exécution) et réécrivez-la avec une fonction de fenêtrage."
+        quiz:
+          - question: "Une CTE (WITH ... AS) sert à :"
+            options: ["nommer une sous-requête pour la réutiliser et clarifier la requête", "créer une table permanente", "supprimer des doublons", "créer un index"]
+            bonnes: [1]
+            explication: "Elle structure les requêtes complexes en étapes lisibles."
+          - question: "SUM(montant) OVER (PARTITION BY agence ORDER BY date) calcule :"
+            options: ["un cumul par agence dans l'ordre des dates", "le total général", "le maximum par agence", "un comptage de lignes"]
+            bonnes: [1]
+            explication: "La fenêtre se réinitialise pour chaque agence."
+          - question: "EXPLAIN ANALYZE sert à :"
+            options: ["afficher le plan d'exécution réel et ses temps", "supprimer une table", "chiffrer une requête", "créer une vue"]
+            bonnes: [1]
+            explication: "On repère les parcours complets de tables coûteux."
+          - question: "Un index accélère surtout :"
+            options: ["les filtres et jointures sur les colonnes indexées", "toutes les écritures", "les sauvegardes", "les requêtes sans WHERE"]
+            bonnes: [1]
+            explication: "Les écritures, elles, deviennent un peu plus coûteuses."
+          - question: "ROW_NUMBER() OVER (PARTITION BY client ORDER BY date DESC) = 1 permet :"
+            options: ["de garder la dernière ligne de chaque client", "de compter les clients", "de trier toute la table", "de supprimer les clients"]
+            bonnes: [1]
+            explication: "Motif classique de dédoublonnage."
       - num: "02"
         title: Python data
         contenu: pandas et Polars, typage, lecture/écriture (CSV, Parquet, JSON), appels d'API, tests.
         livrable: Script d'ingestion API vers Parquet, testé.
+        mise_en_situation: "Une API open data renvoie parfois des champs manquants et change le format des dates sans prévenir. Décrivez comment votre script d'ingestion vers Parquet reste fiable et traçable."
+        quiz:
+          - question: "Une ingestion idempotente :"
+            options: ["donne le même résultat si on la rejoue", "s'exécute une seule fois dans sa vie", "supprime toujours les données", "est plus rapide"]
+            bonnes: [1]
+            explication: "Rejouer ne crée ni doublon ni perte."
+          - question: "Pourquoi typer explicitement les colonnes à l'ingestion ?"
+            options: ["Pour détecter tôt les données non conformes", "Pour augmenter la taille des fichiers", "Par esthétique", "Pour chiffrer"]
+            bonnes: [1]
+            explication: "Un type inattendu signale un changement de source."
+          - question: "Partitionner des fichiers Parquet par date permet :"
+            options: ["de ne lire que les partitions utiles", "d'empêcher la compression", "de dupliquer les données", "de supprimer les métadonnées"]
+            bonnes: [1]
+            explication: "Les requêtes filtrées sur la date lisent moins de données."
+          - question: "Une ingestion incrémentale par curseur consiste à :"
+            options: ["ne charger que ce qui est postérieur au dernier point chargé", "recharger tout à chaque fois", "charger au hasard", "supprimer l'historique"]
+            bonnes: [1]
+            explication: "On mémorise la dernière date ou le dernier identifiant."
+          - question: "Les lignes invalides doivent être :"
+            options: ["mises en quarantaine et comptées", "supprimées silencieusement", "corrigées au hasard", "ignorées sans trace"]
+            bonnes: [1]
+            explication: "Rien ne doit disparaître sans être signalé."
       - num: "03"
         title: Git
         contenu: >-
           Branches, merge et rebase, pull requests, revue de code, commits conventionnels, CI de base.
         livrable: Dépôt avec workflow de pull requests et CI.
+        mise_en_situation: "Deux data engineers ont modifié le même modèle SQL et la branche principale ne passe plus la CI. Décrivez votre démarche pour résoudre le conflit proprement et éviter que cela se reproduise."
+        quiz:
+          - question: "git rebase main sur une branche de fonctionnalité :"
+            options: ["rejoue les commits de la branche par-dessus main", "supprime la branche", "fusionne sans historique", "pousse sur le serveur"]
+            bonnes: [1]
+            explication: "L'historique reste linéaire."
+          - question: "Pourquoi ne pas réécrire l'historique d'une branche partagée ?"
+            options: ["Les autres développeurs se retrouvent désynchronisés", "Git l'interdit toujours", "Cela supprime le dépôt", "Cela ralentit la CI"]
+            bonnes: [1]
+            explication: "On réserve rebase et force-push aux branches personnelles."
+          - question: "Une pull request sert à :"
+            options: ["proposer et faire relire une modification avant intégration", "sauvegarder la base", "supprimer une branche", "déployer en production directement"]
+            bonnes: [1]
+            explication: "Revue de code et CI avant fusion."
+          - question: "Un commit conventionnel comme « feat(dbt): ajoute le modèle ventes » indique :"
+            options: ["le type et la portée de la modification", "le nom de l'auteur", "la date", "le numéro de version"]
+            bonnes: [1]
+            explication: "Il facilite la lecture et la génération de changelogs."
+          - question: "Une CI de base sur un projet data doit au minimum :"
+            options: ["lancer le lint et les tests à chaque pull request", "déployer en production à chaque commit", "supprimer les données de test", "envoyer un e-mail à tous"]
+            bonnes: [1]
+            explication: "On détecte les régressions avant la fusion."
   - title: "Bloc 2 — Modélisation & transformation (S4–S5)"
     modules:
       - num: "04"
@@ -37,11 +103,55 @@ blocs:
           Modélisation dimensionnelle (Kimball), schémas en étoile et en flocon, SCD, Data Vault,
           architecture médaillon (bronze, silver, gold).
         livrable: Modèle d'entrepôt documenté pour un cas métier.
+        mise_en_situation: "Le service commercial veut analyser les ventes par zone, mais les clients changent parfois de zone. Proposez un modèle dimensionnel qui donne la bonne zone à la date de chaque vente."
+        quiz:
+          - question: "Dans un schéma en étoile, la table de faits contient :"
+            options: ["les mesures et les clés vers les dimensions", "uniquement des descriptions", "les utilisateurs de la base", "les journaux"]
+            bonnes: [1]
+            explication: "Les dimensions décrivent le contexte des faits."
+          - question: "Le grain d'une table de faits est :"
+            options: ["le niveau de détail d'une ligne", "sa taille sur disque", "son nombre de colonnes", "son propriétaire"]
+            bonnes: [1]
+            explication: "Par exemple : une ligne par article vendu par ticket."
+          - question: "Une SCD de type 2 :"
+            options: ["conserve l'historique en créant une nouvelle ligne à chaque changement", "écrase l'ancienne valeur", "supprime la dimension", "ne garde que la première valeur"]
+            bonnes: [1]
+            explication: "On ajoute des dates de validité."
+          - question: "Dans l'architecture médaillon, la couche gold contient :"
+            options: ["des données prêtes pour l'analyse métier", "les données brutes", "les fichiers temporaires", "les sauvegardes"]
+            bonnes: [1]
+            explication: "Bronze = brut, silver = nettoyé, gold = agrégé pour le métier."
+          - question: "Le Data Vault est particulièrement adapté :"
+            options: ["à l'intégration de nombreuses sources changeantes avec traçabilité", "aux petits tableurs", "au temps réel exclusivement", "aux images"]
+            bonnes: [1]
+            explication: "Hubs, liens et satellites historisent tout."
       - num: "05"
         title: dbt
         contenu: >-
           Modèles, sources, refs, tests, macros Jinja, modèles incrémentaux, documentation et lignage.
         livrable: Projet dbt complet sur le modèle du module 04.
+        mise_en_situation: "Un modèle dbt incrémental produit des doublons après une relance. Expliquez les causes probables et la configuration et les tests qui l'empêchent."
+        quiz:
+          - question: "Dans dbt, ref('stg_ventes') sert à :"
+            options: ["référencer un autre modèle et construire le lignage", "importer un fichier CSV", "créer un utilisateur", "lancer un test"]
+            bonnes: [1]
+            explication: "dbt déduit l'ordre d'exécution du graphe des ref."
+          - question: "Un test unique sur une colonne vérifie :"
+            options: ["l'absence de doublons", "l'absence de valeurs nulles", "le type", "la longueur"]
+            bonnes: [1]
+            explication: "unique et not_null sont les tests génériques de base."
+          - question: "Un modèle incrémental doit définir :"
+            options: ["une clé unique ou une stratégie de fusion", "aucune configuration", "un mot de passe", "une vue"]
+            bonnes: [1]
+            explication: "Sinon les relances insèrent des doublons."
+          - question: "Les snapshots dbt servent à :"
+            options: ["historiser les changements d'une table source (SCD 2)", "sauvegarder la base", "accélérer les requêtes", "générer des graphiques"]
+            bonnes: [1]
+            explication: "dbt détecte les modifications et garde l'historique."
+          - question: "dbt docs generate produit :"
+            options: ["une documentation navigable avec le lignage", "un rapport financier", "un fichier de configuration", "des tests"]
+            bonnes: [1]
+            explication: "Chaque modèle et colonne décrit apparaît avec ses dépendances."
   - title: "Bloc 3 — Traitement à grande échelle (S6–S8)"
     modules:
       - num: "06"
@@ -50,37 +160,191 @@ blocs:
           Architecture (driver, executors), DataFrames, Spark SQL, partitionnement, shuffles, optimisation,
           Delta Lake.
         livrable: Job Spark traitant plus de 10 Go avec un tuning mesuré.
+        mise_en_situation: "Un job Spark sur 50 Go de transactions échoue par manque de mémoire lors d'une jointure. Expliquez le phénomène et vos pistes de correction, avec la façon de mesurer l'amélioration."
+        quiz:
+          - question: "Dans Spark, le driver :"
+            options: ["coordonne le job et distribue les tâches aux executors", "stocke toutes les données", "est une base de données", "affiche les graphiques"]
+            bonnes: [1]
+            explication: "Les executors font les calculs."
+          - question: "Un shuffle est coûteux car :"
+            options: ["il redistribue les données entre machines via le réseau", "il compresse les données", "il supprime des partitions", "il est exécuté sur le driver seulement"]
+            bonnes: [1]
+            explication: "Jointures et regroupements le déclenchent souvent."
+          - question: "Une broadcast join est adaptée quand :"
+            options: ["une des tables est petite", "les deux tables sont énormes", "il n'y a pas de clé de jointure", "les données sont en streaming"]
+            bonnes: [1]
+            explication: "La petite table est copiée sur chaque executor, évitant le shuffle."
+          - question: "Le data skew désigne :"
+            options: ["une répartition très inégale des données entre partitions", "une erreur de type", "une compression excessive", "une perte de données"]
+            bonnes: [1]
+            explication: "Quelques partitions surchargées ralentissent tout le job."
+          - question: "Delta Lake ajoute aux fichiers Parquet :"
+            options: ["des transactions ACID et l'historique des versions", "un moteur SQL propriétaire obligatoire", "le chiffrement automatique", "un format image"]
+            bonnes: [1]
+            explication: "On peut faire des mises à jour fiables et revenir à une version."
       - num: "07"
         title: Kafka
         contenu: >-
           Topics, partitions, consumer groups, garanties de livraison, Schema Registry, Kafka Connect,
           streaming avec Spark ou Flink.
         livrable: Pipeline temps réel de bout en bout.
+        mise_en_situation: "Votre consommateur Kafka a redémarré et certains colis apparaissent deux fois livrés dans le tableau de bord. Expliquez pourquoi et comment rendre le traitement fiable."
+        quiz:
+          - question: "Dans Kafka, l'ordre des messages est garanti :"
+            options: ["au sein d'une même partition", "sur tout le topic", "jamais", "uniquement pour les messages JSON"]
+            bonnes: [1]
+            explication: "On choisit la clé de partition pour regrouper les événements d'une même entité."
+          - question: "Un consumer group permet :"
+            options: ["de répartir les partitions entre plusieurs consommateurs", "de dupliquer chaque message", "de supprimer un topic", "de chiffrer les messages"]
+            bonnes: [1]
+            explication: "Chaque partition est lue par un seul membre du groupe."
+          - question: "La garantie « au moins une fois » implique :"
+            options: ["des doublons possibles à gérer côté consommateur", "aucune perte ni doublon", "des pertes possibles", "un seul consommateur"]
+            bonnes: [1]
+            explication: "Le traitement doit être idempotent."
+          - question: "Le Schema Registry sert à :"
+            options: ["gérer et contrôler l'évolution des schémas de messages", "stocker les messages", "équilibrer la charge", "authentifier les utilisateurs"]
+            bonnes: [1]
+            explication: "Un changement incompatible est refusé."
+          - question: "Kafka Connect permet :"
+            options: ["de relier Kafka à des systèmes externes sans code spécifique", "de visualiser des données", "d'entraîner des modèles", "de remplacer une base"]
+            bonnes: [1]
+            explication: "Des connecteurs lisent ou écrivent bases, fichiers, stockage objet…"
       - num: "08"
         title: Airflow
         contenu: DAGs, opérateurs, sensors, XCom, TaskFlow API, backfills, gestion des échecs et alertes.
         livrable: Orchestration complète d'un pipeline.
+        mise_en_situation: "La tâche de transformation de la nuit a échoué et les rapports du matin sont faux. Décrivez comment votre DAG Airflow aurait dû détecter, alerter et permettre de rejouer proprement la journée."
+        quiz:
+          - question: "Un DAG Airflow est :"
+            options: ["un graphe orienté sans cycle de tâches", "une base de données", "un tableau de bord", "un langage"]
+            bonnes: [1]
+            explication: "Il définit les tâches et leurs dépendances."
+          - question: "Un backfill consiste à :"
+            options: ["exécuter le DAG sur des périodes passées", "supprimer l'historique", "dupliquer le DAG", "arrêter l'ordonnanceur"]
+            bonnes: [1]
+            explication: "Il exige des tâches idempotentes."
+          - question: "XCom sert à :"
+            options: ["échanger de petites valeurs entre tâches", "transférer de gros fichiers", "stocker les journaux", "définir les horaires"]
+            bonnes: [1]
+            explication: "Les gros volumes passent par un stockage externe."
+          - question: "Un sensor :"
+            options: ["attend qu'une condition soit remplie (fichier présent, partition prête…)", "envoie des alertes", "supprime des tâches", "chiffre des données"]
+            bonnes: [1]
+            explication: "Il conditionne le démarrage des tâches suivantes."
+          - question: "Où stocker les identifiants de connexion utilisés par les DAG ?"
+            options: ["Dans les connexions Airflow ou un gestionnaire de secrets", "En dur dans le code", "Dans le nom du DAG", "Dans les journaux"]
+            bonnes: [1]
+            explication: "Les secrets ne doivent jamais apparaître dans le code."
   - title: "Bloc 4 — Cloud & industrialisation (S9–S12)"
     modules:
       - num: "09"
         title: Docker
         contenu: Images, Dockerfile multi-stage, volumes, réseaux, Docker Compose.
         livrable: Stack locale conteneurisée (Airflow, Postgres, Kafka).
+        mise_en_situation: "La plateforme data locale d'un client met 10 minutes à démarrer et ses images pèsent 3 Go. Proposez les optimisations Docker et Compose que vous appliquez."
+        quiz:
+          - question: "Un volume Docker sert à :"
+            options: ["conserver des données au-delà de la vie du conteneur", "accélérer le réseau", "réduire la taille de l'image", "chiffrer le conteneur"]
+            bonnes: [1]
+            explication: "Les données de base doivent survivre à la recréation du conteneur."
+          - question: "Un build multi-stage réduit la taille de l'image car :"
+            options: ["seuls les artefacts nécessaires sont copiés dans l'image finale", "il compresse Docker", "il supprime les volumes", "il désactive le réseau"]
+            bonnes: [1]
+            explication: "Les outils de compilation restent dans l'étape intermédiaire."
+          - question: "Dans Docker Compose, depends_on garantit :"
+            options: ["l'ordre de démarrage, pas que le service soit prêt", "que le service est prêt à répondre", "la sauvegarde", "le chiffrement"]
+            bonnes: [1]
+            explication: "Il faut des healthchecks ou une attente explicite."
+          - question: "Pourquoi éviter d'exposer les ports d'administration d'une base ?"
+            options: ["Pour réduire la surface d'attaque", "Pour accélérer la base", "Parce que Docker l'interdit", "Pour économiser la mémoire"]
+            bonnes: [1]
+            explication: "Les services internes communiquent par le réseau Docker."
+          - question: "Un outil comme Trivy sert à :"
+            options: ["détecter les vulnérabilités connues dans une image", "construire une image", "déployer sur un cluster", "compresser un volume"]
+            bonnes: [1]
+            explication: "On l'intègre en CI pour bloquer les images vulnérables."
       - num: "10"
         title: AWS / GCP
         contenu: >-
           Stockage objet (S3, GCS), IAM, services managés (Glue, EMR, Dataproc, Composer), Terraform.
         livrable: Infrastructure d'un pipeline en Terraform.
+        mise_en_situation: "Un stagiaire a créé manuellement des ressources cloud avec un compte administrateur et la facture du mois a doublé. Proposez la démarche d'industrialisation (Terraform, IAM, budgets) pour éviter cela."
+        quiz:
+          - question: "L'infrastructure as code (Terraform) permet :"
+            options: ["de décrire et reproduire l'infrastructure de façon versionnée", "d'écrire des requêtes SQL", "d'entraîner des modèles", "de supprimer le cloud"]
+            bonnes: [1]
+            explication: "Chaque changement passe par une revue et un plan."
+          - question: "terraform plan sert à :"
+            options: ["prévisualiser les changements avant de les appliquer", "appliquer immédiatement", "supprimer l'état", "créer un compte"]
+            bonnes: [1]
+            explication: "On vérifie l'impact avant apply."
+          - question: "Le principe du moindre privilège en IAM signifie :"
+            options: ["accorder uniquement les droits nécessaires", "donner les droits administrateur à tous", "partager un compte unique", "désactiver les journaux"]
+            bonnes: [1]
+            explication: "Limite les erreurs et l'impact d'une compromission."
+          - question: "Le stockage objet (S3, GCS) est adapté :"
+            options: ["aux fichiers de données volumineux et peu coûteux à conserver", "aux transactions bancaires en temps réel", "à l'exécution de code", "aux index de recherche"]
+            bonnes: [1]
+            explication: "C'est la base des lacs de données."
+          - question: "Les alertes de budget servent à :"
+            options: ["être prévenu avant un dépassement de coûts", "réduire automatiquement la qualité", "supprimer les ressources", "chiffrer les factures"]
+            bonnes: [1]
+            explication: "On réagit avant la fin du mois."
       - num: "11"
         title: Snowflake / BigQuery
         contenu: >-
           Architecture, warehouses et slots, partitionnement et clustering, maîtrise des coûts, sécurité et RBAC.
         livrable: Migration d'une couche gold dans un entrepôt cloud.
+        mise_en_situation: "Une requête analytique sur BigQuery coûte 50 000 FCFA à chaque exécution et est lancée cent fois par jour par un tableau de bord. Proposez vos optimisations et estimez leur effet."
+        quiz:
+          - question: "Dans BigQuery, le coût d'une requête dépend surtout :"
+            options: ["du volume de données lues", "du nombre de lignes renvoyées", "de la longueur du SQL", "de l'heure"]
+            bonnes: [1]
+            explication: "Éviter SELECT * et filtrer sur les partitions réduit le coût."
+          - question: "Le partitionnement d'une table par date permet :"
+            options: ["de ne lire que les partitions concernées", "de dupliquer la table", "d'interdire les jointures", "de chiffrer la table"]
+            bonnes: [1]
+            explication: "C'est le partition pruning."
+          - question: "Le clustering ordonne physiquement les données selon :"
+            options: ["des colonnes souvent filtrées", "l'ordre d'insertion uniquement", "le nom de la table", "la taille des lignes"]
+            bonnes: [1]
+            explication: "Les blocs non pertinents sont ignorés."
+          - question: "Dans Snowflake, un warehouse est :"
+            options: ["une ressource de calcul dimensionnable", "un espace de stockage", "un utilisateur", "un fichier"]
+            bonnes: [1]
+            explication: "Le calcul est séparé du stockage et facturé à l'usage."
+          - question: "Le RBAC consiste à :"
+            options: ["attribuer des droits via des rôles", "chiffrer les données", "partitionner les tables", "compresser les fichiers"]
+            bonnes: [1]
+            explication: "On gère les accès par rôle plutôt qu'individuellement."
       - num: "12"
         title: Data Quality
         contenu: >-
           Tests dbt, Great Expectations et Soda, contrats de données, SLA de fraîcheur, observabilité et alertes.
         livrable: Framework qualité branché sur un pipeline.
+        mise_en_situation: "Un tableau de bord a affiché des ventes nulles pendant deux jours sans que personne ne s'en aperçoive. Décrivez le cadre de qualité (contrats, contrôles, SLA, alertes) qui l'aurait détecté en moins d'une heure."
+        quiz:
+          - question: "Un contrat de données définit :"
+            options: ["le schéma, la qualité et la fraîcheur attendus entre producteur et consommateur", "un contrat de travail", "une licence logicielle", "un tarif cloud"]
+            bonnes: [1]
+            explication: "Il formalise les engagements sur la donnée."
+          - question: "Un SLA de fraîcheur mesure :"
+            options: ["le délai maximal acceptable depuis la dernière mise à jour", "la taille de la table", "le nombre d'utilisateurs", "le coût"]
+            bonnes: [1]
+            explication: "Au-delà, une alerte est déclenchée."
+          - question: "Un contrôle de volume détecte par exemple :"
+            options: ["une chute anormale du nombre de lignes chargées", "une faute d'orthographe", "un mot de passe faible", "un index manquant"]
+            bonnes: [1]
+            explication: "Zéro vente un jour ouvré est suspect."
+          - question: "Que faire quand un contrôle critique échoue ?"
+            options: ["Bloquer la publication vers la couche gold et alerter", "Publier quand même", "Supprimer les données", "Ignorer"]
+            bonnes: [1]
+            explication: "Mieux vaut pas de chiffre qu'un chiffre faux."
+          - question: "Great Expectations et Soda servent à :"
+            options: ["écrire et exécuter des contrôles de qualité des données", "orchestrer des DAG", "stocker des vecteurs", "déployer des API"]
+            bonnes: [1]
+            explication: "Ils formalisent des attentes vérifiées à chaque exécution."
 
 portfolio:
   - titre: Modèle SQL et requêtes analytiques du transport urbain abidjanais

@@ -20,14 +20,80 @@ blocs:
           Installation (uv), interpréteur, variables, types, opérateurs, entrées/sorties, premiers scripts.
           Pensée algorithmique.
         livrable: Suite de petits programmes (calculs, conditions, boucles).
+        mise_en_situation: "Un commerçant veut un petit programme qui demande le prix unitaire et la quantité d'un article puis affiche le total en FCFA, avec une remise de 5 % au-delà de 50 000 FCFA. Écrivez le programme et décrivez les cas que vous testez."
+        quiz:
+          - question: "Que renvoie input() ?"
+            options: ["Toujours une chaîne de caractères", "Un entier si l'utilisateur tape un nombre", "Un booléen", "None"]
+            bonnes: [1]
+            explication: "Il faut convertir explicitement avec int() ou float()."
+          - question: "Que vaut 7 // 2 en Python ?"
+            options: ["3.5", "3", "4", "1"]
+            bonnes: [2]
+            explication: "// est la division entière."
+          - question: "Que vaut 7 % 2 ?"
+            options: ["1", "3", "3.5", "0"]
+            bonnes: [1]
+            explication: "% renvoie le reste de la division."
+          - question: "Quel mot-clé introduit une condition alternative ?"
+            options: ["elif", "elseif", "else if", "case"]
+            bonnes: [1]
+            explication: "Python utilise if / elif / else."
+          - question: "Combien de fois s'exécute for i in range(3) ?"
+            options: ["3", "2", "4", "Indéfiniment"]
+            bonnes: [1]
+            explication: "range(3) produit 0, 1 et 2."
       - num: "02"
         title: Structures de données
         contenu: Listes, tuples, dictionnaires, sets, compréhensions, slicing, manipulation de chaînes.
         livrable: Programme de traitement de données en mémoire.
+        mise_en_situation: "Vous recevez une liste de ventes (produit, quantité). Proposez la structure de données la plus adaptée pour obtenir rapidement la quantité totale vendue par produit, et écrivez le code correspondant."
+        quiz:
+          - question: "Quelle structure est non modifiable ?"
+            options: ["tuple", "list", "dict", "set"]
+            bonnes: [1]
+            explication: "Un tuple ne peut pas être modifié après sa création."
+          - question: "Que renvoie [x * 2 for x in range(3)] ?"
+            options: ["[0, 2, 4]", "[2, 4, 6]", "[0, 1, 2]", "6"]
+            bonnes: [1]
+            explication: "La compréhension double chaque élément de 0, 1, 2."
+          - question: "Quelle structure supprime automatiquement les doublons ?"
+            options: ["set", "list", "tuple", "str"]
+            bonnes: [1]
+            explication: "Un ensemble ne contient que des éléments uniques."
+          - question: "Que renvoie 'Abidjan'[0:3] ?"
+            options: ["'Abi'", "'Abid'", "'bid'", "'jan'"]
+            bonnes: [1]
+            explication: "Le slicing va de l'indice 0 inclus à 3 exclu."
+          - question: "Comment lire une clé absente d'un dict sans provoquer d'erreur ?"
+            options: ["d.get('cle', 0)", "d['cle']", "d.cle", "d.read('cle')"]
+            bonnes: [1]
+            explication: "get renvoie une valeur par défaut si la clé n'existe pas."
       - num: "03"
         title: Fonctions & modularité
         contenu: Fonctions, portée, arguments, *args/**kwargs, modules, imports, organisation d'un projet.
         livrable: Petit utilitaire structuré en modules.
+        mise_en_situation: "Un script de 300 lignes calcule des factures, envoie des SMS et écrit des fichiers, le tout dans une seule fonction. Proposez un découpage en fonctions et en modules, en justifiant vos choix."
+        quiz:
+          - question: "Que reçoit une fonction définie avec *args ?"
+            options: ["Un tuple d'arguments positionnels", "Un dictionnaire", "Une liste obligatoire", "Rien"]
+            bonnes: [1]
+            explication: "*args regroupe les arguments positionnels supplémentaires dans un tuple."
+          - question: "Et avec **kwargs ?"
+            options: ["Un dictionnaire d'arguments nommés", "Un tuple", "Un entier", "Une chaîne"]
+            bonnes: [1]
+            explication: "**kwargs regroupe les arguments nommés supplémentaires."
+          - question: "Une variable définie dans une fonction est par défaut :"
+            options: ["locale à la fonction", "globale", "partagée entre modules", "constante"]
+            bonnes: [1]
+            explication: "Sa portée est limitée à la fonction."
+          - question: "Pourquoi éviter un argument par défaut mutable comme def f(x=[]) ?"
+            options: ["La même liste est partagée entre les appels", "Python l'interdit", "C'est plus lent", "Cela crée une copie à chaque appel"]
+            bonnes: [1]
+            explication: "La valeur par défaut est évaluée une seule fois, à la définition."
+          - question: "Que permet if __name__ == '__main__': ?"
+            options: ["Exécuter du code seulement quand le fichier est lancé directement", "Importer un module", "Déclarer une classe", "Gérer une exception"]
+            bonnes: [1]
+            explication: "Le bloc ne s'exécute pas quand le module est importé."
   - title: "Bloc 2 — Python intermédiaire (S4–S7)"
     modules:
       - num: "04"
@@ -36,21 +102,109 @@ blocs:
           Classes, objets, attributs, méthodes, héritage, composition, encapsulation, dataclasses,
           méthodes spéciales (dunder).
         livrable: Modélisation objet d'un domaine métier.
+        mise_en_situation: "Modélisez en classes une pharmacie de quartier : médicaments, stock, ventes et ordonnances. Indiquez quelles règles métier chaque classe protège et où vous utilisez la composition plutôt que l'héritage."
+        quiz:
+          - question: "À quoi sert __init__ ?"
+            options: ["Initialiser un nouvel objet", "Détruire un objet", "Importer une classe", "Afficher un objet"]
+            bonnes: [1]
+            explication: "C'est le constructeur appelé à la création de l'instance."
+          - question: "L'encapsulation consiste à :"
+            options: ["protéger l'état interne d'un objet derrière ses méthodes", "copier un objet", "hériter de plusieurs classes", "convertir un objet en texte"]
+            bonnes: [1]
+            explication: "On empêche les modifications incohérentes de l'état."
+          - question: "Quelle méthode spéciale définit l'affichage lisible d'un objet avec print ?"
+            options: ["__str__", "__len__", "__eq__", "__call__"]
+            bonnes: [1]
+            explication: "__str__ fournit la représentation lisible."
+          - question: "« Une voiture a un moteur » se modélise plutôt par :"
+            options: ["la composition", "l'héritage", "une variable globale", "un décorateur"]
+            bonnes: [1]
+            explication: "La relation « a un » appelle la composition ; « est un » appelle l'héritage."
+          - question: "Que permet super().__init__() dans une sous-classe ?"
+            options: ["Appeler le constructeur de la classe parente", "Créer une nouvelle classe", "Supprimer l'héritage", "Rendre la classe abstraite"]
+            bonnes: [1]
+            explication: "Cela réutilise l'initialisation de la classe parente."
       - num: "05"
         title: Gestion des erreurs & fichiers
         contenu: >-
           Exceptions, try/except, context managers, lecture/écriture (texte, CSV, JSON), pathlib et OS.
         livrable: Outil de traitement de fichiers robuste.
+        mise_en_situation: "Votre outil lit chaque nuit un fichier CSV déposé par un partenaire. Une nuit, le fichier est absent ; une autre, il est mal encodé. Décrivez comment votre code gère ces deux cas sans planter ni perdre de données."
+        quiz:
+          - question: "Quel bloc s'exécute toujours, qu'il y ait une exception ou non ?"
+            options: ["finally", "except", "else", "raise"]
+            bonnes: [1]
+            explication: "finally sert au nettoyage (fermeture de ressources)."
+          - question: "Quel est l'intérêt de with open(...) as f ?"
+            options: ["Le fichier est fermé automatiquement", "Le fichier est chiffré", "La lecture est plus rapide", "Le fichier est copié"]
+            bonnes: [1]
+            explication: "Le gestionnaire de contexte garantit la fermeture, même en cas d'erreur."
+          - question: "Pourquoi éviter un except: sans type d'exception ?"
+            options: ["Il masque aussi les erreurs inattendues", "Il est plus lent", "Python l'interdit", "Il ferme le programme"]
+            bonnes: [1]
+            explication: "On capture précisément les erreurs que l'on sait traiter."
+          - question: "Quel module de la bibliothèque standard manipule les chemins de façon portable ?"
+            options: ["pathlib", "random", "math", "socket"]
+            bonnes: [1]
+            explication: "pathlib gère les chemins indépendamment du système d'exploitation."
+          - question: "Quel encodage choisir par défaut pour du texte en français ?"
+            options: ["utf-8", "ascii", "latin-1 toujours", "Aucun"]
+            bonnes: [1]
+            explication: "UTF-8 gère tous les caractères accentués et est la norme actuelle."
       - num: "06"
         title: Python idiomatique
         contenu: >-
           Itérateurs, générateurs, décorateurs, lambda, typage statique (mypy/pyright), PEP 8, ruff.
         livrable: Refactorisation d'un code existant en style idiomatique.
+        mise_en_situation: "On vous confie une fonction qui charge un fichier de 2 Go en mémoire pour compter des lignes. Réécrivez-la de manière idiomatique avec un générateur et ajoutez les annotations de type."
+        quiz:
+          - question: "Quel mot-clé transforme une fonction en générateur ?"
+            options: ["yield", "return", "async", "lambda"]
+            bonnes: [1]
+            explication: "yield produit les valeurs une à une, à la demande."
+          - question: "L'intérêt principal d'un générateur est :"
+            options: ["une consommation mémoire réduite", "un code plus long", "un typage obligatoire", "l'exécution parallèle"]
+            bonnes: [1]
+            explication: "Les éléments ne sont pas tous stockés en mémoire."
+          - question: "Un décorateur est :"
+            options: ["une fonction qui enveloppe une autre fonction", "un commentaire", "un type de variable", "une classe abstraite"]
+            bonnes: [1]
+            explication: "Il ajoute un comportement sans modifier la fonction d'origine."
+          - question: "Que vérifie un outil comme mypy ou pyright ?"
+            options: ["La cohérence des types annotés", "La vitesse du code", "Les fautes d'orthographe", "La sécurité réseau"]
+            bonnes: [1]
+            explication: "Ils détectent des erreurs de type avant l'exécution."
+          - question: "Selon la PEP 8, une variable s'écrit de préférence :"
+            options: ["en snake_case", "en CamelCase", "en MAJUSCULES", "avec des tirets"]
+            bonnes: [1]
+            explication: "snake_case pour variables et fonctions, CamelCase pour les classes."
       - num: "07"
         title: Environnements & packaging
         contenu: >-
           uv, pyproject.toml, dépendances verrouillées, structure d'un package, publication interne, pre-commit.
         livrable: Package installable avec ses dépendances.
+        mise_en_situation: "Un collègue installe votre projet et obtient des erreurs de versions de bibliothèques. Expliquez comment rendre l'installation reproductible et ce que vous mettez dans le dépôt."
+        quiz:
+          - question: "Quel fichier décrit un projet Python moderne ?"
+            options: ["pyproject.toml", "setup.exe", "package.json", "Makefile"]
+            bonnes: [1]
+            explication: "pyproject.toml regroupe métadonnées, dépendances et configuration des outils."
+          - question: "À quoi sert un fichier de verrouillage (lock) ?"
+            options: ["Figer les versions exactes des dépendances", "Chiffrer le code", "Empêcher les commits", "Accélérer Python"]
+            bonnes: [1]
+            explication: "Tout le monde installe exactement les mêmes versions."
+          - question: "pre-commit permet :"
+            options: ["d'exécuter des vérifications avant chaque commit", "de publier un package", "de créer une branche", "de déployer en production"]
+            bonnes: [1]
+            explication: "Lint, formatage ou tests rapides bloquent un commit non conforme."
+          - question: "Faut-il versionner le dossier .venv ?"
+            options: ["Non, il est recréé à partir des dépendances", "Oui, toujours", "Seulement en production", "Seulement sous Windows"]
+            bonnes: [1]
+            explication: "L'environnement est propre à chaque machine."
+          - question: "Que signifie un passage de 1.4.2 à 2.0.0 en versionnage sémantique ?"
+            options: ["Une rupture de compatibilité", "Une correction de bug", "Une nouvelle fonction compatible", "Rien de particulier"]
+            bonnes: [1]
+            explication: "Le numéro majeur change quand l'API n'est plus compatible."
   - title: "Bloc 3 — Niveau confirmé & data (S8–S12)"
     modules:
       - num: "08"
@@ -59,27 +213,137 @@ blocs:
           pytest, fixtures, tests paramétrés, Hypothesis, couverture, linting, intégration continue
           (GitHub Actions).
         livrable: Suite de tests sur un projet existant avec CI.
+        mise_en_situation: "Une fonction de calcul de pénalités de retard n'a aucun test et a déjà causé une erreur de facturation. Listez les cas de test que vous écrivez (y compris les cas limites) et montrez deux d'entre eux en pytest."
+        quiz:
+          - question: "Avec pytest, une fixture sert à :"
+            options: ["préparer des données ou ressources réutilisables par les tests", "accélérer Python", "remplacer les assertions", "publier le code"]
+            bonnes: [1]
+            explication: "Elle factorise la mise en place des tests."
+          - question: "@pytest.mark.parametrize permet :"
+            options: ["d'exécuter un même test avec plusieurs jeux de données", "d'ignorer un test", "de mesurer la couverture", "de déployer"]
+            bonnes: [1]
+            explication: "Un seul test couvre plusieurs cas."
+          - question: "Une couverture de 100 % garantit :"
+            options: ["que chaque ligne a été exécutée, pas que le code est correct", "l'absence totale de bug", "la sécurité du code", "la rapidité"]
+            bonnes: [1]
+            explication: "La couverture mesure l'exécution, pas la justesse des assertions."
+          - question: "En TDD, on écrit d'abord :"
+            options: ["un test qui échoue", "le code complet", "la documentation", "le déploiement"]
+            bonnes: [1]
+            explication: "Cycle rouge, vert, refactorisation."
+          - question: "Un mock sert à :"
+            options: ["remplacer une dépendance externe pendant un test", "accélérer la production", "chiffrer des données", "générer de la documentation"]
+            bonnes: [1]
+            explication: "On isole le code testé d'un service externe (API, e-mail…)."
       - num: "09"
         title: Python asynchrone & API
         contenu: >-
           httpx, async/await, consommation d'API REST, limites de débit, pagination, reprises sur erreur.
         livrable: Client d'API résilient avec gestion d'erreurs.
+        mise_en_situation: "Votre client d'API se fait bloquer (code 429) par le fournisseur après 100 requêtes. Expliquez la cause et décrivez la stratégie que vous mettez en place côté client."
+        quiz:
+          - question: "Le code HTTP 429 signifie :"
+            options: ["Trop de requêtes", "Ressource introuvable", "Erreur serveur", "Non autorisé"]
+            bonnes: [1]
+            explication: "Le serveur limite le débit : il faut ralentir."
+          - question: "Le backoff exponentiel consiste à :"
+            options: ["augmenter progressivement l'attente entre les tentatives", "relancer immédiatement en boucle", "abandonner à la première erreur", "doubler les requêtes"]
+            bonnes: [1]
+            explication: "On laisse le temps au service de récupérer."
+          - question: "await s'utilise :"
+            options: ["dans une fonction déclarée async", "n'importe où", "uniquement dans une classe", "uniquement dans les tests"]
+            bonnes: [1]
+            explication: "await suspend une coroutine en attendant un résultat."
+          - question: "Quelle bibliothèque fait des requêtes HTTP synchrones et asynchrones ?"
+            options: ["httpx", "math", "csv", "pathlib"]
+            bonnes: [1]
+            explication: "httpx propose les deux styles d'API."
+          - question: "Pourquoi fixer un timeout sur chaque requête ?"
+            options: ["Pour ne pas rester bloqué indéfiniment", "Pour accélérer le serveur", "Pour chiffrer la réponse", "Pour réduire le prix"]
+            bonnes: [1]
+            explication: "Sans délai maximal, un service lent peut figer l'application."
       - num: "10"
         title: Bases de données
         contenu: SQL depuis Python, SQLAlchemy 2, ORM vs requêtes, migrations Alembic, bonnes pratiques.
         livrable: Couche d'accès aux données d'une petite application.
+        mise_en_situation: "Un formulaire de recherche construit la requête SQL avec f\"SELECT * FROM eleves WHERE nom = '{nom}'\". Expliquez le risque, montrez un exemple de saisie malveillante et réécrivez la requête de manière sûre."
+        quiz:
+          - question: "La meilleure protection contre l'injection SQL est :"
+            options: ["les requêtes paramétrées", "masquer les erreurs", "un mot de passe long", "le HTTPS"]
+            bonnes: [1]
+            explication: "Les paramètres sont transmis séparément du texte de la requête."
+          - question: "Un ORM comme SQLAlchemy permet :"
+            options: ["de manipuler la base via des objets Python", "de remplacer la base de données", "de chiffrer le disque", "d'héberger un site"]
+            bonnes: [1]
+            explication: "Il traduit des objets et expressions Python en SQL."
+          - question: "À quoi sert une migration Alembic ?"
+            options: ["Faire évoluer le schéma de base de façon versionnée", "Sauvegarder les données", "Déployer le front", "Tester l'API"]
+            bonnes: [1]
+            explication: "Chaque changement de schéma est rejouable dans l'ordre."
+          - question: "Une transaction garantit que :"
+            options: ["toutes ses opérations réussissent ou aucune n'est appliquée", "la requête est plus rapide", "la base est chiffrée", "les doublons sont supprimés"]
+            bonnes: [1]
+            explication: "C'est la propriété d'atomicité."
+          - question: "Le problème N+1 désigne :"
+            options: ["une requête par élément au lieu d'une requête groupée", "une erreur de syntaxe", "une table en trop", "un index manquant obligatoire"]
+            bonnes: [1]
+            explication: "On le corrige par chargement groupé (jointure ou eager loading)."
       - num: "11"
         title: Python pour la data
         contenu: >-
           NumPy, pandas et Polars, nettoyage, agrégations, Parquet, premières visualisations — le pont vers
           les parcours Data et AI.
         livrable: Pipeline d'analyse de données de bout en bout.
+        mise_en_situation: "Le traitement pandas d'un fichier de 5 millions de lignes de transactions prend 20 minutes. Proposez au moins trois pistes pour l'accélérer et dites comment vous mesurez le gain."
+        quiz:
+          - question: "Quel format colonnes est plus compact et rapide que le CSV ?"
+            options: ["Parquet", "TXT", "DOCX", "HTML"]
+            bonnes: [1]
+            explication: "Parquet est compressé, typé et lu colonne par colonne."
+          - question: "Pourquoi éviter les boucles Python sur un DataFrame ?"
+            options: ["Les opérations vectorisées sont beaucoup plus rapides", "Les boucles sont interdites", "Elles modifient les types", "Elles suppriment des lignes"]
+            bonnes: [1]
+            explication: "La vectorisation exécute le calcul en code compilé."
+          - question: "Polars se distingue notamment par :"
+            options: ["une exécution parallèle et paresseuse", "l'absence de typage", "une syntaxe SQL obligatoire", "le fait d'être un tableur"]
+            bonnes: [1]
+            explication: "Son mode lazy optimise le plan d'exécution avant de calculer."
+          - question: "Quelle méthode donne un aperçu rapide des colonnes et des types ?"
+            options: ["df.info()", "df.plot()", "df.to_csv()", "df.drop()"]
+            bonnes: [1]
+            explication: "info() résume types, nombre de valeurs et mémoire utilisée."
+          - question: "Pour mesurer précisément le temps d'un traitement :"
+            options: ["comparer avant et après sur les mêmes données", "estimer à l'œil", "regarder la taille du fichier", "compter les lignes de code"]
+            bonnes: [1]
+            explication: "Une mesure reproductible sur des données identiques est nécessaire."
       - num: "12"
         title: Projet & industrialisation
         contenu: >-
           Architecture d'un projet réel (hexagonale), logging structuré, configuration, Docker multi-stage,
           documentation.
         livrable: Application Python complète, testée et conteneurisée.
+        mise_en_situation: "Votre application fonctionne sur votre poste mais pas sur le serveur de production. Décrivez comment la conteneurisation, la configuration par variables d'environnement et les journaux structurés auraient évité ce problème."
+        quiz:
+          - question: "Un Dockerfile multi-stage permet :"
+            options: ["une image finale plus petite sans les outils de build", "plusieurs applications dans un conteneur", "de supprimer Docker", "de chiffrer l'image"]
+            bonnes: [1]
+            explication: "On compile dans une étape et on ne copie que le nécessaire dans l'image finale."
+          - question: "Où placer les secrets d'une application ?"
+            options: ["Dans des variables d'environnement ou un gestionnaire de secrets", "Dans le code source", "Dans le README", "Dans le nom des fichiers"]
+            bonnes: [1]
+            explication: "Un secret dans le dépôt est exposé à quiconque y a accès."
+          - question: "Pourquoi un conteneur ne doit-il pas tourner en root ?"
+            options: ["Pour limiter les dégâts en cas de compromission", "Pour accélérer le démarrage", "Parce que Docker l'interdit", "Pour économiser la mémoire"]
+            bonnes: [1]
+            explication: "C'est le principe du moindre privilège."
+          - question: "Un journal structuré (JSON) facilite :"
+            options: ["la recherche et l'analyse automatiques", "la compression du code", "la compilation", "le design"]
+            bonnes: [1]
+            explication: "Les outils d'observabilité filtrent par champ."
+          - question: "Dans une architecture hexagonale, le domaine métier :"
+            options: ["ne dépend pas de l'infrastructure", "dépend de la base de données", "contient l'interface web", "contient les tests"]
+            bonnes: [1]
+            explication: "Les dépendances pointent vers le domaine, ce qui le rend testable et durable."
 
 portfolio:
   - titre: Carnet de contacts en ligne de commande

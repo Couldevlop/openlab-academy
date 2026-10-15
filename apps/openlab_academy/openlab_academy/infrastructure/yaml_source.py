@@ -3,7 +3,7 @@ import pathlib
 
 import yaml
 
-from openlab_academy.domain.parcours import Bloc, Module, Niveau, Parcours, ParcoursInvalide, Projet
+from openlab_academy.domain.parcours import Bloc, Module, Niveau, Parcours, ParcoursInvalide, Projet, Question
 from openlab_academy.domain.reglages import Reglages
 
 PARCOURS_DIR = pathlib.Path(__file__).parents[1] / "data" / "parcours"
@@ -23,7 +23,8 @@ class _Lecteur:
 
     def parametres(self, d: dict) -> dict:
         valeurs = {"projets_attendus": self.reglages.projets_par_portfolio,
-                   "heures_par_module": self.reglages.heures_par_module}
+                   "heures_par_module": self.reglages.heures_par_module,
+                   "questions_par_quiz": self.reglages.questions_par_quiz}
         surcharges = d.get("parametres") or {}
         if not isinstance(surcharges, dict):
             raise FormatInvalide(f"{self.source}: parametres doit être un dictionnaire")
@@ -47,8 +48,23 @@ class _Lecteur:
                 raise FormatInvalide(f"{self.source}: {chemin}[{i}] doit être un texte (« : » non quoté ?)")
         return tuple(valeurs)
 
+    def question(self, q, chemin: str) -> Question:
+        if not isinstance(q, dict):
+            raise FormatInvalide(f"{self.source}: {chemin} doit être une question (dictionnaire)")
+        bonnes = self.exiger(q, "bonnes", chemin)
+        if not isinstance(bonnes, list) or not all(isinstance(b, int) for b in bonnes):
+            raise FormatInvalide(f"{self.source}: {chemin}bonnes doit être une liste de numéros d'options")
+        return Question(enonce=str(self.exiger(q, "question", chemin)),
+                        options=self.textes(self.exiger(q, "options", chemin), f"{chemin}options"),
+                        bonnes=tuple(bonnes), explication=str(self.exiger(q, "explication", chemin)))
+
     def module(self, m: dict, chemin: str) -> Module:
-        return Module(*(str(self.exiger(m, c, chemin)) for c in ("num", "title", "contenu", "livrable")))
+        quiz = m.get("quiz") or []
+        if not isinstance(quiz, list):
+            raise FormatInvalide(f"{self.source}: {chemin}quiz doit être une liste de questions")
+        return Module(*(str(self.exiger(m, c, chemin)) for c in ("num", "title", "contenu", "livrable")),
+                      quiz=tuple(self.question(q, f"{chemin}quiz[{i}].") for i, q in enumerate(quiz)),
+                      mise_en_situation=str(m.get("mise_en_situation") or ""))
 
     def projet(self, p: dict, chemin: str, portfolio: bool) -> Projet:
         listes = {c: self.textes(self.exiger(p, c, chemin), f"{chemin}{c}") for c in _LISTES_PROJET}
