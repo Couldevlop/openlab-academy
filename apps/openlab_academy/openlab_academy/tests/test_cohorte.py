@@ -2,7 +2,7 @@ import datetime
 import unittest
 
 from openlab_academy.application.ouvrir_cohorte import OuvrirCohorte
-from openlab_academy.domain.cohorte import Cohorte, CohorteInvalide
+from openlab_academy.domain.cohorte import Cohorte, CohorteInvalide, Rythme
 from openlab_academy.domain.parcours import Bloc, Module
 from openlab_academy.tests.fabriques import parcours, projet
 
@@ -29,7 +29,8 @@ class TestChargeDuParcours(unittest.TestCase):
 class TestCohortePilote(unittest.TestCase):
     def test_pilote_calee_sur_le_parcours(self):
         c = Cohorte.pilote(parcours(title="Fondamentaux"), LUNDI)
-        self.assertEqual(c.titre, "Promo 1 — Fondamentaux")
+        self.assertEqual(c.titre, "Promo 1 — Fondamentaux · Standard 12 h")
+        self.assertEqual(c.rythme, Rythme.STANDARD)
         self.assertEqual(c.cours, "Fondamentaux")
         self.assertEqual(c.debut, LUNDI)
         self.assertEqual(c.fin, LUNDI + datetime.timedelta(weeks=16))
@@ -37,11 +38,33 @@ class TestCohortePilote(unittest.TestCase):
 
     def test_fin_apres_debut(self):
         with self.assertRaisesRegex(CohorteInvalide, "la fin doit suivre le début"):
-            Cohorte("T", "C", LUNDI, LUNDI, "18:30", "20:30", "Africa/Abidjan")
+            Cohorte("T", "C", LUNDI, LUNDI, "18:30", "20:30", "Africa/Abidjan", Rythme.STANDARD)
 
     def test_horaires_coherents(self):
         with self.assertRaisesRegex(CohorteInvalide, "horaire"):
-            Cohorte("T", "C", LUNDI, LUNDI + datetime.timedelta(days=1), "20:30", "18:30", "Africa/Abidjan")
+            Cohorte("T", "C", LUNDI, LUNDI + datetime.timedelta(days=1), "20:30", "18:30", "Africa/Abidjan",
+                    Rythme.STANDARD)
+
+    def test_pilote_intensive_plus_courte(self):
+        c = Cohorte.pilote(parcours(title="Fondamentaux"), LUNDI, Rythme.INTENSIF)
+        self.assertEqual(c.titre, "Promo 1 — Fondamentaux · Intensif 16 h")
+        self.assertEqual(c.fin, LUNDI + datetime.timedelta(weeks=12))  # 188 / 16 = 11,75
+
+
+class TestRythme(unittest.TestCase):
+    def test_deux_formats(self):
+        self.assertEqual((Rythme.STANDARD.heures, Rythme.INTENSIF.heures), (12, 16))
+        self.assertEqual(Rythme("intensif"), Rythme.INTENSIF)
+
+    def test_organisation_hebdomadaire_coherente_avec_les_heures(self):
+        for rythme in Rythme:
+            with self.subTest(rythme=rythme):
+                self.assertEqual(sum(h for _, h in rythme.semaine), rythme.heures)
+
+    def test_descriptif_lisible(self):
+        self.assertIn("2 h chaque soir de semaine", Rythme.INTENSIF.descriptif)
+        self.assertIn("3 h le samedi et le dimanche", Rythme.INTENSIF.descriptif)
+        self.assertIn("12 h par semaine", Rythme.STANDARD.descriptif)
 
 
 class DepotCohortesEnMemoire:
@@ -62,14 +85,21 @@ class TestOuvrirCohorte(unittest.TestCase):
         cas = OuvrirCohorte(depot)
         premiere = cas.executer(parcours(title="P0"), LUNDI)
         seconde = cas.executer(parcours(title="P0"), LUNDI + datetime.timedelta(weeks=1))
-        self.assertEqual(premiere, ("Promo 1 — P0", True))
-        self.assertEqual(seconde, ("Promo 1 — P0", False))
-        self.assertEqual(depot.cohortes["Promo 1 — P0"].debut, LUNDI)
+        self.assertEqual(premiere, ("Promo 1 — P0 · Standard 12 h", True))
+        self.assertEqual(seconde, ("Promo 1 — P0 · Standard 12 h", False))
+        self.assertEqual(depot.cohortes["Promo 1 — P0 · Standard 12 h"].debut, LUNDI)
+
+    def test_les_deux_formats_coexistent(self):
+        depot = DepotCohortesEnMemoire()
+        cas = OuvrirCohorte(depot)
+        cas.executer(parcours(title="P0"), LUNDI)
+        cas.executer(parcours(title="P0"), LUNDI, Rythme.INTENSIF)
+        self.assertEqual(sorted(depot.cohortes), ["Promo 1 — P0 · Intensif 16 h", "Promo 1 — P0 · Standard 12 h"])
 
     def test_debut_par_defaut_lundi_dans_deux_semaines(self):
         depot = DepotCohortesEnMemoire()
         OuvrirCohorte(depot, aujourd_hui=lambda: datetime.date(2026, 10, 15)).executer(parcours(title="P0"))
-        debut = depot.cohortes["Promo 1 — P0"].debut
+        debut = depot.cohortes["Promo 1 — P0 · Standard 12 h"].debut
         self.assertEqual(debut, datetime.date(2026, 11, 2))
         self.assertEqual(debut.weekday(), 0)
 

@@ -3,7 +3,7 @@ import datetime
 from collections.abc import Callable
 from typing import Protocol
 
-from openlab_academy.domain.cohorte import Cohorte
+from openlab_academy.domain.cohorte import Cohorte, Rythme
 from openlab_academy.domain.parcours import Parcours
 
 
@@ -22,9 +22,10 @@ class OuvrirCohorte:
         self._depot = depot
         self._aujourd_hui = aujourd_hui
 
-    def executer(self, parcours: Parcours, debut: datetime.date | None = None) -> tuple[str, bool]:
+    def executer(self, parcours: Parcours, debut: datetime.date | None = None,
+                 rythme: Rythme = Rythme.STANDARD) -> tuple[str, bool]:
         """Renvoie (identifiant, créée ?)."""
-        cohorte = Cohorte.pilote(parcours, debut or _lundi_dans_deux_semaines(self._aujourd_hui()))
+        cohorte = Cohorte.pilote(parcours, debut or _lundi_dans_deux_semaines(self._aujourd_hui()), rythme)
         existante = self._depot.trouver(cohorte.titre)
         if existante:
             return existante, False
