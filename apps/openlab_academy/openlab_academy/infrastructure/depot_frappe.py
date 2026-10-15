@@ -4,7 +4,7 @@ import html
 
 import frappe
 
-from openlab_academy.domain.parcours import Chapitre, Module, Parcours, Question
+from openlab_academy.domain.parcours import Annonce, Chapitre, Module, Parcours, Question
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.infrastructure import editorjs
 
@@ -20,19 +20,21 @@ class DepotFrappe:
     def a_des_inscrits(self, cours_id: str) -> bool:
         return bool(frappe.db.count("LMS Enrollment", {"course": cours_id}))
 
-    def creer(self, parcours: Parcours) -> str:
+    def creer(self, parcours: Parcours | Annonce) -> str:
         cours = frappe.get_doc({"doctype": "LMS Course", "instructors": [{"instructor": self._reglages.formateur}],
                                 **self._champs(parcours)}).insert(ignore_permissions=True)
-        self._ecrire_chapitres(cours.name, parcours)
+        if isinstance(parcours, Parcours):
+            self._ecrire_chapitres(cours.name, parcours)
         return cours.name
 
-    def remplacer(self, cours_id: str, parcours: Parcours) -> None:
+    def remplacer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
         self._purger(cours_id)
         cours = frappe.get_doc("LMS Course", cours_id)
         cours.update(self._champs(parcours))
         cours.set("chapters", [])
         cours.save(ignore_permissions=True)
-        self._ecrire_chapitres(cours_id, parcours)
+        if isinstance(parcours, Parcours):
+            self._ecrire_chapitres(cours_id, parcours)
 
     @contextlib.contextmanager
     def unite_de_travail(self):
@@ -47,10 +49,10 @@ class DepotFrappe:
 
     # --- détails -------------------------------------------------------------
     @staticmethod
-    def _champs(p: Parcours) -> dict:
+    def _champs(p: Parcours | Annonce) -> dict:
         return {"title": p.title, "short_introduction": p.short_introduction, "description": p.description,
                 "tags": ",".join(p.tags), "card_gradient": p.card_gradient,
-                "published": 1, "enable_certification": 1}
+                "published": 1, "enable_certification": 1, "upcoming": int(isinstance(p, Annonce))}
 
     @staticmethod
     def _purger(cours_id: str) -> None:

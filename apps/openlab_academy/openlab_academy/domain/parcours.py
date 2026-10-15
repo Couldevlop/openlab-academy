@@ -107,6 +107,29 @@ class Chapitre:
     projet: Projet | None = None
 
 
+def _verifier_textes(objet, champs=("title", "short_introduction", "description")) -> None:
+    for champ in champs:
+        valeur = getattr(objet, champ)
+        if _SALAIRE.search(valeur):
+            raise ParcoursInvalide(f"{champ}: rémunération en k€ interdite")
+    if not objet.title.strip():
+        raise ParcoursInvalide("title manquant")
+
+
+@dataclass(frozen=True)
+class Annonce:
+    """Parcours annoncé (« à venir ») : visible au catalogue, sans contenu pédagogique publié."""
+
+    title: str
+    short_introduction: str
+    description: str
+    tags: tuple[str, ...]
+    card_gradient: str
+
+    def __post_init__(self):
+        _verifier_textes(self)
+
+
 @dataclass(frozen=True)
 class Parcours:
     title: str
@@ -124,9 +147,7 @@ class Parcours:
     def __post_init__(self):
         if self.heures_par_module <= 0:
             raise ParcoursInvalide("heures_par_module doit être positif")
-        for champ in ("title", "short_introduction", "description"):
-            if _SALAIRE.search(getattr(self, champ)):
-                raise ParcoursInvalide(f"{champ}: rémunération en k€ interdite")
+        _verifier_textes(self)
         for bloc in self.blocs:
             _titre_court(bloc.title)
             for module in bloc.modules:

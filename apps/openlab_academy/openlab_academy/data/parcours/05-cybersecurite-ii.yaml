@@ -1,0 +1,16 @@
+# Parcours annoncé : visible au catalogue en « à venir ».
+# Pour le publier complètement, remplacer ce fichier par le modèle docs/modeles/05-cybersecurite-ii.modele.yaml une fois rempli (sans la clé statut).
+statut: a_venir
+title: Ingénieur Cybersécurité II
+short_introduction: >-
+  Parcours Cybersécurité II — ouverture prochaine. Inscrivez-vous pour être informé du lancement.
+description: >-
+  <p><b>Prérequis :</b> avoir validé le parcours Ingénieur Cybersécurité I.</p>
+  <p><b>Format :</b> modules hebdomadaires en labs isolés, un livrable par module, 10 semaines projet
+  intercalées et un capstone devant jury.</p>
+  <p><b>Suite :</b> aboutissement du cursus cybersécurité (1 an avec le parcours I).</p>
+  <p><b>Cadre légal :</b> toute pratique offensive se fait uniquement sur les labs fournis ou sur des
+  systèmes dont on a l'autorisation écrite (loi ivoirienne n° 2013-451 relative à la cybercriminalité).</p>
+  <p><b>Évaluation :</b> livrables hebdomadaires 20 %, portfolio 40 %, capstone 40 %.</p>
+tags: [Cybersécurité]
+card_gradient: Red

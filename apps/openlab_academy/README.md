@@ -62,3 +62,16 @@ Desk → `/app/reglages-openlab-academy` (System Manager uniquement). Tout régl
 
 Un parcours peut surcharger `projets_par_portfolio` et `heures_par_module` dans son YAML (`parametres:`).
 Les changements s'appliquent aux prochaines publications et cohortes, jamais rétroactivement.
+
+## Parcours « à venir »
+
+Un fichier de parcours avec `statut: a_venir` ne contient que la carte (titre, accroche, description, tags,
+couleur) : le cours est publié en « Upcoming », sans leçon. Remplacer le fichier par le parcours complet
+(sans `statut`) le publie entièrement à la relance du seed. Cas actuel : Ingénieur Cybersécurité I et II
+(modèles à compléter dans `docs/modeles/`).
+
+## Exercices de fin de leçon
+
+Chaque module du YAML porte `quiz` (questions : `question`, `options`, `bonnes` numérotées à partir de 1,
+`explication`) et `mise_en_situation`. Nombre de questions, tentatives, score exigé et délai de déblocage
+se règlent dans l'écran de réglages. Le délai est vérifié côté serveur à chaque soumission.

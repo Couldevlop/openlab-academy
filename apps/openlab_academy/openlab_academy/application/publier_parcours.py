@@ -4,7 +4,9 @@ from contextlib import AbstractContextManager
 from enum import Enum
 from typing import Protocol
 
-from openlab_academy.domain.parcours import Parcours
+from openlab_academy.domain.parcours import Annonce, Parcours
+
+Element = Parcours | Annonce
 
 
 class Statut(str, Enum):
@@ -22,8 +24,8 @@ class DepotCatalogue(Protocol):
 
     def trouver(self, titre: str) -> str | None: ...
     def a_des_inscrits(self, cours_id: str) -> bool: ...
-    def creer(self, parcours: Parcours) -> str: ...
-    def remplacer(self, cours_id: str, parcours: Parcours) -> None: ...
+    def creer(self, parcours: Element) -> str: ...
+    def remplacer(self, cours_id: str, parcours: Element) -> None: ...
     def unite_de_travail(self) -> AbstractContextManager: ...
 
 
@@ -32,10 +34,10 @@ class PublierParcours:
         self._depot = depot
         self._journal = journal
 
-    def executer(self, lot: Iterable[Parcours]) -> dict[str, Statut]:
+    def executer(self, lot: Iterable[Element]) -> dict[str, Statut]:
         return {p.title: self._publier(p) for p in lot}
 
-    def _publier(self, parcours: Parcours) -> Statut:
+    def _publier(self, parcours: Element) -> Statut:
         try:
             with self._depot.unite_de_travail():
                 cours_id = self._depot.trouver(parcours.title)

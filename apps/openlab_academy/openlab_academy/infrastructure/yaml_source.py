@@ -3,7 +3,8 @@ import pathlib
 
 import yaml
 
-from openlab_academy.domain.parcours import Bloc, Module, Niveau, Parcours, ParcoursInvalide, Projet, Question
+from openlab_academy.domain.parcours import (Annonce, Bloc, Module, Niveau, Parcours, ParcoursInvalide, Projet,
+                                             Question)
 from openlab_academy.domain.reglages import Reglages
 
 PARCOURS_DIR = pathlib.Path(__file__).parents[1] / "data" / "parcours"
@@ -86,9 +87,25 @@ class _Lecteur:
             apres_module=None if apres is None else str(apres), **listes,
         )
 
-    def parcours(self, d) -> Parcours:
+    def annonce(self, d: dict) -> Annonce:
+        return Annonce(
+            title=str(self.exiger(d, "title", "")),
+            short_introduction=str(self.exiger(d, "short_introduction", "")),
+            description=str(self.exiger(d, "description", "")),
+            tags=self.textes(d.get("tags") or (), "tags"), card_gradient=str(d.get("card_gradient", "Blue")),
+        )
+
+    def element(self, d) -> "Parcours | Annonce":
         if not isinstance(d, dict):
             raise FormatInvalide(f"{self.source}: le fichier doit contenir un parcours (dictionnaire)")
+        statut = d.get("statut", "complet")
+        if statut == "a_venir":
+            return self.annonce(d)
+        if statut != "complet":
+            raise FormatInvalide(f"{self.source}: statut « {statut} » inconnu (complet | a_venir)")
+        return self.parcours(d)
+
+    def parcours(self, d) -> Parcours:
         blocs = tuple(
             Bloc(str(self.exiger(b, "title", f"blocs[{i}].")),
                  tuple(self.module(m, f"blocs[{i}].modules[{j}].")
@@ -107,14 +124,14 @@ class _Lecteur:
         )
 
 
-def depuis_dict(d, source: str, reglages: Reglages = Reglages()) -> Parcours:
+def depuis_dict(d, source: str, reglages: Reglages = Reglages()) -> Parcours | Annonce:
     try:
-        return _Lecteur(source, reglages).parcours(d)
+        return _Lecteur(source, reglages).element(d)
     except ParcoursInvalide as e:
         raise FormatInvalide(f"{source}: {e}") from e
 
 
-def charger_dossier(dossier: pathlib.Path, reglages: Reglages = Reglages()) -> list[Parcours]:
+def charger_dossier(dossier: pathlib.Path, reglages: Reglages = Reglages()) -> list[Parcours | Annonce]:
     lot = []
     for fichier in sorted(dossier.glob("*.yaml")):
         try:

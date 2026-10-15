@@ -4,7 +4,7 @@ import unittest
 
 import yaml
 
-from openlab_academy.domain.parcours import Niveau
+from openlab_academy.domain.parcours import Annonce, Niveau, Parcours
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.infrastructure.yaml_source import PARCOURS_DIR, FormatInvalide, charger_dossier, depuis_dict
 from openlab_academy.tests.fabriques import parcours_brut
@@ -141,5 +141,9 @@ class TestChargementDossier(unittest.TestCase):
     def test_parcours_livres_valides(self):
         lot = charger_dossier(PARCOURS_DIR)
         self.assertTrue(lot)
-        for p in lot:
+        complets = [p for p in lot if isinstance(p, Parcours)]
+        self.assertEqual(len(complets), 4)
+        for p in complets:
             self.assertEqual(len(p.portfolio), 10)
+        self.assertEqual(sorted(p.title for p in lot if isinstance(p, Annonce)),
+                         ["Ingénieur Cybersécurité I", "Ingénieur Cybersécurité II"])
