@@ -9,6 +9,7 @@ from enum import Enum
 
 PROJETS_PAR_PORTFOLIO = 10
 HEURES_PAR_MODULE = 8
+RYTHME_HEBDO = 12  # heures de travail apprenant par semaine
 TITRE_MAX = 120  # laisse la place aux préfixes (« Projet 10 — ») sous la limite LMS de 140
 _SALAIRE = re.compile(r"\d+\s*k\s*€", re.IGNORECASE)
 
@@ -114,7 +115,7 @@ class Parcours:
         modules = sum(len(b.modules) for b in self.blocs) * HEURES_PAR_MODULE
         return modules + sum(p.duree_h for p in self.portfolio) + self.capstone.duree_h
 
-    def duree_semaines(self, heures_par_semaine: int = HEURES_PAR_MODULE) -> int:
+    def duree_semaines(self, heures_par_semaine: int = RYTHME_HEBDO) -> int:
         if heures_par_semaine <= 0:
             raise ValueError("heures_par_semaine doit être positif")
         return math.ceil(self.charge_horaire() / heures_par_semaine)

@@ -27,7 +27,7 @@ class TestDepotCohortesFrappe(FrappeTestCase):
         b = frappe.get_doc("LMS Batch", nom)
         self.assertEqual([c.course for c in b.courses], [cours])
         self.assertEqual((b.paid_batch, b.published, b.medium, b.timezone), (0, 1, "Online", "Africa/Abidjan"))
-        self.assertEqual((str(b.start_date), str(b.end_date)), ("2026-11-02", "2027-04-19"))
+        self.assertEqual((str(b.start_date), str(b.end_date)), ("2026-11-02", "2027-02-22"))
         self.assertEqual((str(b.start_time), str(b.end_time)), ("18:30:00", "20:30:00"))
         self.assertEqual((b.allow_self_enrollment, b.certification, b.evaluation), (1, 1, 1))
 

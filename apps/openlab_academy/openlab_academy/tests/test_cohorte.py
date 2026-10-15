@@ -18,6 +18,9 @@ class TestChargeDuParcours(unittest.TestCase):
         self.assertEqual(parcours().duree_semaines(heures_par_semaine=8), 24)  # 188 / 8 = 23,5
         self.assertEqual(parcours().duree_semaines(heures_par_semaine=10), 19)
 
+    def test_rythme_par_defaut_12_heures(self):
+        self.assertEqual(parcours().duree_semaines(), 16)  # 188 / 12 = 15,7
+
     def test_rythme_invalide(self):
         with self.assertRaises(ValueError):
             parcours().duree_semaines(heures_par_semaine=0)
@@ -29,7 +32,7 @@ class TestCohortePilote(unittest.TestCase):
         self.assertEqual(c.titre, "Promo 1 — Fondamentaux")
         self.assertEqual(c.cours, "Fondamentaux")
         self.assertEqual(c.debut, LUNDI)
-        self.assertEqual(c.fin, LUNDI + datetime.timedelta(weeks=24))
+        self.assertEqual(c.fin, LUNDI + datetime.timedelta(weeks=16))
         self.assertEqual((c.heure_debut, c.heure_fin, c.fuseau), ("18:30", "20:30", "Africa/Abidjan"))
 
     def test_fin_apres_debut(self):
