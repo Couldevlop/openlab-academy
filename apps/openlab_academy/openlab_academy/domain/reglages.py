@@ -86,6 +86,10 @@ class Reglages:
     heures_par_module: int = 8
     delai_ouverture_semaines: int = 2
     jour_ouverture: int = 0  # 0 = lundi … 6 = dimanche
+    questions_par_quiz: int = 5
+    tentatives_max: int = 3
+    score_min: int = 100  # % de bonnes réponses exigé pour valider la leçon
+    delai_exercices_minutes: int = 60  # délai entre l'ouverture d'une leçon et l'accès aux exercices
     bareme: tuple[CritereBareme, ...] = BAREME_DEFAUT
     exigences_communes: tuple[str, ...] = EXIGENCES_DEFAUT
     rythmes: tuple[Rythme, ...] = field(default=RYTHMES_DEFAUT)
@@ -96,9 +100,13 @@ class Reglages:
     formateur: str = "Administrator"
 
     def __post_init__(self):
-        for champ in ("projets_par_portfolio", "heures_par_module"):
+        for champ in ("projets_par_portfolio", "heures_par_module", "questions_par_quiz", "tentatives_max"):
             if getattr(self, champ) <= 0:
                 raise ReglagesInvalides(f"{champ} doit être positif")
+        if not 1 <= self.score_min <= 100:
+            raise ReglagesInvalides("score_min entre 1 et 100 %")
+        if self.delai_exercices_minutes < 0:
+            raise ReglagesInvalides("delai_exercices_minutes ne peut pas être négatif")
         if self.delai_ouverture_semaines < 0:
             raise ReglagesInvalides("delai_ouverture_semaines ne peut pas être négatif")
         if not 0 <= self.jour_ouverture <= 6:

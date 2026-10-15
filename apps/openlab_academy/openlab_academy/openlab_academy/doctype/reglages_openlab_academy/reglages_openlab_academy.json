@@ -14,6 +14,12 @@
   "col_pedagogie",
   "delai_ouverture_semaines",
   "jour_ouverture",
+  "section_exercices",
+  "questions_par_quiz",
+  "tentatives_max",
+  "col_exercices",
+  "score_min",
+  "delai_exercices_minutes",
   "section_bareme",
   "bareme",
   "section_exigences",
@@ -72,6 +78,43 @@
    "label": "Jour de démarrage des cohortes",
    "options": "Lundi\nMardi\nMercredi\nJeudi\nVendredi\nSamedi\nDimanche",
    "default": "Lundi"
+  },
+  {
+   "fieldname": "section_exercices",
+   "fieldtype": "Section Break",
+   "label": "Exercices de fin de leçon"
+  },
+  {
+   "fieldname": "questions_par_quiz",
+   "fieldtype": "Int",
+   "label": "Questions par quiz",
+   "reqd": 1,
+   "default": "5"
+  },
+  {
+   "fieldname": "tentatives_max",
+   "fieldtype": "Int",
+   "label": "Tentatives maximum",
+   "reqd": 1,
+   "default": "3"
+  },
+  {
+   "fieldname": "col_exercices",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "score_min",
+   "fieldtype": "Int",
+   "label": "Score minimal pour valider (%)",
+   "reqd": 1,
+   "default": "100"
+  },
+  {
+   "fieldname": "delai_exercices_minutes",
+   "fieldtype": "Int",
+   "label": "Déblocage des exercices après (minutes)",
+   "default": "60"
   },
   {
    "fieldname": "section_bareme",
@@ -201,7 +244,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-16 00:00:00",
- "modified": "2026-10-16 00:00:00",
+ "modified": "2026-10-16 01:00:00",
  "sort_field": "modified",
  "sort_order": "DESC"
 }

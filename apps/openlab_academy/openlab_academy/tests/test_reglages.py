@@ -49,6 +49,11 @@ class TestReglagesParDefaut(unittest.TestCase):
         self.assertIn("Tests automatisés, couverture ≥ 70 %", r.exigences_communes)
         self.assertEqual([(x.code, x.heures) for x in r.rythmes], [("standard", 12), ("intensif", 16)])
 
+    def test_exercices_par_defaut(self):
+        r = Reglages()
+        self.assertEqual((r.questions_par_quiz, r.tentatives_max, r.score_min, r.delai_exercices_minutes),
+                         (5, 3, 100, 60))
+
     def test_immuable(self):
         with self.assertRaises(dataclasses.FrozenInstanceError):
             Reglages().heures_par_module = 4
@@ -85,6 +90,16 @@ class TestInvariantsReglages(unittest.TestCase):
                 Reglages(**{champ: 0})
         with self.assertRaisesRegex(ReglagesInvalides, "delai_ouverture_semaines ne peut pas être négatif"):
             Reglages(delai_ouverture_semaines=-1)
+
+    def test_reglages_d_exercices_coherents(self):
+        for champ in ("questions_par_quiz", "tentatives_max"):
+            with self.subTest(champ=champ), self.assertRaisesRegex(ReglagesInvalides, f"{champ} doit être positif"):
+                Reglages(**{champ: 0})
+        for score in (0, 101):
+            with self.subTest(score=score), self.assertRaisesRegex(ReglagesInvalides, "score_min entre 1 et 100"):
+                Reglages(score_min=score)
+        with self.assertRaisesRegex(ReglagesInvalides, "delai_exercices_minutes ne peut pas être négatif"):
+            Reglages(delai_exercices_minutes=-5)
 
     def test_jour_ouverture_valide(self):
         with self.assertRaisesRegex(ReglagesInvalides, "jour_ouverture"):

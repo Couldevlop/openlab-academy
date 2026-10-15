@@ -25,6 +25,8 @@ def vers_domaine(doc) -> Reglages:
         heures_par_module=int(doc.heures_par_module or 0),
         delai_ouverture_semaines=int(doc.delai_ouverture_semaines or 0),
         jour_ouverture=[j.capitalize() for j in JOURS].index(doc.jour_ouverture or "Lundi"),
+        questions_par_quiz=int(doc.questions_par_quiz or 0), tentatives_max=int(doc.tentatives_max or 0),
+        score_min=int(doc.score_min or 0), delai_exercices_minutes=int(doc.delai_exercices_minutes or 0),
         bareme=tuple(CritereBareme(c.nom, int(c.poids or 0)) for c in doc.bareme),
         exigences_communes=tuple(e.texte for e in doc.exigences),
         rythmes=tuple(Rythme(r.code or "", r.libelle or "", tuple(int(r.get(j) or 0) for j in JOURS))
@@ -53,6 +55,8 @@ def initialiser() -> None:
     doc.update({
         "projets_par_portfolio": d.projets_par_portfolio, "heures_par_module": d.heures_par_module,
         "delai_ouverture_semaines": d.delai_ouverture_semaines, "jour_ouverture": JOURS[d.jour_ouverture].capitalize(),
+        "questions_par_quiz": d.questions_par_quiz, "tentatives_max": d.tentatives_max, "score_min": d.score_min,
+        "delai_exercices_minutes": d.delai_exercices_minutes,
         "heure_debut": f"{d.heure_debut}:00", "heure_fin": f"{d.heure_fin}:00", "fuseau": d.fuseau,
         "parcours_pilote": d.parcours_pilote, "formateur": d.formateur, **PLATEFORME_DEFAUT,
     })

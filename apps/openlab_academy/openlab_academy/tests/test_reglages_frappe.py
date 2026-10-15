@@ -3,7 +3,7 @@ from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.infrastructure import reglages_source_frappe as source
-from openlab_academy.patches import initialiser_reglages
+from openlab_academy.patches import completer_reglages_exercices, initialiser_reglages
 
 DOCTYPE = "Reglages OpenLab Academy"
 ELEVE = "eleve.reglages@example.ci"
@@ -42,9 +42,11 @@ class TestSourceReglagesFrappe(FrappeTestCase):
         self.assertEqual(source.charger().heures_par_module, 6)
 
     def test_modification_dans_l_ecran_prise_en_compte(self):
+        vider()
         source.initialiser()
         doc = frappe.get_single(DOCTYPE)
         doc.update({"heures_par_module": 6, "jour_ouverture": "Samedi", "heure_debut": "19:00:00",
+                    "questions_par_quiz": 4, "tentatives_max": 2, "score_min": 80, "delai_exercices_minutes": 30,
                     "heure_fin": "21:00:00", "parcours_pilote": "Développeur Python"})
         doc.append("rythmes", {"code": "week-end", "libelle": "Week-end", "samedi": 5, "dimanche": 5})
         doc.save(ignore_permissions=True)
@@ -52,6 +54,8 @@ class TestSourceReglagesFrappe(FrappeTestCase):
         self.assertEqual((r.heures_par_module, r.jour_ouverture, r.heure_debut, r.heure_fin, r.parcours_pilote),
                          (6, 5, "19:00", "21:00", "Développeur Python"))
         self.assertEqual(r.rythme("week-end").heures, 10)
+        self.assertEqual((r.questions_par_quiz, r.tentatives_max, r.score_min, r.delai_exercices_minutes),
+                         (4, 2, 80, 30))
 
     def test_reglage_incoherent_refuse_a_l_enregistrement(self):
         source.initialiser()
@@ -71,6 +75,26 @@ class TestSourceReglagesFrappe(FrappeTestCase):
         vider()
         initialiser_reglages.execute()
         self.assertEqual(len(frappe.get_single(DOCTYPE).rythmes), 2)
+
+
+class TestPatchExercices(FrappeTestCase):
+    def tearDown(self):
+        frappe.db.rollback()
+
+    def test_site_existant_recoit_les_valeurs_par_defaut(self):
+        source.initialiser()
+        for champ in ("questions_par_quiz", "tentatives_max", "score_min", "delai_exercices_minutes"):
+            frappe.db.set_single_value(DOCTYPE, champ, None)
+        completer_reglages_exercices.execute()
+        r = source.charger()
+        self.assertEqual((r.questions_par_quiz, r.tentatives_max, r.score_min, r.delai_exercices_minutes),
+                         (5, 3, 100, 60))
+
+    def test_valeurs_existantes_conservees(self):
+        source.initialiser()
+        frappe.db.set_single_value(DOCTYPE, "score_min", 90)
+        completer_reglages_exercices.execute()
+        self.assertEqual(source.charger().score_min, 90)
 
 
 class TestDroitsReglages(FrappeTestCase):

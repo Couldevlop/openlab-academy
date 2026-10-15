@@ -2,3 +2,4 @@
 
 [post_model_sync]
 openlab_academy.patches.initialiser_reglages
+openlab_academy.patches.completer_reglages_exercices
