@@ -38,6 +38,7 @@ class TestInstallation(FrappeTestCase):
         install.after_install(commit=False)
         self.assertEqual(frappe.db.get_single_value("System Settings", "language"), "fr")
         self.assertTrue(frappe.db.exists("LMS Course", {"title": "Fondamentaux de la Data Science"}))
+        self.assertTrue(frappe.db.exists("LMS Batch", {"title": "Promo 1 — Fondamentaux de la Data Science"}))
 
     def test_installation_non_exposee_a_l_api(self):
         """OWASP A01 : aucune fonction d'installation n'est appelable via /api/method."""

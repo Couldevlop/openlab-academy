@@ -2,11 +2,13 @@
 
 Aucune dépendance à Frappe ni au format de stockage.
 """
+import math
 import re
 from dataclasses import dataclass
 from enum import Enum
 
 PROJETS_PAR_PORTFOLIO = 10
+HEURES_PAR_MODULE = 8
 TITRE_MAX = 120  # laisse la place aux préfixes (« Projet 10 — ») sous la limite LMS de 140
 _SALAIRE = re.compile(r"\d+\s*k\s*€", re.IGNORECASE)
 
@@ -106,6 +108,16 @@ class Parcours:
                 raise ParcoursInvalide(f"portfolio[{i}].apres_module: module '{p.apres_module}' inexistant")
         if self.capstone.apres_module is not None:
             raise ParcoursInvalide("capstone.apres_module doit être vide")
+
+    def charge_horaire(self) -> int:
+        """Heures de travail apprenant : modules hebdomadaires + portfolio + capstone."""
+        modules = sum(len(b.modules) for b in self.blocs) * HEURES_PAR_MODULE
+        return modules + sum(p.duree_h for p in self.portfolio) + self.capstone.duree_h
+
+    def duree_semaines(self, heures_par_semaine: int = HEURES_PAR_MODULE) -> int:
+        if heures_par_semaine <= 0:
+            raise ValueError("heures_par_semaine doit être positif")
+        return math.ceil(self.charge_horaire() / heures_par_semaine)
 
     def chapitres(self) -> list[Chapitre]:
         """Ordre de publication : chaque bloc, suivi des projets qui consolident ses modules ; capstone en dernier."""
