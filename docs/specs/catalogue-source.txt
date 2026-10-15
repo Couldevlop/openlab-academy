@@ -1,0 +1,256 @@
+OPENLAB ACADEMY
+Division formation — Openlab Consulting
+Catalogue des
+parcours certifiants
+Un socle commun, puis des trajectoires métier intensives — projet professionnel et jury final.
+●  Fondamentaux de la Data Science   —   socle commun — chapitre 0
+●  Développeur Python   —   de la base au niveau confirmé (orienté data)
+●  AI Engineer   —   ingénierie des applications LLM
+●  Data Engineer   —   pipelines & plateformes de données
+●  Ingénieur Cybersécurité   —   offensif, défensif & réponse à incident
+Document interne — Openlab Consulting · Sophia Antipolis / Abidjan
+Édition octobre 2026
+LE MODÈLE OPENLAB ACADEMY
+Une pédagogie par le livrable
+Tous les parcours suivent la même architecture : des modules hebdomadaires d'environ 8 heures (40 % de théorie, 60 % de pratique), un livrable concret à chaque module, et un projet fil rouge présenté devant un jury. L'objectif n'est pas de couvrir une liste de technologies, mais de produire un portfolio démontrable en entretien.
+Le catalogue s'articule en deux temps. Un parcours socle — les Fondamentaux de la Data Science — joue le rôle de chapitre 0 : il installe les bases mathématiques, statistiques et outillées communes à toutes les spécialisations. Viennent ensuite quatre trajectoires métier : Développeur Python, AI Engineer, Data Engineer et Ingénieur Cybersécurité.
+5
+parcours (1 socle + 4 métiers)
+60 %
+de pratique en projet
+1
+jury final par parcours
+Évaluation. Livrables hebdomadaires (40 %) et projet final (60 %). Le parcours socle et le parcours Développeur Python alimentent directement les trois spécialisations AI, Data et Cyber : un apprenant débutant peut ainsi enchaîner chapitre 0, Python, puis la trajectoire métier de son choix.
+PARCOURS 0 · SOCLE COMMUN — CHAPITRE 0
+Fondamentaux de la Data Science
+Parcours préalable aux spécialisations AI, Data et Cyber — aucune rémunération cible propre.
+Prérequis  aucun — niveau lycée en mathématiques suffit.
+Format  1 module/semaine, ~8 h ; se place en amont de tout parcours métier.
+Rôle  installer le vocabulaire, les maths et l'outillage communs à AI Engineer, Data Engineer et Cybersécurité.
+  Bloc 1 — Outils & méthode (S1–S3)
+01  Écosystème & méthode
+Qu'est-ce que la data science : rôles (analyst, engineer, scientist), cycle de vie d'un projet (CRISP-DM), notions d'IA, de ML et de données. Panorama de l'outillage.
+Livrable — Note de cadrage d'un problème métier traduit en question data.
+02  Ligne de commande & Git
+Terminal, navigation fichiers, environnements (conda/venv), bases de Git et GitHub, notebooks Jupyter.
+Livrable — Dépôt versionné contenant un premier notebook exécutable.
+03  Python pour l'analyse
+Variables, types, structures de données, boucles, fonctions ; NumPy pour le calcul vectoriel. Orienté manipulation de données, sans pré-requis de dev.
+Livrable — Notebook d'analyse chiffrée sur un petit jeu de données.
+  Bloc 2 — Mathématiques utiles (S4–S6)
+04  Statistiques descriptives
+Moyenne, médiane, variance, distributions, corrélation, échantillonnage, biais courants. Lecture critique d'un chiffre.
+Livrable — Rapport statistique commenté sur un dataset réel.
+05  Probabilités & inférence
+Probabilités de base, loi normale, intervalles de confiance, tests d'hypothèse, p-value et ses pièges.
+Livrable — Test A/B interprété de bout en bout.
+06  Algèbre linéaire & calcul
+Vecteurs, matrices, produit matriciel, notion de dérivée et de gradient — le minimum pour comprendre le ML et le deep learning.
+Livrable — Fiche de synthèse appliquée (régression linéaire à la main).
+  Bloc 3 — Données & restitution (S7–S10)
+07  Manipulation avec pandas
+Chargement, nettoyage, valeurs manquantes, jointures, agrégations, pivots. Le cœur du métier au quotidien.
+Livrable — Jeu de données brut nettoyé et documenté.
+08  Visualisation
+Matplotlib et seaborn, choix du bon graphique, lisibilité, storytelling visuel, erreurs à éviter.
+Livrable — Mini-dashboard d'exploration d'un jeu de données.
+09  SQL de base
+SELECT, WHERE, GROUP BY, jointures simples, agrégations. Interroger une base relationnelle sans intermédiaire.
+Livrable — 20 requêtes sur une base d'exemple.
+10  Introduction au machine learning
+Apprentissage supervisé vs non supervisé, train/test, sur-apprentissage, première régression et première classification avec scikit-learn.
+Livrable — Modèle prédictif simple évalué correctement.
+PROJET FINAL — FIL ROUGE
+Mini-étude data complète sur un jeu de données au choix : cadrage de la question, nettoyage, analyse statistique, visualisation et un premier modèle, restitués dans un notebook propre et un court rapport. Ce projet valide l'aptitude à enchaîner sur l'un des quatre parcours métier.
+PARCOURS I · DE LA BASE AU NIVEAU CONFIRMÉ (ORIENTÉ DATA)
+Développeur Python
+Fourchette de rémunération visée : 35–55 k€
+Prérequis  aucun — le parcours démarre au niveau zéro.
+Format  1 module/semaine, ~8 h, un livrable par module + projet fil rouge.
+Trajectoire  de la syntaxe de base jusqu'à un code confirmé, testé et packagé, prêt pour la data.
+  Bloc 1 — Bases du langage (S1–S3)
+01  Premiers pas
+Installation, interpréteur, variables, types, opérateurs, entrées/sorties, premiers scripts. Pensée algorithmique.
+Livrable — Suite de petits programmes (calculs, conditions, boucles).
+02  Structures de données
+Listes, tuples, dictionnaires, sets, compréhensions, slicing, manipulation de chaînes.
+Livrable — Programme de traitement de données en mémoire.
+03  Fonctions & modularité
+Fonctions, portée, arguments, *args/**kwargs, modules, imports, organisation d'un projet.
+Livrable — Petit utilitaire structuré en modules.
+  Bloc 2 — Python intermédiaire (S4–S7)
+04  Programmation orientée objet
+Classes, objets, attributs, méthodes, héritage, encapsulation, méthodes spéciales (dunder).
+Livrable — Modélisation objet d'un domaine métier.
+05  Gestion des erreurs & fichiers
+Exceptions, try/except, context managers, lecture/écriture (texte, CSV, JSON), chemins et OS.
+Livrable — Outil de traitement de fichiers robuste.
+06  Python idiomatique
+Itérateurs, générateurs, décorateurs, fonctions lambda, typing, bonnes pratiques PEP 8.
+Livrable — Refactorisation d'un code existant en style idiomatique.
+07  Environnements & packaging
+venv/poetry, pip, dépendances, structure d'un package, publication interne, pré-commit.
+Livrable — Package installable avec ses dépendances.
+  Bloc 3 — Niveau confirmé & data (S8–S12)
+08  Tests & qualité
+pytest, fixtures, mocks, couverture, tests paramétrés, linting, intégration continue de base.
+Livrable — Suite de tests sur le projet fil rouge avec CI.
+09  Python asynchrone & API
+requests et httpx, async/await, consommation d'API REST, limites de débit, pagination.
+Livrable — Client d'API résilient avec gestion d'erreurs.
+10  Bases de données
+SQL depuis Python, SQLAlchemy, ORM vs requêtes, migrations, bonnes pratiques.
+Livrable — Couche d'accès aux données d'une petite application.
+11  Python pour la data
+NumPy et pandas, nettoyage, agrégations, lecture Parquet, premières visualisations — le pont vers les parcours Data et AI.
+Livrable — Pipeline d'analyse de données de bout en bout.
+12  Projet & industrialisation
+Architecture d'un projet réel, logging, configuration, conteneurisation Docker, documentation.
+Livrable — Application Python complète, testée et conteneurisée.
+PROJET FINAL — FIL ROUGE
+Construction d'une application Python de bout en bout : code orienté objet et testé, consommation d'API, accès base de données, traitement de données avec pandas, le tout packagé et conteneurisé. Déployé via Docker et présenté devant un jury. Le module 11 ouvre directement sur les parcours Data Engineer et AI Engineer.
+PARCOURS II · INGÉNIEUR IA APPLIQUÉE
+AI Engineer
+Fourchette de rémunération visée : 50–80 k€
+Prérequis  bases de programmation, Git, notions HTTP/JSON.
+Format  1 module/semaine, ~8 h, un livrable par module + projet fil rouge.
+  Bloc 1 — Fondations (S1–S3)
+01  Python pour l'IA
+Typage, async/await, Pydantic, gestion d'environnement (uv/poetry), tests (pytest), packaging.
+Livrable — Client HTTP asynchrone typé et testé.
+02  API LLM
+Anthropic, OpenAI et modèles open source (Ollama, vLLM). Tokens, température, streaming, sorties structurées, coûts, latence, rate limits.
+Livrable — Wrapper multi-fournisseurs avec retry et suivi des coûts.
+03  Prompt Engineering
+Rôles système, few-shot, chain-of-thought, balises XML, sorties JSON, gestion des refus et des injections.
+Livrable — Bibliothèque de prompts versionnée.
+  Bloc 2 — Connaissance & données (S4–S5)
+04  RAG
+Chunking, embeddings, retrieval hybride (BM25 + vectoriel), reranking, citations, RAG agentique.
+Livrable — Assistant documentaire sur un corpus métier.
+05  Bases vectorielles
+pgvector, Qdrant, Chroma. Index HNSW, filtres de métadonnées, mise à jour incrémentale, compromis coût/latence/rappel.
+Livrable — Benchmark de 2 bases sur le même corpus.
+  Bloc 3 — Agents (S6–S9)
+06  Tool Calling
+Schémas de fonctions, boucle agentique, gestion d'erreurs, appels parallèles.
+Livrable — Agent connecté à 3 outils réels (API, base SQL, fichiers).
+07  MCP (Model Context Protocol)
+Architecture client/serveur, tools, resources et prompts, transports stdio/HTTP, authentification.
+Livrable — Serveur MCP exposant un système interne.
+08  LangGraph
+Graphes d'état, nœuds et arêtes conditionnelles, persistance, human-in-the-loop, multi-agents (superviseur, swarm).
+Livrable — Workflow multi-agents avec validation humaine.
+09  Context Engineering
+Budget de contexte, compaction et résumé, mémoire court et long terme, sous-agents, prompt caching.
+Livrable — Agent long-running stable sur plus de 50 tours.
+  Bloc 4 — Production (S10–S12)
+10  Evals
+Jeux de test dorés, LLM-as-judge, métriques RAG (RAGAS : fidélité, pertinence), tests de régression en CI.
+Livrable — Suite d'évaluation automatisée dans le pipeline.
+11  Guardrails
+Validation d'entrée et de sortie, détection d'injection, filtrage des PII, garde-fous de permissions sur les outils, conformité RGPD et AI Act.
+Livrable — Couche de sécurité branchée sur l'agent du module 08.
+12  Observabilité
+Traces (Langfuse, LangSmith, OpenTelemetry), suivi des coûts et de la latence, feedback utilisateur, dashboards et alerting.
+Livrable — Dashboard de monitoring en production.
+PROJET FINAL — FIL ROUGE
+Construction d'un agent métier complet : RAG, outils exposés via MCP, orchestration LangGraph, suite d'evals, guardrails et observabilité. Le projet est déployé (Docker et CI/CD), puis présenté devant un jury. Pour un profil déjà senior en Python et data, le module 01 se compresse en 2–3 jours au profit des modules 08 à 12, là où se joue la différence en entreprise.
+PARCOURS III · INGÉNIEUR DONNÉES
+Data Engineer
+Fourchette de rémunération visée : 45–70 k€
+Prérequis  logique de programmation, notions de bases de données.
+Format  1 module/semaine, ~8 h, un livrable par module + pipeline fil rouge.
+  Bloc 1 — Fondamentaux (S1–S3)
+01  SQL
+Jointures, CTE, fonctions de fenêtrage, agrégations avancées, plans d'exécution, index.
+Livrable — 30 requêtes analytiques optimisées sur un jeu de données réel.
+02  Python data
+pandas et polars, typage, lecture/écriture (CSV, Parquet, JSON), appels d'API, tests.
+Livrable — Script d'ingestion API vers Parquet, testé.
+03  Git
+Branches, merge et rebase, pull requests, revue de code, conventions de commits, CI de base.
+Livrable — Dépôt du fil rouge avec workflow PR et CI.
+  Bloc 2 — Modélisation & transformation (S4–S5)
+04  Data Modeling
+Modélisation dimensionnelle (Kimball), schémas en étoile et en flocon, SCD, Data Vault, architecture médaillon (bronze, silver, gold).
+Livrable — Modèle d'entrepôt documenté pour un cas métier.
+05  dbt
+Modèles, sources, refs, tests, macros Jinja, modèles incrémentaux, documentation et lignage.
+Livrable — Projet dbt complet sur le modèle du module 04.
+  Bloc 3 — Traitement à grande échelle (S6–S8)
+06  Apache Spark
+Architecture (driver, executors), DataFrames, Spark SQL, partitionnement, shuffles, optimisation, Delta Lake.
+Livrable — Job Spark traitant plus de 10 Go avec un tuning mesuré.
+07  Kafka
+Topics, partitions, consumer groups, garanties de livraison, Schema Registry, Kafka Connect, streaming avec Spark ou Flink.
+Livrable — Pipeline temps réel de bout en bout.
+08  Airflow
+DAGs, opérateurs, sensors, XCom, TaskFlow API, backfills, gestion des échecs et alertes.
+Livrable — Orchestration complète du fil rouge.
+  Bloc 4 — Cloud & industrialisation (S9–S12)
+09  Docker
+Images, Dockerfile multi-stage, volumes, réseaux, Docker Compose.
+Livrable — Stack locale conteneurisée (Airflow, Postgres, Kafka).
+10  AWS / GCP
+Stockage objet (S3, GCS), IAM, services managés (Glue, EMR, Dataproc, Composer), Terraform.
+Livrable — Infrastructure du pipeline en Terraform.
+11  Snowflake / BigQuery
+Architecture, warehouses et slots, partitionnement et clustering, maîtrise des coûts, sécurité et RBAC.
+Livrable — Migration de la couche gold dans un entrepôt cloud.
+12  Data Quality
+Tests dbt, Great Expectations et Soda, contrats de données, SLA de fraîcheur, observabilité et alerting.
+Livrable — Framework qualité branché sur le pipeline.
+PROJET FINAL — FIL ROUGE
+Plateforme data complète : ingestion batch et streaming, modélisation, transformations dbt, orchestration Airflow, infrastructure cloud et framework qualité. Le tout est déployé puis présenté devant un jury.
+PARCOURS IV · SÉCURITÉ OFFENSIVE & DÉFENSIVE
+Ingénieur Cybersécurité
+Fourchette de rémunération visée : 45–70 k€
+Prérequis  aisance avec un ordinateur et la ligne de commande.
+Format  1 module/semaine, ~8 h, en labs isolés (environnements volontairement vulnérables).
+  Bloc 1 — Fondations (S1–S3)
+01  Réseaux TCP/IP
+Modèles OSI et TCP/IP, adressage et sous-réseaux, routage, DNS, HTTP(S), TLS, VPN, segmentation.
+Livrable — Schéma réseau d'une PME avec plan de segmentation.
+02  Linux
+Système de fichiers, permissions, processus, services, journaux, durcissement, scripts Bash.
+Livrable — Checklist de durcissement appliquée à un serveur.
+03  Python sécurité
+Automatisation, sockets, requêtes HTTP, parsing de logs, scripts d'audit.
+Livrable — Outil d'analyse de logs d'authentification.
+  Bloc 2 — Offensif & sécurité applicative (S4–S8)
+04  OWASP Top 10
+Contrôle d'accès défaillant, injections, XSS, SSRF, mauvaises configurations, défaillances cryptographiques, avec remédiation pour chaque faille.
+Livrable — Rapport de vulnérabilités sur une application de lab.
+05  Nmap
+Découverte d'hôtes, scans de ports et de services, détection de versions, scripts NSE, cadre légal du scan.
+Livrable — Cartographie d'un réseau de lab.
+06  Wireshark
+Capture et filtrage, analyse de protocoles, détection d'anomalies, reconstruction de sessions.
+Livrable — Analyse forensique d'une capture réseau.
+07  Burp Suite
+Proxy, Repeater, Intruder, scanner, tests d'authentification et de sessions.
+Livrable — Audit web complet sur une application de lab.
+08  Pentest
+Méthodologie (PTES, OSSTMM), cadrage et autorisation, reconnaissance, exploitation en lab, élévation de privilèges, rédaction du rapport.
+Livrable — Rapport de pentest professionnel (synthèse dirigeants et détail technique).
+  Bloc 3 — Défensif & entreprise (S9–S12)
+09  Active Directory
+Architecture (domaines, forêts, GPO), Kerberos, attaques courantes et durcissement, tiering model.
+Livrable — Audit et plan de durcissement d'un AD de lab.
+10  SIEM (Splunk)
+Ingestion de logs, SPL, règles de corrélation, dashboards, MITRE ATT&CK.
+Livrable — 10 règles de détection mappées sur ATT&CK.
+11  Cloud Security
+Responsabilité partagée, IAM et moindre privilège, sécurité réseau cloud, gestion des secrets, CSPM, référentiels CIS.
+Livrable — Audit de configuration d'un compte cloud.
+12  Réponse à incident
+Cycle NIST (préparation, détection, confinement, éradication, retour à la normale), forensique de base, communication de crise, RGPD et NIS2.
+Livrable — Playbook d'incident et exercice sur table.
+PROJET FINAL — FIL ROUGE
+Exercice Red Team / Blue Team sur une infrastructure de lab : l'audit offensif, la détection SIEM et la réponse à incident sont documentés, puis présentés devant un jury.
+MISE EN ŒUVRE
+Socle commun & cohortes conjointes
+Le catalogue est pensé comme un escalier. Les Fondamentaux de la Data Science (chapitre 0) et le parcours Développeur Python forment la rampe d'accès : un profil débutant les enchaîne avant de bifurquer vers AI Engineer, Data Engineer ou Ingénieur Cybersécurité. Les trois spécialisations convergent ensuite sur Python, Docker, le cloud et Git, ce qui permet de mutualiser un tronc commun en cohorte conjointe et de créer des promotions mixtes — un atout pour le placement nearshore vers Sophia Antipolis.
+Parcours d'entrée recommandés. Débutant complet → chapitre 0, puis Développeur Python, puis une spécialisation. Profil déjà développeur → entrée directe en AI ou Data, le chapitre 0 servant de remise à niveau statistique ciblée.
+Modèle double-track. Chaque parcours existe en version entreprise (payante, exécutive) et en cohorte fondatrice gratuite, cette dernière servant l'acquisition de talents, la constitution de preuves et la notoriété de marque.
