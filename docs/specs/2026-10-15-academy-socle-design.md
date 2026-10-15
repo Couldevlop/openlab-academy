@@ -23,6 +23,8 @@ Inclus :
 2. Habillage OpenLab.
 3. Seed idempotent des 5 parcours du catalogue.
 4. Un devoir (LMS Assignment) par livrable de module.
+4bis. **Portfolio par parcours : 10 projets complets + 1 capstone** (55 projets au total), en plus des
+   livrables hebdomadaires (cf. §4.3).
 5. Une cohorte pilote.
 6. Image Docker figée + compose reproductible.
 
@@ -76,15 +78,46 @@ Openlab_Academy/
   ne supprime jamais un cours portant des inscriptions.
 - Lancement : `after_install` + commande `bench --site X execute openlab_academy.seed.loader.run`.
 
-### 4.3 Cohorte pilote
+### 4.3 Portfolio de projets
+Chaque parcours = modules hebdomadaires (livrables courts) **+ 10 projets portfolio + 1 capstone**.
+Le capstone remplace le « projet final fil rouge » du catalogue. Durée du parcours allongée d'environ 50 %.
+
+Placement : les projets sont intercalés en « semaines projet » après les modules qu'ils consolident
+(champ `apres_module`), ~12 h chacun ; le capstone (~3 semaines) clôt le parcours. Dans LMS : un chapitre
+« Projet N — … » contenant une leçon d'énoncé + un `LMS Assignment` (rendu = URL du dépôt Git).
+
+Fiche projet (`portfolio[]` dans `parcours.yaml`, validée au chargement) :
+- `titre`, `apres_module`, `duree_h`
+- `contexte` — cas d'usage réel ouest-africain (Mobile Money, cacao, transport Abidjan, santé, PME, administration…)
+- `objectifs`, `fonctionnalites` (périmètre fonctionnel complet, pas un exercice)
+- `stack` — outils actuels du métier en 2026 (ex. Python : uv, ruff, mypy/pyright, Pydantic v2, FastAPI, pytest ;
+  Data : Polars, DuckDB, dbt, Dagster/Airflow, Parquet/Iceberg ; IA : SDK LLM, sorties structurées, RAG hybride,
+  MCP, LangGraph, evals ; Cyber : OWASP Top 10/ASVS, SAST/DAST, détection Sigma, IaC sécurisée)
+- `criteres_acceptation` — vérifiables, dont : démarre avec une commande (`docker compose up` ou équivalent),
+  tests verts, démo fonctionnelle
+- `exigences_qualite` — socle commun à tous les projets, complété par parcours :
+  README (installation, architecture, choix), tests automatisés (couverture ≥ 70 %), lint + format + typage,
+  CI (GitHub Actions) verte, conteneurisation, secrets hors du code (`.env.example`), sécurité OWASP de base,
+  architecture propre (séparation domaine / infra), commits conventionnels, journal de décisions (ADR)
+- `livrables` — dépôt Git, démo (déployée ou vidéo ≤ 3 min), rapport court
+- `grille` — barème /20 : fonctionnel 40 %, qualité/tests 25 %, sécurité 10 %, architecture 15 %, documentation 10 %
+
+Progression : projets 1–3 guidés (squelette et critères détaillés), 4–7 semi-guidés, 8–10 autonomes ;
+le capstone est un produit complet choisi par l'apprenant dans une liste, présenté au jury.
+
+Évaluation du parcours : livrables hebdomadaires 20 %, portfolio 40 %, capstone 40 %.
+
+Hors périmètre du socle : corrigés de référence des 55 projets (sous-projet ultérieur si souhaité).
+
+### 4.5 Cohorte pilote
 - `LMS Batch` « Promo 1 — Fondamentaux Data Science », contenant le Parcours 0, dates paramétrables,
   évaluateur = rôle jury. Pas de prix (gratuit jusqu'au sous-projet 2).
 
-### 4.4 Rôles
+### 4.6 Rôles
 Rôles natifs LMS : `Course Creator` (formateur), `Batch Evaluator` (jury), `LMS Student` (apprenant).
 Aucun rôle maison.
 
-### 4.5 Docker
+### 4.7 Docker
 - Image unique construite depuis `frappe/bench` pinné sur un digest, `bench init --frappe-branch version-15`,
   `get-app payments --branch version-15`, `get-app lms --branch main` **pinné sur un commit/tag**,
   `openlab_academy` copié, `bench build` à la construction.
@@ -106,7 +139,8 @@ Aucun rôle maison.
 ## 7. Tests
 
 - `tests/test_seed.py` (FrappeTestCase) : 5 cours créés ; nombre de chapitres/leçons/devoirs conforme
-  au YAML ; seconde exécution = aucun doublon ; modification d'un module dans le YAML = mise à jour.
+  au YAML ; chaque parcours a exactement 10 projets + 1 capstone, chaque fiche complète (tous champs requis,
+  `apres_module` existant) ; seconde exécution = aucun doublon ; modification d'un module dans le YAML = mise à jour.
 - Validation YAML : champ manquant → erreur explicite.
 - Vérification de bout en bout réelle : compte apprenant → inscription à la cohorte → lecture d'une leçon
   → rendu d'un devoir → visible côté évaluateur.
@@ -114,5 +148,5 @@ Aucun rôle maison.
 ## 8. Critères de succès
 
 - Image construite, `docker-compose up` → plateforme habillée OpenLab en français sur `localhost:8000`.
-- 5 parcours publiés, chaque module avec son devoir, une cohorte pilote.
+- 5 parcours publiés, chaque module avec son devoir, 10 projets + 1 capstone par parcours, une cohorte pilote.
 - Tests verts ; parcours apprenant de bout en bout vérifié manuellement.
