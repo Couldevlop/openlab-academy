@@ -170,3 +170,15 @@ Décision utilisateur : tout paramètre métier est réglable sans développeur 
   toute autre clé est refusée.
 - Port applicatif `SourceReglages.charger() -> Reglages` ; adaptateur Frappe. Un changement de réglages s'applique aux
   prochaines publications et cohortes, jamais rétroactivement.
+
+## 10. Exercices de fin de leçon (ajout du 2026-10-16)
+
+Décision utilisateur : après chaque module, un quiz obligatoire et une mise en situation.
+- Réglages (écran) : `questions_par_quiz` = 5, `tentatives_max` = 3, `score_min` = **100 %**, `delai_exercices_minutes` = 60.
+- Contenu (YAML du module) : `quiz` (exactement `questions_par_quiz` questions : énoncé, 2 à 6 options, ≥ 1 bonne
+  réponse, explication) et `mise_en_situation` (texte). Générés pour les 4 parcours, à relire par les formateurs.
+- Publication : un `LMS Quiz` par leçon (max_attempts, passing_percentage, réponses montrées) + un devoir
+  « Mise en situation » ; la leçon affiche le conseil de relire le cours après 3 échecs ; LMS « quiz obligatoire » activé.
+- Verrou d'1 h **côté serveur** : la première ouverture d'une leçon par un apprenant est enregistrée
+  (surcharge de `lms.lms.utils.get_lesson`) ; toute réponse au quiz ou à la mise en situation avant
+  `ouverture + délai` est refusée avec le temps restant. Formateurs et administrateurs ne sont pas bloqués.
