@@ -150,3 +150,23 @@ Aucun rôle maison.
 - Image construite, `docker-compose up` → plateforme habillée OpenLab en français sur `localhost:8000`.
 - 5 parcours publiés, chaque module avec son devoir, 10 projets + 1 capstone par parcours, une cohorte pilote.
 - Tests verts ; parcours apprenant de bout en bout vérifié manuellement.
+
+## 9. Réglages paramétrables (ajout du 2026-10-16)
+
+Décision utilisateur : tout paramètre métier est réglable sans développeur via un écran Frappe.
+
+- DocType single **« Reglages OpenLab Academy »** (module OpenLab Academy), lecture/écriture réservées à System Manager,
+  initialisé avec les valeurs actuelles (after_install + patch pour les sites existants). Champs :
+  - Pédagogie : `projets_par_portfolio` (10), `heures_par_module` (8), `delai_ouverture_semaines` (2), `jour_ouverture` (Lundi).
+  - Barème : table (critère, poids) — total = 100.
+  - Exigences qualité communes : table (texte).
+  - Rythmes : table (code, libellé, heures lundi…dimanche) — ≥ 1 rythme, codes uniques, total > 0.
+  - Séances : `heure_debut` (18:30), `heure_fin` (20:30), `fuseau` (Africa/Abidjan).
+  - Cohorte pilote : `parcours_pilote`, `formateur`.
+  - Plateforme : `nom` (OpenLab Academy), `logo`, `langue` (fr), `devise` (XOF).
+- Domaine : value object `Reglages` (défauts = valeurs actuelles) portant les invariants ; `Rythme` devient une donnée
+  (plus une énumération). Le contrôleur du DocType valide en construisant `Reglages` : une incohérence est refusée.
+- Surcharge par parcours : clé YAML facultative `parametres:` (`projets_par_portfolio`, `heures_par_module`) ;
+  toute autre clé est refusée.
+- Port applicatif `SourceReglages.charger() -> Reglages` ; adaptateur Frappe. Un changement de réglages s'applique aux
+  prochaines publications et cohortes, jamais rétroactivement.
