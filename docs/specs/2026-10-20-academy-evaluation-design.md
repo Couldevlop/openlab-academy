@@ -46,7 +46,9 @@ Non-objectifs (chantier 1) :
 - Détection de plagiat inter-copies.
 
 Anti-objectifs (échec même si « ça marche ») :
-- Une note produite par l'IA ou par des pairs publiée sans validation du formateur.
+- Une note produite par l'IA ou par des pairs publiée **comme définitive** sans validation humaine (la publication
+  provisoire du §4.6 est explicite, désactivée par défaut et toujours marquée).
+- Une copie bloquée parce qu'une personne est absente.
 - Une copie qui sort du serveur, ou visible par quelqu'un qui n'a pas à la voir.
 - Un apprenant qui obtient une meilleure note en écrivant des instructions à l'IA dans sa copie.
 - Une interface qui donne l'impression d'un module ajouté à côté de Frappe LMS.
@@ -110,6 +112,36 @@ du lot. Copies à faible confiance ou à écart IA/pairs → hors lot, à corrig
   stocké côté OpenLab ; l'IA, les citations et les pairs travaillent dessus, jamais sur le dépôt vivant.
 - Limite assumée : pour un rendu en URL, l'anonymat des pairs n'est pas garanti (le dépôt affiche le pseudo de l'auteur).
   L'interface de relecture n'affiche pas l'auteur, mais ne promet pas l'anonymat dans ce cas.
+
+### 4.6 Rien ne bloque, tout se délègue (exigence de l'utilisateur)
+Principe : **aucune absence dans la chaîne ne bloque une copie.** Chaque étape a un délai ; à son expiration,
+une action réglée s'applique.
+
+| Acteur absent | Action à expiration (réglable) |
+|---|---|
+| Contrôles / IA indisponibles | étape marquée « non disponible », la copie avance |
+| Pair qui ne relit pas | réattribution à un autre pair ; sinon la copie avance avec les relectures obtenues |
+| Apprenant en retard sur ses relectures | rappel, puis dispense automatique (sa note n'est plus masquée) |
+| Juré absent | la médiane se fait sur les jurés présents ; sinon escalade au formateur |
+| Formateur absent | escalade au **suppléant**, puis au **responsable pédagogique** |
+| Toute la chaîne humaine absente | publication **provisoire** (option, désactivée par défaut) : note marquée « provisoire, en attente de validation », remplaçable ensuite |
+
+**Délégation** : un formateur, un juré ou un responsable délègue ses corrections à une autre personne habilitée
+(par cohorte, par exercice ou pour une période, ex. congé du 1er au 15). Le délégataire agit en son nom, le journal
+garde les deux identités ; la délégation est révocable et expire seule. Le super administrateur peut déléguer pour
+le compte de n'importe qui.
+
+### 4.7 Console de super administration : 100 % paramétrable (exigence de l'utilisateur)
+Aucune valeur métier en dur. Tout se règle dans la console (bureau Frappe, rôle System Manager / « Super Admin
+OpenLab »), dans l'esprit de l'écran « Réglages OpenLab Academy » existant :
+- étapes actives, nombre de pairs, anonymat, gating des notes, **délais et action à expiration de chaque étape** ;
+- grilles génériques (critères, niveaux, points), barème des projets, note sur N, seuil de réussite ;
+- IA : URL, modèle par type de copie, clé, délai, seuil de confiance des lots, liste des tournures d'injection ;
+- suppléants par cohorte, responsable pédagogique, délégations en cours, publication provisoire oui/non ;
+- défauts par type d'exercice, surcharge par cohorte et par exercice.
+
+Priorité : console (exercice > cohorte > type) > YAML du parcours > défauts du code. Une valeur réglée dans la
+console **n'est jamais écrasée** par la republication des parcours (hook `after_migrate`).
 
 ## 5. IA souveraine
 
