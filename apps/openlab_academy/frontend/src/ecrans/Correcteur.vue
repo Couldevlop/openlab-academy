@@ -2,7 +2,7 @@
 // Correcteur (formateur, juré) : copie à gauche, grille à droite ; J/K copie suivante/précédente, 1–9 niveau du
 // critère actif. La note se recalcule à chaque choix ; seule la publication la rend visible à l'apprenant.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import CopieRendue from '../composants/CopieRendue.vue'
 import EnTete from '../composants/EnTete.vue'
 import GrilleCorrecteur from '../composants/GrilleCorrecteur.vue'
@@ -37,7 +37,9 @@ const nbLots = computed(() => file.value?.lots?.length || 0)
 const jure = computed(() => copie.value?.role === 'jury')
 const grilleComplete = computed(() => copie.value && complet(copie.value.grille, niveaux.value))
 const note = computed(() => copie.value && calculerNote(copie.value.grille, niveaux.value, copie.value.note_sur))
-const citation = computed(() => copie.value?.ia?.citations?.[actif.value] || '')
+// copie signalée (injection) : la pré-correction de l'IA est écartée, ni puces, ni justification, ni citation
+const ia = computed(() => (copie.value?.signalement ? null : copie.value?.ia ?? null))
+const citation = computed(() => ia.value?.citations?.[actif.value] || '')
 const consigne = computed(() => rendreMarkdown(copie.value?.consigne || ''))
 const depot = computed(() => lienSur(copie.value?.source_url))
 
@@ -89,14 +91,25 @@ watch(id, () => {
   chargerCopie()
 })
 
+// modifications non enregistrées : confirmation avant toute sortie (autre écran, autre copie, onglet, retour
+// arrière du navigateur, fermeture ou rechargement de la page)
 const abandonner = () => !modifiee.value || window.confirm('Quitter cette copie sans enregistrer vos choix ?')
 onBeforeRouteLeave(() => abandonner())
+onBeforeRouteUpdate((vers, depuis) => vers.params.copie === depuis.params.copie || abandonner())
+
+function avantDechargement(evenement) {
+  evenement.preventDefault()
+  evenement.returnValue = ''
+}
+watch(modifiee, (sale) => {
+  if (sale) window.addEventListener('beforeunload', avantDechargement)
+  else window.removeEventListener('beforeunload', avantDechargement)
+})
+onBeforeUnmount(() => window.removeEventListener('beforeunload', avantDechargement))
 
 function aller(decalage) {
   const cible = copies.value[rang.value + decalage]
-  if (!cible || !abandonner()) return
-  modifiee.value = false
-  router.push({ name: 'correcteur', params: { copie: cible.copie }, query: route.query })
+  if (cible) router.push({ name: 'correcteur', params: { copie: cible.copie }, query: route.query })
 }
 
 function surNiveaux(valeur) {
@@ -256,7 +269,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', clavier))
           :niveaux="niveaux"
           :commentaires="commentaires"
           :auto="copie.auto_evaluation"
-          :ia="copie.ia"
+          :ia="ia"
           :pairs="copie.pairs"
           :jury="copie.jury"
           @update:niveaux="surNiveaux"

@@ -110,6 +110,56 @@ describe('Correcteur', () => {
     expect(w.findAll('[aria-pressed="true"]')).toHaveLength(2)
   })
 
+  it('modifications non enregistrées : confirmation avant de changer de copie (J, onglet, URL)', async () => {
+    const { routeur } = await ouvrir()
+    const confirmer = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    await touche('2')
+    await touche('j')
+    expect(confirmer).toHaveBeenCalledTimes(1)
+    expect(routeur.currentRoute.value.params.copie).toBe('C2')
+    await routeur.push({ name: 'correcteur' }) // onglet « À corriger » : même route, autre paramètre
+    expect(confirmer).toHaveBeenCalledTimes(2)
+    expect(routeur.currentRoute.value.params.copie).toBe('C2')
+    await routeur.push('/correcteur/C1') // retour arrière ou lien direct
+    expect(routeur.currentRoute.value.params.copie).toBe('C2')
+    confirmer.mockReturnValue(true)
+    await touche('j')
+    expect(confirmer).toHaveBeenCalledTimes(4)
+    expect(routeur.currentRoute.value.params.copie).toBe('C3')
+    confirmer.mockRestore()
+  })
+
+  it('sans modification : on change de copie sans confirmation', async () => {
+    const { routeur } = await ouvrir()
+    const confirmer = vi.spyOn(window, 'confirm')
+    await touche('j')
+    expect(confirmer).not.toHaveBeenCalled()
+    expect(routeur.currentRoute.value.params.copie).toBe('C3')
+    confirmer.mockRestore()
+  })
+
+  it('fermeture ou rechargement de la page retenus tant que la copie est modifiée', async () => {
+    await ouvrir()
+    const quitter = () => {
+      const e = new Event('beforeunload', { cancelable: true })
+      window.dispatchEvent(e)
+      return e.defaultPrevented
+    }
+    expect(quitter()).toBe(false)
+    await touche('2')
+    expect(quitter()).toBe(true)
+  })
+
+  it("copie signalée : la proposition de l'IA est écartée de la grille et de la copie", async () => {
+    const ia = { ...COPIE.ia, justifications: { pertinence: 'Justification piégée' } }
+    const { w } = await ouvrir({ ...COPIE, ia, signalement: "copie signalée : tentative d'instruction à l'IA" })
+    expect(w.find('.signalement').exists()).toBe(true)
+    expect(w.findAll('.puce').map((p) => p.text())).not.toContain('IA')
+    expect(w.find('.ia-ligne').exists()).toBe(false)
+    expect(w.find('mark.citation').exists()).toBe(false)
+    expect(w.text()).not.toContain('Justification piégée')
+  })
+
   it('un juré enregistre sa note mais ne publie pas', async () => {
     const { w } = await ouvrir({ ...COPIE, role: 'jury', jury: { mediane: {}, nombre: 1, attendus: 3 } })
     expect(w.findAll('.actions button').map((b) => b.text())).toEqual(['Enregistrer ma note'])
