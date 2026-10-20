@@ -1,9 +1,8 @@
 import unittest
-from dataclasses import replace
 
 from openlab_academy.domain.reglages import ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import (
-    Chaine, ConfigEtape, ConfigIA, Etape, Expiration, ReglagesEvaluation, Surcharge, TypeExercice,
+    CHAINES_DEFAUT, Chaine, ConfigEtape, ConfigIA, Etape, Expiration, ReglagesEvaluation, Surcharge, TypeExercice,
 )
 
 E = Etape
@@ -18,7 +17,7 @@ class TestDefauts(unittest.TestCase):
         self.r = ReglagesEvaluation()
 
     def actives(self, type_):
-        c = self.r.chaines[type_]
+        c = CHAINES_DEFAUT[type_]
         return {e for e in Etape if c.active(e)}
 
     def test_mise_en_situation(self):
@@ -35,7 +34,7 @@ class TestDefauts(unittest.TestCase):
         self.assertEqual(self.actives(TypeExercice.CAPSTONE), {E.CONTROLES, E.IA, E.JURY, E.FORMATEUR})
 
     def test_delais_et_expirations(self):
-        c = self.r.chaines[TypeExercice.PROJET]
+        c = CHAINES_DEFAUT[TypeExercice.PROJET]
         self.assertEqual((c.config(E.CONTROLES).delai_heures, c.config(E.IA).delai_heures), (1, 1))
         self.assertEqual((c.config(E.PAIRS).delai_heures, c.config(E.PAIRS).expiration), (72, Expiration.REATTRIBUER))
         self.assertEqual((c.config(E.JURY).delai_heures, c.config(E.JURY).expiration), (168, Expiration.ESCALADER))
@@ -43,7 +42,7 @@ class TestDefauts(unittest.TestCase):
                          (72, Expiration.ESCALADER))
 
     def test_options_par_defaut(self):
-        c = self.r.chaines[TypeExercice.PROJET]
+        c = CHAINES_DEFAUT[TypeExercice.PROJET]
         self.assertEqual((c.nb_pairs, c.anonymat, c.note_masquee_avant_relectures, c.note_sur, c.seuil_reussite),
                          (3, True, True, 20, 10.0))
         self.assertFalse(self.r.publication_provisoire)
@@ -128,19 +127,34 @@ class TestChainePour(unittest.TestCase):
         c = self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX2", self.surcharges, self.yaml)
         self.assertIs(c, self.s_co)
 
-    def test_type_ensuite(self):
-        c = self.r.chaine_pour(TypeExercice.PROJET, "C2", "EX2", self.surcharges, self.yaml)
-        self.assertIs(c, self.r.chaines[TypeExercice.PROJET])
-
-    def test_yaml_si_type_absent(self):
-        r = replace(self.r, chaines={})
+    def test_yaml_avant_le_type(self):
+        r = ReglagesEvaluation(chaines={TypeExercice.PROJET: chaine_avec({E.FORMATEUR}, nb_pairs=9)})
         c = r.chaine_pour(TypeExercice.PROJET, "C2", "EX2", self.surcharges, self.yaml)
         self.assertIs(c, self.yaml)
 
-    def test_rien_de_configure(self):
-        r = replace(self.r, chaines={})
+    def test_type_configure_sans_yaml(self):
+        configuree = chaine_avec({E.FORMATEUR}, nb_pairs=9)
+        r = ReglagesEvaluation(chaines={TypeExercice.PROJET: configuree})
+        self.assertIs(r.chaine_pour(TypeExercice.PROJET, "C2", "EX2", self.surcharges, None), configuree)
+
+    def test_defauts_du_code_en_dernier(self):
+        self.assertEqual(self.r.chaines, {})
+        c = self.r.chaine_pour(TypeExercice.PROJET, "C2", "EX2", self.surcharges, None)
+        self.assertIs(c, CHAINES_DEFAUT[TypeExercice.PROJET])
+
+    def test_surcharge_sans_cible_refusee(self):
         with self.assertRaises(ReglagesInvalides):
-            r.chaine_pour(TypeExercice.PROJET, "C2", "EX2", (), None)
+            Surcharge(None, None, self.yaml)
+
+    def test_garde_publication_provisoire_sur_chaine_retournee(self):
+        dangereuse = Chaine(tuple(ConfigEtape(e, True, 1, Expiration.PUBLIER_PROVISOIRE if e == E.FORMATEUR
+                                              else Expiration.PASSER) for e in Etape))
+        with self.assertRaisesRegex(ReglagesInvalides, "provisoire"):
+            self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX1", (Surcharge(None, "EX1", dangereuse),), None)
+        with self.assertRaisesRegex(ReglagesInvalides, "provisoire"):
+            self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX1", (), dangereuse)
+        autorise = ReglagesEvaluation(publication_provisoire=True)
+        self.assertIs(autorise.chaine_pour(TypeExercice.PROJET, "C1", "EX1", (), dangereuse), dangereuse)
 
 
 if __name__ == "__main__":

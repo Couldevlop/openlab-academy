@@ -119,16 +119,23 @@ def chaines_defaut() -> dict[TypeExercice, Chaine]:
     }
 
 
+CHAINES_DEFAUT: dict[TypeExercice, Chaine] = chaines_defaut()
+
+
 @dataclass(frozen=True)
 class Surcharge:
     cohorte: str | None
     exercice: str | None
     chaine: Chaine
 
+    def __post_init__(self):
+        if self.cohorte is None and self.exercice is None:
+            raise ReglagesInvalides("une surcharge doit viser une cohorte ou un exercice")
+
 
 @dataclass(frozen=True)
 class ReglagesEvaluation:
-    chaines: dict[TypeExercice, Chaine] = field(default_factory=chaines_defaut)
+    chaines: dict[TypeExercice, Chaine] = field(default_factory=dict)  # types configurés dans la console
     ia: ConfigIA = field(default_factory=ConfigIA)
     publication_provisoire: bool = False
     responsable_pedagogique: str = ""
@@ -137,27 +144,32 @@ class ReglagesEvaluation:
     niveaux_generiques: tuple[str, ...] = NIVEAUX_GENERIQUES_DEFAUT
 
     def __post_init__(self):
-        if not self.publication_provisoire:
-            for type_, chaine in self.chaines.items():
-                if chaine.config(Etape.FORMATEUR).expiration == Expiration.PUBLIER_PROVISOIRE:
-                    raise ReglagesInvalides(
-                        f"{type_.value} : publication provisoire à l'expiration du formateur non autorisée (option désactivée)")
+        for type_, chaine in self.chaines.items():
+            self._verifier_publication(chaine, type_)
         if any(poids < 0 for _, poids in self.grille_generique) or sum(p for _, p in self.grille_generique) != 100:
             raise ReglagesInvalides("grille générique : poids positifs totalisant 100")
         if len(self.niveaux_generiques) < 2:
             raise ReglagesInvalides("niveaux génériques : au moins 2 niveaux requis")
 
+    def _verifier_publication(self, chaine: Chaine, type_: TypeExercice) -> Chaine:
+        if (not self.publication_provisoire
+                and chaine.config(Etape.FORMATEUR).expiration == Expiration.PUBLIER_PROVISOIRE):
+            raise ReglagesInvalides(
+                f"{type_.value} : publication provisoire à l'expiration du formateur non autorisée (option désactivée)")
+        return chaine
+
     def chaine_pour(self, type_: TypeExercice, cohorte: str | None, exercice: str | None,
                     surcharges: tuple[Surcharge, ...], yaml: Chaine | None) -> Chaine:
-        """Priorité : surcharge exercice > surcharge cohorte > type d'exercice > YAML."""
+        """Priorité : surcharge exercice > surcharge cohorte > YAML > type d'exercice > défauts du code."""
+        return self._verifier_publication(self._choisir(type_, cohorte, exercice, surcharges, yaml), type_)
+
+    def _choisir(self, type_, cohorte, exercice, surcharges, yaml) -> Chaine:
         for s in surcharges:
             if s.exercice is not None and s.exercice == exercice and s.cohorte in (None, cohorte):
                 return s.chaine
         for s in surcharges:
-            if s.exercice is None and s.cohorte is not None and s.cohorte == cohorte:
+            if s.exercice is None and s.cohorte == cohorte:
                 return s.chaine
-        if type_ in self.chaines:
-            return self.chaines[type_]
         if yaml is not None:
             return yaml
-        raise ReglagesInvalides(f"aucune chaîne d'évaluation configurée pour « {type_.value} »")
+        return self.chaines.get(type_) or CHAINES_DEFAUT[type_]
