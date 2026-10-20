@@ -10,6 +10,7 @@ from typing import Protocol
 from openlab_academy.application.chaine import SYSTEME, Journal
 from openlab_academy.application.controler import (
     Avanceur, DepotControles, EtapeIndisponible, consigner_indisponibilite)
+from openlab_academy.domain.copie import Proposition
 from openlab_academy.domain.garde_fous_ia import construire_messages, detecter_injection, interpreter
 from openlab_academy.domain.reglages_evaluation import Etape, ReglagesEvaluation
 
@@ -34,26 +35,28 @@ class PreCorriger:
         self._journal = journal
 
     def executer(self, copie_id: str) -> None:
-        contenu = self._depot.contenu(copie_id)
-        tournures = detecter_injection(contenu.texte, self._ia.tournures_injection)
-        if tournures:  # proposition écartée, copie signalée au formateur
-            self._conclure(copie_id, SIGNALEMENT, {"tournures": list(tournures)})
-            return
-        modele = self._ia.modele_code if contenu.rendu_par_lien else self._ia.modele_texte
         try:
-            if not (self._ia.url and modele):
-                raise EtapeIndisponible("IA non configurée (URL ou modèle)")
-            if not contenu.texte.strip():
-                raise EtapeIndisponible("copie vide")
-            copie, grille = self._depot.copie(copie_id), self._depot.grille(copie_id)
-            messages = construire_messages(grille, self._depot.consigne(copie.exercice), contenu.texte)
-            proposition = interpreter(self._correcteur.proposer(messages, modele), grille, contenu.texte)
+            action, details, proposition = self._proposer(copie_id)
         except Exception as erreur:  # rien ne bloque : l'étape est marquée non disponible
             consigner_indisponibilite(self._avancer, self._journal, copie_id, Etape.IA,
                                       "pré-correction non disponible", erreur)
             return
-        self._conclure(copie_id, "pré-correction proposée", {"modele": modele, "confiance": proposition.confiance},
-                       proposition)
+        self._conclure(copie_id, action, details, proposition)
+
+    def _proposer(self, copie_id: str) -> tuple[str, dict, Proposition | None]:
+        contenu = self._depot.contenu(copie_id)
+        tournures = detecter_injection(contenu.texte, self._ia.tournures_injection)
+        if tournures:  # proposition écartée, copie signalée au formateur
+            return SIGNALEMENT, {"tournures": list(tournures)}, None
+        modele = self._ia.modele_code if contenu.rendu_par_lien else self._ia.modele_texte
+        if not (self._ia.url and modele):
+            raise EtapeIndisponible("IA non configurée (URL ou modèle)")
+        if not contenu.texte.strip():
+            raise EtapeIndisponible("copie vide")
+        copie, grille = self._depot.copie(copie_id), self._depot.grille(copie_id)
+        messages = construire_messages(grille, self._depot.consigne(copie.exercice), contenu.texte)
+        proposition = interpreter(self._correcteur.proposer(messages, modele), grille, contenu.texte)
+        return "pré-correction proposée", {"modele": modele, "confiance": proposition.confiance}, proposition
 
     def _conclure(self, copie_id: str, action: str, details: dict, proposition=None) -> None:
         """En parallèle des pairs, le résultat est consigné sans faire avancer la copie (étape non courante)."""

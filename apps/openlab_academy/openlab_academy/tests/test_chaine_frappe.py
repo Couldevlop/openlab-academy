@@ -20,7 +20,7 @@ from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFr
 from openlab_academy.infrastructure.depot_relectures_frappe import DepotRelecturesFrappe
 from openlab_academy.infrastructure.reglages_evaluation_frappe import SourceReglagesFrappe
 from openlab_academy.tests.test_depot_copies_frappe import A, B, Base
-from openlab_academy.tests.http_simule import Reponse, github
+from openlab_academy.tests.http_simule import SHA, Reponse, github
 from openlab_academy.tests.test_reglages_evaluation_frappe import etapes_formateur
 
 COPIE = "Copie OpenLab"
@@ -152,11 +152,29 @@ class TestDemarrage(Cas):
         doc.save(ignore_permissions=True)
 
     def a_l_etape_ia(self):
+        """Hébergeur injoignable au rendu ; les contrôles reprennent et figent l'instantané avant de vérifier."""
         self.soumettre(self.livrable)  # sans cohorte : pas de pairs
         copie = self.copie_de()
+        self.assertEqual(self.depot.contenu(copie).texte, "")
+        self.http.side_effect = github(fichiers={"README.md": "Le tableau de bord hebdomadaire réduit les ruptures."})
         evaluation.controler(copie)
-        frappe.db.set_value(COPIE, copie, "contenu", "Le tableau de bord hebdomadaire réduit les ruptures.")
+        self.assertEqual(self.depot.contenu(copie).commit, SHA)
+        self.assertIn("tableau de bord hebdomadaire", self.depot.contenu(copie).texte)
+        self.assertEqual(self.ligne(copie).etape_courante, "ia")
         return copie
+
+    def test_secrets_illisibles_les_taches_avancent_sans_exception(self):
+        self.soumettre(self.livrable)
+        copie = self.copie_de()
+        source = evaluation.reglages_evaluation_frappe
+        with mock.patch.object(source, "jeton_depots", side_effect=RuntimeError("secret")), \
+                mock.patch.object(source, "cle_ia", side_effect=RuntimeError("secret")):
+            evaluation.controler(copie)
+            self.assertEqual(self.ligne(copie).etape_courante, "ia")
+            evaluation.pre_corriger(copie)
+        self.assertEqual(self.ligne(copie).etape_courante, "formateur")
+        self.assertEqual(self.actions(copie), ["étape suivante", "contrôles non disponibles", "étape suivante",
+                                               "pré-correction non disponible", "pairs sautés", "étape suivante"])
 
     def test_pre_correction_par_le_service_de_la_console(self):
         self.configurer_ia()

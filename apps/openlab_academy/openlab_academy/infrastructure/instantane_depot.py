@@ -6,6 +6,7 @@ chemin validé (jamais vers le lien fourni), sans suivre de redirection et toujo
 sont bornées : nombre de fichiers, taille lue, durée totale et plafond de caractères.
 """
 import ipaddress
+import json
 import re
 import time
 from collections.abc import Callable
@@ -17,6 +18,9 @@ import requests
 from openlab_academy.application.controler import EtapeIndisponible
 
 DELAI_S = 10
+BUDGET_S = 20  # durée totale d'un instantané pris pendant le rendu de l'apprenant
+BUDGET_TACHE_S = 60  # durée totale d'un instantané repris en tâche de fond
+JSON_MAX = 8 * 1024 * 1024
 FICHIERS_MAX = 12
 PAGES_MAX = 10
 PAR_PAGE = 100
@@ -102,18 +106,30 @@ class _Client:
 
     ENTETES: dict[str, str] = {}
 
-    def __init__(self, lien: Lien, delai_s: float, jeton: str = ""):
+    def __init__(self, lien: Lien, delai_s: float, jeton: str = "", limite: float | None = None,
+                 horloge: Callable[[], float] = time.monotonic):
         self._lien = lien
         self._delai = delai_s
         self._jeton = jeton
+        self._limite = limite  # échéance totale (horloge monotone) de tous les appels ; None = délai par appel seul
+        self._horloge = horloge
 
     def _autorisation(self) -> dict:
         return {}
 
+    def _delai_appel(self) -> float:
+        if self._limite is None:
+            return self._delai
+        reste = self._limite - self._horloge()
+        if reste <= 0:
+            raise DepotIndisponible("hébergeur : délai total dépassé")
+        return min(self._delai, reste)
+
     def _get(self, url: str, params: dict | None = None, entetes: dict | None = None):
+        delai = self._delai_appel()
         try:
-            reponse = requests.get(url, params=params, headers={**self.ENTETES, **self._autorisation(), **(entetes or {})},
-                                   timeout=self._delai, allow_redirects=False, stream=True)
+            reponse = requests.get(url, params=params, timeout=delai, allow_redirects=False, stream=True,
+                                   headers={**self.ENTETES, **self._autorisation(), **(entetes or {})})
         except requests.RequestException as erreur:
             raise DepotIndisponible(f"hébergeur injoignable ({type(erreur).__name__})") from None
         statut = reponse.status_code
@@ -128,14 +144,29 @@ class _Client:
             raise DepotIndisponible(f"hébergeur : réponse HTTP {statut}")
         return reponse
 
-    def _json(self, url: str, params: dict | None = None, type_=dict):
-        reponse = self._get(url, params)
+    @staticmethod
+    def _lire(reponse, plafond: int) -> tuple[bytes, bool]:
+        """Au plus `plafond` octets, puis la connexion est fermée ; le booléen dit si la réponse dépassait."""
+        morceaux, total = [], 0
         try:
-            donnees = reponse.json()
-        except ValueError:
-            raise DepotIndisponible("hébergeur : réponse illisible") from None
+            for morceau in reponse.iter_content(MORCEAU):
+                morceaux.append(morceau)
+                total += len(morceau)
+                if total > plafond:
+                    break
         finally:
             reponse.close()
+        return b"".join(morceaux)[:plafond], total > plafond
+
+    def _json(self, url: str, params: dict | None = None, type_=dict):
+        """Métadonnées bornées à JSON_MAX octets : au-delà, le dépôt est trop volumineux pour être évalué (motif)."""
+        brut, deborde = self._lire(self._get(url, params), JSON_MAX)
+        if deborde:
+            raise DepotIntrouvable("dépôt trop volumineux pour être évalué")
+        try:
+            donnees = json.loads(brut.decode("utf-8"))
+        except ValueError:
+            raise DepotIndisponible("hébergeur : réponse illisible") from None
         if not isinstance(donnees, type_):
             raise DepotIndisponible("hébergeur : réponse inattendue")
         return donnees
@@ -148,17 +179,7 @@ class _Client:
 
     def lire(self, chemin: str, ref: str, plafond: int) -> str | None:
         """Texte d'un fichier lu au plus jusqu'au plafond ; None si binaire."""
-        reponse = self._fichier(chemin, ref)
-        morceaux, total = [], 0
-        try:
-            for morceau in reponse.iter_content(MORCEAU):
-                morceaux.append(morceau)
-                total += len(morceau)
-                if total >= plafond:
-                    break
-        finally:
-            reponse.close()
-        brut = b"".join(morceaux)[:plafond]
+        brut, _ = self._lire(self._fichier(chemin, ref), plafond)
         return None if b"\x00" in brut else brut.decode("utf-8", errors="replace")
 
 
@@ -221,8 +242,9 @@ class ClientGitLab(_Client):
         return self._get(f"{self._base}/repository/files/{quote(chemin, safe='')}/raw", {"ref": ref})
 
 
-def client_pour(lien: Lien, delai_s: float, jeton: str = "") -> _Client:
-    return {"github.com": ClientGitHub, "gitlab.com": ClientGitLab}[lien.hote](lien, delai_s, jeton)
+def client_pour(lien: Lien, delai_s: float, jeton: str = "", limite: float | None = None,
+                horloge: Callable[[], float] = time.monotonic) -> _Client:
+    return {"github.com": ClientGitHub, "gitlab.com": ClientGitLab}[lien.hote](lien, delai_s, jeton, limite, horloge)
 
 
 def _exclu(chemin: str) -> bool:
@@ -254,20 +276,23 @@ def _rang(chemin: str) -> tuple:
 
 
 class InstantaneDepot:
-    """Port Instantane : (texte de l'instantané, commit figé) d'un dépôt public."""
+    """Port Instantane : (texte de l'instantané, commit figé) d'un dépôt public. Tous les appels tiennent dans
+    `budget_s` : au-delà, l'instantané est abandonné (DepotIndisponible) et sera repris en tâche de fond."""
 
     def __init__(self, hotes: tuple[str, ...], plafond: int, delai_s: float = DELAI_S,
-                 fichiers_max: int = FICHIERS_MAX, horloge: Callable[[], float] = time.monotonic, jeton: str = ""):
+                 fichiers_max: int = FICHIERS_MAX, horloge: Callable[[], float] = time.monotonic, jeton: str = "",
+                 budget_s: float = BUDGET_S):
         self._hotes = hotes
         self._plafond = plafond
         self._delai = delai_s
         self._fichiers_max = fichiers_max
         self._horloge = horloge
         self._jeton = jeton
+        self._budget = budget_s
 
     def prendre(self, url: str) -> tuple[str, str]:
-        client = client_pour(valider_lien(url, self._hotes), self._delai, self._jeton)
-        limite = self._horloge() + 3 * self._delai
+        lien = valider_lien(url, self._hotes)
+        client = client_pour(lien, self._delai, self._jeton, self._horloge() + self._budget, self._horloge)
         commit = client.commit(client.infos())
         fichiers = sorted((c, t) for c, t in client.arborescence(commit) if not _exclu(c))
         arborescence = "\n".join(c for c, _ in fichiers)[:self._plafond // 4]
@@ -276,7 +301,7 @@ class InstantaneDepot:
         lus = 0
         for chemin, taille in cles:
             reste = self._plafond - len(texte)
-            if reste <= 0 or lus >= self._fichiers_max or self._horloge() > limite:
+            if reste <= 0 or lus >= self._fichiers_max:
                 break
             if taille is not None and taille > self._plafond:
                 continue

@@ -2,12 +2,25 @@
 
 La clé d'accès ne quitte que l'en-tête Authorization : aucun message d'erreur ne la contient (les exceptions
 d'origine ne sont ni recopiées ni chaînées), aucune redirection n'est suivie et chaque appel a un délai.
+Elle ne circule en HTTP clair que vers un hôte local ou interne (conteneur voisin, adresse privée).
 """
+import ipaddress
 from urllib.parse import urlsplit
 
 import requests
 
 from openlab_academy.application.controler import EtapeIndisponible
+
+
+def _interne(hote: str) -> bool:
+    """Hôte local ou interne (localhost, nom de conteneur sans point, adresse privée) : HTTP clair toléré."""
+    if hote == "localhost" or "." not in hote and ":" not in hote:
+        return True
+    try:
+        adresse = ipaddress.ip_address(hote)
+    except ValueError:
+        return False
+    return adresse.is_private or adresse.is_loopback
 
 
 class CorrecteurIndisponible(EtapeIndisponible):
@@ -27,6 +40,8 @@ class CorrecteurCompatibleOpenAI:
         parties = urlsplit(self._url or "")
         if parties.scheme not in ("http", "https") or not parties.hostname or "@" in parties.netloc:
             raise CorrecteurIndisponible("service IA : URL invalide (http ou https sans identifiants)")
+        if self._cle and parties.scheme == "http" and not _interne(parties.hostname):
+            raise CorrecteurIndisponible("service IA : clé refusée en HTTP clair vers un hôte public (HTTPS requis)")
         return f"{self._url.rstrip('/')}/v1/chat/completions"
 
     def proposer(self, messages: list[dict], modele: str) -> str:

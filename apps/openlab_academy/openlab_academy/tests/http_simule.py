@@ -6,7 +6,9 @@ class Reponse:
     def __init__(self, statut=200, json=None, texte="", octets=None):
         self.status_code = statut
         self._json = json
-        self._octets = octets if octets is not None else texte.encode("utf-8")
+        if octets is None:
+            octets = json_.dumps(json).encode("utf-8") if json is not None else texte.encode("utf-8")
+        self._octets = octets
         self.fermee = False
 
     def json(self):

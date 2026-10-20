@@ -63,10 +63,11 @@ class TestDepot(unittest.TestCase):
         demandes = [a.args[0] for a in get.call_args_list]
         self.assertNotIn("https://api.github.com/repos/aya/livrable/commits/main", demandes)  # commit figé réutilisé
 
-    def test_commit_absent_relu_sur_la_branche_par_defaut(self):
-        with mock.patch(GET, side_effect=github()) as get:
-            self.assertEqual(self.controleur.verifier(COPIE, GRILLE, contenu("", URL, "")), [])
-        self.assertIn("https://api.github.com/repos/aya/livrable/commits/main", [a.args[0] for a in get.call_args_list])
+    def test_sans_commit_fige_un_depot_vide_est_signale(self):
+        """Sans instantané (sa reprise a échoué sur le contenu), le défaut du dépôt devient un motif."""
+        routes = {"https://api.github.com/repos/aya/livrable/commits/main": Reponse(409)}
+        with mock.patch(GET, side_effect=github(routes=routes)):
+            self.assertEqual(self.controleur.verifier(COPIE, GRILLE, contenu("", URL, "")), ["dépôt vide"])
 
     def test_depot_introuvable_ou_prive(self):
         base = "https://api.github.com/repos/aya/livrable"

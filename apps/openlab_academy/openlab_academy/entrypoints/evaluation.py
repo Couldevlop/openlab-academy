@@ -9,7 +9,7 @@ import frappe
 from frappe.utils import now_datetime
 
 from openlab_academy.application.chaine import SYSTEME, TACHES, FaireAvancer, TraiterEcheances
-from openlab_academy.application.controler import ControlerCopie
+from openlab_academy.application.controler import ControlerCopie, consigner_indisponibilite
 from openlab_academy.application.pre_corriger import PreCorriger
 from openlab_academy.application.soumettre_copie import SoumettreCopie
 from openlab_academy.domain.reglages_evaluation import Etape
@@ -18,7 +18,7 @@ from openlab_academy.infrastructure.depot_copies_frappe import DepotCopiesFrappe
 from openlab_academy.infrastructure.depot_relectures_frappe import DepotRelecturesFrappe
 from openlab_academy.infrastructure.controles import ControleurDepots
 from openlab_academy.infrastructure.correcteur_ia import CorrecteurCompatibleOpenAI
-from openlab_academy.infrastructure.instantane_depot import InstantaneDepot
+from openlab_academy.infrastructure.instantane_depot import BUDGET_TACHE_S, InstantaneDepot
 
 CHAMPS = ("name", "assignment", "member", "type", "answer", "assignment_attachment")
 POINT = "openlab_rendu"
@@ -73,19 +73,36 @@ def notifier(destinataire: str, message: str) -> None:
                     "subject": message, "email_content": message}).insert(ignore_permissions=True)
 
 
+def _executer(copie_id: str, etape: Etape, libelle: str, construire: Callable[[], object]) -> None:
+    """Lecture de la console et des secrets comprise : rien de ce qui précède le cas d'usage ne s'échappe de la tâche."""
+    try:
+        cas = construire()
+    except Exception as erreur:
+        consigner_indisponibilite(avanceur(), journal_frappe.journaliser, copie_id, etape, libelle, erreur)
+        return
+    cas.executer(copie_id)
+
+
 def controler(copie_id: str) -> None:
-    """Contrôles automatiques : un échec bloquant renvoie la copie, un hébergeur indisponible la laisse avancer."""
-    ControlerCopie(DepotCopiesFrappe(), ControleurDepots(reglages_evaluation_frappe.charger(),
-                                                     jeton=reglages_evaluation_frappe.jeton_depots()), avanceur(),
-                   journal_frappe.journaliser, notifier).executer(copie_id)
+    """Contrôles automatiques : un échec bloquant renvoie la copie, un hébergeur indisponible la laisse avancer.
+    Un rendu en URL sans instantané (hébergeur injoignable au rendu) est photographié ici, avec plus de temps."""
+    def construire():
+        reglages, jeton = reglages_evaluation_frappe.charger(), reglages_evaluation_frappe.jeton_depots()
+        instantane = InstantaneDepot(reglages.hotes_depots, reglages.ia.plafond_caracteres, jeton=jeton,
+                                     budget_s=BUDGET_TACHE_S)
+        return ControlerCopie(DepotCopiesFrappe(), ControleurDepots(reglages, jeton=jeton), avanceur(),
+                              journal_frappe.journaliser, notifier, instantane)
+    _executer(copie_id, Etape.CONTROLES, "contrôles non disponibles", construire)
 
 
 def pre_corriger(copie_id: str) -> None:
     """Pré-correction par le modèle souverain réglé dans la console ; une panne laisse la copie avancer."""
-    reglages = reglages_evaluation_frappe.charger()
-    correcteur = CorrecteurCompatibleOpenAI(reglages.ia.url, reglages_evaluation_frappe.cle_ia(),
-                                            reglages.ia.delai_minutes * 60)
-    PreCorriger(DepotCopiesFrappe(), correcteur, reglages, avanceur(), journal_frappe.journaliser).executer(copie_id)
+    def construire():
+        reglages = reglages_evaluation_frappe.charger()
+        correcteur = CorrecteurCompatibleOpenAI(reglages.ia.url, reglages_evaluation_frappe.cle_ia(),
+                                                reglages.ia.delai_minutes * 60)
+        return PreCorriger(DepotCopiesFrappe(), correcteur, reglages, avanceur(), journal_frappe.journaliser)
+    _executer(copie_id, Etape.IA, "pré-correction non disponible", construire)
 
 
 def traiter_echeances() -> None:

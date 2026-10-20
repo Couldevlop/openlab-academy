@@ -62,5 +62,20 @@ class TestCorrecteurCompatibleOpenAI(unittest.TestCase):
                     CorrecteurCompatibleOpenAI(url, CLE, 60).proposer(MESSAGES, "m")
         post.assert_not_called()
 
+    def test_cle_jamais_envoyee_en_http_clair_vers_un_hote_public(self):
+        with mock.patch(POST) as post:
+            for url in ("http://ia.openlab.ci", "http://8.8.8.8:8080"):
+                with self.subTest(url=url), self.assertRaisesRegex(CorrecteurIndisponible, "HTTPS requis"):
+                    CorrecteurCompatibleOpenAI(url, CLE, 60).proposer(MESSAGES, "m")
+        post.assert_not_called()
+        for url in ("http://localhost:8080", "http://127.0.0.1:8080", "http://ia:8080", "http://10.0.0.5",
+                    "http://192.168.1.20", "http://[::1]:8080"):
+            with self.subTest(url=url), mock.patch(POST, return_value=reponse()) as post:
+                CorrecteurCompatibleOpenAI(url, CLE, 60).proposer(MESSAGES, "m")
+                self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], f"Bearer {CLE}")
+        with mock.patch(POST, return_value=reponse()) as post:  # sans clé, rien à protéger
+            CorrecteurCompatibleOpenAI("http://ia.openlab.ci", "", 60).proposer(MESSAGES, "m")
+        post.assert_called_once()
+
     def test_cle_absente_de_la_representation(self):
         self.assertNotIn(CLE, repr(CorrecteurCompatibleOpenAI("https://ia", CLE, 60)))

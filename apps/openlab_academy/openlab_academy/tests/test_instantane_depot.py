@@ -1,12 +1,14 @@
 """Instantané d'un dépôt public : lien validé (SSRF), API officielles seules, contenu plafonné."""
+import itertools
 import traceback
 import unittest
 from unittest import mock
 
 import requests
 
+from openlab_academy.infrastructure import instantane_depot
 from openlab_academy.infrastructure.instantane_depot import (
-    DepotIndisponible, DepotIntrouvable, InstantaneDepot, LienRefuse, Lien, client_pour, valider_lien)
+    BUDGET_S, DepotIndisponible, DepotIntrouvable, InstantaneDepot, LienRefuse, Lien, client_pour, valider_lien)
 from openlab_academy.tests.http_simule import SHA, Reponse, github
 
 HOTES = ("github.com", "gitlab.com")
@@ -124,10 +126,26 @@ class TestInstantaneGitHub(unittest.TestCase):
         with mock.patch(GET, side_effect=github(arbre=arbre, fichiers={c: "x" for c in arbre})) as get:
             InstantaneDepot(HOTES, 60000, fichiers_max=3).prendre(URL)
         self.assertEqual(sum("/contents/" in a.args[0] for a in get.call_args_list), 3)
-        temps = iter([0, 0, 100, 100])
-        with mock.patch(GET, side_effect=github(arbre=arbre, fichiers={c: "x" for c in arbre})) as get:
-            InstantaneDepot(HOTES, 60000, horloge=lambda: next(temps)).prendre(URL)
-        self.assertEqual(sum("/contents/" in a.args[0] for a in get.call_args_list), 1)
+
+    def test_duree_totale_bornee_sur_tous_les_appels(self):
+        """Chaque appel coûte 5 s à l'horloge simulée : au-delà du budget, l'instantané est abandonné."""
+        temps = itertools.count(0, 5)
+        arbre = [f"src/m{i}.py" for i in range(50)]
+        with mock.patch(GET, side_effect=github(arbre=arbre, fichiers={c: "x" for c in arbre})) as get, \
+                self.assertRaisesRegex(DepotIndisponible, "délai total"):
+            InstantaneDepot(HOTES, 60000, budget_s=20, horloge=lambda: next(temps)).prendre(URL)
+        # infos à 5 s, commit à 10 s, arborescence à 15 s (5 s restantes), fichier à 20 s : abandon
+        self.assertEqual([a.kwargs["timeout"] for a in get.call_args_list], [10, 10, 5])
+        self.assertEqual(BUDGET_S, 20)
+
+    def test_metadonnees_bornees_en_taille(self):
+        base = "https://api.github.com/repos/aya/livrable"
+        enorme = Reponse(json={"tree": [{"path": f"f{i}.py", "type": "blob"} for i in range(50)]})
+        with mock.patch.object(instantane_depot, "JSON_MAX", 200), \
+                mock.patch(GET, side_effect=github(routes={f"{base}/git/trees/{SHA}": enorme})), \
+                self.assertRaisesRegex(DepotIntrouvable, "trop volumineux"):
+            InstantaneDepot(HOTES, 60000).prendre(URL)
+        self.assertTrue(enorme.fermee)
 
     def test_depot_introuvable_prive_ou_vide(self):
         base = "https://api.github.com/repos/aya/livrable"

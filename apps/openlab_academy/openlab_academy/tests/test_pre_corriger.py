@@ -104,6 +104,14 @@ class TestPreCorriger(Cas):
         self.assertNotIn(CLE, repr(self.journal))
         self.assertEqual(self.journal[-2][4], {"etape": "ia", "cause": "RuntimeError"})
 
+    def test_lecture_de_la_copie_en_echec_non_disponible(self):
+        self.preparer()
+        self.m.contenu = lambda _id: (_ for _ in ()).throw(RuntimeError("base indisponible"))
+        self.corriger(Correcteur())
+        self.assertEqual(self.journal[-2][2:], ("pré-correction non disponible", {},
+                                                {"etape": "ia", "cause": "RuntimeError"}))
+        self.assertEqual(self.etape(self.a), ("formateur", Statut.A_CORRIGER))
+
     def test_ia_non_configuree_non_disponible(self):
         for ia in (replace(IA, url=""), replace(IA, modele_texte="")):
             with self.subTest(ia=ia):
