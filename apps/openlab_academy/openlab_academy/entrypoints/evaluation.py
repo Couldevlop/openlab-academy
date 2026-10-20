@@ -10,17 +10,20 @@ from frappe.utils import now_datetime
 
 from openlab_academy.application.chaine import SYSTEME, TACHES, FaireAvancer, TraiterEcheances
 from openlab_academy.application.controler import ControlerCopie
+from openlab_academy.application.pre_corriger import PreCorriger
 from openlab_academy.application.soumettre_copie import SoumettreCopie
 from openlab_academy.domain.reglages_evaluation import Etape
 from openlab_academy.infrastructure import journal_frappe, reglages_evaluation_frappe
 from openlab_academy.infrastructure.depot_copies_frappe import DepotCopiesFrappe, cours_evalue
 from openlab_academy.infrastructure.depot_relectures_frappe import DepotRelecturesFrappe
 from openlab_academy.infrastructure.controles import ControleurDepots
+from openlab_academy.infrastructure.correcteur_ia import CorrecteurCompatibleOpenAI
 from openlab_academy.infrastructure.instantane_depot import InstantaneDepot
 
 CHAMPS = ("name", "assignment", "member", "type", "answer", "assignment_attachment")
 POINT = "openlab_rendu"
 POINT_ETAPE = "openlab_etape"
+MARGE_S = 60  # la tâche survit au délai de l'appel au modèle : c'est lui qui expire, proprement
 
 
 def isoler(action: Callable[[], None]) -> None:
@@ -50,7 +53,11 @@ def file(tache: str, copie_id: str) -> None:
     if tache not in TACHES.values():
         raise ValueError(f"tâche inconnue : {tache}")
     try:
-        frappe.enqueue(f"{__name__}.{tache}", copie_id=copie_id, enqueue_after_commit=True)
+        options = {}
+        if tache == TACHES[Etape.IA]:  # plusieurs minutes sur CPU : file longue, délai réglé dans la console
+            delai_s = reglages_evaluation_frappe.charger().ia.delai_minutes * 60
+            options = {"queue": "long", "timeout": delai_s + MARGE_S}
+        frappe.enqueue(f"{__name__}.{tache}", copie_id=copie_id, enqueue_after_commit=True, **options)
     except Exception:
         frappe.log_error(title="openlab_academy : tâche non mise en file", message=frappe.get_traceback())
 
@@ -58,15 +65,6 @@ def file(tache: str, copie_id: str) -> None:
 def avanceur() -> FaireAvancer:
     return FaireAvancer(DepotCopiesFrappe(), DepotRelecturesFrappe(), reglages_evaluation_frappe.SourceReglagesFrappe(),
                         now_datetime, file, journal_frappe.journaliser)
-
-
-def _non_disponible(copie_id: str, etape: Etape, libelle: str) -> None:
-    """Consigne l'indisponibilité si le résultat est encore attendu ; n'avance que si l'étape est la courante."""
-    avancer = avanceur()
-    if not avancer.accepte_resultat(copie_id, etape):
-        return  # signal périmé : la copie a quitté cette étape (ou est publiée, ou remplacée)
-    journal_frappe.journaliser(copie_id, SYSTEME, libelle, {}, {"etape": etape.value})
-    avancer.executer(copie_id, etape)
 
 
 def notifier(destinataire: str, message: str) -> None:
@@ -83,8 +81,11 @@ def controler(copie_id: str) -> None:
 
 
 def pre_corriger(copie_id: str) -> None:
-    """Pré-correction : pas encore branchée, l'étape est marquée « non disponible » et la copie avance."""
-    _non_disponible(copie_id, Etape.IA, "pré-correction non disponible")
+    """Pré-correction par le modèle souverain réglé dans la console ; une panne laisse la copie avancer."""
+    reglages = reglages_evaluation_frappe.charger()
+    correcteur = CorrecteurCompatibleOpenAI(reglages.ia.url, reglages_evaluation_frappe.cle_ia(),
+                                            reglages.ia.delai_minutes * 60)
+    PreCorriger(DepotCopiesFrappe(), correcteur, reglages, avanceur(), journal_frappe.journaliser).executer(copie_id)
 
 
 def traiter_echeances() -> None:

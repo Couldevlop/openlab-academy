@@ -1,8 +1,10 @@
 """Chaîne de correction sur de vraies soumissions : adaptateurs, tâches de fond, échéances horaires."""
 import datetime
+import json
 from unittest import mock
 
 import frappe
+import requests
 from frappe.utils import now_datetime
 
 from openlab_academy import hooks
@@ -18,7 +20,7 @@ from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFr
 from openlab_academy.infrastructure.depot_relectures_frappe import DepotRelecturesFrappe
 from openlab_academy.infrastructure.reglages_evaluation_frappe import SourceReglagesFrappe
 from openlab_academy.tests.test_depot_copies_frappe import A, B, Base
-from openlab_academy.tests.http_simule import github
+from openlab_academy.tests.http_simule import Reponse, github
 from openlab_academy.tests.test_reglages_evaluation_frappe import etapes_formateur
 
 COPIE = "Copie OpenLab"
@@ -96,7 +98,7 @@ class TestDemarrage(Cas):
         evaluation.controler(copie)
         self.assertEqual((self.ligne(copie).statut, self.ligne(copie).etape_courante), ("controlee", "ia"))
         self.file.assert_called_with("openlab_academy.entrypoints.evaluation.pre_corriger", copie_id=copie,
-                                     enqueue_after_commit=True)
+                                     enqueue_after_commit=True, queue="long", timeout=10 * 60 + evaluation.MARGE_S)
         evaluation.controler(copie)  # signal périmé : ignoré
         evaluation.pre_corriger(copie)
         self.assertEqual((self.ligne(copie).statut, self.ligne(copie).etape_courante), ("a_corriger", "formateur"))
@@ -142,6 +144,49 @@ class TestDemarrage(Cas):
         evaluation.controler(copie)
         self.assertEqual(self.ligne(copie).statut, "renvoyee")
         self.http.assert_not_called()
+
+    def configurer_ia(self, cle="sk-console-789"):
+        doc = frappe.get_single("Reglages Evaluation OpenLab")
+        doc.update({"ia_url": "https://ia.openlab.ci", "ia_modele_texte": "texte-8b", "ia_modele_code": "code-8b",
+                    "ia_delai_minutes": 3, "cle_ia": cle})
+        doc.save(ignore_permissions=True)
+
+    def a_l_etape_ia(self):
+        self.soumettre(self.livrable)  # sans cohorte : pas de pairs
+        copie = self.copie_de()
+        evaluation.controler(copie)
+        frappe.db.set_value(COPIE, copie, "contenu", "Le tableau de bord hebdomadaire réduit les ruptures.")
+        return copie
+
+    def test_pre_correction_par_le_service_de_la_console(self):
+        self.configurer_ia()
+        copie = self.a_l_etape_ia()
+        grille = self.depot.grille(copie)
+        brut = json.dumps({"criteres": {c.code: {"niveau": 1, "justification": "ok", "citation": "tableau de bord"}
+                                        for c in grille.criteres}, "confiance": 0.8})
+        reponse = Reponse(json={"choices": [{"message": {"content": brut}}]})
+        with mock.patch("requests.post", return_value=reponse) as post:
+            evaluation.pre_corriger(copie)
+        (url,), options = post.call_args
+        self.assertEqual((url, options["json"]["model"], options["timeout"]),
+                         ("https://ia.openlab.ci/v1/chat/completions", "code-8b", 180))
+        self.assertEqual(options["headers"]["Authorization"], "Bearer sk-console-789")
+        (p,) = [p for p in self.depot.propositions(copie) if p.source == Source.IA]
+        self.assertEqual(p.confiance, 0.8)
+        self.assertEqual(self.ligne(copie).etape_courante, "formateur")
+        self.assertIn("pré-correction proposée", self.actions(copie))
+
+    def test_service_en_panne_cle_jamais_consignee(self):
+        self.configurer_ia()
+        copie = self.a_l_etape_ia()
+        panne = requests.ConnectionError("Authorization: Bearer sk-console-789")
+        with mock.patch("requests.post", side_effect=panne), \
+                mock.patch.object(evaluation.frappe, "log_error") as consigne:
+            evaluation.pre_corriger(copie)
+        consigne.assert_not_called()
+        self.assertEqual(self.ligne(copie).etape_courante, "formateur")
+        self.assertNotIn("sk-console-789", repr(frappe.get_all(JOURNAL, {"copie": copie}, ["action", "avant", "apres"])))
+        self.assertIn("pré-correction non disponible", self.actions(copie))
 
     def test_isoler_annule_les_ecritures_de_l_action_en_erreur(self):
         self.soumettre(self.livrable)
