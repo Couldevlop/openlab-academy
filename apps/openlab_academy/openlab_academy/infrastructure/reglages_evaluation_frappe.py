@@ -75,11 +75,30 @@ def surcharges() -> tuple[Surcharge, ...]:
                  for nom in frappe.get_all(SURCHARGE, pluck="name", order_by="creation"))
 
 
+CHAMPS_DELEGATION = ["titulaire", "delegataire", "debut", "fin", "cohorte", "exercice", "revoquee"]
+
+
+def _delegation(d) -> Delegation:
+    return Delegation(d.titulaire, d.delegataire, get_datetime(d.debut), get_datetime(d.fin),
+                      cohorte=d.cohorte or None, exercice=d.exercice or None, revoquee=bool(d.revoquee))
+
+
 def delegations() -> tuple[Delegation, ...]:
-    champs = ["titulaire", "delegataire", "debut", "fin", "cohorte", "exercice", "revoquee"]
-    return tuple(Delegation(d.titulaire, d.delegataire, get_datetime(d.debut), get_datetime(d.fin),
-                            cohorte=d.cohorte or None, exercice=d.exercice or None, revoquee=bool(d.revoquee))
-                 for d in frappe.get_all(DELEGATION, fields=champs, order_by="creation"))
+    return tuple(_delegation(d) for d in frappe.get_all(DELEGATION, fields=CHAMPS_DELEGATION, order_by="creation"))
+
+
+class DepotDelegationsFrappe:
+    def creer_delegation(self, d: Delegation) -> str:
+        return frappe.get_doc({"doctype": DELEGATION, "titulaire": d.titulaire, "delegataire": d.delegataire,
+                               "debut": d.debut, "fin": d.fin, "cohorte": d.cohorte, "exercice": d.exercice}
+                              ).insert(ignore_permissions=True).name
+
+    def delegation(self, delegation_id: str) -> Delegation | None:
+        ligne = frappe.db.get_value(DELEGATION, delegation_id, CHAMPS_DELEGATION, as_dict=True)
+        return _delegation(ligne) if ligne else None
+
+    def revoquer_delegation(self, delegation_id: str) -> None:
+        frappe.db.set_value(DELEGATION, delegation_id, "revoquee", 1)
 
 
 class SourceReglagesFrappe:

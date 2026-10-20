@@ -20,6 +20,9 @@
   "echeance",
   "escalade_a",
   "relectures_dispensees",
+  "note",
+  "note_sur",
+  "reussite",
   "grille_json",
   "empreinte",
   "signature",
@@ -106,6 +109,24 @@
    "default": "0"
   },
   {
+   "fieldname": "note",
+   "fieldtype": "Float",
+   "label": "Note publiée",
+   "read_only": 1
+  },
+  {
+   "fieldname": "note_sur",
+   "fieldtype": "Int",
+   "label": "Note sur",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reussite",
+   "fieldtype": "Check",
+   "label": "Réussite",
+   "read_only": 1
+  },
+  {
    "fieldname": "grille_json",
    "fieldtype": "Long Text",
    "label": "Grille figée",
@@ -159,7 +180,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-20 12:00:00",
+ "modified": "2026-10-20 18:00:00",
  "sort_field": "modified",
  "sort_order": "DESC"
 }

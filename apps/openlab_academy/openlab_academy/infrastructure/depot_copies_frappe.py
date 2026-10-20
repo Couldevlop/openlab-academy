@@ -5,6 +5,7 @@ import json
 import frappe
 from frappe.utils import get_datetime, strip_html_tags
 
+from openlab_academy.application.pre_corriger import SIGNALEMENT
 from openlab_academy.application.soumettre_copie import Contenu, Exercice
 from openlab_academy.domain.copie import Copie, CopieVerrouillee, Etat, Proposition, Source, Statut
 from openlab_academy.domain.grille import Grille
@@ -16,8 +17,11 @@ RELECTURE = "Relecture Pair OpenLab"
 GRILLE_EXERCICE = "Grille Exercice OpenLab"
 AUTO_EVALUATION = "Auto Evaluation OpenLab"
 INSTRUCTEUR = "Course Instructor"
+SOUMISSION = "LMS Assignment Submission"
+JOURNAL = "Journal Note OpenLab"
 EN_COURS = [s.value for s in (Statut.RENDUE, Statut.CONTROLEE, Statut.PRE_CORRIGEE, Statut.EN_RELECTURE,
                               Statut.A_CORRIGER)]
+EN_CORRECTION = [Statut.A_CORRIGER.value, Statut.PROVISOIRE.value]
 
 
 def _json(valeur) -> str:
@@ -192,3 +196,68 @@ class DepotCopiesFrappe:
         if not noms:
             noms = [frappe.db.get_single_value("Reglages OpenLab Academy", "formateur")]
         return {n for n in noms if n}
+
+    def jures(self, copie_id: str) -> set[str]:
+        """Évaluateurs de la cohorte : ceux des cours du lot (LMS Batch), qui forment le jury."""
+        cohorte = frappe.db.get_value(COPIE, copie_id, "cohorte")
+        evaluateurs = [e for e in frappe.get_all("Batch Course", {"parent": cohorte or "", "parenttype": "LMS Batch"},
+                                                 pluck="evaluator", parent_doctype="LMS Batch") if e]
+        if not evaluateurs:
+            return set()
+        return set(frappe.get_all("Course Evaluator", {"name": ["in", evaluateurs]}, pluck="evaluator"))
+
+    # --- correction, publication et retours -------------------------------------
+    def copies_en_correction(self, exercice: str | None = None) -> list[str]:
+        """Copies à corriger ou provisoires encore dans la chaîne (une version remplacée n'a plus d'étape)."""
+        filtres = [["statut", "in", EN_CORRECTION], ["etape_courante", "is", "set"]]
+        if exercice:
+            filtres.append(["exercice", "=", exercice])
+        return frappe.get_all(COPIE, filtres, pluck="name", order_by="creation")
+
+    def copies_publiees(self, exercice: str | None = None) -> list[str]:
+        filtres = {"statut": Statut.PUBLIEE.value, **({"exercice": exercice} if exercice else {})}
+        return frappe.get_all(COPIE, filtres, pluck="name", order_by="creation")
+
+    def publier(self, copie_id: str, note: float, note_sur: int, reussite: bool, resume: str, lien: str) -> None:
+        """Note figée sur la copie ; statut et résumé écrits dans la soumission LMS (champ natif `comments`).
+
+        Écriture directe : la validation LMS ramènerait le statut à sa valeur précédente pour un correcteur
+        sans rôle LMS privilégié (délégataire), et relancerait le rendu. Le résumé est construit ici, échappé."""
+        frappe.db.set_value(COPIE, copie_id, {"note": note, "note_sur": note_sur, "reussite": int(reussite)})
+        soumission = frappe.db.get_value(COPIE, copie_id, "soumission")
+        if not frappe.db.exists(SOUMISSION, soumission):
+            return
+        commentaire = (f"<p>{html.escape(resume)} "
+                       f'<a href="{html.escape(lien, quote=True)}">Voir le retour détaillé</a></p>')
+        frappe.db.set_value(SOUMISSION, soumission, {"status": "Pass" if reussite else "Fail", "comments": commentaire})
+
+    def resultat(self, copie_id: str) -> tuple[float, int, bool]:
+        """Note figée à la publication (lue pour une copie publiée seulement)."""
+        ligne = frappe.db.get_value(COPIE, copie_id, ["note", "note_sur", "reussite"], as_dict=True)
+        return float(ligne.note or 0), int(ligne.note_sur or 0), bool(ligne.reussite)
+
+    def dispensee(self, copie_id: str) -> bool:
+        return bool(frappe.db.get_value(COPIE, copie_id, "relectures_dispensees"))
+
+    def signalee(self, copie_id: str) -> bool:
+        return bool(frappe.db.exists(JOURNAL, {"copie": copie_id, "action": SIGNALEMENT}))
+
+    def texte_lisible(self, copie_id: str) -> str:
+        """Texte brut de la copie : un rendu texte LMS (HTML) est réduit à son texte, jamais renvoyé en HTML."""
+        contenu = self.contenu(copie_id)
+        if contenu.rendu_par_lien:
+            return contenu.texte
+        return html.unescape(strip_html_tags(contenu.texte)).strip()
+
+    def existe(self, copie_id: str) -> bool:
+        return bool(copie_id) and bool(frappe.db.exists(COPIE, copie_id))
+
+    # --- auto-évaluation -----------------------------------------------------
+    def inscrit(self, apprenant: str, exercice: str) -> bool:
+        cours = frappe.db.get_value("LMS Assignment", exercice, "course")
+        return bool(cours) and bool(frappe.db.exists("LMS Enrollment", {"member": apprenant, "course": cours}))
+
+    def derniere_copie(self, apprenant: str, exercice: str) -> Copie | None:
+        noms = frappe.get_all(COPIE, {"apprenant": apprenant, "exercice": exercice}, pluck="name",
+                              order_by="version desc", limit=1)
+        return self.copie(noms[0]) if noms else None

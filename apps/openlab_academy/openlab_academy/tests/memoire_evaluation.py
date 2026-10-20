@@ -42,6 +42,13 @@ class Memoire:
         self.paires_concurrentes: set[tuple[str, str]] = set()  # insérées par une autre transaction
         self.contenus: dict[str, Contenu] = {}
         self.consignes = {"EX1": "Analysez le cas."}
+        self.jures_: set[str] = set()
+        self.resultats: dict[str, tuple] = {}
+        self.publications: list[tuple] = []
+        self.signalees: set[str] = set()
+        self.auto_evals: dict[tuple[str, str], dict] = {}
+        self.inscrits: set[tuple[str, str]] = set()
+        self.delegations_: dict[str, object] = {}
 
     # --- préparation des cas ---------------------------------------------------
     def rendre(self, apprenant, chaine, maintenant, cohorte="COH1", exercice="EX1") -> str:
@@ -151,3 +158,59 @@ class Memoire:
 
     def dispenser(self, copie_id):
         self.dispensees.append(copie_id)
+
+    # --- correction, publication, retours ------------------------------------------
+    def jures(self, copie_id):
+        return set(self.jures_)
+
+    def publier(self, copie_id, note, note_sur, reussite, resume, lien):
+        self.resultats[copie_id] = (note, note_sur, reussite)
+        self.publications.append((copie_id, note, reussite, resume, lien))
+
+    def resultat(self, copie_id):
+        return self.resultats.get(copie_id)
+
+    def dispensee(self, copie_id):
+        return copie_id in self.dispensees
+
+    def signalee(self, copie_id):
+        return copie_id in self.signalees
+
+    def texte_lisible(self, copie_id):
+        return self.contenu(copie_id).texte
+
+    def copies_en_correction(self, exercice=None):
+        return [cid for cid, c in self.copies.items()
+                if c.statut in (Statut.A_CORRIGER, Statut.PROVISOIRE) and self.etats[cid].etape
+                and exercice in (None, c.exercice)]
+
+    def copies_publiees(self, exercice=None):
+        return [cid for cid, c in self.copies.items() if c.statut == Statut.PUBLIEE and exercice in (None, c.exercice)]
+
+    def relectures_du_relecteur(self, relecteur):
+        return [r for r in self.rel.values() if r.relecteur == relecteur]
+
+    def auto_evaluation(self, apprenant, exercice):
+        return self.auto_evals.get((apprenant, exercice))
+
+    def enregistrer_auto_evaluation(self, apprenant, exercice, niveaux):
+        self.auto_evals[(apprenant, exercice)] = dict(niveaux)
+
+    def inscrit(self, apprenant, exercice):
+        return (apprenant, exercice) in self.inscrits
+
+    def derniere_copie(self, apprenant, exercice):
+        miennes = [c for c in self.copies.values() if c.apprenant == apprenant and c.exercice == exercice]
+        return max(miennes, key=lambda c: c.version) if miennes else None
+
+    # --- délégations ---------------------------------------------------------------
+    def creer_delegation(self, d):
+        did = f"D{len(self.delegations_) + 1}"
+        self.delegations_[did] = d
+        return did
+
+    def delegation(self, delegation_id):
+        return self.delegations_.get(delegation_id)
+
+    def revoquer_delegation(self, delegation_id):
+        self.delegations_[delegation_id] = replace(self.delegations_[delegation_id], revoquee=True)

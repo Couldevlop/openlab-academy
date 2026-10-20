@@ -50,6 +50,10 @@ class DepotRelecturesFrappe:
         return [_relecture(ligne) for ligne in frappe.db.get_values(
             RELECTURE, {"copie": copie_id}, CHAMPS, as_dict=True, order_by="creation", for_update=True)]
 
+    def relectures_du_relecteur(self, relecteur: str) -> list[Relecture]:
+        return [_relecture(ligne) for ligne in frappe.get_all(RELECTURE, {"relecteur": relecteur}, CHAMPS,
+                                                              order_by="creation")]
+
     def relectures_echues(self, maintenant) -> list[Relecture]:
         return [_relecture(ligne) for ligne in frappe.get_all(
             RELECTURE, [["statut", "=", StatutRelecture.A_FAIRE.value], ["echeance", "is", "set"],
