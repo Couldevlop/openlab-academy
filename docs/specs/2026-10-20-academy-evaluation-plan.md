@@ -42,7 +42,7 @@ Vue 3 + frappe-ui + Vite (écrans), llama.cpp server (API compatible OpenAI) sur
 
 ---
 
-### Tâche 1 : domaine — grille
+### Task 1 : domaine — grille
 
 **Fichiers :** créer `domain/grille.py`, `tests/test_grille.py`.
 
@@ -63,7 +63,7 @@ Vue 3 + frappe-ui + Vite (écrans), llama.cpp server (API compatible OpenAI) sur
 - [ ] Vérifier l'échec, implémenter, vérifier le passage (`bash docker/dev-test.sh openlab_academy.tests.test_grille`).
 - [ ] Commit `feat(academy): grille d'évaluation (critères, niveaux, note pondérée)`.
 
-### Tâche 2 : domaine — réglages de l'évaluation
+### Task 2 : domaine — réglages de l'évaluation
 
 **Fichiers :** créer `domain/reglages_evaluation.py`, `tests/test_reglages_evaluation.py`.
 
@@ -92,7 +92,7 @@ Vue 3 + frappe-ui + Vite (écrans), llama.cpp server (API compatible OpenAI) sur
   cohorte > type > yaml (quatre cas, une surcharge à chaque niveau).
 - [ ] Échec → implémentation → passage → commit `feat(academy): réglages de l'évaluation (chaînes, délais, IA)`.
 
-### Tâche 3 : domaine — copie, propositions, médiane, lots
+### Task 3 : domaine — copie, propositions, médiane, lots
 
 **Fichiers :** créer `domain/copie.py`, `tests/test_copie.py`.
 
@@ -115,7 +115,7 @@ Vue 3 + frappe-ui + Vite (écrans), llama.cpp server (API compatible OpenAI) sur
   `(3, 2)` → 1 ; `lots` : trois copies au même vecteur ≥ seuil → un lot, une sous le seuil → hors lot.
 - [ ] Échec → implémentation → passage → commit `feat(academy): copie, propositions, médiane et lots`.
 
-### Tâche 4 : domaine — délégation et échéances
+### Task 4 : domaine — délégation et échéances
 
 **Fichiers :** créer `domain/delegation.py`, `domain/echeances.py`, `tests/test_delegation.py`, `tests/test_echeances.py`.
 
@@ -134,7 +134,7 @@ Vue 3 + frappe-ui + Vite (écrans), llama.cpp server (API compatible OpenAI) sur
   escalade sans suppléant → responsable.
 - [ ] Échec → implémentation → passage → commit `feat(academy): délégation et échéances non bloquantes`.
 
-### Tâche 5 : domaine — garde-fous de l'IA
+### Task 5 : domaine — garde-fous de l'IA
 
 **Fichiers :** créer `domain/garde_fous_ia.py`, `tests/test_garde_fous_ia.py`.
 
@@ -156,7 +156,7 @@ Vue 3 + frappe-ui + Vite (écrans), llama.cpp server (API compatible OpenAI) sur
   citation inventée → critère à revoir et confiance 0.
 - [ ] Échec → implémentation → passage → commit `feat(academy): garde-fous de la pré-correction IA (anti-injection)`.
 
-### Tâche 6 : console — DocTypes de réglages, surcharges, délégations, journal
+### Task 6 : console — DocTypes de réglages, surcharges, délégations, journal
 
 **Fichiers :** créer sous `openlab_academy/doctype/` : `reglages_evaluation_openlab` (Single), tables enfants
 `etape_correction_openlab` (type_exercice, etape, active, delai_heures, expiration),
@@ -179,7 +179,7 @@ OpenLab » (fixture) avec raccourcis vers les six écrans.
 - [ ] Échec → implémentation → `bench migrate` sur le banc → passage → commit
   `feat(academy): console de l'évaluation (réglages, surcharges, délégations, journal)`.
 
-### Tâche 7 : copies, propositions, relectures — persistance et rendu
+### Task 7 : copies, propositions, relectures — persistance et rendu
 
 **Fichiers :** créer DocTypes `copie_openlab` (soumission → LMS Assignment Submission, apprenant, exercice, cohorte,
 type_exercice, version, statut, etape_courante, echeance, grille_json, empreinte, contenu (Long Text), source_url,
@@ -207,7 +207,7 @@ est rattachée à la copie comme proposition AUTO_EVALUATION.
   la copie de A via `frappe.get_doc` → `PermissionError`.
 - [ ] Échec → implémentation → passage → commit `feat(academy): copies figées au rendu, grilles par exercice`.
 
-### Tâche 8 : orchestration de la chaîne
+### Task 8 : orchestration de la chaîne
 
 **Fichiers :** créer `application/chaine.py`, `application/pairs.py`, `tests/test_chaine.py`, `tests/test_pairs.py`.
 
@@ -229,7 +229,7 @@ est rattachée à la copie comme proposition AUTO_EVALUATION.
   responsable ; toute la chaîne échue avec `publication_provisoire` vrai → PROVISOIRE, faux → reste A_CORRIGER.
 - [ ] Échec → implémentation → passage → commit `feat(academy): chaîne de correction non bloquante et pairs`.
 
-### Tâche 9 : contrôles automatiques et instantané de dépôt
+### Task 9 : contrôles automatiques et instantané de dépôt
 
 **Fichiers :** créer `infrastructure/controles.py`, `infrastructure/instantane_depot.py`, `application/controler.py`,
 tests associés (HTTP simulé avec `unittest.mock.patch("requests.get")`).
@@ -245,7 +245,7 @@ plafond `plafond_caracteres`, aucune exécution de code.
   contenu tronqué au plafond ; timeout → étape « non disponible », pas d'exception.
 - [ ] Échec → implémentation → passage → commit `feat(academy): contrôles automatiques et instantané de dépôt`.
 
-### Tâche 10 : pré-correction IA (adaptateur compatible OpenAI)
+### Task 10 : pré-correction IA (adaptateur compatible OpenAI)
 
 **Fichiers :** créer `infrastructure/correcteur_ia.py`, `application/pre_corriger.py`, `tests/test_pre_corriger.py`,
 `tests/test_correcteur_ia.py` ; `tests/integration_ia.py` (hors suite par défaut, lancé à la main).
@@ -262,7 +262,7 @@ formateur) ; sinon `construire_messages` → `proposer` → `interpreter` → pr
   sinon ; la clé n'apparaît dans aucun journal ni message d'erreur.
 - [ ] Échec → implémentation → passage → commit `feat(academy): pré-correction par IA souveraine`.
 
-### Tâche 11 : correction formateur, lots, publication, API
+### Task 11 : correction formateur, lots, publication, API
 
 **Fichiers :** créer `application/corriger.py`, `entrypoints/evaluation_api.py`, `entrypoints/evaluation.py`
 (rendu, tâches RQ, ordonnanceur), tests associés. Modifier `hooks.py` : `scheduler_events = {"hourly":
@@ -288,7 +288,7 @@ identifiant de l'auteur.
   `relecture(id)` sans champ identifiant l'auteur ; statut LMS Pass à 10/20 avec seuil 10.
 - [ ] Échec → implémentation → passage → commit `feat(academy): correction formateur, lots, publication et API`.
 
-### Tâche 12 : écrans (relecture, correcteur, retour)
+### Task 12 : écrans (relecture, correcteur, retour)
 
 **Fichiers :** créer `openlab_academy/frontend/` (Vite + Vue 3 + frappe-ui, build vers `public/espace/`),
 `www/espace.py` + `www/espace.html` (route `/espace/<path>`, connexion requise), modifier `docker/Dockerfile`
@@ -304,7 +304,7 @@ identifiant de l'auteur.
   (compétence `run` / navigateur) aux largeurs 375 px et 1280 px.
 - [ ] Commit `feat(academy): écrans relecture, correcteur et retour`.
 
-### Tâche 13 : vérification de bout en bout et sécurité
+### Task 13 : vérification de bout en bout et sécurité
 
 - [ ] Configurer la console du banc vers le modèle Hetzner (URL et clé fournies par l'utilisateur, saisies dans
   l'écran, jamais committées) ; `tests/integration_ia.py` sur 10 copies réelles → mesurer durée et écart, consigner
