@@ -5,11 +5,11 @@ lecture de la ressource ; une ressource inexistante est refusée comme une resso
 sont limitées en débit. Les textes des apprenants et de l'IA sont renvoyés en texte brut : l'écran les échappe.
 """
 import json
+import time
 from collections.abc import Callable
 from functools import wraps
 
 import frappe
-from frappe.rate_limiter import rate_limit
 from frappe.utils import cint, get_datetime, now_datetime
 
 from openlab_academy.application.corriger import (
@@ -25,9 +25,9 @@ from openlab_academy.infrastructure.depot_relectures_frappe import DepotRelectur
 
 HEURE = 3600
 LOT_MAX = 200
-LIMITES = {  # requêtes par heure et par adresse
+LIMITES = {  # requêtes par heure et par utilisateur
     "enregistrer_relecture": 60, "enregistrer_auto_evaluation": 30, "corriger": 600, "valider_lot": 600,
-    "publier": 600, "deleguer": 30, "revoquer": 30,
+    "publier": 600, "deleguer": 30, "revoquer": 30, "file_correction": 300,
 }
 SUPERVISEURS = {"System Manager", reglages_evaluation_frappe.ROLE}
 CORRECTEURS_LMS = {"Moderator", "Course Creator", "Batch Evaluator"}
@@ -48,8 +48,26 @@ def _api(fn: Callable) -> Callable:
     return appel
 
 
+def cle_debit(nom: str, utilisateur: str) -> str:
+    """Compteur à fenêtre fixe d'une heure, par point d'API et par utilisateur (pas par adresse)."""
+    return frappe.cache.make_key(f"openlab_academy:debit:{nom}:{utilisateur}:{int(time.time() // HEURE)}")
+
+
 def _limite(nom: str) -> Callable:
-    return rate_limit(limit=LIMITES[nom], seconds=HEURE)
+    """Limitation de débit par utilisateur, appliquée aux requêtes HTTP ; au-delà -> 429."""
+    def decorer(fn: Callable) -> Callable:
+        @wraps(fn)
+        def appel(*args, **kwargs):
+            if getattr(frappe.local, "request", None):
+                cle = cle_debit(nom, frappe.session.user)
+                compte = frappe.cache.incrby(cle, 1)
+                if compte == 1:
+                    frappe.cache.expire(cle, HEURE)
+                if compte > LIMITES[nom]:
+                    frappe.throw("Trop de requêtes : réessayez plus tard.", frappe.TooManyRequestsError)
+            return fn(*args, **kwargs)
+        return appel
+    return decorer
 
 
 def _json(valeur, attendu: type):
@@ -105,7 +123,8 @@ def _seuil() -> float:
 
 
 def _publier(depot: DepotCopiesFrappe) -> PublierNote:
-    return PublierNote(depot, _acces(depot), evaluation.avanceur(), journal_frappe.journaliser, evaluation.notifier)
+    return PublierNote(depot, DepotRelecturesFrappe(), _acces(depot), evaluation.avanceur(),
+                       journal_frappe.journaliser, evaluation.notifier)
 
 
 # --- apprenant : relectures, auto-évaluation, retour ------------------------------------------------------
@@ -122,8 +141,8 @@ def relecture(relecture_id: str) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-@_limite("enregistrer_relecture")
 @_api
+@_limite("enregistrer_relecture")
 def enregistrer_relecture(relecture_id: str, niveaux: dict | str, commentaires: dict | str) -> None:
     relectures = DepotRelecturesFrappe()
     r = relectures.relecture(relecture_id)
@@ -131,6 +150,7 @@ def enregistrer_relecture(relecture_id: str, niveaux: dict | str, commentaires: 
         raise AccesRefuse("relecture non attribuée")
     EnregistrerRelecture(_depot(), relectures, evaluation.avanceur(), journal_frappe.journaliser).executer(
         _moi(), relecture_id, _json(niveaux, dict), _json(commentaires, dict) or {})
+    evaluation.liberer_plus_tard(_moi())  # sa propre note, différée par le gating, peut sortir
 
 
 @frappe.whitelist(methods=["GET"])
@@ -140,8 +160,8 @@ def mon_auto_evaluation(exercice: str) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-@_limite("enregistrer_auto_evaluation")
 @_api
+@_limite("enregistrer_auto_evaluation")
 def enregistrer_auto_evaluation(exercice: str, niveaux: dict | str) -> None:
     AutoEvaluer(_depot()).enregistrer(_moi(), exercice, _json(niveaux, dict))
 
@@ -157,21 +177,22 @@ def mon_retour(copie: str) -> dict:
 # --- correcteur : file, copie, correction, lots, publication ------------------------------------------------
 @frappe.whitelist(methods=["GET"])
 @_api
+@_limite("file_correction")
 def file_correction(exercice: str | None = None) -> dict:
     depot = _depot()
-    return ConsulterCorrection(depot, _acces(depot), _seuil()).file(_moi(), exercice or None)
+    return ConsulterCorrection(depot, _acces(depot), _seuil).file(_moi(), exercice or None)
 
 
 @frappe.whitelist(methods=["GET"])
 @_api
 def copie_a_corriger(copie: str) -> dict:
     depot = _depot()
-    return ConsulterCorrection(depot, _acces(depot), _seuil()).copie(_moi(), _copie(depot, copie))
+    return ConsulterCorrection(depot, _acces(depot), _seuil).copie(_moi(), _copie(depot, copie))
 
 
 @frappe.whitelist(methods=["POST"])
-@_limite("corriger")
 @_api
+@_limite("corriger")
 def corriger(copie: str, niveaux: dict | str, commentaires: dict | str | None = None) -> None:
     depot = _depot()
     CorrigerCopie(depot, _acces(depot), evaluation.avanceur(), journal_frappe.journaliser).executer(
@@ -179,8 +200,8 @@ def corriger(copie: str, niveaux: dict | str, commentaires: dict | str | None = 
 
 
 @frappe.whitelist(methods=["POST"])
-@_limite("valider_lot")
 @_api
+@_limite("valider_lot")
 def valider_lot(copies: list | str, et_publier: int | str = 0) -> dict:
     depot = _depot()
     ids = _json(copies, list) or []
@@ -198,8 +219,8 @@ def valider_lot(copies: list | str, et_publier: int | str = 0) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-@_limite("publier")
 @_api
+@_limite("publier")
 def publier(copie: str) -> dict:
     depot = _depot()
     return {"copie": copie, "note": _publier(depot).executer(_moi(), _copie(depot, copie))}
@@ -222,8 +243,8 @@ def _delegations() -> GererDelegations:
 
 
 @frappe.whitelist(methods=["POST"])
-@_limite("deleguer")
 @_api
+@_limite("deleguer")
 def deleguer(delegataire: str, debut: str, fin: str, cohorte: str | None = None, exercice: str | None = None,
              titulaire: str | None = None) -> str:
     try:
@@ -237,7 +258,7 @@ def deleguer(delegataire: str, debut: str, fin: str, cohorte: str | None = None,
 
 
 @frappe.whitelist(methods=["POST"])
-@_limite("revoquer")
 @_api
+@_limite("revoquer")
 def revoquer(delegation: str) -> None:
     _delegations().revoquer(_moi(), delegation)

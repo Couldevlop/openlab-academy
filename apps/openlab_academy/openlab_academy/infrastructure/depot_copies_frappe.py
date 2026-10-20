@@ -207,29 +207,70 @@ class DepotCopiesFrappe:
         return set(frappe.get_all("Course Evaluator", {"name": ["in", evaluateurs]}, pluck="evaluator"))
 
     # --- correction, publication et retours -------------------------------------
-    def copies_en_correction(self, exercice: str | None = None) -> list[str]:
-        """Copies à corriger ou provisoires encore dans la chaîne (une version remplacée n'a plus d'étape)."""
+    def copies_en_correction(self, exercice: str | None = None, pour: frozenset[str] | None = None) -> list[str]:
+        """Copies à corriger ou provisoires encore dans la chaîne (une version remplacée n'a plus d'étape).
+
+        `pour` (personnes au nom desquelles l'appelant peut agir) préfiltre en base, avant tout contrôle par copie :
+        cohortes dont elles sont formatrices ou évaluatrices, devoirs de leurs cours, escalades qui leur sont
+        adressées ; le formateur par défaut des réglages garde tout (il est titulaire en dernier recours)."""
         filtres = [["statut", "in", EN_CORRECTION], ["etape_courante", "is", "set"]]
         if exercice:
             filtres.append(["exercice", "=", exercice])
+        if pour is not None and frappe.db.get_single_value("Reglages OpenLab Academy", "formateur") not in pour:
+            ou = self._perimetre(sorted(pour))
+            return frappe.get_all(COPIE, filtres, or_filters=ou, pluck="name", order_by="creation")
         return frappe.get_all(COPIE, filtres, pluck="name", order_by="creation")
+
+    @staticmethod
+    def _perimetre(personnes: list[str]) -> list[list]:
+        def parents(table, parent, filtres):
+            return frappe.get_all(table, {**filtres, "parenttype": parent}, pluck="parent", parent_doctype=parent)
+        lots = parents(INSTRUCTEUR, "LMS Batch", {"instructor": ["in", personnes]})
+        cours = parents(INSTRUCTEUR, "LMS Course", {"instructor": ["in", personnes]})
+        evaluateurs = frappe.get_all("Course Evaluator", {"evaluator": ["in", personnes]}, pluck="name")
+        if evaluateurs:  # jurés : évaluateurs des cours du lot
+            lots += parents("Batch Course", "LMS Batch", {"evaluator": ["in", evaluateurs]})
+        ou = [["escalade_a", "in", personnes]]
+        if lots:
+            ou.append(["cohorte", "in", lots])
+        if cours:
+            ou.append(["exercice", "in", frappe.get_all("LMS Assignment", {"course": ["in", cours]}, pluck="name")])
+        return ou
 
     def copies_publiees(self, exercice: str | None = None) -> list[str]:
         filtres = {"statut": Statut.PUBLIEE.value, **({"exercice": exercice} if exercice else {})}
         return frappe.get_all(COPIE, filtres, pluck="name", order_by="creation")
 
-    def publier(self, copie_id: str, note: float, note_sur: int, reussite: bool, resume: str, lien: str) -> None:
-        """Note figée sur la copie ; statut et résumé écrits dans la soumission LMS (champ natif `comments`).
+    def publier(self, copie_id: str, note: float, note_sur: int, reussite: bool, resume: str, lien: str,
+                differe: bool) -> None:
+        """Note figée sur la copie ; dans la soumission LMS, statut et résumé, ou le seul lien si c'est différé."""
+        frappe.db.set_value(COPIE, copie_id, {"note": note, "note_sur": note_sur, "reussite": int(reussite),
+                                              "lms_differe": int(differe)})
+        self._ecrire_lms(copie_id, None if differe else reussite, resume, lien)
 
-        Écriture directe : la validation LMS ramènerait le statut à sa valeur précédente pour un correcteur
-        sans rôle LMS privilégié (délégataire), et relancerait le rendu. Le résumé est construit ici, échappé."""
-        frappe.db.set_value(COPIE, copie_id, {"note": note, "note_sur": note_sur, "reussite": int(reussite)})
+    def liberer(self, copie_id: str, reussite: bool, resume: str, lien: str) -> None:
+        frappe.db.set_value(COPIE, copie_id, "lms_differe", 0)
+        self._ecrire_lms(copie_id, reussite, resume, lien)
+
+    def _ecrire_lms(self, copie_id: str, reussite: bool | None, resume: str, lien: str) -> None:
+        """Écriture directe : la validation LMS ramènerait le statut à sa valeur précédente pour un correcteur
+        sans rôle LMS privilégié (délégataire), et relancerait le rendu. Le commentaire est construit ici, échappé ;
+        `reussite` None laisse le statut LMS inchangé."""
         soumission = frappe.db.get_value(COPIE, copie_id, "soumission")
         if not frappe.db.exists(SOUMISSION, soumission):
             return
-        commentaire = (f"<p>{html.escape(resume)} "
-                       f'<a href="{html.escape(lien, quote=True)}">Voir le retour détaillé</a></p>')
-        frappe.db.set_value(SOUMISSION, soumission, {"status": "Pass" if reussite else "Fail", "comments": commentaire})
+        texte = f"{html.escape(resume)} " if resume else ""
+        valeurs = {"comments": f'<p>{texte}<a href="{html.escape(lien, quote=True)}">Voir le retour détaillé</a></p>'}
+        if reussite is not None:
+            valeurs["status"] = "Pass" if reussite else "Fail"
+        frappe.db.set_value(SOUMISSION, soumission, valeurs)
+
+    def differee(self, copie_id: str) -> bool:
+        return bool(frappe.db.get_value(COPIE, copie_id, "lms_differe"))
+
+    def copies_differees(self, apprenant: str | None = None) -> list[str]:
+        filtres = {"lms_differe": 1, "statut": Statut.PUBLIEE.value, **({"apprenant": apprenant} if apprenant else {})}
+        return frappe.get_all(COPIE, filtres, pluck="name", order_by="creation")
 
     def resultat(self, copie_id: str) -> tuple[float, int, bool]:
         """Note figée à la publication (lue pour une copie publiée seulement)."""

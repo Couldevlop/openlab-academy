@@ -9,6 +9,7 @@ import frappe
 from frappe.utils import now_datetime
 
 from openlab_academy.application.chaine import SYSTEME, TACHES, FaireAvancer, TraiterEcheances
+from openlab_academy.application.corriger import LibererNote
 from openlab_academy.application.controler import ControlerCopie, consigner_indisponibilite
 from openlab_academy.application.pre_corriger import PreCorriger
 from openlab_academy.application.soumettre_copie import SoumettreCopie
@@ -106,9 +107,33 @@ def pre_corriger(copie_id: str) -> None:
 
 
 def traiter_echeances() -> None:
-    """Tâche horaire : applique l'action réglée à chaque étape et relecture échue."""
+    """Tâche horaire : applique l'action réglée à chaque étape et relecture échue, puis libère les notes dont
+    le gating est tombé (dispense, relectures faites ou retirées)."""
     TraiterEcheances(DepotCopiesFrappe(), DepotRelecturesFrappe(), reglages_evaluation_frappe.SourceReglagesFrappe(),
                      avanceur(), now_datetime, journal_frappe.journaliser, unite, notifier).executer()
+    cas = liberateur()
+    for copie_id in DepotCopiesFrappe().copies_differees():
+        unite(lambda copie_id=copie_id: cas.executer(copie_id))
+
+
+def liberateur() -> LibererNote:
+    return LibererNote(DepotCopiesFrappe(), DepotRelecturesFrappe(), avanceur().chaine, journal_frappe.journaliser,
+                       notifier)
+
+
+def liberer_notes(apprenant: str) -> None:
+    """Tâche de fond, après la relecture d'un apprenant : ses notes différées sortent si plus rien n'est dû.
+    Hors de la transaction de la relecture, pour ne jamais verrouiller deux copies à la fois."""
+    cas = liberateur()
+    for copie_id in DepotCopiesFrappe().copies_differees(apprenant):
+        isoler(lambda copie_id=copie_id: cas.executer(copie_id))
+
+
+def liberer_plus_tard(apprenant: str) -> None:
+    try:
+        frappe.enqueue(f"{__name__}.liberer_notes", apprenant=apprenant, enqueue_after_commit=True)
+    except Exception:  # l'échéancier horaire prendra le relais
+        frappe.log_error(title="openlab_academy : libération non mise en file", message=frappe.get_traceback())
 
 
 def soumettre(soumission: dict) -> str | None:

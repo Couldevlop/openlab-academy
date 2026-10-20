@@ -8,11 +8,11 @@ from collections.abc import Callable
 from typing import Protocol
 
 from openlab_academy.application.corriger import (
-    AccesRefuse, CorrectionRefusee, GENERAL, synthese, valider_niveaux)
+    AccesRefuse, CorrectionRefusee, GENERAL, note_masquee, synthese, valider_niveaux)
 from openlab_academy.application.pairs import DepotRelectures, Relecture, StatutRelecture
 from openlab_academy.application.soumettre_copie import Contenu, Exercice
 from openlab_academy.domain.copie import Copie, Proposition, Statut
-from openlab_academy.domain.grille import Grille, GrilleInvalide
+from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.reglages_evaluation import Chaine
 
 EN_COURS = "Votre copie est en cours de correction."
@@ -45,7 +45,8 @@ class ConsulterRetour:
         if copie.statut not in (Statut.PUBLIEE, Statut.PROVISOIRE):
             return base
         chaine = self._chaine(copie)
-        if chaine.note_masquee_avant_relectures and self._relectures_dues(copie):
+        if note_masquee(chaine, copie, self._depot.dispensee(copie_id),
+                        self._relectures.relectures(copie.exercice, copie.cohorte)):
             return {**base, "masquee": True, "message": MASQUEE}
         grille = self._depot.grille(copie_id)
         s = synthese(self._depot.propositions(copie_id))
@@ -54,10 +55,7 @@ class ConsulterRetour:
             niveaux, message = s.formateur.niveaux if s.formateur else {}, ""
         else:
             niveaux, note_sur, message = s.niveaux_provisoires() or {}, chaine.note_sur, PROVISOIRE
-            try:
-                note = grille.note(niveaux, note_sur)
-            except GrilleInvalide:  # rien d'humain à afficher encore
-                note = None
+            note = s.note_provisoire(grille, note_sur)
             reussite = None if note is None else note >= chaine.seuil_reussite
         commentaires = s.formateur.commentaires if s.formateur else {}
         criteres = []
@@ -71,12 +69,6 @@ class ConsulterRetour:
                 "pairs": [p.commentaires[c.code] for p in s.pairs if p.commentaires.get(c.code)]})
         return {**base, "note": note, "note_sur": note_sur, "reussite": reussite, "criteres": criteres,
                 "commentaire_general": commentaires.get(GENERAL, ""), "message": message}
-
-    def _relectures_dues(self, copie: Copie) -> bool:
-        if self._depot.dispensee(copie.id):
-            return False
-        return any(r.relecteur == copie.apprenant and r.statut == StatutRelecture.A_FAIRE
-                   for r in self._relectures.relectures(copie.exercice, copie.cohorte))
 
 
 class DepotAutoEvaluation(Protocol):

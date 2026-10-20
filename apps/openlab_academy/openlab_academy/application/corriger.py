@@ -4,6 +4,10 @@ Seul un humain publie une note : un titulaire de la copie (formateur de la cohor
 son délégataire, ou le super administrateur ; jamais l'auteur de la copie. L'accès est vérifié avant toute lecture
 du contenu ou de l'état de la copie. Chaque note proposée ou publiée est journalisée avec l'acteur et, s'il agit
 par délégation, le titulaire au nom duquel il agit.
+
+Gating des notes (Coursera) : tant que l'apprenant doit des relectures, la publication n'écrit dans LMS qu'un
+lien, sans note ni réussite ; le statut LMS et le résumé sont différés, puis libérés quand le gating tombe
+(relectures faites, dispense ou relectures retirées).
 """
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
@@ -11,6 +15,7 @@ from datetime import datetime
 from statistics import fmean
 from typing import Protocol
 
+from openlab_academy.application.pairs import DepotRelectures, Relecture, StatutRelecture
 from openlab_academy.application.pre_corriger import SIGNALEMENT
 from openlab_academy.application.soumettre_copie import Contenu
 from openlab_academy.domain.copie import (
@@ -23,6 +28,7 @@ COMMENTAIRE_MAX = 5000
 GENERAL = "general"  # commentaire d'ensemble, à côté des commentaires par critère
 CORRIGEABLES = (Statut.A_CORRIGER, Statut.PROVISOIRE)
 LIEN_RETOUR = "/espace/retour/{}"
+SYSTEME = "systeme"
 
 
 class AccesRefuse(Exception):
@@ -43,11 +49,24 @@ class DepotCorrection(Protocol):
     def changer_statut(self, copie_id: str, statut: Statut, etape: str, echeance: datetime | None) -> None: ...
     def titulaires(self, copie_id: str) -> set[str]: ...
     def jures(self, copie_id: str) -> set[str]: ...
-    def publier(self, copie_id: str, note: float, note_sur: int, reussite: bool, resume: str, lien: str) -> None: ...
+    def dispensee(self, copie_id: str) -> bool: ...
+    def publier(self, copie_id: str, note: float, note_sur: int, reussite: bool, resume: str, lien: str,
+                differe: bool) -> None:
+        """Différé : lien seul dans LMS, statut LMS inchangé."""
+
+
+class DepotLiberation(Protocol):
+    def verrouiller(self, copie_id: str) -> CopieVerrouillee: ...
+    def dispensee(self, copie_id: str) -> bool: ...
+    def resultat(self, copie_id: str) -> tuple[float, int, bool]: ...
+    def copies_differees(self, apprenant: str | None = None) -> list[str]: ...
+    def differee(self, copie_id: str) -> bool: ...
+    def liberer(self, copie_id: str, reussite: bool, resume: str, lien: str) -> None: ...
 
 
 class DepotConsultation(DepotCorrection, Protocol):
-    def copies_en_correction(self, exercice: str | None = None) -> list[str]: ...
+    def copies_en_correction(self, exercice: str | None = None,
+                             pour: frozenset[str] | None = None) -> list[str]: ...  # pour : None = toutes
     def contenu(self, copie_id: str) -> Contenu: ...
     def texte_lisible(self, copie_id: str) -> str: ...
     def consigne(self, exercice: str) -> str: ...
@@ -102,6 +121,16 @@ def nettoyer_commentaires(grille: Grille, commentaires) -> dict[str, str]:
     return {c: t for c, t in nets.items() if t}
 
 
+def resume_note(note: float, note_sur: int, reussite: bool) -> str:
+    return f"Note : {note:g}/{note_sur} ({'réussi' if reussite else 'non validé'})."
+
+
+def note_masquee(chaine: Chaine, copie: Copie, dispensee: bool, relectures: Iterable[Relecture]) -> bool:
+    """Gating : la note de l'auteur reste masquée tant qu'il doit une relecture, sauf dispense."""
+    return (chaine.note_masquee_avant_relectures and not dispensee
+            and any(r.relecteur == copie.apprenant and r.statut == StatutRelecture.A_FAIRE for r in relectures))
+
+
 # --- synthèse des propositions ------------------------------------------------------------------------------
 def derniere(props: Iterable[Proposition], source: Source) -> Proposition | None:
     return next((p for p in reversed(list(props)) if p.source == source), None)
@@ -140,6 +169,19 @@ class Synthese:
         if self.pairs:
             sources.append(Proposition(Source.PAIR, "", self.mediane_pairs))
         return ecarts(sources)
+
+    @property
+    def ecarts_ia_pairs(self) -> set[str]:
+        """Écart de plus d'un niveau entre l'IA et la médiane des pairs : la copie sort des lots."""
+        if self.ia is None or not self.pairs:
+            return set()
+        return ecarts([self.ia, Proposition(Source.PAIR, "", self.mediane_pairs)])
+
+    def note_provisoire(self, grille: Grille, note_sur: int) -> float | None:
+        try:
+            return grille.note(self.niveaux_provisoires() or {}, note_sur)
+        except GrilleInvalide:  # rien d'humain à noter encore
+            return None
 
     def niveaux_provisoires(self) -> dict[str, int] | None:
         """Note provisoire : formateur, sinon jury, sinon pairs. Jamais la seule IA (non montrée à l'apprenant)."""
@@ -181,6 +223,15 @@ class Acces:
         self._delegations = delegations
         self._horloge = horloge
         self._administrateur = administrateur
+
+    def administrateur(self, acteur: str) -> bool:
+        return self._administrateur(acteur)
+
+    def mandants(self, acteur: str) -> frozenset[str]:
+        """Titulaires qui délèguent actuellement à l'acteur (quel que soit le périmètre)."""
+        maintenant = self._horloge()
+        return frozenset(d.titulaire for d in self._delegations()
+                         if d.delegataire == acteur and not d.revoquee and d.debut <= maintenant <= d.fin)
 
     def _mandant(self, acteur: str, copie: Copie, titulaires: set[str]) -> str | None:
         """Titulaire de la délégation active la plus spécifique dont l'acteur est délégataire."""
@@ -263,23 +314,33 @@ class ValiderLot:
             v = self._depot.verrouiller(copie_id)
             hab = self._acces.correcteur(acteur, v.copie, v.etat)
             _corrigeable(v.copie)
-            ia = derniere(self._depot.propositions(copie_id), Source.IA)
+            s = synthese(self._depot.propositions(copie_id))
+            ia = s.ia
             if ia is None or ia.confiance is None or ia.confiance < self._seuil:
                 raise CorrectionRefusee(f"copie {copie_id} hors lot : proposition IA absente ou peu sûre")
-            retenues.append((copie_id, hab, valider_niveaux(self._depot.grille(copie_id), ia.niveaux), ia))
-        for copie_id, hab, niveaux, ia in retenues:  # écritures après toutes les vérifications
+            if s.ecarts_ia_pairs:
+                raise CorrectionRefusee(f"copie {copie_id} hors lot : écart entre l'IA et les pairs")
+            niveaux = valider_niveaux(self._depot.grille(copie_id), ia.niveaux)
+            retenues.append((copie_id, hab, niveaux, ia, s.formateur))
+        for copie_id, hab, niveaux, ia, precedente in retenues:  # écritures après toutes les vérifications
             self._depot.ajouter_proposition(copie_id, Proposition(Source.FORMATEUR, acteur, niveaux,
                                                                   dict(ia.commentaires), au_nom_de=hab.au_nom_de))
-            self._journal(copie_id, acteur, "validation par lot", {}, {"niveaux": niveaux}, hab.au_nom_de)
+            self._journal(copie_id, acteur, "validation par lot",
+                          {"niveaux": precedente.niveaux if precedente else {}}, {"niveaux": niveaux},
+                          hab.au_nom_de)
         return [r[0] for r in retenues]
 
 
 class PublierNote:
-    """Cas d'usage unique de publication : note sur N, statut publié, soumission LMS réussie ou non."""
+    """Cas d'usage unique de publication : note sur N, statut publié, soumission LMS réussie ou non.
 
-    def __init__(self, depot: DepotCorrection, acces: Acces, avanceur: Avanceur, journal: Journal,
-                 notifier: Callable[[str, str], None] = lambda *_: None):
+    Si le gating masque encore la note de l'apprenant, ni la note ni la réussite ne sortent : LMS ne reçoit
+    qu'un lien et son statut est différé jusqu'à la libération (`LibererNote`)."""
+
+    def __init__(self, depot: DepotCorrection, relectures: DepotRelectures, acces: Acces, avanceur: Avanceur,
+                 journal: Journal, notifier: Callable[[str, str], None] = lambda *_: None):
         self._depot = depot
+        self._relectures = relectures
         self._acces = acces
         self._avanceur = avanceur
         self._journal = journal
@@ -290,21 +351,60 @@ class PublierNote:
         copie = v.copie
         hab = self._acces.correcteur(acteur, copie, v.etat)
         _corrigeable(copie)
-        formateur = derniere(self._depot.propositions(copie_id), Source.FORMATEUR)
-        if formateur is None:
+        s = synthese(self._depot.propositions(copie_id))
+        if s.formateur is None:
             raise CorrectionRefusee("aucune correction du formateur à publier")
         chaine = self._avanceur.chaine(copie)
-        note = self._depot.grille(copie_id).note(formateur.niveaux, chaine.note_sur)
+        grille = self._depot.grille(copie_id)
+        note = grille.note(s.formateur.niveaux, chaine.note_sur)
         reussite = note >= chaine.seuil_reussite
+        avant = {"statut": copie.statut.value}
+        if copie.statut == Statut.PROVISOIRE:
+            avant["note"] = s.note_provisoire(grille, chaine.note_sur)
+        differe = note_masquee(chaine, copie, self._depot.dispensee(copie_id),
+                               self._relectures.relectures(copie.exercice, copie.cohorte))
         self._depot.changer_statut(copie_id, copie.passer_a(Statut.PUBLIEE).statut, "", None)
         lien = LIEN_RETOUR.format(copie_id)
-        resume = f"Note : {note:g}/{chaine.note_sur} ({'réussi' if reussite else 'non validé'})."
-        self._depot.publier(copie_id, note, chaine.note_sur, reussite, resume, lien)
-        self._journal(copie_id, acteur, "note publiée", {"statut": copie.statut.value},
-                      {"statut": Statut.PUBLIEE.value, "note": note, "reussite": reussite}, hab.au_nom_de)
-        self._notifier(copie.apprenant, f"Votre exercice {copie.exercice} est corrigé. {resume} "
-                                        f"Retour détaillé : {lien}")
+        resume = "" if differe else resume_note(note, chaine.note_sur, reussite)
+        self._depot.publier(copie_id, note, chaine.note_sur, reussite, resume, lien, differe)
+        self._journal(copie_id, acteur, "note publiée", avant,
+                      {"statut": Statut.PUBLIEE.value, "note": note, "reussite": reussite, "lms_differe": differe},
+                      hab.au_nom_de)
+        if differe:
+            self._notifier(copie.apprenant, f"Votre exercice {copie.exercice} est corrigé. Terminez vos relectures "
+                                            f"pour découvrir votre note. Retour détaillé : {lien}")
+        else:
+            self._notifier(copie.apprenant, f"Votre exercice {copie.exercice} est corrigé. {resume} "
+                                            f"Retour détaillé : {lien}")
         return note
+
+
+class LibererNote:
+    """Le gating est tombé (relectures faites, dispense, relectures retirées) : statut LMS et résumé sont écrits,
+    l'apprenant est prévenu. Rien ne se passe tant qu'une relecture est encore due."""
+
+    def __init__(self, depot: DepotLiberation, relectures: DepotRelectures, chaine: Callable[[Copie], Chaine],
+                 journal: Journal, notifier: Callable[[str, str], None] = lambda *_: None):
+        self._depot = depot
+        self._relectures = relectures
+        self._chaine = chaine
+        self._journal = journal
+        self._notifier = notifier
+
+    def executer(self, copie_id: str) -> bool:
+        copie = self._depot.verrouiller(copie_id).copie
+        if not self._depot.differee(copie_id):
+            return False  # déjà libérée
+        if note_masquee(self._chaine(copie), copie, self._depot.dispensee(copie_id),
+                        self._relectures.relectures(copie.exercice, copie.cohorte)):
+            return False
+        note, note_sur, reussite = self._depot.resultat(copie_id)
+        lien, resume = LIEN_RETOUR.format(copie_id), resume_note(note, note_sur, reussite)
+        self._depot.liberer(copie_id, reussite, resume, lien)
+        self._journal(copie_id, SYSTEME, "note libérée", {"lms_differe": True}, {"lms_differe": False}, None)
+        self._notifier(copie.apprenant, f"Votre note de l'exercice {copie.exercice} est disponible. {resume} "
+                                        f"Retour détaillé : {lien}")
+        return True
 
 
 # --- vues du correcteur ------------------------------------------------------------------------------------
@@ -315,7 +415,7 @@ def _ia(p: Proposition | None) -> dict | None:
 
 
 class ConsulterCorrection:
-    def __init__(self, depot: DepotConsultation, acces: Acces, seuil_confiance: float):
+    def __init__(self, depot: DepotConsultation, acces: Acces, seuil_confiance: Callable[[], float]):
         self._depot = depot
         self._acces = acces
         self._seuil = seuil_confiance
@@ -330,7 +430,8 @@ class ConsulterCorrection:
     def file(self, acteur: str, exercice: str | None = None) -> dict:
         """Copies que l'acteur peut corriger ou noter comme juré, et lots de copies validables d'un geste."""
         copies, candidates = [], {}
-        for copie_id in self._depot.copies_en_correction(exercice):
+        pour = None if self._acces.administrateur(acteur) else frozenset({acteur}) | self._acces.mandants(acteur)
+        for copie_id in self._depot.copies_en_correction(exercice, pour):
             trouve = self._habilitation(acteur, copie_id)
             if trouve is None:
                 continue
@@ -341,9 +442,10 @@ class ConsulterCorrection:
                            "etape": etat.etape, "echeance": etat.echeance, "role": hab.source.value,
                            "confiance": s.ia.confiance if s.ia else None, "ecarts": sorted(s.ecarts),
                            "signalee": self._depot.signalee(copie_id), "corrigee": s.formateur is not None})
-            if hab.source == Source.FORMATEUR and s.ia is not None and not s.ecarts:
+            if hab.source == Source.FORMATEUR and s.ia is not None and not s.ecarts_ia_pairs:
                 candidates.setdefault(copie.exercice, {})[copie_id] = s.ia
-        groupes = [lot for par_exercice in candidates.values() for lot in lots(par_exercice, self._seuil)]
+        seuil = self._seuil() if candidates else 0.0  # réglages lus seulement s'il y a des lots possibles
+        groupes = [lot for par_exercice in candidates.values() for lot in lots(par_exercice, seuil)]
         return {"copies": copies, "lots": groupes}
 
     def copie(self, acteur: str, copie_id: str) -> dict:

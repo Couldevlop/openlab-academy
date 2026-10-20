@@ -4,7 +4,8 @@ from datetime import timedelta
 from openlab_academy.application.chaine import FaireAvancer, TraiterEcheances
 from openlab_academy.application.corriger import (
     LIEN_RETOUR, Acces, AccesRefuse, ConsulterCorrection, CorrectionRefusee, CorrigerCopie, GererDelegations,
-    PublierNote, ValiderLot, derniere, fiabilite, synthese)
+    LibererNote, PublierNote, ValiderLot, derniere, fiabilite, synthese)
+from openlab_academy.application.pairs import StatutRelecture
 from openlab_academy.application.pre_corriger import SIGNALEMENT
 from openlab_academy.application.soumettre_copie import Contenu
 from openlab_academy.domain.copie import Proposition, Source, Statut
@@ -45,9 +46,11 @@ class Cas(unittest.TestCase):
         self.delegations = list(delegations)
         self.acces = Acces(self.m, lambda: self.delegations, horloge, lambda u: u == ADMIN)
         self.corriger = CorrigerCopie(self.m, self.acces, self.avancer, journal)
-        self.publier = PublierNote(self.m, self.acces, self.avancer, journal, lambda *a: self.notes.append(a))
+        self.publier = PublierNote(self.m, self.m, self.acces, self.avancer, journal,
+                                   lambda *a: self.notes.append(a))
+        self.liberer = LibererNote(self.m, self.m, self.avancer.chaine, journal, lambda *a: self.notes.append(a))
         self.lot = ValiderLot(self.m, self.acces, 0.8, journal)
-        self.vue = ConsulterCorrection(self.m, self.acces, 0.8)
+        self.vue = ConsulterCorrection(self.m, self.acces, lambda: 0.8)
 
     def a_corriger(self, apprenant=A):
         """Copie rendue, contrôles passés : à l'étape suivante (jury ou formateur)."""
@@ -234,6 +237,19 @@ class TestValiderLot(Cas):
             self.lot.executer(FORM, ids + [mienne])
         self.assertTrue(all(derniere(self.m.propositions(c), Source.FORMATEUR) is None for c in ids))
 
+    def test_ecart_ia_pairs_hors_lot(self):
+        ids = self.lot_de(1)
+        self.m.ajouter_proposition(ids[0], ia(BONS))
+        self.m.ajouter_proposition(ids[0], Proposition(Source.PAIR, "p", {"pertinence": 0, "rigueur": 2}))
+        with self.assertRaisesRegex(CorrectionRefusee, "écart entre l'IA et les pairs"):
+            self.lot.executer(FORM, ids)
+
+    def test_correction_precedente_journalisee(self):
+        ids = self.lot_de(1)
+        self.corriger.executer(FORM, ids[0], BONS)
+        self.lot.executer(FORM, ids)
+        self.assertEqual(self.dernier("validation par lot")[3], {"niveaux": BONS})
+
     def test_hors_lot_refuse(self):
         ids = self.lot_de(confiance=0.5)
         with self.assertRaisesRegex(CorrectionRefusee, "hors lot"):
@@ -267,8 +283,8 @@ class TestPublierNote(Cas):
         self.assertEqual(self.publier.executer(FORM, cid), 10.0)
         self.assertEqual(self.m.copie(cid).statut, Statut.PUBLIEE)
         self.assertEqual(self.m.etat(cid).etape, "")
-        (copie, note, reussite, resume, lien), = self.m.publications
-        self.assertEqual((copie, note, reussite, lien), (cid, 10.0, True, LIEN_RETOUR.format(cid)))
+        (copie, note, reussite, resume, lien, differe), = self.m.publications
+        self.assertEqual((copie, note, reussite, lien, differe), (cid, 10.0, True, LIEN_RETOUR.format(cid), False))
         self.assertIn("10/20", resume)
         self.assertEqual(self.m.resultat(cid), (10.0, 20, True))
         self.assertEqual(self.notes[0][0], A)
@@ -284,7 +300,7 @@ class TestPublierNote(Cas):
         cid = self.corrigee()
         self.m.changer_statut(cid, Statut.PROVISOIRE, "formateur", None)
         self.publier.executer(FORM, cid)
-        self.assertEqual(self.dernier("note publiée")[3], {"statut": "provisoire"})
+        self.assertEqual(self.dernier("note publiée")[3], {"statut": "provisoire", "note": 10.0})
 
     def test_delegataire_publie_au_nom_du_titulaire(self):
         cid = self.corrigee(delegations=[delegation()])
@@ -300,6 +316,44 @@ class TestPublierNote(Cas):
         self.publier.executer(FORM, cid)
         with self.assertRaisesRegex(CorrectionRefusee, "pas à corriger"):
             self.publier.executer(FORM, cid)
+
+    def gatee(self):
+        """A doit encore relire la copie de B quand sa note est publiée."""
+        cid = self.corrigee()
+        b = self.m.rendre(B, self.chaine_, self.t)
+        self.rid = self.m.attribuer(b, A, self.t)
+        self.publier.executer(FORM, cid)
+        return cid
+
+    def test_gating_actif_ni_note_ni_reussite_ne_sortent(self):
+        cid = self.gatee()
+        (_, _, _, resume, lien, differe), = self.m.publications
+        self.assertEqual((resume, lien, differe), ("", LIEN_RETOUR.format(cid), True))
+        (destinataire, message), = self.notes
+        self.assertEqual(destinataire, A)
+        self.assertNotIn("10", message)
+        self.assertNotIn("réussi", message)
+        self.assertTrue(self.dernier("note publiée")[4]["lms_differe"])
+        self.assertFalse(self.liberer.executer(cid))  # relecture encore due
+        self.assertEqual(self.m.liberations, [])
+
+    def test_liberee_apres_les_relectures(self):
+        cid = self.gatee()
+        self.m.changer_statut_relecture(self.rid, StatutRelecture.FAITE)
+        self.assertEqual(self.m.copies_differees(A), [cid])
+        self.assertTrue(self.liberer.executer(cid))
+        (copie, reussite, resume, _), = self.m.liberations
+        self.assertEqual((copie, reussite), (cid, True))
+        self.assertIn("10/20", resume)
+        self.assertIn("10/20", self.notes[-1][1])
+        self.assertEqual(self.dernier("note libérée")[1], "systeme")
+        self.assertFalse(self.liberer.executer(cid))  # déjà libérée
+        self.assertEqual(len(self.m.liberations), 1)
+
+    def test_liberee_apres_dispense(self):
+        cid = self.gatee()
+        self.m.dispenser(cid)
+        self.assertTrue(self.liberer.executer(cid))
 
     def test_sans_correction_du_formateur(self):
         self.monter()
@@ -343,13 +397,20 @@ class TestConsulterCorrection(Cas):
             self.m.ajouter_proposition(cid, ia(BONS))
         self.m.ajouter_proposition(ids[2], Proposition(Source.PAIR, "p", {"pertinence": 0, "rigueur": 2}))
         mienne = self.a_corriger(FORM)
+        self.m.titulaires_ = {FORM}
         file = self.vue.file(FORM)
+        self.assertEqual(self.m.filtres_correction[-1], frozenset({FORM}))
         self.assertEqual([c["copie"] for c in file["copies"]], ids)
         self.assertNotIn(mienne, [c["copie"] for c in file["copies"]])
         self.assertEqual(file["lots"], [ids[:2]])  # écart IA/pairs : hors lot
         premiere = file["copies"][0]
         self.assertEqual((premiere["apprenant"], premiere["confiance"], premiere["role"]), ("e0@x.ci", 0.9, "formateur"))
         self.assertEqual(self.vue.file(AUTRE), {"copies": [], "lots": []})
+        self.assertEqual(len(self.vue.file(ADMIN)["copies"]), 5)  # le super administrateur voit tout
+        self.assertIsNone(self.m.filtres_correction[-1])
+        self.delegations = [delegation()]
+        self.vue.file(DELEG)
+        self.assertEqual(self.m.filtres_correction[-1], frozenset({DELEG, FORM}))
         self.assertEqual(self.vue.file(FORM, exercice="EX2"), {"copies": [], "lots": []})
 
     def test_file_du_jure(self):

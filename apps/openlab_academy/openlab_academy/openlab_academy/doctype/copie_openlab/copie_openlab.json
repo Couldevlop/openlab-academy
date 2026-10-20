@@ -23,6 +23,7 @@
   "note",
   "note_sur",
   "reussite",
+  "lms_differe",
   "grille_json",
   "empreinte",
   "signature",
@@ -127,6 +128,13 @@
    "read_only": 1
   },
   {
+   "fieldname": "lms_differe",
+   "fieldtype": "Check",
+   "label": "Statut LMS différé (gating)",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
    "fieldname": "grille_json",
    "fieldtype": "Long Text",
    "label": "Grille figée",
@@ -180,7 +188,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-20 18:00:00",
+ "modified": "2026-10-20 20:00:00",
  "sort_field": "modified",
  "sort_order": "DESC"
 }

@@ -49,6 +49,9 @@ class Memoire:
         self.auto_evals: dict[tuple[str, str], dict] = {}
         self.inscrits: set[tuple[str, str]] = set()
         self.delegations_: dict[str, object] = {}
+        self.differees_: set[str] = set()
+        self.liberations: list[tuple] = []
+        self.filtres_correction: list = []
 
     # --- préparation des cas ---------------------------------------------------
     def rendre(self, apprenant, chaine, maintenant, cohorte="COH1", exercice="EX1") -> str:
@@ -163,9 +166,21 @@ class Memoire:
     def jures(self, copie_id):
         return set(self.jures_)
 
-    def publier(self, copie_id, note, note_sur, reussite, resume, lien):
+    def publier(self, copie_id, note, note_sur, reussite, resume, lien, differe):
         self.resultats[copie_id] = (note, note_sur, reussite)
-        self.publications.append((copie_id, note, reussite, resume, lien))
+        self.publications.append((copie_id, note, reussite, resume, lien, differe))
+        if differe:
+            self.differees_.add(copie_id)
+
+    def differee(self, copie_id):
+        return copie_id in self.differees_
+
+    def copies_differees(self, apprenant=None):
+        return [cid for cid in sorted(self.differees_) if apprenant in (None, self.copies[cid].apprenant)]
+
+    def liberer(self, copie_id, reussite, resume, lien):
+        self.differees_.discard(copie_id)
+        self.liberations.append((copie_id, reussite, resume, lien))
 
     def resultat(self, copie_id):
         return self.resultats.get(copie_id)
@@ -179,10 +194,12 @@ class Memoire:
     def texte_lisible(self, copie_id):
         return self.contenu(copie_id).texte
 
-    def copies_en_correction(self, exercice=None):
+    def copies_en_correction(self, exercice=None, pour=None):
+        self.filtres_correction.append(pour)
         return [cid for cid, c in self.copies.items()
                 if c.statut in (Statut.A_CORRIGER, Statut.PROVISOIRE) and self.etats[cid].etape
-                and exercice in (None, c.exercice)]
+                and exercice in (None, c.exercice)
+                and (pour is None or (self.titulaires_ | self.jures_ | {self.etats[cid].escalade_a}) & pour)]
 
     def copies_publiees(self, exercice=None):
         return [cid for cid, c in self.copies.items() if c.statut == Statut.PUBLIEE and exercice in (None, c.exercice)]

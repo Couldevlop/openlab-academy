@@ -9,7 +9,10 @@ from frappe.utils import add_days, now_datetime
 from openlab_academy.application.pairs import StatutRelecture
 from openlab_academy.application.pre_corriger import SIGNALEMENT
 from openlab_academy.domain.copie import Proposition, Source, Statut
+from openlab_academy.application.corriger import ConsulterCorrection
 from openlab_academy.entrypoints import evaluation, evaluation_api as api
+from openlab_academy.infrastructure.depot_copies_frappe import DepotCopiesFrappe
+from openlab_academy.infrastructure.depot_relectures_frappe import DepotRelecturesFrappe
 from openlab_academy.infrastructure import journal_frappe
 from openlab_academy.infrastructure.reglages_evaluation_frappe import ROLE
 from openlab_academy.tests.test_chaine_frappe import Cas
@@ -56,6 +59,21 @@ class CasApi(Cas):
         api.corriger(copie, json.dumps(niveaux), json.dumps({"general": "Bon travail <b>gras</b>"}))
         return copie
 
+    def en_relecture(self):
+        self.cohorte = self.lot(FORM, A, B)
+        self.soumettre(self.livrable, A)
+        self.soumettre(self.livrable, B, "https://github.com/bkone/livrable")
+        self.a, self.b = self.copie_de(A), self.copie_de(B)
+        for copie in (self.a, self.b):
+            evaluation.controler(copie)
+        self.r_a = self.relectures.relectures_du_relecteur(A)[0].id  # A relit B
+        self.r_b = self.relectures.relectures_du_relecteur(B)[0].id  # B relit A
+
+    def relire(self, relecteur, relecture):
+        self.en_tant_que(relecteur)
+        commentaires = {c: "Argumenté et utile." for c in DIX}
+        api.enregistrer_relecture(relecture, json.dumps(DIX), json.dumps(commentaires))
+
     def deleguer_a(self, titulaire=FORM, delegataire=DELEG):
         frappe.get_doc({"doctype": "Delegation OpenLab", "titulaire": titulaire, "delegataire": delegataire,
                         "debut": add_days(now_datetime(), -1), "fin": add_days(now_datetime(), 5)}
@@ -84,6 +102,7 @@ class TestPublier(CasApi):
         (copie,) = self.a_corriger(A)
         self.deleguer_a()
         self.en_tant_que(DELEG)
+        self.assertEqual([c["copie"] for c in api.file_correction()["copies"]], [copie])
         api.corriger(copie, DIX)
         self.assertEqual(api.publier(copie), {"copie": copie, "note": 10.0})
         self.en_tant_que("Administrator")
@@ -210,21 +229,6 @@ class TestCorrecteur(CasApi):
 
 
 class TestApprenant(CasApi):
-    def en_relecture(self):
-        self.cohorte = self.lot(FORM, A, B)
-        self.soumettre(self.livrable, A)
-        self.soumettre(self.livrable, B, "https://github.com/bkone/livrable")
-        self.a, self.b = self.copie_de(A), self.copie_de(B)
-        for copie in (self.a, self.b):
-            evaluation.controler(copie)
-        self.r_a = self.relectures.relectures_du_relecteur(A)[0].id  # A relit B
-        self.r_b = self.relectures.relectures_du_relecteur(B)[0].id  # B relit A
-
-    def relire(self, relecteur, relecture):
-        self.en_tant_que(relecteur)
-        commentaires = {c: "Argumenté et utile." for c in DIX}
-        api.enregistrer_relecture(relecture, json.dumps(DIX), json.dumps(commentaires))
-
     def test_mon_retour_d_autrui_ou_inexistant_403(self):
         (copie,) = self.a_corriger(A)
         self.en_tant_que(B)
@@ -301,6 +305,63 @@ class TestApprenant(CasApi):
             api.enregistrer_auto_evaluation(self.livrable, DIX)
 
 
+class TestGating(CasApi):
+    """Publication pendant que l'apprenant doit encore une relecture : rien de la note ne sort."""
+
+    def publiee_sous_gating(self):
+        self.en_relecture()
+        self.relire(B, self.r_b)  # la copie de A passe au formateur ; A n'a pas encore relu B
+        self.en_tant_que("Administrator")
+        self.soumission = frappe.db.get_value("Copie OpenLab", self.a, "soumission")
+        self.statut_avant = frappe.db.get_value(SOUMISSION, self.soumission, "status")
+        self.en_tant_que(FORM)
+        api.corriger(self.a, DIX)
+        api.publier(self.a)
+        self.en_tant_que("Administrator")
+
+    def lms(self):
+        return frappe.db.get_value(SOUMISSION, self.soumission, ["status", "comments"], as_dict=True)
+
+    def test_publication_sous_gating_ne_divulgue_rien(self):
+        self.publiee_sous_gating()
+        lms = self.lms()
+        self.assertEqual(lms.status, self.statut_avant)
+        self.assertIn(f'href="/espace/retour/{self.a}"', lms.comments)
+        for fuite in ("10/20", "Note", "réussi", "Pass"):
+            self.assertNotIn(fuite, lms.comments)
+            self.assertNotIn(fuite, self.notifier.call_args.args[1])
+        self.assertEqual(frappe.db.get_value("Copie OpenLab", self.a, "lms_differe"), 1)
+
+    def test_liberee_quand_les_relectures_sont_faites(self):
+        self.publiee_sous_gating()
+        self.file.reset_mock()
+        self.relire(A, self.r_a)
+        self.file.assert_any_call("openlab_academy.entrypoints.evaluation.liberer_notes", apprenant=A,
+                                  enqueue_after_commit=True)
+        self.en_tant_que("Administrator")
+        evaluation.liberer_notes(A)
+        lms = self.lms()
+        self.assertEqual(lms.status, "Pass")
+        self.assertIn("10/20", lms.comments)
+        self.assertEqual(frappe.db.get_value("Copie OpenLab", self.a, "lms_differe"), 0)
+        self.assertIn("10/20", self.notifier.call_args.args[1])
+        self.assertIn("note libérée", self.actions(self.a))
+
+    def test_file_indisponible_l_echeancier_prendra_le_relais(self):
+        self.file.side_effect = ConnectionError("redis")
+        with mock.patch.object(evaluation.frappe, "log_error") as consigne:
+            evaluation.liberer_plus_tard(A)
+        consigne.assert_called_once()
+
+    def test_liberee_par_l_echeancier_apres_dispense(self):
+        self.publiee_sous_gating()
+        evaluation.traiter_echeances()
+        self.assertEqual(self.lms().status, self.statut_avant)  # relecture encore due : rien ne bouge
+        DepotRelecturesFrappe().dispenser(self.a)
+        evaluation.traiter_echeances()
+        self.assertEqual(self.lms().status, "Pass")
+
+
 class TestDelegations(CasApi):
     def test_deleguer_ses_corrections_puis_revoquer(self):
         self.en_tant_que(FORM)
@@ -344,6 +405,7 @@ class TestDelegations(CasApi):
         api.deleguer(DELEG, str(add_days(now_datetime(), -1)), str(add_days(now_datetime(), 3)),
                      cohorte=self.cohorte, exercice=self.livrable)
         self.en_tant_que(DELEG)
+        self.assertEqual([c["copie"] for c in api.file_correction()["copies"]], [copie])
         api.corriger(copie, DIX)
 
 
@@ -358,7 +420,7 @@ class TestAdaptateur(CasApi):
     def test_publier_sans_soumission_lms_fige_la_note(self):
         (copie,) = self.a_corriger(A)
         frappe.db.set_value("Copie OpenLab", copie, "soumission", "disparue")
-        self.depot.publier(copie, 12.0, 20, True, "Note : 12/20.", "/espace/retour/x")
+        self.depot.publier(copie, 12.0, 20, True, "Note : 12/20.", "/espace/retour/x", False)
         self.assertEqual(self.depot.resultat(copie), (12.0, 20, True))
 
 
@@ -376,19 +438,70 @@ class TestGardes(CasApi):
             with self.subTest(point=nom), self.assertRaises(frappe.PermissionError):
                 getattr(api, nom)(*args)
 
-    def test_debit_limite_sur_chaque_ecriture(self):
-        self.en_tant_que("Guest")
+    def test_debit_par_utilisateur_sur_chaque_ecriture(self):
+        """Même adresse, deux comptes : chacun son compteur ; au-delà de la limite -> 429."""
         requete = mock.Mock(method="POST")
-        for nom, limite in api.LIMITES.items():
-            ip = f"10.{uuid.uuid4().int % 250}.{uuid.uuid4().int % 250}.{uuid.uuid4().int % 250}"
-            with self.subTest(point=nom), mock.patch.object(frappe.local, "request", requete, create=True), \
-                    mock.patch.object(frappe.local, "request_ip", ip, create=True), \
-                    mock.patch.dict(frappe.local.form_dict, {"cmd": f"{api.__name__}.{nom}"}):
-                for _ in range(limite):
-                    with self.assertRaises(frappe.PermissionError):
+        with mock.patch.object(frappe.local, "request", requete, create=True), \
+                mock.patch.object(frappe.local, "request_ip", "10.0.0.7", create=True):
+            for nom, limite in api.LIMITES.items():
+                for qui in (A, B):
+                    frappe.cache.delete_value(api.cle_debit(nom, qui))
+                self.en_tant_que(A)
+                with self.subTest(point=nom):
+                    for _ in range(limite):
+                        try:
+                            getattr(api, nom)(*self.APPELS[nom])
+                        except (frappe.PermissionError, frappe.ValidationError):
+                            pass
+                    with self.assertRaises(frappe.TooManyRequestsError):
                         getattr(api, nom)(*self.APPELS[nom])
-                with self.assertRaises(frappe.RateLimitExceededError):
-                    getattr(api, nom)(*self.APPELS[nom])
+                    self.en_tant_que(B)
+                    try:
+                        getattr(api, nom)(*self.APPELS[nom])
+                    except (frappe.PermissionError, frappe.ValidationError):
+                        pass
                 frappe.local.message_log = []
         self.assertEqual(set(api.LIMITES), {"enregistrer_relecture", "enregistrer_auto_evaluation", "corriger",
-                                            "valider_lot", "publier", "deleguer", "revoquer"})
+                                            "valider_lot", "publier", "deleguer", "revoquer", "file_correction"})
+
+    def test_debit_non_compte_hors_requete(self):
+        self.en_tant_que(A)
+        frappe.cache.delete_value(api.cle_debit("publier", A))
+        with self.assertRaises(frappe.PermissionError):
+            api.publier("C")
+        self.assertFalse(frappe.cache.get(api.cle_debit("publier", A)))
+
+
+class TestFileCorrection(CasApi):
+    def test_apprenant_file_vide_sans_controle_par_copie(self):
+        self.a_corriger(A, B)
+        self.en_tant_que(A)
+        with mock.patch.object(ConsulterCorrection, "_habilitation") as habilitation, \
+                mock.patch.object(DepotCopiesFrappe, "titulaires") as titulaires, \
+                mock.patch.object(frappe.db, "sql", wraps=frappe.db.sql) as requetes:
+            self.assertEqual(api.file_correction(), {"copies": [], "lots": []})
+        habilitation.assert_not_called()
+        titulaires.assert_not_called()
+        sur_les_copies = [c for c in requetes.call_args_list
+                          if any(t in str(c.args[0]) for t in ("Copie OpenLab", "Proposition OpenLab", "Journal Note"))]
+        self.assertEqual(len(sur_les_copies), 1)  # la seule liste préfiltrée, vide : aucune lecture par copie
+
+    def test_destinataire_de_l_escalade(self):
+        (copie,) = self.a_corriger(A)
+        frappe.db.set_value("Copie OpenLab", copie, "escalade_a", AUTRE)
+        self.en_tant_que(AUTRE)
+        self.assertEqual([c["copie"] for c in api.file_correction()["copies"]], [copie])
+
+    def test_formateur_du_cours_et_formateur_par_defaut(self):
+        self.soumettre(self.livrable, A)  # sans cohorte : titulaires du cours, sinon formateur des réglages
+        copie = self.copie_de(A)
+        self.depot.changer_statut(copie, Statut.A_CORRIGER, "formateur", None)
+        cours = frappe.get_doc("LMS Course", self.cours)
+        cours.append("instructors", {"instructor": AUTRE})
+        cours.save(ignore_permissions=True)
+        self.en_tant_que(AUTRE)
+        self.assertEqual([c["copie"] for c in api.file_correction()["copies"]], [copie])
+        self.en_tant_que("Administrator")
+        frappe.db.set_single_value("Reglages OpenLab Academy", "formateur", DELEG)
+        self.en_tant_que(DELEG)
+        self.assertEqual(api.file_correction()["copies"], [])  # le cours a un formateur : DELEG n'est pas titulaire
