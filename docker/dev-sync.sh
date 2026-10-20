@@ -2,10 +2,18 @@
 set -euo pipefail
 C=openlab-academy_frappe_1
 B=/home/frappe/frappe-bench
-SRC="$(cd "$(dirname "$0")/../apps/openlab_academy" && (pwd -W 2>/dev/null || pwd))"
+APP="$(cd "$(dirname "$0")/../apps/openlab_academy" && pwd)"
+FRONT="$APP/frontend"
+PAQUET="$APP/openlab_academy/public/espace/espace.js"
 export MSYS_NO_PATHCONV=1
+# écrans d'évaluation : reconstruits si leurs sources sont plus récentes que le paquet
+if [ -d "$FRONT/node_modules" ] && { [ ! -f "$PAQUET" ] || [ -n "$(find "$FRONT/src" "$FRONT/vite.config.js" "$FRONT/package.json" -newer "$PAQUET" -print -quit)" ]; }; then
+  (cd "$FRONT" && npm run --silent build)
+fi
 docker exec -u frappe "$C" rm -rf "$B/apps/openlab_academy"
-docker cp "$SRC" "$C:$B/apps/openlab_academy"
+docker exec -u frappe "$C" mkdir -p "$B/apps/openlab_academy"
+# copie sans les dépendances du frontend (node_modules), inutiles au serveur
+tar -C "$APP" --exclude=./frontend/node_modules -cf - . | docker exec -i -u root "$C" tar -C "$B/apps/openlab_academy" -xf -
 docker exec -u root "$C" chown -R frappe:frappe "$B/apps/openlab_academy"
 docker exec -u frappe -w "$B" "$C" bash -lc '
   find apps/openlab_academy -name "__pycache__" -prune -exec rm -rf {} +

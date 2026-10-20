@@ -14,6 +14,11 @@ RUN bench get-app --skip-assets payments --branch version-15  && (cd apps/paymen
  && bench get-app --skip-assets lms --branch main \
  && cd apps/lms && git fetch --depth 1 upstream "$LMS_REF" && git checkout -q -f "$LMS_REF"
 COPY --chown=frappe:frappe apps/openlab_academy apps/openlab_academy
+# écrans d'évaluation (Vue 3 + frappe-ui) : construits vers openlab_academy/public/espace, dépendances retirées
+RUN cd apps/openlab_academy/frontend \
+ && npm ci --no-audit --no-fund \
+ && npm run build \
+ && rm -rf node_modules
 RUN ./env/bin/pip install -q -e apps/openlab_academy \
  && printf "frappe\npayments\nlms\nopenlab_academy" > sites/apps.txt \
  && (cd apps/lms && yarn install --check-files) \

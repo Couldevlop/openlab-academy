@@ -70,6 +70,7 @@ class DepotConsultation(DepotCorrection, Protocol):
     def contenu(self, copie_id: str) -> Contenu: ...
     def texte_lisible(self, copie_id: str) -> str: ...
     def consigne(self, exercice: str) -> str: ...
+    def titre(self, exercice: str) -> str: ...
     def signalee(self, copie_id: str) -> bool: ...
 
 
@@ -416,10 +417,12 @@ def _ia(p: Proposition | None) -> dict | None:
 
 
 class ConsulterCorrection:
-    def __init__(self, depot: DepotConsultation, acces: Acces, seuil_confiance: Callable[[], float]):
+    def __init__(self, depot: DepotConsultation, acces: Acces, seuil_confiance: Callable[[], float],
+                 chaine: Callable[[Copie], Chaine]):
         self._depot = depot
         self._acces = acces
         self._seuil = seuil_confiance
+        self._chaine = chaine
 
     def _habilitation(self, acteur: str, copie_id: str) -> tuple[Copie, Etat, Habilitation] | None:
         copie, etat = self._depot.copie(copie_id), self._depot.etat(copie_id)
@@ -458,8 +461,11 @@ class ConsulterCorrection:
         s = synthese(self._depot.propositions(copie_id))
         contenu = self._depot.contenu(copie_id)
         formateur = s.formateur
+        chaine = self._chaine(copie)
         return {
             "copie": copie_id, "apprenant": copie.apprenant, "exercice": copie.exercice, "cohorte": copie.cohorte,
+            "titre": self._depot.titre(copie.exercice), "note_sur": chaine.note_sur,
+            "seuil_reussite": chaine.seuil_reussite,
             "version": copie.version, "statut": copie.statut.value, "etape": etat.etape, "echeance": etat.echeance,
             "role": hab.source.value, "au_nom_de": hab.au_nom_de,
             "contenu": self._depot.texte_lisible(copie_id), "source_url": contenu.source_url,

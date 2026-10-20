@@ -50,7 +50,7 @@ class Cas(unittest.TestCase):
                                    lambda *a: self.notes.append(a))
         self.liberer = LibererNote(self.m, self.m, self.avancer.chaine, journal, lambda *a: self.notes.append(a))
         self.lot = ValiderLot(self.m, self.acces, 0.8, journal)
-        self.vue = ConsulterCorrection(self.m, self.acces, lambda: 0.8)
+        self.vue = ConsulterCorrection(self.m, self.acces, lambda: 0.8, self.avancer.chaine)
 
     def a_corriger(self, apprenant=A):
         """Copie rendue, contrôles passés : à l'étape suivante (jury ou formateur)."""
@@ -432,6 +432,7 @@ class TestConsulterCorrection(Cas):
         self.m.signalees.add(cid)
         vue = self.vue.copie(FORM, cid)
         self.assertEqual((vue["contenu"], vue["consigne"], vue["apprenant"]), ("Ma copie", "Analysez le cas.", A))
+        self.assertEqual((vue["titre"], vue["note_sur"], vue["seuil_reussite"]), ("Mise en situation 01", 20, 10.0))
         self.assertEqual((vue["auto_evaluation"], vue["controles"]), (MOYENS, ["trop court"]))
         self.assertEqual(vue["ia"], {"niveaux": BONS, "justifications": {"pertinence": "Justification pertinence",
                                                                          "rigueur": "Justification rigueur"},

@@ -266,8 +266,8 @@ class TestApprenant(CasApi):
         (resume,) = api.mes_relectures()
         self.assertEqual((resume["relecture"], resume["rang"], resume["total"]), (self.r_a, 1, 1))
         vue = api.relecture(self.r_a)
-        self.assertEqual(set(vue), {"relecture", "exercice", "consigne", "contenu", "grille", "statut", "echeance",
-                                    "rang", "total", "anonymat_garanti"})
+        self.assertEqual(set(vue), {"relecture", "exercice", "titre", "consigne", "contenu", "grille", "statut",
+                                    "echeance", "rang", "total", "anonymat_garanti"})
         for trace in (B, self.b, "bkone", frappe.db.get_value("User", B, "full_name")):
             self.assertNotIn(trace, repr(vue))
             self.assertNotIn(trace, repr(resume))

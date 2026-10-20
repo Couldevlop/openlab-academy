@@ -5,3 +5,5 @@ __pycache__/
 poc/
 ~$*
 .remember/
+node_modules/
+apps/openlab_academy/openlab_academy/public/espace/

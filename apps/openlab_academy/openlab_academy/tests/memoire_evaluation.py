@@ -42,6 +42,7 @@ class Memoire:
         self.paires_concurrentes: set[tuple[str, str]] = set()  # insérées par une autre transaction
         self.contenus: dict[str, Contenu] = {}
         self.consignes = {"EX1": "Analysez le cas."}
+        self.titres = {"EX1": "Mise en situation 01"}
         self.jures_: set[str] = set()
         self.resultats: dict[str, tuple] = {}
         self.publications: list[tuple] = []
@@ -83,6 +84,9 @@ class Memoire:
 
     def consigne(self, exercice):
         return self.consignes.get(exercice, "")
+
+    def titre(self, exercice):
+        return self.titres.get(exercice, exercice)
 
     def ajouter_proposition(self, copie_id, p):
         self.props.setdefault(copie_id, []).append(p)

@@ -134,6 +134,10 @@ class DepotCopiesFrappe:
         question = frappe.db.get_value("LMS Assignment", exercice, "question") or ""
         return html.unescape(strip_html_tags(question)).strip()
 
+    def titre(self, exercice: str) -> str:
+        """Titre du devoir LMS, à défaut son identifiant (texte brut, échappé à l'affichage)."""
+        return frappe.db.get_value("LMS Assignment", exercice, "title") or exercice
+
     def version_courante(self, soumission: str) -> Copie | None:
         noms = frappe.get_all(COPIE, {"soumission": soumission}, pluck="name", order_by="version desc", limit=1)
         return self.copie(noms[0]) if noms else None

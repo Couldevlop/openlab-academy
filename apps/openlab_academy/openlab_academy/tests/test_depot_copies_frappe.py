@@ -258,6 +258,10 @@ class TestRendu(Base):
         self.assertEqual(self.depot.consigne(self.cas), "Analysez le cas « Aya ».")
         self.assertEqual(self.depot.consigne("inexistant"), "")
 
+    def test_titre_de_l_exercice_ou_son_identifiant(self):
+        self.assertTrue(self.depot.titre(self.cas).startswith("Mise en situation"))
+        self.assertEqual(self.depot.titre("inexistant"), "inexistant")
+
     def test_soumettre_assemble_les_adaptateurs(self):
         s = self.soumettre(self.livrable)
         (ligne,) = self.copies()

@@ -5,3 +5,5 @@ docs/
 **/*.pyc
 *.docx
 docker/.env
+**/node_modules
+apps/openlab_academy/openlab_academy/public/espace

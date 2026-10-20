@@ -180,14 +180,14 @@ def mon_retour(copie: str) -> dict:
 @_limite("file_correction")
 def file_correction(exercice: str | None = None) -> dict:
     depot = _depot()
-    return ConsulterCorrection(depot, _acces(depot), _seuil).file(_moi(), exercice or None)
+    return ConsulterCorrection(depot, _acces(depot), _seuil, evaluation.avanceur().chaine).file(_moi(), exercice or None)
 
 
 @frappe.whitelist(methods=["GET"])
 @_api
 def copie_a_corriger(copie: str) -> dict:
     depot = _depot()
-    return ConsulterCorrection(depot, _acces(depot), _seuil).copie(_moi(), _copie(depot, copie))
+    return ConsulterCorrection(depot, _acces(depot), _seuil, evaluation.avanceur().chaine).copie(_moi(), _copie(depot, copie))
 
 
 @frappe.whitelist(methods=["POST"])

@@ -12,6 +12,9 @@ after_request = ["openlab_academy.entrypoints.http.after_request"]
 app_include_css = ["/assets/openlab_academy/css/openlab.css"]
 web_include_css = ["/assets/openlab_academy/css/openlab.css"]
 
+# écrans d'évaluation (relecture, correcteur, retour) : une page, routée côté navigateur
+website_route_rules = [{"from_route": "/espace/<path:app_path>", "to_route": "espace"}]
+
 override_whitelisted_methods = {"lms.lms.utils.get_lesson": "openlab_academy.entrypoints.lms.get_lesson"}
 doc_events = {
     "LMS Quiz Submission": {"before_insert": "openlab_academy.entrypoints.lms.avant_soumission_quiz"},

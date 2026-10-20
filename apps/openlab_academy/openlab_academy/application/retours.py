@@ -23,6 +23,7 @@ VISIBLES = (StatutRelecture.A_FAIRE, StatutRelecture.FAITE)
 
 class DepotRetours(Protocol):
     def copie(self, copie_id: str) -> Copie: ...
+    def titre(self, exercice: str) -> str: ...
     def grille(self, copie_id: str) -> Grille: ...
     def propositions(self, copie_id: str) -> list[Proposition]: ...
     def resultat(self, copie_id: str) -> tuple[float, int, bool]: ...
@@ -39,7 +40,8 @@ class ConsulterRetour:
         copie = self._depot.copie(copie_id)
         if copie.apprenant != apprenant:
             raise AccesRefuse("cette copie n'est pas la vôtre")
-        base = {"copie": copie_id, "exercice": copie.exercice, "statut": copie.statut.value,
+        base = {"copie": copie_id, "exercice": copie.exercice, "titre": self._depot.titre(copie.exercice),
+                "statut": copie.statut.value,
                 "provisoire": copie.statut == Statut.PROVISOIRE, "masquee": False, "note": None, "note_sur": None,
                 "reussite": None, "criteres": [], "commentaire_general": "", "message": EN_COURS}
         if copie.statut not in (Statut.PUBLIEE, Statut.PROVISOIRE):
@@ -64,6 +66,7 @@ class ConsulterRetour:
             criteres.append({
                 "code": c.code, "libelle": c.libelle, "poids": c.poids, "niveau": niveau,
                 "niveau_libelle": c.niveaux[niveau].libelle if niveau is not None else "",
+                "niveaux": [n.libelle for n in c.niveaux],
                 "auto_evaluation": s.auto_evaluation.niveaux.get(c.code) if s.auto_evaluation else None,
                 "commentaire": commentaires.get(c.code, ""),
                 "pairs": [p.commentaires[c.code] for p in s.pairs if p.commentaires.get(c.code)]})
@@ -115,6 +118,7 @@ class DepotRelecturesVues(Protocol):
     def contenu(self, copie_id: str) -> Contenu: ...
     def texte_lisible(self, copie_id: str) -> str: ...
     def consigne(self, exercice: str) -> str: ...
+    def titre(self, exercice: str) -> str: ...
 
 
 class DepotRelecturesDuRelecteur(DepotRelectures, Protocol):
@@ -147,7 +151,8 @@ class ConsulterRelectures:
         if trouvee is None:
             raise AccesRefuse("relecture non attribuée")
         r, exercice, rang, total = trouvee
-        return {"relecture": r.id, "exercice": exercice, "consigne": self._depot.consigne(exercice),
+        return {"relecture": r.id, "exercice": exercice, "titre": self._depot.titre(exercice),
+                "consigne": self._depot.consigne(exercice),
                 "contenu": self._depot.texte_lisible(r.copie), "grille": self._depot.grille(r.copie).vers_dict(),
                 "statut": r.statut.value, "echeance": r.echeance, "rang": rang, "total": total,
                 "anonymat_garanti": not self._depot.contenu(r.copie).rendu_par_lien}

@@ -39,8 +39,8 @@ class TestConsulterRetour(Cas):
         self.monter()
         self.m.ajouter_proposition(self.a, Proposition(Source.IA, "ia", BONS, {"pertinence": "secret"}))
         retour = self.retour.executer(A, self.a)
-        self.assertEqual((retour["statut"], retour["note"], retour["criteres"], retour["message"]),
-                         ("rendue", None, [], EN_COURS))
+        self.assertEqual((retour["statut"], retour["note"], retour["criteres"], retour["message"], retour["titre"]),
+                         ("rendue", None, [], EN_COURS, "Mise en situation 01"))
         self.assertNotIn("secret", repr(retour))
 
     def test_note_masquee_tant_que_les_relectures_ne_sont_pas_faites(self):
@@ -77,8 +77,9 @@ class TestConsulterRetour(Cas):
                          (12.5, 20, True, False))
         premier = retour["criteres"][0]
         self.assertEqual(premier, {"code": "pertinence", "libelle": "Pertinence", "poids": 60, "niveau": 2,
-                                   "niveau_libelle": "Bon", "auto_evaluation": 1, "commentaire": "Bien",
-                                   "pairs": ["Très clair"]})
+                                   "niveau_libelle": "Bon", "niveaux": ["Faible", "Moyen", "Bon"],
+                                   "auto_evaluation": 1, "commentaire": "Bien", "pairs": ["Très clair"]})
+        self.assertEqual(retour["titre"], "Mise en situation 01")
         self.assertEqual(retour["commentaire_general"], "Bravo")
         self.assertNotIn(B, repr(retour))  # pairs anonymes
 
@@ -153,8 +154,9 @@ class TestConsulterRelectures(Cas):
 
     def test_relecture_sans_champ_identifiant_l_auteur(self):
         vue = self.vue.relecture(A, self.r1)
-        self.assertEqual(set(vue), {"relecture", "exercice", "consigne", "contenu", "grille", "statut", "echeance",
-                                    "rang", "total", "anonymat_garanti"})
+        self.assertEqual(set(vue), {"relecture", "exercice", "titre", "consigne", "contenu", "grille", "statut",
+                                    "echeance", "rang", "total", "anonymat_garanti"})
+        self.assertEqual(vue["titre"], "Mise en situation 01")
         self.assertEqual((vue["contenu"], vue["consigne"], vue["anonymat_garanti"]),
                          ("Copie de B", "Analysez le cas.", False))
         self.assertNotIn(B, repr(vue))
