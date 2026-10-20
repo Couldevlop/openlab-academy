@@ -98,9 +98,37 @@ class DepotFrappe:
             "doctype": "LMS Assignment", "title": titre, "question": consigne,
             "type": type_, "course": cours_id, "grade_assignment": 1,
         }).insert(ignore_permissions=True).name
+        self._figer(nom, type_exercice, projet, grille, chaine)
+        return nom
+
+    def _figer(self, nom: str, type_exercice: TypeExercice, projet, grille: Grille | None, chaine: Chaine | None):
         grille = grille or grille_par_defaut(type_exercice, projet, self._reglages, self._evaluation)
         depot_copies_frappe.enregistrer_grille_exercice(nom, type_exercice, grille, chaine)
-        return nom
+
+    def completer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
+        """Cours conservé tel quel (inscrits) : crée seulement les grilles manquantes de ses devoirs, par titre."""
+        if isinstance(parcours, Annonce):
+            return
+        for titre, type_exercice, projet, grille, chaine in self._exercices(parcours):
+            nom = frappe.db.get_value("LMS Assignment", {"course": cours_id, "title": titre})
+            if nom and not depot_copies_frappe.a_une_grille(nom):
+                self._figer(nom, type_exercice, projet, grille, chaine)
+
+    @staticmethod
+    def _type_projet(projet) -> TypeExercice:
+        return TypeExercice.CAPSTONE if projet.apres_module is None else TypeExercice.PROJET
+
+    def _exercices(self, parcours: Parcours):
+        """(titre du devoir, type, projet, grille, chaîne) de chaque exercice du parcours."""
+        for chapitre in parcours.chapitres():
+            if chapitre.projet is not None:
+                p = chapitre.projet
+                yield chapitre.titre, self._type_projet(p), p, p.grille, p.correction
+            for m in chapitre.modules:
+                yield f"Livrable {m.num} — {m.title}", TypeExercice.LIVRABLE, None, m.grille_livrable, m.correction_livrable
+                if m.quiz:
+                    yield (f"Mise en situation {m.num} — {m.title}", TypeExercice.MISE_EN_SITUATION, None,
+                           m.grille_cas, m.correction_cas)
 
     @staticmethod
     def _nouvelle_lecon(cours_id: str, chapitre: str, titre: str, contenu: str, evaluations: list[dict]):
@@ -110,7 +138,7 @@ class DepotFrappe:
         }).insert(ignore_permissions=True)
 
     def _lecon_projet(self, cours_id: str, chapitre: str, ch: Chapitre) -> str:
-        type_exercice = TypeExercice.CAPSTONE if ch.projet.apres_module is None else TypeExercice.PROJET
+        type_exercice = self._type_projet(ch.projet)
         devoir = self._devoir(cours_id, ch.titre, editorjs.consigne_projet(ch.projet), type_exercice, ch.projet,
                               ch.projet.grille, ch.projet.correction)
         return self._nouvelle_lecon(cours_id, chapitre, f"Énoncé — {ch.projet.titre}",

@@ -26,6 +26,9 @@ class DepotEnMemoire:
     def remplacer(self, cours_id, p):
         self._ecrire(p)
 
+    def completer(self, cours_id, p):
+        self.completes = getattr(self, "completes", []) + [cours_id]
+
     def _ecrire(self, p):
         self.cours[p.title] = p
         if p.title in self.echoue_sur:
@@ -62,6 +65,7 @@ class TestPublierParcours(unittest.TestCase):
         self.assertEqual(self.publier(depot, parcours(short_introduction="x")), {"T": Statut.IGNORE})
         self.assertIs(depot.cours["T"], original)
         self.assertIn("« T » a des inscrits", self.journal[0])
+        self.assertEqual(depot.completes, ["T"])  # seules les grilles manquantes sont créées
 
     def test_echec_isole_et_annule(self):
         depot = DepotEnMemoire(echoue_sur={"KO"})

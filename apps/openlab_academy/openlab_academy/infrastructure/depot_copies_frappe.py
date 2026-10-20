@@ -30,6 +30,17 @@ def enregistrer_grille_exercice(exercice: str, type_: TypeExercice, grille: Gril
         frappe.db.set_value(GRILLE_EXERCICE, existante, valeurs)
 
 
+def a_une_grille(exercice: str) -> bool:
+    return bool(frappe.db.exists(GRILLE_EXERCICE, {"exercice": exercice}))
+
+
+def cours_evalue(exercice: str) -> bool:
+    """Le cours de ce devoir a-t-il des exercices avec grille OpenLab ?"""
+    cours = frappe.db.get_value("LMS Assignment", exercice, "course")
+    devoirs = frappe.get_all("LMS Assignment", filters={"course": cours}, pluck="name") if cours else []
+    return bool(devoirs) and bool(frappe.db.exists(GRILLE_EXERCICE, {"exercice": ["in", devoirs]}))
+
+
 def supprimer_grilles_sans_copie(exercices: list[str]) -> None:
     """Retire les grilles des exercices purgés par une republication, sauf celles qui ont des copies."""
     for exercice in exercices:
@@ -65,6 +76,15 @@ class DepotCopiesFrappe:
     def auto_evaluation(self, apprenant: str, exercice: str) -> dict[str, int] | None:
         niveaux = frappe.db.get_value(AUTO_EVALUATION, {"apprenant": apprenant, "exercice": exercice}, "niveaux_json")
         return {c: int(n) for c, n in json.loads(niveaux).items()} if niveaux else None
+
+    def enregistrer_auto_evaluation(self, apprenant: str, exercice: str, niveaux: dict[str, int]) -> None:
+        """Une seule auto-évaluation par (apprenant, exercice) : la nouvelle remplace l'ancienne."""
+        nom = frappe.db.get_value(AUTO_EVALUATION, {"apprenant": apprenant, "exercice": exercice})
+        if nom:
+            frappe.db.set_value(AUTO_EVALUATION, nom, "niveaux_json", _json(niveaux))
+        else:
+            frappe.get_doc({"doctype": AUTO_EVALUATION, "apprenant": apprenant, "exercice": exercice,
+                            "niveaux_json": _json(niveaux)}).insert(ignore_permissions=True)
 
     # --- copies --------------------------------------------------------------
     def signature(self, copie_id: str) -> str:

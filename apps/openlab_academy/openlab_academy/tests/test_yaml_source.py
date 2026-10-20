@@ -206,6 +206,24 @@ class TestGrilleEtCorrection(unittest.TestCase):
             with self.subTest(nom), self.assertRaisesRegex(FormatInvalide, message):
                 depuis_dict(brut, "t.yaml")
 
+    def test_booleens_refuses_ou_un_entier_est_attendu(self):
+        brut = parcours_brut()
+        brut["portfolio"][0]["duree_h"] = True
+        with self.assertRaisesRegex(FormatInvalide, "duree_h doit être un entier"):
+            depuis_dict(brut, "t.yaml")
+        brut = parcours_brut()
+        brut["parametres"] = {"heures_par_module": True}
+        with self.assertRaisesRegex(FormatInvalide, "doit être un entier"):
+            depuis_dict(brut, "t.yaml")
+        brut = parcours_brut()
+        brut["portfolio"][0]["grille"] = [critere_brut(poids=True)]
+        with self.assertRaisesRegex(FormatInvalide, "poids doit être un entier"):
+            depuis_dict(brut, "t.yaml")
+        brut = parcours_brut()
+        brut["blocs"][0]["modules"][0]["quiz"][0]["bonnes"] = [True]
+        with self.assertRaisesRegex(FormatInvalide, "bonnes doit être une liste"):
+            depuis_dict(brut, "t.yaml")
+
     def test_correction_invalide_message_clair(self):
         brut = parcours_brut()
         brut["blocs"][0]["modules"][0]["correction_livrable"] = {"etapes": [{"etape": "zzz"}]}

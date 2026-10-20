@@ -84,8 +84,9 @@ class TestSoumettreCopie(unittest.TestCase):
     def cas(self, depot=None, instantane=None, reglages=None, surcharges=lambda: ()):
         self.depot = depot or DepotMemoire()
         self.instantane = instantane or InstantaneMemoire()
+        self.journal = []
         self.uc = SoumettreCopie(self.depot, self.instantane, reglages or ReglagesEvaluation(), lambda: MAINTENANT,
-                                 surcharges)
+                                 surcharges, lambda *args: self.journal.append(args))
         return self.uc
 
     def test_premier_rendu(self):
@@ -156,14 +157,36 @@ class TestSoumettreCopie(unittest.TestCase):
         self.assertEqual(self.depot.propositions(v2), [])  # propositions de la v1 hors calcul
         self.assertEqual(len(self.depot.propositions(v1)), 1)
 
-    def test_resoumission_d_une_copie_deja_avancee(self):
+    def test_resoumission_d_une_copie_avancee_non_publiee(self):
+        for statut in (Statut.PRE_CORRIGEE, Statut.PROVISOIRE):
+            uc = self.cas()
+            v1 = uc.executer(soumission())
+            self.depot.copies[v1] = replace(self.depot.copies[v1], statut=statut)
+            v2 = uc.executer(soumission(answer="https://github.com/a/p2"))
+            self.assertEqual(self.depot.copie(v2).version, 2)
+            self.assertEqual(self.depot.copie(v1).statut, statut)
+            self.assertEqual(self.depot.relectures_annulees, [v1])
+
+    def test_resoumission_apres_publication_ignoree_et_journalisee(self):
         uc = self.cas()
         v1 = uc.executer(soumission())
         self.depot.copies[v1] = replace(self.depot.copies[v1], statut=Statut.PUBLIEE)
-        v2 = uc.executer(soumission(answer="https://github.com/a/p2"))
-        self.assertEqual(self.depot.copie(v2).version, 2)
-        self.assertEqual(self.depot.copie(v1).statut, Statut.PUBLIEE)
-        self.assertEqual(self.depot.relectures_annulees, [v1])
+        self.assertEqual(uc.executer(soumission(answer="https://github.com/a/p2")), v1)
+        self.assertEqual(len(self.depot.copies), 1)
+        self.assertEqual(self.depot.relectures_annulees, [])
+        self.assertEqual(self.journal[0][:3], (v1, "a@x.ci", "rendu après publication ignoré"))
+
+    def test_chaine_invalide_n_ecrit_rien(self):
+        uc = self.cas()
+        v1 = uc.executer(soumission())
+        dangereuse = Chaine(tuple(ConfigEtape(e, e == Etape.FORMATEUR, 1, Expiration.PUBLIER_PROVISOIRE)
+                                  for e in Etape))
+        uc._surcharges = lambda: (Surcharge(None, "EX1", dangereuse),)
+        with self.assertRaisesRegex(ValueError, "provisoire"):
+            uc.executer(soumission(answer="https://github.com/a/p2"))
+        self.assertEqual(len(self.depot.copies), 1)
+        self.assertEqual(self.depot.copie(v1).statut, Statut.RENDUE)
+        self.assertEqual(self.depot.relectures_annulees, [])
 
     def test_auto_evaluation_prealable_rattachee(self):
         copie_id = self.cas(DepotMemoire(auto={"pertinence": 1, "rigueur": 0})).executer(soumission())

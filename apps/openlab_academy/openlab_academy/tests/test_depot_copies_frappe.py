@@ -7,12 +7,14 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy import hooks
+from openlab_academy.application.publier_parcours import PublierParcours, Statut as StatutPublication
 from openlab_academy.domain.cohorte import Cohorte
 from openlab_academy.domain.copie import Proposition, Source, Statut
 from openlab_academy.domain.grille import Grille
-from openlab_academy.domain.parcours import Bloc
+from openlab_academy.domain.parcours import Annonce, Bloc
 from openlab_academy.domain.reglages import Reglages
-from openlab_academy.domain.reglages_evaluation import TypeExercice
+from openlab_academy.domain.reglages_evaluation import (
+    Chaine, ConfigEtape, Etape, Expiration, Surcharge, TypeExercice)
 from openlab_academy.entrypoints import evaluation
 from openlab_academy.infrastructure import depot_copies_frappe
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
@@ -209,10 +211,23 @@ class TestCopies(Base):
     def test_responsable_pedagogique_lit_sans_ecrire(self):
         self.soumettre(self.livrable)
         nom = self.copies()[0].name
-        permissions = frappe.get_meta("Copie OpenLab").permissions
-        responsable = [p for p in permissions if p.role == "Responsable pédagogique OpenLab"]
-        self.assertEqual([(p.read, p.write, p.create) for p in responsable], [(1, 0, 0)])
-        self.assertTrue(nom)
+        email = "responsable.copie@example.ci"
+        if not frappe.db.exists("User", email):
+            frappe.get_doc({"doctype": "User", "email": email, "first_name": "Resp", "send_welcome_email": 0,
+                            "roles": [{"role": "Responsable pédagogique OpenLab"}]}).insert(ignore_permissions=True)
+        frappe.set_user(email)
+        self.assertTrue(frappe.has_permission("Copie OpenLab", "read", nom))
+        self.assertFalse(frappe.has_permission("Copie OpenLab", "write", nom))
+        self.assertFalse(frappe.has_permission("Copie OpenLab", "create"))
+
+    def test_auto_evaluation_unique_par_apprenant_et_exercice(self):
+        self.depot.enregistrer_auto_evaluation(A, self.livrable, {"pertinence": 1})
+        self.depot.enregistrer_auto_evaluation(A, self.livrable, {"pertinence": 2})
+        self.assertEqual(self.depot.auto_evaluation(A, self.livrable), {"pertinence": 2})
+        self.assertEqual(frappe.db.count("Auto Evaluation OpenLab", {"apprenant": A, "exercice": self.livrable}), 1)
+        with self.assertRaisesRegex(frappe.ValidationError, "existe déjà"):
+            frappe.get_doc({"doctype": "Auto Evaluation OpenLab", "apprenant": A, "exercice": self.livrable,
+                            "niveaux_json": "{}"}).insert(ignore_permissions=True)
 
 
 class TestRendu(Base):
@@ -233,6 +248,85 @@ class TestRendu(Base):
         self.assertEqual(evaluation.soumettre({"name": s.name, "assignment": self.livrable, "member": A,
                                                "type": "URL", "answer": URL, "assignment_attachment": None}),
                          ligne.name)
+
+
+class TestCoursConserve(Base):
+    def test_cours_avec_inscrit_republie_recoit_ses_grilles_manquantes(self):
+        frappe.get_doc({"doctype": "LMS Enrollment", "course": self.cours, "member": A,
+                        "member_type": "Student"}).insert(ignore_permissions=True)
+        frappe.db.delete("Grille Exercice OpenLab", {"exercice": ["in", [self.cas, self.livrable, self.projet]]})
+        avant = frappe.get_doc("Grille Exercice OpenLab", {"exercice": self.capstone}).modified
+        depot = DepotFrappe(commit=False, reglages=Reglages())
+        statuts = PublierParcours(depot, lambda message: None).executer([self.p])
+        self.assertEqual(statuts, {self.p.title: StatutPublication.IGNORE})
+        for devoir, type_ in ((self.cas, "mise_en_situation"), (self.livrable, "livrable"), (self.projet, "projet")):
+            self.assertEqual(frappe.db.get_value("Grille Exercice OpenLab", {"exercice": devoir}, "type_exercice"), type_)
+        self.assertEqual(frappe.get_doc("Grille Exercice OpenLab", {"exercice": self.capstone}).modified, avant)
+        self.soumettre(self.livrable)
+        self.assertEqual(len(self.copies()), 1)
+
+    def test_completer_ignore_une_annonce_et_les_devoirs_inconnus(self):
+        depot = DepotFrappe(commit=False)
+        depot.completer(self.cours, Annonce("A", "s", "d", (), "Blue"))
+        frappe.db.delete("Grille Exercice OpenLab", {"exercice": self.livrable})
+        frappe.db.delete("LMS Assignment", {"name": self.livrable})
+        depot.completer(self.cours, self.p)
+        self.assertFalse(frappe.db.exists("Grille Exercice OpenLab", {"exercice": self.livrable}))
+
+    def test_completer_un_module_sans_mise_en_situation(self):
+        simple = parcours(title="Cours simple completer")
+        cours = DepotFrappe(commit=False).creer(simple)
+        frappe.db.delete("Grille Exercice OpenLab", {"exercice": ["in", frappe.get_all(
+            "LMS Assignment", filters={"course": cours}, pluck="name")]})
+        DepotFrappe(commit=False).completer(cours, simple)
+        self.assertEqual(frappe.db.count("Grille Exercice OpenLab", {"exercice": ["in", frappe.get_all(
+            "LMS Assignment", filters={"course": cours}, pluck="name")]}), 12)
+
+    def test_exercice_sans_grille_d_un_cours_openlab_consigne(self):
+        frappe.db.delete("Grille Exercice OpenLab", {"exercice": self.livrable})
+        with mock.patch.object(evaluation.frappe, "log_error") as journal:
+            self.soumettre(self.livrable)
+        self.assertEqual(journal.call_count, 1)  # une fois, malgré after_insert + on_update
+        self.assertEqual(self.copies(), [])
+
+    def test_devoir_hors_cours_openlab_sans_consignation(self):
+        devoir = frappe.get_doc({"doctype": "LMS Assignment", "title": "Libre", "question": "q", "type": "URL",
+                                 "course": DepotFrappe(commit=False).creer(parcours(title="Cours libre"))}
+                                ).insert(ignore_permissions=True).name
+        frappe.db.delete("Grille Exercice OpenLab", {"exercice": ["in", frappe.get_all(
+            "LMS Assignment", filters={"course": frappe.db.get_value("LMS Assignment", devoir, "course")},
+            pluck="name")]})
+        with mock.patch.object(evaluation.frappe, "log_error") as journal:
+            self.soumettre(devoir)
+        journal.assert_not_called()
+
+
+class TestAtomicite(Base):
+    def test_echec_apres_ecriture_annule_tout(self):
+        s = self.soumettre(self.livrable)
+        (v1,) = self.copies()
+        frappe.get_doc({"doctype": "Relecture Pair OpenLab", "copie": v1.name, "relecteur": B}).insert(
+            ignore_permissions=True)
+        dangereuse = Chaine(tuple(ConfigEtape(e, e == Etape.FORMATEUR, 1, Expiration.PUBLIER_PROVISOIRE)
+                                  for e in Etape))
+        s.answer = "https://github.com/aya/livrable-v2"
+        with mock.patch.object(evaluation.reglages_evaluation_frappe, "surcharges",
+                               return_value=(Surcharge(None, self.livrable, dangereuse),)), \
+                mock.patch.object(evaluation.frappe, "log_error") as journal:
+            s.save(ignore_permissions=True)
+        journal.assert_called()
+        self.assertEqual([(c.version, c.statut) for c in self.copies()], [(1, "rendue")])
+        self.assertEqual(frappe.db.get_value("Relecture Pair OpenLab", {"copie": v1.name}, "statut"), "à_faire")
+
+    def test_rendu_apres_publication_ignore(self):
+        s = self.soumettre(self.livrable)
+        (v1,) = self.copies()
+        frappe.db.set_value("Copie OpenLab", v1.name, "statut", "publiee")
+        s.answer = "https://github.com/aya/livrable-v2"
+        s.save(ignore_permissions=True)
+        self.assertEqual([(c.version, c.statut) for c in self.copies()], [(1, "publiee")])
+        self.assertEqual(frappe.db.get_value("Journal Note OpenLab", {"copie": v1.name}, "action"),
+                         "rendu après publication ignoré")
 
 
 class TestStatut(Base):

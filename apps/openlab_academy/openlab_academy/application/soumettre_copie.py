@@ -63,12 +63,14 @@ class Instantane(Protocol):
 
 class SoumettreCopie:
     def __init__(self, depot: DepotCopies, instantane: Instantane, reglages: ReglagesEvaluation,
-                 horloge: Callable[[], datetime], surcharges: Callable[[], tuple[Surcharge, ...]] = lambda: ()):
+                 horloge: Callable[[], datetime], surcharges: Callable[[], tuple[Surcharge, ...]] = lambda: (),
+                 journal: Callable[[str, str, str, dict, dict], None] = lambda *_: None):
         self._depot = depot
         self._instantane = instantane
         self._reglages = reglages
         self._horloge = horloge
         self._surcharges = surcharges
+        self._journal = journal
 
     def executer(self, soumission: dict) -> str | None:
         """Identifiant de la copie courante ; None si l'exercice n'a pas de grille OpenLab."""
@@ -79,9 +81,25 @@ class SoumettreCopie:
         signature = Contenu.signature_de(soumission)
         if courante is not None and self._depot.signature(courante.id) == signature:
             return courante.id
+        apprenant, assignment = soumission["member"], soumission["assignment"]
+        if courante is not None and courante.statut == Statut.PUBLIEE:  # la note publiée est définitive
+            self._journal(courante.id, apprenant, "rendu après publication ignoré", {}, {"signature": signature})
+            return courante.id
+        # tout ce qui peut échouer est calculé avant la première écriture
+        cohorte = self._depot.cohorte(apprenant, assignment)
+        chaine = self._reglages.chaine_pour(exercice.type_, cohorte, assignment, self._surcharges(), exercice.chaine)
+        etape = etape_suivante(chaine, None)
+        echeance = self._horloge() + timedelta(hours=chaine.config(etape).delai_heures)
         if courante is not None:
             self._remplacer(courante)
-        return self._creer(soumission, exercice, signature, 1 if courante is None else courante.version + 1)
+        copie = Copie("", apprenant, assignment, cohorte or "", exercice.type_,
+                      1 if courante is None else courante.version + 1, Statut.RENDUE)
+        copie_id = self._depot.creer(copie, exercice.grille, self._contenu(soumission, signature))
+        self._depot.changer_statut(copie_id, Statut.RENDUE, etape.value, echeance)
+        niveaux = self._depot.auto_evaluation(apprenant, assignment)
+        if niveaux is not None:
+            self._depot.ajouter_proposition(copie_id, Proposition(Source.AUTO_EVALUATION, apprenant, niveaux))
+        return copie_id
 
     def _remplacer(self, ancienne: Copie) -> None:
         self._depot.annuler_relectures(ancienne.id)
@@ -89,20 +107,6 @@ class SoumettreCopie:
             self._depot.changer_statut(ancienne.id, ancienne.passer_a(Statut.RENVOYEE).statut, "", None)
         except TransitionInterdite:
             pass  # copie déjà avancée : elle garde son statut, seule la nouvelle version fait foi
-
-    def _creer(self, soumission: dict, exercice: Exercice, signature: str, version: int) -> str:
-        apprenant, assignment = soumission["member"], soumission["assignment"]
-        cohorte = self._depot.cohorte(apprenant, assignment)
-        copie = Copie("", apprenant, assignment, cohorte or "", exercice.type_, version, Statut.RENDUE)
-        copie_id = self._depot.creer(copie, exercice.grille, self._contenu(soumission, signature))
-        chaine = self._reglages.chaine_pour(exercice.type_, cohorte, assignment, self._surcharges(), exercice.chaine)
-        etape = etape_suivante(chaine, None)
-        echeance = self._horloge() + timedelta(hours=chaine.config(etape).delai_heures)
-        self._depot.changer_statut(copie_id, Statut.RENDUE, etape.value, echeance)
-        niveaux = self._depot.auto_evaluation(apprenant, assignment)
-        if niveaux is not None:
-            self._depot.ajouter_proposition(copie_id, Proposition(Source.AUTO_EVALUATION, apprenant, niveaux))
-        return copie_id
 
     def _contenu(self, soumission: dict, signature: str) -> Contenu:
         nom = soumission["name"]

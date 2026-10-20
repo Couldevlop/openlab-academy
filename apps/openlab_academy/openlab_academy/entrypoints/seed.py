@@ -19,7 +19,8 @@ def _journal(message: str) -> None:
 def run(path: str | None = None, commit: bool = True) -> dict[str, str]:
     reglages = reglages_source_frappe.charger()
     lot = charger_dossier(pathlib.Path(path) if path else PARCOURS_DIR, reglages)
-    statuts = PublierParcours(DepotFrappe(commit=commit, reglages=reglages, evaluation=reglages_evaluation_frappe.charger()), _journal).executer(lot)
+    depot = DepotFrappe(commit=commit, reglages=reglages, evaluation=reglages_evaluation_frappe.charger())
+    statuts = PublierParcours(depot, _journal).executer(lot)
     resultat = {titre: statut.value for titre, statut in statuts.items()}
     print(resultat)
     return resultat

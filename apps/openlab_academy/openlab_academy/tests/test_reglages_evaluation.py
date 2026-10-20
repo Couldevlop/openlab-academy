@@ -157,10 +157,6 @@ class TestChainePour(unittest.TestCase):
         self.assertIs(autorise.chaine_pour(TypeExercice.PROJET, "C1", "EX1", (), dangereuse), dangereuse)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class TestChaineDict(unittest.TestCase):
     def test_aller_retour(self):
         c = CHAINES_DEFAUT[TypeExercice.LIVRABLE]
@@ -194,3 +190,7 @@ class TestChaineDict(unittest.TestCase):
         ]:
             with self.subTest(donnees=donnees), self.assertRaisesRegex(ReglagesInvalides, message):
                 Chaine.depuis_dict(donnees)
+
+
+if __name__ == "__main__":
+    unittest.main()

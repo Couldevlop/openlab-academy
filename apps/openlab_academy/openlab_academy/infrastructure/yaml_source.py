@@ -15,6 +15,10 @@ _LISTES_PROJET = ("objectifs", "fonctionnalites", "stack", "criteres_acceptation
 _PARAMETRES = {"projets_par_portfolio": "projets_attendus", "heures_par_module": "heures_par_module"}
 
 
+def _entier(valeur) -> bool:
+    return isinstance(valeur, int) and not isinstance(valeur, bool)
+
+
 class FormatInvalide(ValueError):
     """Fichier de parcours mal formé ou contraire aux invariants du domaine."""
 
@@ -34,7 +38,7 @@ class _Lecteur:
         for cle, valeur in surcharges.items():
             if cle not in _PARAMETRES:
                 raise FormatInvalide(f"{self.source}: parametres.{cle} inconnu ({sorted(_PARAMETRES)})")
-            if not isinstance(valeur, int):
+            if not _entier(valeur):
                 raise FormatInvalide(f"{self.source}: parametres.{cle} doit être un entier")
             valeurs[_PARAMETRES[cle]] = valeur
         return valeurs
@@ -55,7 +59,7 @@ class _Lecteur:
         if not isinstance(q, dict):
             raise FormatInvalide(f"{self.source}: {chemin} doit être une question (dictionnaire)")
         bonnes = self.exiger(q, "bonnes", chemin)
-        if not isinstance(bonnes, list) or not all(isinstance(b, int) for b in bonnes):
+        if not isinstance(bonnes, list) or not all(_entier(b) for b in bonnes):
             raise FormatInvalide(f"{self.source}: {chemin}bonnes doit être une liste de numéros d'options")
         return Question(enonce=str(self.exiger(q, "question", chemin)),
                         options=self.textes(self.exiger(q, "options", chemin), f"{chemin}options"),
@@ -78,7 +82,7 @@ class _Lecteur:
         niveaux = self.exiger(c, "niveaux", f"{chemin}.")
         if not isinstance(niveaux, list) or not all(isinstance(n, dict) and "libelle" in n for n in niveaux):
             raise FormatInvalide(f"{self.source}: {chemin}.niveaux doit être une liste de niveaux avec un libelle")
-        if not isinstance(c.get("poids"), int):
+        if not _entier(c.get("poids")):
             raise FormatInvalide(f"{self.source}: {chemin}.poids doit être un entier")
         libelle = str(self.exiger(c, "libelle", f"{chemin}."))
         return {"code": str(self.exiger(c, "code", f"{chemin}.")), "libelle": libelle, "poids": c["poids"],
@@ -120,7 +124,7 @@ class _Lecteur:
         except ValueError:
             raise FormatInvalide(f"{self.source}: {chemin}niveau '{niveau}' inconnu") from None
         duree = self.exiger(p, "duree_h", chemin)
-        if not isinstance(duree, int):
+        if not _entier(duree):
             raise FormatInvalide(f"{self.source}: {chemin}duree_h doit être un entier")
         apres = p.get("apres_module")
         return Projet(
