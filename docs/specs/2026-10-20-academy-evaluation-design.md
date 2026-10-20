@@ -140,7 +140,7 @@ OpenLab »), dans l'esprit de l'écran « Réglages OpenLab Academy » existant 
 - suppléants par cohorte, responsable pédagogique, délégations en cours, publication provisoire oui/non ;
 - défauts par type d'exercice, surcharge par cohorte et par exercice.
 
-Priorité : console (exercice > cohorte > type) > YAML du parcours > défauts du code. Une valeur réglée dans la
+Priorité : console exercice > console cohorte > YAML de l'exercice > console type d'exercice > défauts du code. Une valeur réglée dans la
 console **n'est jamais écrasée** par la republication des parcours (hook `after_migrate`).
 
 ## 5. IA souveraine

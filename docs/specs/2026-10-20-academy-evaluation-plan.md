@@ -19,7 +19,7 @@ Vue 3 + frappe-ui + Vite (écrans), llama.cpp server (API compatible OpenAI) sur
 
 - TDD strict, couverture 100 % hors tests (`bash docker/dev-test.sh`, seuil 99 %), suite complète verte à chaque commit.
 - Aucune valeur métier en dur : défauts dans le domaine, valeur effective lue dans la console (§4.7 de la spec).
-  Priorité : surcharge exercice > surcharge cohorte > type d'exercice > YAML > défauts du code.
+  Priorité : surcharge exercice (console) > surcharge cohorte (console) > YAML de l'exercice > type d'exercice (console) > défauts du code.
 - Rien ne bloque (§4.6) : chaque étape a un délai et une action à expiration ; une erreur d'adaptateur (IA, HTTP)
   marque l'étape « non disponible » et la copie avance.
 - Seul un humain publie une note définitive ; la publication provisoire est une option désactivée par défaut,
