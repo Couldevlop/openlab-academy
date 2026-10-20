@@ -2,7 +2,9 @@
 import json
 
 import frappe
+from frappe.utils import get_datetime
 
+from openlab_academy.application.chaine import Etat
 from openlab_academy.application.soumettre_copie import Contenu, Exercice
 from openlab_academy.domain.copie import Copie, Proposition, Source, Statut
 from openlab_academy.domain.grille import Grille
@@ -13,6 +15,9 @@ PROPOSITION = "Proposition OpenLab"
 RELECTURE = "Relecture Pair OpenLab"
 GRILLE_EXERCICE = "Grille Exercice OpenLab"
 AUTO_EVALUATION = "Auto Evaluation OpenLab"
+INSTRUCTEUR = "Course Instructor"
+EN_COURS = [s.value for s in (Statut.RENDUE, Statut.CONTROLEE, Statut.PRE_CORRIGEE, Statut.EN_RELECTURE,
+                              Statut.A_CORRIGER)]
 
 
 def _json(valeur) -> str:
@@ -130,3 +135,31 @@ class DepotCopiesFrappe:
         for nom in frappe.get_all(RELECTURE, {"copie": copie_id, "statut": "à_faire"}, pluck="name"):
             frappe.db.set_value(RELECTURE, nom, "statut", "annulée")
 
+    # --- état dans la chaîne de correction ------------------------------------
+    def etat(self, copie_id: str) -> Etat:
+        ligne = frappe.db.get_value(COPIE, copie_id, ["etape_courante", "echeance", "escalade_a"], as_dict=True)
+        return Etat(ligne.etape_courante or "", get_datetime(ligne.echeance) if ligne.echeance else None,
+                    ligne.escalade_a or "")
+
+    def grille(self, copie_id: str) -> Grille:
+        return Grille.depuis_dict(json.loads(frappe.db.get_value(COPIE, copie_id, "grille_json")))
+
+    def copies_echues(self, maintenant) -> list[str]:
+        filtres = [["statut", "in", EN_COURS], ["echeance", "is", "set"], ["echeance", "<=", maintenant]]
+        return frappe.get_all(COPIE, filtres, pluck="name", order_by="echeance")
+
+    def escalader(self, copie_id: str, destinataire: str, echeance) -> None:
+        frappe.db.set_value(COPIE, copie_id, {"escalade_a": destinataire, "echeance": echeance})
+
+    def titulaires(self, copie_id: str) -> set[str]:
+        """Formateurs de la cohorte, sinon du cours, sinon le formateur des réglages OpenLab Academy."""
+        cohorte, exercice = frappe.db.get_value(COPIE, copie_id, ["cohorte", "exercice"])
+        noms = frappe.get_all(INSTRUCTEUR, {"parent": cohorte or "", "parenttype": "LMS Batch"},
+                              pluck="instructor", parent_doctype="LMS Batch")
+        if not noms:
+            cours = frappe.db.get_value("LMS Assignment", exercice, "course") or ""
+            noms = frappe.get_all(INSTRUCTEUR, {"parent": cours, "parenttype": "LMS Course"},
+                                  pluck="instructor", parent_doctype="LMS Course")
+        if not noms:
+            noms = [frappe.db.get_single_value("Reglages OpenLab Academy", "formateur")]
+        return {n for n in noms if n}

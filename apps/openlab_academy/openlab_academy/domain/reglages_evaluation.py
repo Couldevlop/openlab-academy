@@ -155,6 +155,7 @@ class Surcharge:
     cohorte: str | None
     exercice: str | None
     chaine: Chaine
+    suppleant: str | None = None  # remplaçant du formateur échu, avant le responsable pédagogique
 
     def __post_init__(self):
         if self.cohorte is None and self.exercice is None:

@@ -188,6 +188,15 @@ class TestSoumettreCopie(unittest.TestCase):
         self.assertEqual(self.depot.copie(v1).statut, Statut.RENDUE)
         self.assertEqual(self.depot.relectures_annulees, [])
 
+    def test_nouvelle_copie_demarree_une_seule_fois(self):
+        demarrees = []
+        uc = self.cas()
+        uc._demarrer = demarrees.append
+        v1 = uc.executer(soumission())
+        uc.executer(soumission(status="Pass"))  # même rendu : rien ne redémarre
+        v2 = uc.executer(soumission(answer="https://github.com/a/p2"))
+        self.assertEqual(demarrees, [v1, v2])
+
     def test_auto_evaluation_prealable_rattachee(self):
         copie_id = self.cas(DepotMemoire(auto={"pertinence": 1, "rigueur": 0})).executer(soumission())
         self.assertEqual(self.depot.propositions(copie_id),

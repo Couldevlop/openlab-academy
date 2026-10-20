@@ -7,6 +7,7 @@
  "field_order": [
   "cohorte",
   "exercice",
+  "suppleant",
   "etapes",
   "nb_pairs",
   "anonymat",
@@ -29,6 +30,13 @@
    "label": "Exercice",
    "options": "LMS Assignment",
    "in_list_view": 1
+  },
+  {
+   "fieldname": "suppleant",
+   "fieldtype": "Link",
+   "label": "Suppléant du formateur",
+   "options": "User",
+   "description": "Reçoit les copies quand le formateur dépasse son délai, avant le responsable pédagogique."
   },
   {
    "fieldname": "etapes",
@@ -89,7 +97,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-20 00:00:00",
+ "modified": "2026-10-20 12:00:00",
  "sort_field": "modified",
  "sort_order": "DESC",
  "custom": 0,

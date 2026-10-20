@@ -21,3 +21,6 @@ doc_events = {
         "on_update": "openlab_academy.entrypoints.evaluation.rendu",
     },
 }
+
+# échéances de la chaîne de correction : rien ne bloque une copie
+scheduler_events = {"hourly": ["openlab_academy.entrypoints.evaluation.traiter_echeances"]}

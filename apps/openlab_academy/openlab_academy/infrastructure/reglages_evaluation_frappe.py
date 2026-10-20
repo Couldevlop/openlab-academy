@@ -61,7 +61,7 @@ def vers_domaine(doc) -> ReglagesEvaluation:
 
 
 def surcharge_vers_domaine(doc) -> Surcharge:
-    return Surcharge(doc.cohorte or None, doc.exercice or None, _chaine(doc, doc.etapes))
+    return Surcharge(doc.cohorte or None, doc.exercice or None, _chaine(doc, doc.etapes), doc.suppleant or None)
 
 
 def charger() -> ReglagesEvaluation:
@@ -79,6 +79,16 @@ def delegations() -> tuple[Delegation, ...]:
     return tuple(Delegation(d.titulaire, d.delegataire, get_datetime(d.debut), get_datetime(d.fin),
                             cohorte=d.cohorte or None, exercice=d.exercice or None, revoquee=bool(d.revoquee))
                  for d in frappe.get_all(DELEGATION, fields=champs, order_by="creation"))
+
+
+class SourceReglagesFrappe:
+    """Réglages et surcharges relus à chaque usage : la console s'applique sans redémarrage."""
+
+    def reglages(self) -> ReglagesEvaluation:
+        return charger()
+
+    def surcharges(self) -> tuple[Surcharge, ...]:
+        return surcharges()
 
 
 def cle_ia() -> str:

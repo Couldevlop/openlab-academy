@@ -135,7 +135,7 @@ class TestCopies(Base):
         grille = Grille.depuis_dict(json.loads(copie.grille_json))
         self.assertEqual(copie.empreinte, grille.empreinte())
         self.assertEqual((copie.contenu, copie.source_url, copie.commit), (URL, URL, ""))  # instantané provisoire
-        self.assertEqual(copie.etape_courante, "auto_evaluation")
+        self.assertEqual(copie.etape_courante, "controles")  # l'auto-évaluation précède le rendu
         self.assertIsNotNone(copie.echeance)
 
     def test_correction_du_formateur_ne_cree_pas_de_version(self):

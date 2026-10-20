@@ -18,6 +18,8 @@
   "statut",
   "etape_courante",
   "echeance",
+  "escalade_a",
+  "relectures_dispensees",
   "grille_json",
   "empreinte",
   "signature",
@@ -92,6 +94,18 @@
    "label": "Échéance de l'étape"
   },
   {
+   "fieldname": "escalade_a",
+   "fieldtype": "Link",
+   "label": "Escaladée à",
+   "options": "User"
+  },
+  {
+   "fieldname": "relectures_dispensees",
+   "fieldtype": "Check",
+   "label": "Relectures dispensées",
+   "default": "0"
+  },
+  {
    "fieldname": "grille_json",
    "fieldtype": "Long Text",
    "label": "Grille figée",
@@ -145,7 +159,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-20 00:00:00",
+ "modified": "2026-10-20 12:00:00",
  "sort_field": "modified",
  "sort_order": "DESC"
 }

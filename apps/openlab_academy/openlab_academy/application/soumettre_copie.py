@@ -64,13 +64,15 @@ class Instantane(Protocol):
 class SoumettreCopie:
     def __init__(self, depot: DepotCopies, instantane: Instantane, reglages: ReglagesEvaluation,
                  horloge: Callable[[], datetime], surcharges: Callable[[], tuple[Surcharge, ...]] = lambda: (),
-                 journal: Callable[[str, str, str, dict, dict], None] = lambda *_: None):
+                 journal: Callable[[str, str, str, dict, dict], None] = lambda *_: None,
+                 demarrer: Callable[[str], None] = lambda _: None):
         self._depot = depot
         self._instantane = instantane
         self._reglages = reglages
         self._horloge = horloge
         self._surcharges = surcharges
         self._journal = journal
+        self._demarrer = demarrer  # déclenche la chaîne de correction d'une copie nouvellement créée
 
     def executer(self, soumission: dict) -> str | None:
         """Identifiant de la copie courante ; None si l'exercice n'a pas de grille OpenLab."""
@@ -99,6 +101,7 @@ class SoumettreCopie:
         niveaux = self._depot.auto_evaluation(apprenant, assignment)
         if niveaux is not None:
             self._depot.ajouter_proposition(copie_id, Proposition(Source.AUTO_EVALUATION, apprenant, niveaux))
+        self._demarrer(copie_id)
         return copie_id
 
     def _remplacer(self, ancienne: Copie) -> None:

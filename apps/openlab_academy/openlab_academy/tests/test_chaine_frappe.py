@@ -1,0 +1,233 @@
+"""Chaîne de correction sur de vraies soumissions : adaptateurs, tâches de fond, échéances horaires."""
+import datetime
+from unittest import mock
+
+import frappe
+from frappe.utils import now_datetime
+
+from openlab_academy import hooks
+from openlab_academy.application.chaine import SYSTEME, Etat, FaireAvancer
+from openlab_academy.application.pairs import EnregistrerRelecture, StatutRelecture
+from openlab_academy.domain.cohorte import Cohorte
+from openlab_academy.domain.copie import Source, Statut
+from openlab_academy.domain.reglages import Reglages
+from openlab_academy.entrypoints import evaluation
+from openlab_academy.infrastructure import journal_frappe
+from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
+from openlab_academy.infrastructure.depot_relectures_frappe import DepotRelecturesFrappe
+from openlab_academy.infrastructure.reglages_evaluation_frappe import SourceReglagesFrappe
+from openlab_academy.tests.test_depot_copies_frappe import A, B, Base
+from openlab_academy.tests.test_reglages_evaluation_frappe import etapes_formateur
+
+COPIE = "Copie OpenLab"
+JOURNAL = "Journal Note OpenLab"
+CONTROLER = "openlab_academy.entrypoints.evaluation.controler"
+
+
+class Cas(Base):
+    def setUp(self):
+        super().setUp()
+        self.file = mock.patch.object(evaluation.frappe, "enqueue").start()
+        self.addCleanup(mock.patch.stopall)
+        self.relectures = DepotRelecturesFrappe()
+
+    def lot(self, formateur="Administrator", *membres):
+        lot = DepotCohortesFrappe(formateur).creer(Cohorte.pilote(self.p, datetime.date(2026, 11, 2),
+                                                                  Reglages().rythme("standard"), Reglages()))
+        for membre in membres:
+            frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": lot, "member": membre}).insert(
+                ignore_permissions=True)
+        return lot
+
+    def copie_de(self, membre=A, devoir=None):
+        return frappe.get_all(COPIE, {"apprenant": membre, "exercice": devoir or self.livrable}, pluck="name",
+                              order_by="version desc", limit=1)[0]
+
+    def ligne(self, copie_id):
+        return frappe.db.get_value(COPIE, copie_id, ["statut", "etape_courante", "echeance", "escalade_a",
+                                                     "relectures_dispensees"], as_dict=True)
+
+    def actions(self, copie_id, acteur=SYSTEME):
+        return frappe.get_all(JOURNAL, {"copie": copie_id, "acteur": acteur}, pluck="action", order_by="creation")
+
+    def en_relecture(self):
+        """A et B, dans la même cohorte de deux, ont rendu le livrable et passé les contrôles."""
+        self.cohorte = self.lot("Administrator", A, B)
+        self.soumettre(self.livrable, A)
+        self.soumettre(self.livrable, B, "https://github.com/kone/livrable")
+        self.a, self.b = self.copie_de(A), self.copie_de(B)
+        for copie in (self.a, self.b):
+            evaluation.controler(copie)
+
+
+class TestDemarrage(Cas):
+    def test_rendu_demarre_la_chaine(self):
+        self.soumettre(self.livrable)
+        copie = self.copie_de()
+        self.assertEqual((self.ligne(copie).statut, self.ligne(copie).etape_courante), ("rendue", "controles"))
+        self.file.assert_called_once_with(CONTROLER, copie_id=copie, enqueue_after_commit=True)
+        self.assertEqual(self.actions(copie), ["étape suivante"])
+
+    def test_demarrage_en_erreur_garde_la_copie_a_sa_premiere_etape(self):
+        with mock.patch.object(FaireAvancer, "demarrer", side_effect=RuntimeError("panne")), \
+                mock.patch.object(evaluation.frappe, "log_error") as consigne:
+            self.soumettre(self.livrable)
+        consigne.assert_called_once()
+        ligne = self.ligne(self.copie_de())
+        self.assertEqual((ligne.statut, ligne.etape_courante), ("rendue", "auto_evaluation"))
+        self.assertIsNotNone(ligne.echeance)  # l'échéance horaire la fera avancer
+
+    def test_tache_inconnue_refusee(self):
+        with self.assertRaisesRegex(ValueError, "tâche inconnue"):
+            evaluation.file("supprimer", "C1")
+
+    def test_file_indisponible_ne_bloque_pas(self):
+        self.file.side_effect = ConnectionError("redis")
+        with mock.patch.object(evaluation.frappe, "log_error") as consigne:
+            evaluation.file("controler", "C1")
+        consigne.assert_called_once()
+
+    def test_etapes_non_disponibles_font_avancer(self):
+        self.soumettre(self.livrable)  # sans cohorte : pas de pairs
+        copie = self.copie_de()
+        evaluation.controler(copie)
+        self.assertEqual((self.ligne(copie).statut, self.ligne(copie).etape_courante), ("controlee", "ia"))
+        self.file.assert_called_with("openlab_academy.entrypoints.evaluation.pre_corriger", copie_id=copie,
+                                     enqueue_after_commit=True)
+        evaluation.controler(copie)  # signal périmé : ignoré
+        evaluation.pre_corriger(copie)
+        self.assertEqual((self.ligne(copie).statut, self.ligne(copie).etape_courante), ("a_corriger", "formateur"))
+        self.assertEqual(self.actions(copie), ["étape suivante", "contrôles non disponibles", "étape suivante",
+                                               "pré-correction non disponible", "pairs sautés", "étape suivante"])
+
+    def test_isoler_annule_les_ecritures_de_l_action_en_erreur(self):
+        self.soumettre(self.livrable)
+        copie = self.copie_de()
+
+        def action():
+            frappe.db.set_value(COPIE, copie, "etape_courante", "ia")
+            raise RuntimeError("panne")
+
+        with mock.patch.object(evaluation.frappe, "log_error") as consigne:
+            evaluation.isoler(action)
+        consigne.assert_called_once()
+        self.assertEqual(self.ligne(copie).etape_courante, "controles")
+
+
+class TestPairsFrappe(Cas):
+    def test_cohorte_de_deux_se_relit_et_avance(self):
+        self.en_relecture()
+        self.assertEqual(self.relectures.taille_cohorte(self.cohorte), 2)
+        self.assertEqual(self.relectures.taille_cohorte(""), 0)
+        self.assertEqual([c.id for c in self.relectures.copies_rendues(self.livrable, self.cohorte)], [self.a, self.b])
+        relectures = self.relectures.relectures(self.livrable, self.cohorte)
+        self.assertEqual({(r.copie, r.relecteur) for r in relectures}, {(self.a, B), (self.b, A)})
+        self.assertEqual(self.ligne(self.a).statut, "en_relecture")
+        b_relit_a = next(r for r in relectures if r.copie == self.a)
+        self.assertEqual(self.relectures.relecture(b_relit_a.id), b_relit_a)
+        self.assertIsNone(self.relectures.relecture("inexistante"))
+        uc = EnregistrerRelecture(evaluation.DepotCopiesFrappe(), self.relectures, evaluation.avanceur(),
+                                  journal_frappe.journaliser)
+        codes = [c.code for c in self.depot.grille(self.a).criteres]
+        uc.executer(B, b_relit_a.id, {c: 1 for c in codes}, {c: "Argumenté." for c in codes})
+        (p,) = [p for p in self.depot.propositions(self.a) if p.source == Source.PAIR]
+        self.assertEqual((p.auteur, p.niveaux), (B, {c: 1 for c in codes}))
+        self.assertEqual(self.relectures.relecture(b_relit_a.id).statut, StatutRelecture.FAITE)
+        self.assertEqual((self.ligne(self.a).statut, self.ligne(self.a).etape_courante), ("a_corriger", "formateur"))
+        self.assertIn("relecture", self.actions(self.a, acteur=B))
+
+    def test_version_courante_seule_dans_le_vivier(self):
+        self.en_relecture()
+        s = frappe.get_doc("LMS Assignment Submission", {"member": A, "assignment": self.livrable})
+        s.answer = "https://github.com/aya/livrable-v2"
+        s.save(ignore_permissions=True)
+        v2 = self.copie_de(A)
+        self.assertNotEqual(v2, self.a)
+        self.assertEqual([c.id for c in self.relectures.copies_rendues(self.livrable, self.cohorte)], [self.b, v2])
+
+    def test_relectures_echues_et_dispense(self):
+        self.en_relecture()
+        self.assertEqual(self.relectures.relectures_echues(now_datetime()), [])
+        plus_tard = now_datetime() + datetime.timedelta(days=4)
+        echues = self.relectures.relectures_echues(plus_tard)
+        self.assertEqual(len(echues), 2)
+        self.relectures.changer_statut_relecture(echues[0].id, StatutRelecture.ANNULEE)
+        self.assertEqual(len(self.relectures.relectures_echues(plus_tard)), 1)
+        sans_delai = frappe.get_doc({"doctype": "Relecture Pair OpenLab", "copie": self.a, "relecteur": A}).insert(
+            ignore_permissions=True).name
+        self.assertIsNone(self.relectures.relecture(sans_delai).echeance)
+        self.assertNotIn(sans_delai, [r.id for r in self.relectures.relectures_echues(plus_tard)])
+        self.relectures.dispenser(self.a)
+        self.assertEqual(self.ligne(self.a).relectures_dispensees, 1)
+
+    def test_traiter_echeances_fait_avancer_la_chaine(self):
+        self.en_relecture()
+        passe = now_datetime() - datetime.timedelta(hours=1)
+        frappe.db.set_value("Relecture Pair OpenLab", {"copie": self.a}, "echeance", passe)
+        frappe.db.set_value(COPIE, self.a, "echeance", passe)
+        evaluation.traiter_echeances()
+        # personne d'autre dans la cohorte : la relecture est annulée, B dispensé, la copie de A avance
+        self.assertEqual(frappe.db.get_value("Relecture Pair OpenLab", {"copie": self.a}, "statut"), "annulée")
+        self.assertEqual(self.ligne(self.b).relectures_dispensees, 1)
+        self.assertEqual(self.ligne(self.a).etape_courante, "formateur")
+        self.assertEqual(self.actions(self.a)[-3:], ["relecture annulée", "passer", "étape suivante"])
+        self.assertEqual(self.ligne(self.b).etape_courante, "pairs")
+
+    def test_hook_horaire(self):
+        self.assertEqual(hooks.scheduler_events["hourly"], ["openlab_academy.entrypoints.evaluation.traiter_echeances"])
+
+
+class TestDepotChaineFrappe(Cas):
+    def test_etat_grille_et_echeances(self):
+        self.soumettre(self.livrable)
+        copie = self.copie_de()
+        etat = self.depot.etat(copie)
+        self.assertEqual(etat.etape, "controles")
+        self.assertEqual(etat.escalade_a, "")
+        self.assertEqual(self.depot.grille(copie).criteres[0].code, "pertinence")
+        self.assertEqual(self.depot.copies_echues(now_datetime()), [])
+        self.assertIn(copie, self.depot.copies_echues(now_datetime() + datetime.timedelta(hours=2)))
+        echeance = datetime.datetime(2027, 1, 1, 9, 0)
+        self.depot.escalader(copie, "Administrator", echeance)
+        self.assertEqual(self.depot.etat(copie), Etat("controles", echeance, "Administrator"))
+        self.depot.changer_statut(copie, Statut.A_CORRIGER, "formateur", None)
+        self.assertEqual(self.depot.etat(copie).echeance, None)
+        self.assertNotIn(copie, self.depot.copies_echues(echeance))
+
+    def test_titulaires_de_la_cohorte_du_cours_ou_des_reglages(self):
+        self.lot(B, A)
+        self.soumettre(self.livrable)
+        self.assertEqual(self.depot.titulaires(self.copie_de()), {B})  # formateurs de la cohorte
+        self.soumettre(self.livrable, B)  # B hors cohorte : formateurs du cours
+        sans_lot = self.copie_de(B)
+        self.assertEqual(self.depot.titulaires(sans_lot), {"Administrator"})
+        cours = frappe.db.get_value("LMS Assignment", self.livrable, "course")
+        frappe.db.delete("Course Instructor", {"parent": cours, "parenttype": "LMS Course"})
+        with mock.patch.object(frappe.db, "get_single_value", return_value=A):
+            self.assertEqual(self.depot.titulaires(sans_lot), {A})  # formateur des réglages
+        with mock.patch.object(frappe.db, "get_single_value", return_value=None):
+            self.assertEqual(self.depot.titulaires(sans_lot), set())
+
+    def test_suppleant_de_la_surcharge(self):
+        lot = self.lot()
+        frappe.get_doc({"doctype": "Surcharge Evaluation OpenLab", "cohorte": lot, "suppleant": B,
+                        "etapes": etapes_formateur()}).insert()
+        source = SourceReglagesFrappe()
+        (surcharge,) = source.surcharges()
+        self.assertEqual(surcharge.suppleant, B)
+        self.assertEqual(source.reglages().responsable_pedagogique, frappe.get_single(
+            "Reglages Evaluation OpenLab").responsable_pedagogique or "")
+
+    def test_formateur_echu_escalade(self):
+        lot = self.lot("Administrator", A)
+        frappe.get_doc({"doctype": "Surcharge Evaluation OpenLab", "cohorte": lot, "suppleant": B,
+                        "etapes": etapes_formateur()}).insert()
+        self.soumettre(self.livrable)
+        copie = self.copie_de()
+        self.assertEqual(self.ligne(copie).etape_courante, "formateur")
+        frappe.db.set_value(COPIE, copie, "echeance", now_datetime() - datetime.timedelta(minutes=1))
+        evaluation.traiter_echeances()
+        self.assertEqual(self.ligne(copie).escalade_a, B)
+        (entree,) = frappe.get_all(JOURNAL, {"copie": copie, "action": "escalader"}, ["acteur", "avant", "apres"])
+        self.assertEqual(entree.acteur, SYSTEME)
+        self.assertIn("Administrator", entree.avant)
