@@ -7,7 +7,7 @@ MESSAGE = "Le journal des notes est non modifiable."
 
 class JournalNoteOpenLab(Document):
     def before_insert(self):
-        self.horodatage = self.horodatage or now_datetime()
+        self.horodatage = now_datetime()
 
     def on_update(self):
         if not self.flags.in_insert:

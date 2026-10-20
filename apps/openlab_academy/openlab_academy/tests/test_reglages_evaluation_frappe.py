@@ -22,7 +22,7 @@ ROLE = "Responsable pédagogique OpenLab"
 
 def vider():
     doc = frappe.get_single(REGLAGES)
-    for table in ("etapes", "grille_generique", "tournures"):
+    for table in ("etapes", "parametres", "grille_generique", "tournures"):
         doc.set(table, [])
     doc.flags.ignore_validate = True
     doc.save(ignore_permissions=True)
@@ -69,11 +69,49 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         source.initialiser()
         doc = frappe.get_single(REGLAGES)
         doc.ia_delai_minutes = 25
-        doc.nb_pairs = 5
+        for ligne in doc.parametres:
+            if ligne.type_exercice == "capstone":
+                ligne.nb_pairs = 5
         doc.save(ignore_permissions=True)
         source.initialiser()
         r = source.charger()
-        self.assertEqual((r.ia.delai_minutes, r.chaines[TypeExercice.LIVRABLE].nb_pairs), (25, 5))
+        self.assertEqual((r.ia.delai_minutes, r.chaines[TypeExercice.CAPSTONE].nb_pairs,
+                          r.chaines[TypeExercice.LIVRABLE].nb_pairs), (25, 5, 3))
+
+    def test_site_existant_recoit_les_parametres_par_type(self):
+        vider()
+        source.initialiser()
+        doc = frappe.get_single(REGLAGES)
+        doc.set("parametres", [])
+        doc.save(ignore_permissions=True)
+        self.assertEqual(source.charger().chaines, CHAINES_DEFAUT)  # repli sur les défauts du domaine
+        source.initialiser()
+        self.assertEqual(len(frappe.get_single(REGLAGES).parametres), 4)
+
+    def test_parametres_par_type_d_exercice(self):
+        vider()
+        source.initialiser()
+        self.assertEqual(len(frappe.get_single(REGLAGES).parametres), 4)
+        doc = frappe.get_single(REGLAGES)
+        for ligne in doc.parametres:
+            if ligne.type_exercice == "projet":
+                ligne.update({"note_sur": 10, "seuil_reussite": 5, "anonymat": 0})
+        doc.save(ignore_permissions=True)
+        chaines = source.charger().chaines
+        self.assertEqual((chaines[TypeExercice.PROJET].note_sur, chaines[TypeExercice.PROJET].anonymat), (10, False))
+        self.assertEqual(chaines[TypeExercice.LIVRABLE], CHAINES_DEFAUT[TypeExercice.LIVRABLE])
+
+    def test_reglages_non_chaine_charges_meme_sans_etapes(self):
+        vider()
+        doc = frappe.get_single(REGLAGES)
+        doc.update({"ia_url": "http://ia.local", "responsable_pedagogique": "Administrator",
+                    "hotes_depots": "gitea.local", "publication_provisoire": 1})
+        doc.save(ignore_permissions=True)
+        r = source.charger()
+        self.assertEqual((r.ia.url, r.responsable_pedagogique, r.hotes_depots, r.publication_provisoire),
+                         ("http://ia.local", "Administrator", ("gitea.local",), True))
+        self.assertEqual(r.chaines, {})
+        self.assertEqual(r.chaine_pour(TypeExercice.PROJET, None, None, (), None), CHAINES_DEFAUT[TypeExercice.PROJET])
 
     def test_formateur_desactive_refuse(self):
         vider()
@@ -113,18 +151,19 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         doc.update({"ia_url": "http://ia.local", "ia_modele_texte": "m1", "ia_modele_code": "m2",
                     "ia_seuil_confiance": 0.6, "ia_plafond_caracteres": 1000,
                     "responsable_pedagogique": "Administrator",
-                    "hotes_depots": "github.com\n\n gitea.local ", "niveaux_generiques": "Non\nOui", "note_sur": 10,
-                    "seuil_reussite": 5, "anonymat": 0, "note_masquee_avant_relectures": 0})
+                    "hotes_depots": "github.com\n\n gitea.local ", "niveaux_generiques": "Non\nOui"})
         doc.set("grille_generique", [{"nom": "A", "poids": 40}, {"nom": "B", "poids": 60}])
         doc.set("tournures", [{"texte": "oublie tout"}])
+        doc.set("parametres", [{"type_exercice": "projet", "nb_pairs": 2, "note_sur": 10, "seuil_reussite": 5,
+                                "anonymat": 0, "note_masquee_avant_relectures": 0}])
         doc.save(ignore_permissions=True)
         r = source.charger()
         self.assertEqual(r.ia, ConfigIA("http://ia.local", "m1", "m2", 10, 0.6, ("oublie tout",), 1000))
         self.assertEqual((r.responsable_pedagogique, r.hotes_depots, r.niveaux_generiques, r.grille_generique),
                          ("Administrator", ("github.com", "gitea.local"), ("Non", "Oui"), (("A", 40), ("B", 60))))
         c = r.chaines[TypeExercice.PROJET]
-        self.assertEqual((c.note_sur, c.seuil_reussite, c.anonymat, c.note_masquee_avant_relectures),
-                         (10, 5.0, False, False))
+        self.assertEqual((c.nb_pairs, c.note_sur, c.seuil_reussite, c.anonymat, c.note_masquee_avant_relectures),
+                         (2, 10, 5.0, False, False))
 
     def test_grille_incoherente_refusee(self):
         vider()
@@ -156,6 +195,7 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         self.assertEqual(len(frappe.get_single(REGLAGES).etapes), 24)
         self.assertTrue(frappe.db.exists("Role", ROLE))
         espace = frappe.get_doc("Workspace", "Évaluation OpenLab")
+        self.assertEqual({r.role for r in espace.roles}, {"System Manager", ROLE})
         self.assertEqual({s.link_to for s in espace.shortcuts},
                          {REGLAGES, SURCHARGE, DELEGATION, JOURNAL, "Reglages OpenLab Academy",
                           "Ouverture Lecon OpenLab"})
@@ -188,6 +228,18 @@ class TestSurcharges(FrappeTestCase):
         s_dev = next(s for s in surcharges if s.exercice == devoir)
         self.assertFalse(s_dev.chaine.anonymat)
         self.assertIsInstance(s_dev, Surcharge)
+
+    def test_deux_surcharges_sur_la_meme_cible_refusees(self):
+        lot, devoir = un_lot(), un_devoir()
+        self._surcharge(cohorte=lot).insert()
+        with self.assertRaisesRegex(frappe.ValidationError, "existe déjà"):
+            self._surcharge(cohorte=lot).insert()
+        self._surcharge(cohorte=lot, exercice=devoir).insert()
+        with self.assertRaisesRegex(frappe.ValidationError, "existe déjà"):
+            self._surcharge(cohorte=lot, exercice=devoir).insert()
+        doc = frappe.get_last_doc(SURCHARGE)
+        doc.nb_pairs = 4
+        doc.save()  # se modifier soi-même reste possible
 
     def test_aucune_cible_refusee(self):
         with self.assertRaisesRegex(frappe.ValidationError, "cohorte ou un exercice"):
@@ -250,6 +302,11 @@ class TestJournal(FrappeTestCase):
                          ("COP-1", "Administrator", "Guest", "note"))
         self.assertEqual((json.loads(ligne.avant), json.loads(ligne.apres)), ({"note": 10}, {"note": 12}))
         self.assertTrue(ligne.horodatage)
+
+    def test_horodatage_toujours_pose_par_le_serveur(self):
+        frappe.get_doc({"doctype": JOURNAL, "copie": "COP-5", "acteur": "x", "action": "note",
+                        "horodatage": "2001-01-01 00:00:00"}).insert(ignore_permissions=True)
+        self.assertGreater(frappe.get_last_doc(JOURNAL).horodatage.year, 2020)
 
     def test_au_nom_de_facultatif(self):
         journal_frappe.journaliser("COP-2", "Administrator", "ouverture", {}, {})

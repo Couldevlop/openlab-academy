@@ -1,0 +1,70 @@
+{
+ "doctype": "DocType",
+ "name": "Parametres Chaine OpenLab",
+ "issingle": 0,
+ "istable": 1,
+ "editable_grid": 1,
+ "field_order": [
+  "type_exercice",
+  "nb_pairs",
+  "anonymat",
+  "note_masquee_avant_relectures",
+  "note_sur",
+  "seuil_reussite"
+ ],
+ "fields": [
+  {
+   "fieldname": "type_exercice",
+   "fieldtype": "Select",
+   "label": "Type d'exercice",
+   "options": "\nmise_en_situation\nlivrable\nprojet\ncapstone",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "nb_pairs",
+   "fieldtype": "Int",
+   "label": "Nombre de relecteurs pairs",
+   "default": "3",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "anonymat",
+   "fieldtype": "Check",
+   "label": "Relecture anonyme",
+   "default": "1",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "note_masquee_avant_relectures",
+   "fieldtype": "Check",
+   "label": "Note masquée avant les relectures",
+   "default": "1",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "note_sur",
+   "fieldtype": "Int",
+   "label": "Note sur",
+   "default": "20",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "seuil_reussite",
+   "fieldtype": "Float",
+   "label": "Seuil de réussite",
+   "default": "10",
+   "in_list_view": 1
+  }
+ ],
+ "permissions": [],
+ "track_changes": 0,
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-20 00:00:00",
+ "modified": "2026-10-20 00:00:00",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "custom": 0,
+ "engine": "InnoDB",
+ "module": "OpenLab Academy"
+}

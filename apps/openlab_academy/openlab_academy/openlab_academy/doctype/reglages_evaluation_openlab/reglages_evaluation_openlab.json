@@ -8,12 +8,7 @@
   "section_chaines",
   "etapes",
   "section_parametres",
-  "nb_pairs",
-  "anonymat",
-  "note_masquee_avant_relectures",
-  "col_notes",
-  "note_sur",
-  "seuil_reussite",
+  "parametres",
   "section_publication",
   "publication_provisoire",
   "responsable_pedagogique",
@@ -48,42 +43,13 @@
   {
    "fieldname": "section_parametres",
    "fieldtype": "Section Break",
-   "label": "Paramètres communs des chaînes"
+   "label": "Paramètres de chaîne par type d'exercice"
   },
   {
-   "fieldname": "nb_pairs",
-   "fieldtype": "Int",
-   "label": "Nombre de relecteurs pairs",
-   "default": "3"
-  },
-  {
-   "fieldname": "anonymat",
-   "fieldtype": "Check",
-   "label": "Relecture anonyme",
-   "default": "1"
-  },
-  {
-   "fieldname": "note_masquee_avant_relectures",
-   "fieldtype": "Check",
-   "label": "Note masquée avant les relectures",
-   "default": "1"
-  },
-  {
-   "fieldname": "col_notes",
-   "fieldtype": "Column Break",
-   "label": ""
-  },
-  {
-   "fieldname": "note_sur",
-   "fieldtype": "Int",
-   "label": "Note sur",
-   "default": "20"
-  },
-  {
-   "fieldname": "seuil_reussite",
-   "fieldtype": "Float",
-   "label": "Seuil de réussite",
-   "default": "10"
+   "fieldname": "parametres",
+   "fieldtype": "Table",
+   "label": "Paramètres",
+   "options": "Parametres Chaine OpenLab"
   },
   {
    "fieldname": "section_publication",
