@@ -320,13 +320,14 @@ class ValiderLot:
                 raise CorrectionRefusee(f"copie {copie_id} hors lot : proposition IA absente ou peu sûre")
             if s.ecarts_ia_pairs:
                 raise CorrectionRefusee(f"copie {copie_id} hors lot : écart entre l'IA et les pairs")
+            if s.formateur is not None:  # une correction humaine n'est jamais écrasée par un lot
+                raise CorrectionRefusee(f"copie {copie_id} hors lot : déjà corrigée, à traiter une par une")
             niveaux = valider_niveaux(self._depot.grille(copie_id), ia.niveaux)
-            retenues.append((copie_id, hab, niveaux, ia, s.formateur))
-        for copie_id, hab, niveaux, ia, precedente in retenues:  # écritures après toutes les vérifications
+            retenues.append((copie_id, hab, niveaux, ia))
+        for copie_id, hab, niveaux, ia in retenues:  # écritures après toutes les vérifications
             self._depot.ajouter_proposition(copie_id, Proposition(Source.FORMATEUR, acteur, niveaux,
                                                                   dict(ia.commentaires), au_nom_de=hab.au_nom_de))
-            self._journal(copie_id, acteur, "validation par lot",
-                          {"niveaux": precedente.niveaux if precedente else {}}, {"niveaux": niveaux},
+            self._journal(copie_id, acteur, "validation par lot", {"niveaux": {}}, {"niveaux": niveaux},
                           hab.au_nom_de)
         return [r[0] for r in retenues]
 
@@ -442,7 +443,8 @@ class ConsulterCorrection:
                            "etape": etat.etape, "echeance": etat.echeance, "role": hab.source.value,
                            "confiance": s.ia.confiance if s.ia else None, "ecarts": sorted(s.ecarts),
                            "signalee": self._depot.signalee(copie_id), "corrigee": s.formateur is not None})
-            if hab.source == Source.FORMATEUR and s.ia is not None and not s.ecarts_ia_pairs:
+            if (hab.source == Source.FORMATEUR and s.ia is not None and s.formateur is None
+                    and not s.ecarts_ia_pairs):
                 candidates.setdefault(copie.exercice, {})[copie_id] = s.ia
         seuil = self._seuil() if candidates else 0.0  # réglages lus seulement s'il y a des lots possibles
         groupes = [lot for par_exercice in candidates.values() for lot in lots(par_exercice, seuil)]

@@ -347,6 +347,18 @@ class TestGating(CasApi):
         self.assertIn("10/20", self.notifier.call_args.args[1])
         self.assertIn("note libérée", self.actions(self.a))
 
+    def test_une_seule_liberation_quand_deux_chemins_listent_la_copie(self):
+        self.publiee_sous_gating()
+        DepotRelecturesFrappe().dispenser(self.a)
+        listees = DepotCopiesFrappe().copies_differees()  # l'échéancier a déjà listé la copie
+        self.assertIn(self.a, listees)
+        self.notifier.reset_mock()
+        evaluation.liberer_notes(A)  # la tâche de la relecture passe avant lui
+        cas = evaluation.liberateur()
+        self.assertEqual([cas.executer(c) for c in listees if c == self.a], [False])
+        self.assertEqual(self.actions(self.a).count("note libérée"), 1)
+        self.assertEqual(self.notifier.call_count, 1)
+
     def test_file_indisponible_l_echeancier_prendra_le_relais(self):
         self.file.side_effect = ConnectionError("redis")
         with mock.patch.object(evaluation.frappe, "log_error") as consigne:
@@ -445,7 +457,7 @@ class TestGardes(CasApi):
                 mock.patch.object(frappe.local, "request_ip", "10.0.0.7", create=True):
             for nom, limite in api.LIMITES.items():
                 for qui in (A, B):
-                    frappe.cache.delete_value(api.cle_debit(nom, qui))
+                    frappe.cache.delete_value(api.cle_debit(nom, qui), make_keys=False)
                 self.en_tant_que(A)
                 with self.subTest(point=nom):
                     for _ in range(limite):
@@ -466,7 +478,7 @@ class TestGardes(CasApi):
 
     def test_debit_non_compte_hors_requete(self):
         self.en_tant_que(A)
-        frappe.cache.delete_value(api.cle_debit("publier", A))
+        frappe.cache.delete_value(api.cle_debit("publier", A), make_keys=False)
         with self.assertRaises(frappe.PermissionError):
             api.publier("C")
         self.assertFalse(frappe.cache.get(api.cle_debit("publier", A)))

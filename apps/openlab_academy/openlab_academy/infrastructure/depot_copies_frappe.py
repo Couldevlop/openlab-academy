@@ -266,7 +266,8 @@ class DepotCopiesFrappe:
         frappe.db.set_value(SOUMISSION, soumission, valeurs)
 
     def differee(self, copie_id: str) -> bool:
-        return bool(frappe.db.get_value(COPIE, copie_id, "lms_differe"))
+        """Lecture verrouillante : la dernière valeur validée, jamais l'instantané de la transaction."""
+        return bool(frappe.db.get_value(COPIE, copie_id, "lms_differe", for_update=True))
 
     def copies_differees(self, apprenant: str | None = None) -> list[str]:
         filtres = {"lms_differe": 1, "statut": Statut.PUBLIEE.value, **({"apprenant": apprenant} if apprenant else {})}

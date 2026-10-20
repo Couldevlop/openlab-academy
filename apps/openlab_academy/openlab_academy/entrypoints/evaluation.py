@@ -123,10 +123,11 @@ def liberateur() -> LibererNote:
 
 def liberer_notes(apprenant: str) -> None:
     """Tâche de fond, après la relecture d'un apprenant : ses notes différées sortent si plus rien n'est dû.
-    Hors de la transaction de la relecture, pour ne jamais verrouiller deux copies à la fois."""
+    Hors de la transaction de la relecture ; chaque copie est sa propre transaction (`unite`), validée aussitôt :
+    son verrou est relâché et une libération concurrente (échéancier) relit `lms_differe` déjà remis à zéro."""
     cas = liberateur()
     for copie_id in DepotCopiesFrappe().copies_differees(apprenant):
-        isoler(lambda copie_id=copie_id: cas.executer(copie_id))
+        unite(lambda copie_id=copie_id: cas.executer(copie_id))
 
 
 def liberer_plus_tard(apprenant: str) -> None:

@@ -244,11 +244,14 @@ class TestValiderLot(Cas):
         with self.assertRaisesRegex(CorrectionRefusee, "écart entre l'IA et les pairs"):
             self.lot.executer(FORM, ids)
 
-    def test_correction_precedente_journalisee(self):
-        ids = self.lot_de(1)
+    def test_copie_deja_corrigee_jamais_ecrasee(self):
+        ids = self.lot_de(2)
         self.corriger.executer(FORM, ids[0], BONS)
-        self.lot.executer(FORM, ids)
-        self.assertEqual(self.dernier("validation par lot")[3], {"niveaux": BONS})
+        with self.assertRaisesRegex(CorrectionRefusee, "déjà corrigée"):
+            self.lot.executer(FORM, ids)
+        self.assertEqual(derniere(self.m.propositions(ids[0]), Source.FORMATEUR).niveaux, BONS)
+        self.assertIsNone(derniere(self.m.propositions(ids[1]), Source.FORMATEUR))
+        self.assertEqual(self.vue.file(FORM)["lots"], [])  # sortie des lots : il n'en reste qu'une
 
     def test_hors_lot_refuse(self):
         ids = self.lot_de(confiance=0.5)
