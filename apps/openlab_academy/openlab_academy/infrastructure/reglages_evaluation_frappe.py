@@ -45,6 +45,8 @@ def vers_domaine(doc) -> ReglagesEvaluation:
         par_type.setdefault(TypeExercice(ligne.type_exercice), []).append(ligne)
     defaut = ReglagesEvaluation()
     params = {p.type_exercice: p for p in doc.parametres}
+    if len(params) != len(doc.parametres):
+        raise ReglagesInvalides("un seul jeu de paramètres par type d'exercice")
     return ReglagesEvaluation(
         chaines={type_: _chaine(params.get(type_.value) or CHAINES_DEFAUT[type_], lignes) for type_, lignes in par_type.items()},
         ia=ConfigIA(url=doc.ia_url or "", modele_texte=doc.ia_modele_texte or "", modele_code=doc.ia_modele_code or "",
@@ -93,10 +95,10 @@ def _remplir_parametres(doc) -> None:
 def initialiser() -> None:
     """Remplit la console avec les valeurs par défaut du domaine, sans jamais écraser des réglages existants."""
     doc = frappe.get_single(REGLAGES)
-    if not doc.get("parametres"):
-        _remplir_parametres(doc)
     if doc.get("etapes"):
-        doc.save(ignore_permissions=True)
+        if not doc.get("parametres"):  # site créé avant les paramètres par type
+            _remplir_parametres(doc)
+            doc.save(ignore_permissions=True)
         return
     defaut = ReglagesEvaluation()
     ia = defaut.ia
@@ -121,9 +123,19 @@ def creer_role() -> None:
         frappe.get_doc({"doctype": "Role", "role_name": ROLE, "desk_access": 1}).insert(ignore_permissions=True)
 
 
+def _restreindre_espace(espace) -> None:
+    """Un espace créé par une version antérieure reçoit la restriction de rôles prévue."""
+    voulus = {"System Manager", ROLE}
+    if {r.role for r in espace.roles} != voulus or not espace.public:
+        espace.public = 1
+        espace.set("roles", [{"role": r} for r in sorted(voulus)])
+        espace.save(ignore_permissions=True)
+
+
 def creer_espace_travail() -> None:
     """Espace « Évaluation OpenLab » : raccourcis vers les six écrans de la console (créé une seule fois)."""
     if frappe.db.exists("Workspace", ESPACE):
+        _restreindre_espace(frappe.get_doc("Workspace", ESPACE))
         return
     blocs = [{"id": f"raccourci{i}", "type": "shortcut", "data": {"shortcut_name": ecran, "col": 4}}
              for i, ecran in enumerate(ECRANS)]

@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from unittest.mock import patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -202,6 +203,30 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         self.assertEqual(len(json.loads(espace.content)), 6)
         initialiser_reglages_evaluation.execute()  # idempotent
         self.assertEqual(frappe.db.count("Workspace", {"name": "Évaluation OpenLab"}), 1)
+
+    def test_espace_existant_sans_restriction_est_restreint(self):
+        initialiser_reglages_evaluation.execute()
+        espace = frappe.get_doc("Workspace", "Évaluation OpenLab")
+        espace.set("roles", [])
+        espace.save(ignore_permissions=True)
+        initialiser_reglages_evaluation.execute()
+        roles = {r.role for r in frappe.get_doc("Workspace", "Évaluation OpenLab").roles}
+        self.assertEqual(roles, {"System Manager", ROLE})
+
+    def test_initialiser_ne_sauvegarde_rien_si_tout_est_en_place(self):
+        vider()
+        source.initialiser()
+        with patch("frappe.model.document.Document.save") as sauver:
+            source.initialiser()
+        sauver.assert_not_called()
+
+    def test_parametres_en_double_refuses(self):
+        vider()
+        source.initialiser()
+        doc = frappe.get_single(REGLAGES)
+        doc.append("parametres", {"type_exercice": "projet", "nb_pairs": 1, "note_sur": 20, "seuil_reussite": 10})
+        with self.assertRaisesRegex(frappe.ValidationError, "un seul jeu de paramètres"):
+            doc.save(ignore_permissions=True)
 
     def test_migration_prepare_la_console(self):
         vider()
