@@ -3,7 +3,7 @@ from dataclasses import replace
 from datetime import datetime, timedelta
 
 from openlab_academy.application.pairs import Relecture, StatutRelecture
-from openlab_academy.application.soumettre_copie import Exercice
+from openlab_academy.application.soumettre_copie import Contenu, Exercice
 from openlab_academy.domain.copie import Copie, CopieVerrouillee, Etat, Statut, etape_suivante
 from openlab_academy.domain.grille import grille_generique
 from openlab_academy.domain.reglages_evaluation import ReglagesEvaluation, TypeExercice
@@ -40,6 +40,8 @@ class Memoire:
         self.titulaires_ = {"form@x.ci"}
         self.verrous: list[str] = []
         self.paires_concurrentes: set[tuple[str, str]] = set()  # insérées par une autre transaction
+        self.contenus: dict[str, Contenu] = {}
+        self.consignes = {"EX1": "Analysez le cas."}
 
     # --- préparation des cas ---------------------------------------------------
     def rendre(self, apprenant, chaine, maintenant, cohorte="COH1", exercice="EX1") -> str:
@@ -62,6 +64,12 @@ class Memoire:
 
     def copie(self, copie_id):
         return self.copies[copie_id]
+
+    def contenu(self, copie_id):
+        return self.contenus.get(copie_id, Contenu("", "", "", "", ""))
+
+    def consigne(self, exercice):
+        return self.consignes.get(exercice, "")
 
     def ajouter_proposition(self, copie_id, p):
         self.props.setdefault(copie_id, []).append(p)

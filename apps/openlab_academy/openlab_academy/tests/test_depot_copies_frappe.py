@@ -4,6 +4,7 @@ import json
 from unittest import mock
 
 import frappe
+import requests
 from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy import hooks
@@ -20,8 +21,8 @@ from openlab_academy.infrastructure import depot_copies_frappe
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
 from openlab_academy.infrastructure.depot_copies_frappe import DepotCopiesFrappe
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
-from openlab_academy.infrastructure.instantane_provisoire import InstantaneProvisoire
 from openlab_academy.tests.fabriques import parcours
+from openlab_academy.tests.http_simule import SHA, github
 from openlab_academy.tests.test_exercices_frappe import module
 
 A = "eleve.a.copie@example.ci"
@@ -47,6 +48,9 @@ class Base(FrappeTestCase):
         self.projet = next(d.name for d in devoirs if d.title.startswith("Projet 1 "))
         self.capstone = next(d.name for d in devoirs if d.title.startswith("Capstone"))
         self.depot = DepotCopiesFrappe()
+        # jamais de réseau : l'hébergeur est injoignable sauf simulation explicite
+        self.http = mock.patch("requests.get", side_effect=requests.ConnectionError("hors ligne")).start()
+        self.addCleanup(mock.patch.stopall)
 
     def tearDown(self):
         frappe.set_user("Administrator")
@@ -127,6 +131,7 @@ class TestCopies(Base):
                              "openlab_academy.entrypoints.evaluation.rendu")
 
     def test_soumission_cree_une_copie_figee(self):
+        self.http.side_effect = github()
         s = self.soumettre(self.livrable)
         (ligne,) = self.copies()
         copie = frappe.get_doc("Copie OpenLab", ligne.name)
@@ -134,7 +139,10 @@ class TestCopies(Base):
                           copie.statut), (s.name, A, self.livrable, "livrable", 1, "rendue"))
         grille = Grille.depuis_dict(json.loads(copie.grille_json))
         self.assertEqual(copie.empreinte, grille.empreinte())
-        self.assertEqual((copie.contenu, copie.source_url, copie.commit), (URL, URL, ""))  # instantané provisoire
+        self.assertEqual((copie.source_url, copie.commit), (URL, SHA))  # instantané du dépôt public
+        self.assertIn("=== README.md ===\n# Livrable", copie.contenu)
+        self.assertEqual(self.depot.contenu(ligne.name).texte, copie.contenu)
+        self.assertEqual(self.depot.contenu(ligne.name).commit, SHA)
         self.assertEqual(copie.etape_courante, "controles")  # l'auto-évaluation précède le rendu
         self.assertIsNotNone(copie.echeance)
 
@@ -239,8 +247,16 @@ class TestRendu(Base):
         journal.assert_called()
         self.assertEqual(self.copies(), [])
 
-    def test_instantane_provisoire_garde_le_lien(self):
-        self.assertEqual(InstantaneProvisoire().prendre(URL), (URL, ""))
+    def test_depot_injoignable_ne_bloque_pas_le_rendu(self):
+        self.soumettre(self.livrable)
+        (ligne,) = self.copies()
+        contenu = self.depot.contenu(ligne.name)
+        self.assertEqual((contenu.texte, contenu.source_url, contenu.commit), ("", URL, ""))
+
+    def test_consigne_de_l_exercice_en_texte(self):
+        frappe.db.set_value("LMS Assignment", self.cas, "question", "<p>Analysez le cas &laquo; Aya &raquo;.</p>")
+        self.assertEqual(self.depot.consigne(self.cas), "Analysez le cas « Aya ».")
+        self.assertEqual(self.depot.consigne("inexistant"), "")
 
     def test_soumettre_assemble_les_adaptateurs(self):
         s = self.soumettre(self.livrable)

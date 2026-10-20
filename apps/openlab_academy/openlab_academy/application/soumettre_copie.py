@@ -33,6 +33,11 @@ class Contenu:
     signature: str
     soumission: str
 
+    @property
+    def rendu_par_lien(self) -> bool:
+        """Rendu en URL (dépôt) ; une pièce jointe est un chemin du site (« /files/… »), un texte n'a pas de lien."""
+        return bool(self.source_url) and not self.source_url.startswith("/")
+
     @staticmethod
     def signature_de(soumission: dict) -> str:
         """Empreinte de ce que l'apprenant a rendu : une correction du formateur ne la change pas."""

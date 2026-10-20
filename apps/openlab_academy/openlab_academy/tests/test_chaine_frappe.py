@@ -18,6 +18,7 @@ from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFr
 from openlab_academy.infrastructure.depot_relectures_frappe import DepotRelecturesFrappe
 from openlab_academy.infrastructure.reglages_evaluation_frappe import SourceReglagesFrappe
 from openlab_academy.tests.test_depot_copies_frappe import A, B, Base
+from openlab_academy.tests.http_simule import github
 from openlab_academy.tests.test_reglages_evaluation_frappe import etapes_formateur
 
 COPIE = "Copie OpenLab"
@@ -101,6 +102,46 @@ class TestDemarrage(Cas):
         self.assertEqual((self.ligne(copie).statut, self.ligne(copie).etape_courante), ("a_corriger", "formateur"))
         self.assertEqual(self.actions(copie), ["étape suivante", "contrôles non disponibles", "étape suivante",
                                                "pré-correction non disponible", "pairs sautés", "étape suivante"])
+
+    def test_controles_conformes_sur_un_depot_public(self):
+        self.http.side_effect = github()
+        self.soumettre(self.livrable)
+        copie = self.copie_de()
+        evaluation.controler(copie)
+        self.assertEqual((self.ligne(copie).statut, self.ligne(copie).etape_courante), ("controlee", "ia"))
+        self.assertEqual(self.actions(copie), ["étape suivante", "contrôles conformes", "étape suivante"])
+        self.assertEqual([p.source for p in self.depot.propositions(copie)], [Source.CONTROLES])
+
+    def test_jeton_des_depots_de_la_console_utilise(self):
+        doc = frappe.get_single("Reglages Evaluation OpenLab")
+        doc.jeton_depots = "ghp_console"
+        doc.save(ignore_permissions=True)
+        self.http.side_effect = github()
+        self.soumettre(self.livrable)
+        evaluation.controler(self.copie_de())
+        self.assertTrue(self.http.call_args_list)
+        self.assertTrue(all(a.kwargs["headers"]["Authorization"] == "Bearer ghp_console"
+                            for a in self.http.call_args_list))
+        self.assertNotIn("ghp_console", repr(frappe.get_all(JOURNAL, fields=["avant", "apres"])))
+
+    def test_depot_prive_renvoie_la_copie_et_previent_l_apprenant(self):
+        self.soumettre(self.livrable)
+        copie = self.copie_de()
+        self.http.side_effect = github(prive=True)
+        evaluation.controler(copie)
+        ligne = self.ligne(copie)
+        self.assertEqual((ligne.statut, ligne.etape_courante, ligne.echeance), ("renvoyee", "", None))
+        self.assertEqual(self.actions(copie)[-1], "copie renvoyée")
+        sujets = frappe.get_all("Notification Log", {"for_user": A}, pluck="subject")
+        self.assertTrue(any("dépôt introuvable ou privé" in s for s in sujets))
+
+    def test_copie_texte_trop_courte_renvoyee(self):
+        with mock.patch("openlab_academy.entrypoints.lms.avant_soumission_devoir"):  # verrou testé ailleurs
+            self.soumettre(self.cas, reponse="Trop court.")
+        copie = self.copie_de(devoir=self.cas)
+        evaluation.controler(copie)
+        self.assertEqual(self.ligne(copie).statut, "renvoyee")
+        self.http.assert_not_called()
 
     def test_isoler_annule_les_ecritures_de_l_action_en_erreur(self):
         self.soumettre(self.livrable)

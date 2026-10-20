@@ -110,6 +110,12 @@ class TestValidation(unittest.TestCase):
         with self.assertRaises(ReglagesInvalides):
             ReglagesEvaluation(niveaux_generiques=("Seul",))
 
+    def test_longueur_minimale(self):
+        self.assertEqual(ReglagesEvaluation().longueur_min_caracteres, 200)
+        self.assertEqual(ReglagesEvaluation(longueur_min_caracteres=0).longueur_min_caracteres, 0)
+        with self.assertRaisesRegex(ReglagesInvalides, "longueur_min_caracteres"):
+            ReglagesEvaluation(longueur_min_caracteres=-1)
+
 
 class TestChainePour(unittest.TestCase):
     def setUp(self):

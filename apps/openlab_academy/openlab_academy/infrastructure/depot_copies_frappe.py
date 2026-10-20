@@ -1,8 +1,9 @@
 """Adaptateur : copies, propositions, relectures, grilles d'exercice et cohorte de l'apprenant dans Frappe."""
+import html
 import json
 
 import frappe
-from frappe.utils import get_datetime
+from frappe.utils import get_datetime, strip_html_tags
 
 from openlab_academy.application.soumettre_copie import Contenu, Exercice
 from openlab_academy.domain.copie import Copie, CopieVerrouillee, Etat, Proposition, Source, Statut
@@ -114,6 +115,17 @@ class DepotCopiesFrappe:
             "empreinte": grille.empreinte(), "signature": contenu.signature, "contenu": contenu.texte,
             "source_url": contenu.source_url, "commit": contenu.commit,
         }).insert(ignore_permissions=True).name
+
+    def contenu(self, copie_id: str) -> Contenu:
+        ligne = frappe.db.get_value(COPIE, copie_id, ["contenu", "source_url", "commit", "signature", "soumission"],
+                                    as_dict=True)
+        return Contenu(ligne.contenu or "", ligne.source_url or "", ligne.commit or "", ligne.signature or "",
+                       ligne.soumission or "")
+
+    def consigne(self, exercice: str) -> str:
+        """Consigne du devoir LMS en texte brut (le HTML de la consigne n'est jamais transmis tel quel)."""
+        question = frappe.db.get_value("LMS Assignment", exercice, "question") or ""
+        return html.unescape(strip_html_tags(question)).strip()
 
     def version_courante(self, soumission: str) -> Copie | None:
         noms = frappe.get_all(COPIE, {"soumission": soumission}, pluck="name", order_by="version desc", limit=1)

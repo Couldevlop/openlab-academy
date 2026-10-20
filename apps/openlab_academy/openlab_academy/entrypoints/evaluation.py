@@ -9,12 +9,14 @@ import frappe
 from frappe.utils import now_datetime
 
 from openlab_academy.application.chaine import SYSTEME, TACHES, FaireAvancer, TraiterEcheances
+from openlab_academy.application.controler import ControlerCopie
 from openlab_academy.application.soumettre_copie import SoumettreCopie
 from openlab_academy.domain.reglages_evaluation import Etape
 from openlab_academy.infrastructure import journal_frappe, reglages_evaluation_frappe
 from openlab_academy.infrastructure.depot_copies_frappe import DepotCopiesFrappe, cours_evalue
 from openlab_academy.infrastructure.depot_relectures_frappe import DepotRelecturesFrappe
-from openlab_academy.infrastructure.instantane_provisoire import InstantaneProvisoire
+from openlab_academy.infrastructure.controles import ControleurDepots
+from openlab_academy.infrastructure.instantane_depot import InstantaneDepot
 
 CHAMPS = ("name", "assignment", "member", "type", "answer", "assignment_attachment")
 POINT = "openlab_rendu"
@@ -74,8 +76,10 @@ def notifier(destinataire: str, message: str) -> None:
 
 
 def controler(copie_id: str) -> None:
-    """Contrôles automatiques : pas encore branchés, l'étape est marquée « non disponible » et la copie avance."""
-    _non_disponible(copie_id, Etape.CONTROLES, "contrôles non disponibles")
+    """Contrôles automatiques : un échec bloquant renvoie la copie, un hébergeur indisponible la laisse avancer."""
+    ControlerCopie(DepotCopiesFrappe(), ControleurDepots(reglages_evaluation_frappe.charger(),
+                                                     jeton=reglages_evaluation_frappe.jeton_depots()), avanceur(),
+                   journal_frappe.journaliser, notifier).executer(copie_id)
 
 
 def pre_corriger(copie_id: str) -> None:
@@ -90,8 +94,11 @@ def traiter_echeances() -> None:
 
 
 def soumettre(soumission: dict) -> str | None:
-    return SoumettreCopie(DepotCopiesFrappe(), InstantaneProvisoire(), reglages_evaluation_frappe.charger(),
-                          now_datetime, reglages_evaluation_frappe.surcharges, journal_frappe.journaliser,
+    reglages = reglages_evaluation_frappe.charger()
+    instantane = InstantaneDepot(reglages.hotes_depots, reglages.ia.plafond_caracteres,
+                                 jeton=reglages_evaluation_frappe.jeton_depots())
+    return SoumettreCopie(DepotCopiesFrappe(), instantane, reglages, now_datetime,
+                          reglages_evaluation_frappe.surcharges, journal_frappe.journaliser,
                           lambda copie_id: isoler(lambda: avanceur().demarrer(copie_id))).executer(soumission)
 
 

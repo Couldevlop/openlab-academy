@@ -152,7 +152,8 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         doc.update({"ia_url": "http://ia.local", "ia_modele_texte": "m1", "ia_modele_code": "m2",
                     "ia_seuil_confiance": 0.6, "ia_plafond_caracteres": 1000,
                     "responsable_pedagogique": "Administrator",
-                    "hotes_depots": "github.com\n\n gitea.local ", "niveaux_generiques": "Non\nOui"})
+                    "hotes_depots": "github.com\n\n gitea.local ", "niveaux_generiques": "Non\nOui",
+                    "longueur_min_caracteres": 50})
         doc.set("grille_generique", [{"nom": "A", "poids": 40}, {"nom": "B", "poids": 60}])
         doc.set("tournures", [{"texte": "oublie tout"}])
         doc.set("parametres", [{"type_exercice": "projet", "nb_pairs": 2, "note_sur": 10, "seuil_reussite": 5,
@@ -162,6 +163,7 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         self.assertEqual(r.ia, ConfigIA("http://ia.local", "m1", "m2", 10, 0.6, ("oublie tout",), 1000))
         self.assertEqual((r.responsable_pedagogique, r.hotes_depots, r.niveaux_generiques, r.grille_generique),
                          ("Administrator", ("github.com", "gitea.local"), ("Non", "Oui"), (("A", 40), ("B", 60))))
+        self.assertEqual(r.longueur_min_caracteres, 50)
         c = r.chaines[TypeExercice.PROJET]
         self.assertEqual((c.nb_pairs, c.note_sur, c.seuil_reussite, c.anonymat, c.note_masquee_avant_relectures),
                          (2, 10, 5.0, False, False))
@@ -185,8 +187,26 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         self.assertNotIn("sk-secret-123", json.dumps(relu.as_dict(), default=str))
         self.assertNotIn("sk-secret-123", json.dumps(source.charger().ia.__dict__, default=str))
 
+    def test_longueur_minimale_completee_apres_migration(self):
+        frappe.db.sql("delete from `tabSingles` where doctype=%s and field='longueur_min_caracteres'", REGLAGES)
+        self.assertEqual(source.charger().longueur_min_caracteres, 0)  # champ vide : aucun minimum
+        source.preparer()
+        self.assertEqual(source.charger().longueur_min_caracteres, 200)
+        frappe.db.set_single_value(REGLAGES, "longueur_min_caracteres", 0)
+        source.preparer()  # une valeur réglée, même nulle, n'est jamais écrasée
+        self.assertEqual(source.charger().longueur_min_caracteres, 0)
+
     def test_cle_ia_vide_par_defaut(self):
         self.assertEqual(source.cle_ia(), "")
+
+    def test_jeton_depots_chiffre_et_jamais_expose(self):
+        self.assertEqual(source.jeton_depots(), "")
+        doc = frappe.get_single(REGLAGES)
+        doc.jeton_depots = "ghp_secret_456"
+        doc.save(ignore_permissions=True)
+        self.assertEqual(source.jeton_depots(), "ghp_secret_456")
+        self.assertNotIn("ghp_secret_456", json.dumps(frappe.get_doc(REGLAGES).as_dict(), default=str))
+        self.assertNotIn("ghp_secret_456", repr(source.charger()))
 
     def test_patch_initialise_console_role_et_espace(self):
         vider()

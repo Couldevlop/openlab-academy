@@ -169,6 +169,7 @@ class ReglagesEvaluation:
     publication_provisoire: bool = False
     responsable_pedagogique: str = ""
     hotes_depots: tuple[str, ...] = ("github.com", "gitlab.com")
+    longueur_min_caracteres: int = 200  # contrôle d'une copie texte ; 0 = aucun minimum
     grille_generique: tuple[tuple[str, int], ...] = GRILLE_GENERIQUE_DEFAUT
     niveaux_generiques: tuple[str, ...] = NIVEAUX_GENERIQUES_DEFAUT
 
@@ -179,6 +180,8 @@ class ReglagesEvaluation:
             raise ReglagesInvalides("grille générique : poids positifs totalisant 100")
         if len(self.niveaux_generiques) < 2:
             raise ReglagesInvalides("niveaux génériques : au moins 2 niveaux requis")
+        if self.longueur_min_caracteres < 0:
+            raise ReglagesInvalides("longueur_min_caracteres ne peut pas être négative")
 
     def _verifier_publication(self, chaine: Chaine, type_: TypeExercice) -> Chaine:
         if (not self.publication_provisoire

@@ -25,6 +25,8 @@
   "tournures",
   "section_depots",
   "hotes_depots",
+  "jeton_depots",
+  "longueur_min_caracteres",
   "niveaux_generiques",
   "grille_generique"
  ],
@@ -138,6 +140,18 @@
    "label": "Hôtes de dépôt autorisés (un par ligne)"
   },
   {
+   "fieldname": "jeton_depots",
+   "fieldtype": "Password",
+   "label": "Jeton d'accès à l'API GitHub (facultatif, lecture seule)"
+  },
+  {
+   "fieldname": "longueur_min_caracteres",
+   "fieldtype": "Int",
+   "label": "Longueur minimale d'une copie texte (caractères, 0 = aucune)",
+   "default": "200",
+   "non_negative": 1
+  },
+  {
    "fieldname": "niveaux_generiques",
    "fieldtype": "Small Text",
    "label": "Niveaux génériques (un par ligne)"
@@ -166,7 +180,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-20 00:00:00",
+ "modified": "2026-10-20 12:00:00",
  "sort_field": "modified",
  "sort_order": "DESC",
  "custom": 0,

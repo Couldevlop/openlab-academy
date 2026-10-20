@@ -55,6 +55,7 @@ def vers_domaine(doc) -> ReglagesEvaluation:
                     plafond_caracteres=int(doc.ia_plafond_caracteres or 0)),
         publication_provisoire=bool(doc.publication_provisoire),
         responsable_pedagogique=doc.responsable_pedagogique or "", hotes_depots=_lignes(doc.hotes_depots) or defaut.hotes_depots,
+        longueur_min_caracteres=int(doc.longueur_min_caracteres or 0),
         grille_generique=tuple((c.nom, int(c.poids or 0)) for c in doc.grille_generique) or GRILLE_GENERIQUE_DEFAUT,
         niveaux_generiques=_lignes(doc.niveaux_generiques) or defaut.niveaux_generiques,
     )
@@ -95,6 +96,11 @@ def cle_ia() -> str:
     return get_decrypted_password(REGLAGES, REGLAGES, "cle_ia", raise_exception=False) or ""
 
 
+def jeton_depots() -> str:
+    """Jeton d'accès facultatif à l'API GitHub (champ mot de passe) : relève le quota des appels anonymes."""
+    return get_decrypted_password(REGLAGES, REGLAGES, "jeton_depots", raise_exception=False) or ""
+
+
 def _remplir_parametres(doc) -> None:
     doc.set("parametres", [{"type_exercice": type_.value, "nb_pairs": ch.nb_pairs, "anonymat": ch.anonymat,
                             "note_masquee_avant_relectures": ch.note_masquee_avant_relectures,
@@ -118,6 +124,7 @@ def initialiser() -> None:
         "ia_delai_minutes": ia.delai_minutes, "ia_seuil_confiance": ia.seuil_confiance,
         "ia_plafond_caracteres": ia.plafond_caracteres, "hotes_depots": "\n".join(defaut.hotes_depots),
         "niveaux_generiques": "\n".join(defaut.niveaux_generiques),
+        "longueur_min_caracteres": defaut.longueur_min_caracteres,
     })
     doc.set("etapes", [{"type_exercice": type_.value, "etape": c.etape.value, "active": c.active,
                         "delai_heures": c.delai_heures, "expiration": c.expiration.value}
@@ -126,6 +133,12 @@ def initialiser() -> None:
     doc.set("tournures", [{"texte": t} for t in ia.tournures_injection])
     doc.set("grille_generique", [{"nom": nom, "poids": poids} for nom, poids in defaut.grille_generique])
     doc.save(ignore_permissions=True)
+
+
+def completer_champs() -> None:
+    """Champ ajouté après l'initialisation d'un site : il reçoit le défaut du domaine, jamais par-dessus une valeur réglée."""
+    if not frappe.db.sql("select 1 from `tabSingles` where doctype=%s and field='longueur_min_caracteres'", REGLAGES):
+        frappe.db.set_single_value(REGLAGES, "longueur_min_caracteres", ReglagesEvaluation().longueur_min_caracteres)
 
 
 def creer_role() -> None:
@@ -160,4 +173,5 @@ def preparer() -> None:
     """Rôle, réglages par défaut et espace de travail : idempotent, appelé par le patch et après chaque migration."""
     creer_role()
     initialiser()
+    completer_champs()
     creer_espace_travail()
