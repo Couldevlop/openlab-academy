@@ -1,0 +1,209 @@
+{
+ "doctype": "DocType",
+ "name": "Reglages Evaluation OpenLab",
+ "issingle": 1,
+ "istable": 0,
+ "editable_grid": 0,
+ "field_order": [
+  "section_chaines",
+  "etapes",
+  "section_parametres",
+  "nb_pairs",
+  "anonymat",
+  "note_masquee_avant_relectures",
+  "col_notes",
+  "note_sur",
+  "seuil_reussite",
+  "section_publication",
+  "publication_provisoire",
+  "responsable_pedagogique",
+  "section_ia",
+  "ia_url",
+  "cle_ia",
+  "ia_modele_texte",
+  "ia_modele_code",
+  "col_ia",
+  "ia_delai_minutes",
+  "ia_seuil_confiance",
+  "ia_plafond_caracteres",
+  "section_tournures",
+  "tournures",
+  "section_depots",
+  "hotes_depots",
+  "niveaux_generiques",
+  "grille_generique"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_chaines",
+   "fieldtype": "Section Break",
+   "label": "Chaîne d'évaluation par type d'exercice"
+  },
+  {
+   "fieldname": "etapes",
+   "fieldtype": "Table",
+   "label": "Étapes",
+   "options": "Etape Correction OpenLab"
+  },
+  {
+   "fieldname": "section_parametres",
+   "fieldtype": "Section Break",
+   "label": "Paramètres communs des chaînes"
+  },
+  {
+   "fieldname": "nb_pairs",
+   "fieldtype": "Int",
+   "label": "Nombre de relecteurs pairs",
+   "default": "3"
+  },
+  {
+   "fieldname": "anonymat",
+   "fieldtype": "Check",
+   "label": "Relecture anonyme",
+   "default": "1"
+  },
+  {
+   "fieldname": "note_masquee_avant_relectures",
+   "fieldtype": "Check",
+   "label": "Note masquée avant les relectures",
+   "default": "1"
+  },
+  {
+   "fieldname": "col_notes",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "note_sur",
+   "fieldtype": "Int",
+   "label": "Note sur",
+   "default": "20"
+  },
+  {
+   "fieldname": "seuil_reussite",
+   "fieldtype": "Float",
+   "label": "Seuil de réussite",
+   "default": "10"
+  },
+  {
+   "fieldname": "section_publication",
+   "fieldtype": "Section Break",
+   "label": "Publication"
+  },
+  {
+   "fieldname": "publication_provisoire",
+   "fieldtype": "Check",
+   "label": "Autoriser la publication provisoire (toujours marquée « provisoire »)",
+   "default": "0"
+  },
+  {
+   "fieldname": "responsable_pedagogique",
+   "fieldtype": "Link",
+   "label": "Responsable pédagogique",
+   "options": "User"
+  },
+  {
+   "fieldname": "section_ia",
+   "fieldtype": "Section Break",
+   "label": "Pré-correction IA"
+  },
+  {
+   "fieldname": "ia_url",
+   "fieldtype": "Data",
+   "label": "URL du service"
+  },
+  {
+   "fieldname": "cle_ia",
+   "fieldtype": "Password",
+   "label": "Clé d'accès"
+  },
+  {
+   "fieldname": "ia_modele_texte",
+   "fieldtype": "Data",
+   "label": "Modèle (texte)"
+  },
+  {
+   "fieldname": "ia_modele_code",
+   "fieldtype": "Data",
+   "label": "Modèle (code)"
+  },
+  {
+   "fieldname": "col_ia",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "ia_delai_minutes",
+   "fieldtype": "Int",
+   "label": "Délai (minutes)",
+   "default": "10"
+  },
+  {
+   "fieldname": "ia_seuil_confiance",
+   "fieldtype": "Float",
+   "label": "Seuil de confiance",
+   "default": "0.8"
+  },
+  {
+   "fieldname": "ia_plafond_caracteres",
+   "fieldtype": "Int",
+   "label": "Plafond de caractères",
+   "default": "60000"
+  },
+  {
+   "fieldname": "section_tournures",
+   "fieldtype": "Section Break",
+   "label": "Tournures d'injection détectées"
+  },
+  {
+   "fieldname": "tournures",
+   "fieldtype": "Table",
+   "label": "Tournures",
+   "options": "Tournure Injection OpenLab"
+  },
+  {
+   "fieldname": "section_depots",
+   "fieldtype": "Section Break",
+   "label": "Dépôts et grille générique"
+  },
+  {
+   "fieldname": "hotes_depots",
+   "fieldtype": "Small Text",
+   "label": "Hôtes de dépôt autorisés (un par ligne)"
+  },
+  {
+   "fieldname": "niveaux_generiques",
+   "fieldtype": "Small Text",
+   "label": "Niveaux génériques (un par ligne)"
+  },
+  {
+   "fieldname": "grille_generique",
+   "fieldtype": "Table",
+   "label": "Grille générique (total 100 %)",
+   "options": "Critere Generique OpenLab"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 0
+  },
+  {
+   "role": "Responsable pédagogique OpenLab",
+   "read": 1
+  }
+ ],
+ "track_changes": 1,
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-20 00:00:00",
+ "modified": "2026-10-20 00:00:00",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "custom": 0,
+ "engine": "InnoDB",
+ "module": "OpenLab Academy"
+}

@@ -1,0 +1,99 @@
+{
+ "doctype": "DocType",
+ "name": "Surcharge Evaluation OpenLab",
+ "issingle": 0,
+ "istable": 0,
+ "editable_grid": 0,
+ "field_order": [
+  "cohorte",
+  "exercice",
+  "etapes",
+  "nb_pairs",
+  "anonymat",
+  "note_masquee_avant_relectures",
+  "col_notes",
+  "note_sur",
+  "seuil_reussite"
+ ],
+ "fields": [
+  {
+   "fieldname": "cohorte",
+   "fieldtype": "Link",
+   "label": "Cohorte",
+   "options": "LMS Batch",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "exercice",
+   "fieldtype": "Link",
+   "label": "Exercice",
+   "options": "LMS Assignment",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "etapes",
+   "fieldtype": "Table",
+   "label": "Étapes",
+   "options": "Etape Correction OpenLab"
+  },
+  {
+   "fieldname": "nb_pairs",
+   "fieldtype": "Int",
+   "label": "Nombre de relecteurs pairs",
+   "default": "3"
+  },
+  {
+   "fieldname": "anonymat",
+   "fieldtype": "Check",
+   "label": "Relecture anonyme",
+   "default": "1"
+  },
+  {
+   "fieldname": "note_masquee_avant_relectures",
+   "fieldtype": "Check",
+   "label": "Note masquée avant les relectures",
+   "default": "1"
+  },
+  {
+   "fieldname": "col_notes",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "note_sur",
+   "fieldtype": "Int",
+   "label": "Note sur",
+   "default": "20"
+  },
+  {
+   "fieldname": "seuil_reussite",
+   "fieldtype": "Float",
+   "label": "Seuil de réussite",
+   "default": "10"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "Responsable pédagogique OpenLab",
+   "read": 1
+  }
+ ],
+ "track_changes": 1,
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-20 00:00:00",
+ "modified": "2026-10-20 00:00:00",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "custom": 0,
+ "engine": "InnoDB",
+ "module": "OpenLab Academy",
+ "autoname": "hash"
+}

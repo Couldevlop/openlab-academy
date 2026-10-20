@@ -1,0 +1,38 @@
+{
+ "doctype": "DocType",
+ "name": "Critere Generique OpenLab",
+ "issingle": 0,
+ "istable": 1,
+ "editable_grid": 1,
+ "field_order": [
+  "nom",
+  "poids"
+ ],
+ "fields": [
+  {
+   "fieldname": "nom",
+   "fieldtype": "Data",
+   "label": "Critère",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "poids",
+   "fieldtype": "Int",
+   "label": "Poids (%)",
+   "reqd": 1,
+   "in_list_view": 1
+  }
+ ],
+ "permissions": [],
+ "track_changes": 0,
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-20 00:00:00",
+ "modified": "2026-10-20 00:00:00",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "custom": 0,
+ "engine": "InnoDB",
+ "module": "OpenLab Academy"
+}

@@ -1,0 +1,94 @@
+{
+ "doctype": "DocType",
+ "name": "Delegation OpenLab",
+ "issingle": 0,
+ "istable": 0,
+ "editable_grid": 0,
+ "field_order": [
+  "titulaire",
+  "delegataire",
+  "debut",
+  "fin",
+  "cohorte",
+  "exercice",
+  "revoquee"
+ ],
+ "fields": [
+  {
+   "fieldname": "titulaire",
+   "fieldtype": "Link",
+   "label": "Titulaire",
+   "options": "User",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "delegataire",
+   "fieldtype": "Link",
+   "label": "Délégataire",
+   "options": "User",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "debut",
+   "fieldtype": "Datetime",
+   "label": "Début",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "fin",
+   "fieldtype": "Datetime",
+   "label": "Fin",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "cohorte",
+   "fieldtype": "Link",
+   "label": "Cohorte (optionnel)",
+   "options": "LMS Batch"
+  },
+  {
+   "fieldname": "exercice",
+   "fieldtype": "Link",
+   "label": "Exercice (optionnel)",
+   "options": "LMS Assignment"
+  },
+  {
+   "fieldname": "revoquee",
+   "fieldtype": "Check",
+   "label": "Révoquée",
+   "default": "0",
+   "in_list_view": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "Responsable pédagogique OpenLab",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  }
+ ],
+ "track_changes": 1,
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-20 00:00:00",
+ "modified": "2026-10-20 00:00:00",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "custom": 0,
+ "engine": "InnoDB",
+ "module": "OpenLab Academy",
+ "autoname": "hash"
+}

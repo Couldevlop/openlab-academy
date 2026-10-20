@@ -1,0 +1,30 @@
+{
+ "doctype": "DocType",
+ "name": "Tournure Injection OpenLab",
+ "issingle": 0,
+ "istable": 1,
+ "editable_grid": 1,
+ "field_order": [
+  "texte"
+ ],
+ "fields": [
+  {
+   "fieldname": "texte",
+   "fieldtype": "Data",
+   "label": "Tournure suspecte",
+   "reqd": 1,
+   "in_list_view": 1
+  }
+ ],
+ "permissions": [],
+ "track_changes": 0,
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-20 00:00:00",
+ "modified": "2026-10-20 00:00:00",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "custom": 0,
+ "engine": "InnoDB",
+ "module": "OpenLab Academy"
+}
