@@ -204,9 +204,12 @@ class TestPairsFrappe(Cas):
         self.assertEqual(frappe.db.count("Relecture Pair OpenLab", {"copie": self.a, "relecteur": B}), 1)
         self.assertEqual(self.relectures.verrouiller_relecture("inexistante"), None)
         # insérée entre la vérification et l'insertion : l'unicité en base tranche, sans message à l'écran
+        frappe.msgprint("message antérieur")
         with mock.patch.object(frappe.local.db, "exists", return_value=False):
             self.assertIsNone(self.relectures.attribuer(self.a, B, echeance))
-        self.assertEqual(frappe.local.message_log, [])
+        self.assertEqual(len(frappe.local.message_log), 1)  # seul le message d'unicité est retiré
+        self.assertIn("message antérieur", str(frappe.local.message_log[0]))
+        frappe.local.message_log.clear()
         self.assertEqual(frappe.db.count("Relecture Pair OpenLab", {"copie": self.a, "relecteur": B}), 1)
         relecture_pair_openlab.on_doctype_update()  # idempotent : la contrainte existe déjà
         self.assertTrue(frappe.db.sql("""select 1 from information_schema.TABLE_CONSTRAINTS
@@ -230,6 +233,16 @@ class TestPairsFrappe(Cas):
         self.assertEqual((ligne.statut, ligne.etape_courante, ligne.echeance), ("en_relecture", "", None))
         self.assertNotIn(self.a, self.depot.copies_echues(now_datetime() + datetime.timedelta(days=365)))
         self.depot.verrouiller(self.a)
+
+    def test_annuler_ne_touche_jamais_une_relecture_faite(self):
+        self.en_relecture()
+        faite = frappe.db.get_value("Relecture Pair OpenLab", {"copie": self.a}, "name")
+        self.relectures.changer_statut_relecture(faite, StatutRelecture.FAITE)
+        a_faire = frappe.get_doc({"doctype": "Relecture Pair OpenLab", "copie": self.a, "relecteur": A}).insert(
+            ignore_permissions=True).name
+        self.depot.annuler_relectures(self.a)
+        self.assertEqual(self.relectures.relecture(faite).statut, StatutRelecture.FAITE)
+        self.assertEqual(self.relectures.relecture(a_faire).statut, StatutRelecture.ANNULEE)
 
     def test_lectures_verrouillantes(self):
         self.en_relecture()

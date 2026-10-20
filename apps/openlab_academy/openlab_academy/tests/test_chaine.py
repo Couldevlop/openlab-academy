@@ -292,6 +292,8 @@ class TestTraiterEcheances(Cas):
         self.m.relectures_echues = lambda maintenant: []  # traitement des relectures en échec
         self.avancer_horloge(72)
         self.assertEqual(sorted(self.m.dispensees), [a, b])
+        self.assertEqual(self.actions().count("relecture annulée"), 2)
+        self.assertEqual({r.statut for r in self.m.rel.values()}, {StatutRelecture.ANNULEE})
         self.assertEqual({self.etape(a), self.etape(b)}, {("formateur", Statut.A_CORRIGER)})
 
     def test_relecture_traitee_entre_temps_ignoree(self):

@@ -140,8 +140,10 @@ class DepotCopiesFrappe:
                                                 "citations_json", "confiance", "au_nom_de"])]
 
     def annuler_relectures(self, copie_id: str) -> None:
-        for nom in frappe.get_all(RELECTURE, {"copie": copie_id, "statut": "à_faire"}, pluck="name"):
-            frappe.db.set_value(RELECTURE, nom, "statut", "annulée")
+        """Écriture conditionnelle : seules les relectures encore à faire au moment de l'écriture sont annulées,
+        jamais une relecture rendue entre-temps par une autre transaction."""
+        frappe.db.sql(f"update `tab{RELECTURE}` set statut='annulée', modified=%s where copie=%s and statut='à_faire'",
+                      (frappe.utils.now_datetime(), copie_id))
 
     # --- état dans la chaîne de correction ------------------------------------
     def verrouiller(self, copie_id: str) -> CopieVerrouillee:

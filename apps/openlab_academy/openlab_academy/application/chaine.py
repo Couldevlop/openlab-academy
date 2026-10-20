@@ -229,6 +229,8 @@ class TraiterEcheances:
                           {"echeance": max(attente)})
             return True
         for r in en_cours:
+            self._relectures.changer_statut_relecture(r.id, StatutRelecture.ANNULEE)
+            self._journal(copie.id, SYSTEME, "relecture annulée", {"relecteur": r.relecteur}, {})
             self._dispenser(copie, r)
         return False
 

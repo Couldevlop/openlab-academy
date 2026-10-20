@@ -59,6 +59,7 @@ class DepotRelecturesFrappe:
         """None si la paire (copie, relecteur) existe déjà (contrainte d'unicité, attribution concurrente)."""
         if frappe.db.exists(RELECTURE, {"copie": copie_id, "relecteur": relecteur}):
             return None
+        messages = len(frappe.local.message_log)
         frappe.db.savepoint(POINT)
         try:
             return frappe.get_doc({"doctype": RELECTURE, "copie": copie_id, "relecteur": relecteur,
@@ -66,7 +67,7 @@ class DepotRelecturesFrappe:
                                   ).insert(ignore_permissions=True).name
         except frappe.UniqueValidationError:  # insérée entre-temps par une transaction concurrente
             frappe.db.rollback(save_point=POINT)
-            frappe.clear_messages()  # pas de message d'erreur d'unicité remonté à l'utilisateur
+            del frappe.local.message_log[messages:]  # retire le seul message d'unicité, pas les autres
             return None
 
     def rappeler(self, relecture_id: str, echeance) -> None:
