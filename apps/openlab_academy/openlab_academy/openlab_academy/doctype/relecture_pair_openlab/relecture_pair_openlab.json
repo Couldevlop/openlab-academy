@@ -12,7 +12,8 @@
   "copie",
   "relecteur",
   "statut",
-  "echeance"
+  "echeance",
+  "rappel"
  ],
  "fields": [
   {
@@ -46,6 +47,12 @@
    "fieldname": "echeance",
    "fieldtype": "Datetime",
    "label": "Échéance"
+  },
+  {
+   "fieldname": "rappel",
+   "fieldtype": "Check",
+   "label": "Rappel envoyé",
+   "default": "0"
   }
  ],
  "permissions": [
@@ -67,7 +74,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-20 00:00:00",
+ "modified": "2026-10-20 12:00:00",
  "sort_field": "modified",
  "sort_order": "DESC"
 }

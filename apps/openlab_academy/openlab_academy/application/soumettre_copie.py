@@ -109,7 +109,9 @@ class SoumettreCopie:
         try:
             self._depot.changer_statut(ancienne.id, ancienne.passer_a(Statut.RENVOYEE).statut, "", None)
         except TransitionInterdite:
-            pass  # copie déjà avancée : elle garde son statut, seule la nouvelle version fait foi
+            # copie déjà avancée : elle garde son statut mais quitte la chaîne (ni étape ni échéance),
+            # seule la nouvelle version fait foi
+            self._depot.changer_statut(ancienne.id, ancienne.statut, "", None)
 
     def _contenu(self, soumission: dict, signature: str) -> Contenu:
         nom = soumission["name"]

@@ -7,12 +7,13 @@ from frappe.utils import now_datetime
 
 from openlab_academy import hooks
 from openlab_academy.application.chaine import SYSTEME, Etat, FaireAvancer
-from openlab_academy.application.pairs import EnregistrerRelecture, StatutRelecture
+from openlab_academy.application.pairs import EnregistrerRelecture, RelectureRefusee, StatutRelecture
 from openlab_academy.domain.cohorte import Cohorte
 from openlab_academy.domain.copie import Source, Statut
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.entrypoints import evaluation
 from openlab_academy.infrastructure import journal_frappe
+from openlab_academy.openlab_academy.doctype.relecture_pair_openlab import relecture_pair_openlab
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
 from openlab_academy.infrastructure.depot_relectures_frappe import DepotRelecturesFrappe
 from openlab_academy.infrastructure.reglages_evaluation_frappe import SourceReglagesFrappe
@@ -166,12 +167,63 @@ class TestPairsFrappe(Cas):
         frappe.db.set_value("Relecture Pair OpenLab", {"copie": self.a}, "echeance", passe)
         frappe.db.set_value(COPIE, self.a, "echeance", passe)
         evaluation.traiter_echeances()
+        # premier dépassement : rappel à B, délai prolongé, la copie de A attend
+        relecture = frappe.get_doc("Relecture Pair OpenLab", {"copie": self.a})
+        self.assertEqual((relecture.statut, relecture.rappel), ("à_faire", 1))
+        self.assertGreater(relecture.echeance, now_datetime())
+        (note,) = frappe.get_all("Notification Log", {"for_user": B, "subject": ["like", "Rappel%"]},
+                                 ["subject", "type"])
+        self.assertEqual(note.type, "Alert")
+        self.assertEqual(self.ligne(self.a).etape_courante, "pairs")
+        self.assertEqual(self.actions(self.a)[-2:], ["rappel de relecture", "attente des relectures"])
+        frappe.db.set_value("Relecture Pair OpenLab", relecture.name, "echeance", passe)
+        frappe.db.set_value(COPIE, self.a, "echeance", passe)
+        evaluation.traiter_echeances()
         # personne d'autre dans la cohorte : la relecture est annulée, B dispensé, la copie de A avance
         self.assertEqual(frappe.db.get_value("Relecture Pair OpenLab", {"copie": self.a}, "statut"), "annulée")
         self.assertEqual(self.ligne(self.b).relectures_dispensees, 1)
         self.assertEqual(self.ligne(self.a).etape_courante, "formateur")
         self.assertEqual(self.actions(self.a)[-3:], ["relecture annulée", "passer", "étape suivante"])
         self.assertEqual(self.ligne(self.b).etape_courante, "pairs")
+
+    def test_double_envoi_d_une_relecture_enregistre_une_fois(self):
+        self.en_relecture()
+        (relecture,) = [r for r in self.relectures.relectures(self.livrable, self.cohorte) if r.copie == self.a]
+        codes = [c.code for c in self.depot.grille(self.a).criteres]
+        uc = EnregistrerRelecture(evaluation.DepotCopiesFrappe(), self.relectures, evaluation.avanceur())
+        uc.executer(B, relecture.id, {c: 1 for c in codes}, {c: "Argumenté." for c in codes})
+        with self.assertRaises(RelectureRefusee):
+            uc.executer(B, relecture.id, {c: 1 for c in codes}, {c: "Argumenté." for c in codes})
+        self.assertEqual(len([p for p in self.depot.propositions(self.a) if p.source == Source.PAIR]), 1)
+
+    def test_paire_unique_en_base(self):
+        self.en_relecture()
+        echeance = now_datetime()
+        self.assertIsNone(self.relectures.attribuer(self.a, B, echeance))  # B relit déjà la copie de A
+        self.assertEqual(frappe.db.count("Relecture Pair OpenLab", {"copie": self.a, "relecteur": B}), 1)
+        self.assertEqual(self.relectures.verrouiller_relecture("inexistante"), None)
+        relecture_pair_openlab.on_doctype_update()  # idempotent : la contrainte existe déjà
+        self.assertTrue(frappe.db.sql("""select 1 from information_schema.TABLE_CONSTRAINTS
+            where table_name='tabRelecture Pair OpenLab' and CONSTRAINT_NAME='unique_copie_relecteur'"""))
+
+    def test_pre_correction_pendant_les_pairs_consignee_sans_avancer(self):
+        self.en_relecture()
+        evaluation.pre_corriger(self.a)
+        self.assertEqual(self.ligne(self.a).etape_courante, "pairs")
+        self.assertEqual(self.actions(self.a)[-1], "pré-correction non disponible")
+        frappe.db.set_value(COPIE, self.a, "statut", "publiee")
+        evaluation.pre_corriger(self.a)  # après publication : plus rien n'est consigné
+        self.assertEqual(self.actions(self.a).count("pré-correction non disponible"), 1)
+
+    def test_version_remplacee_hors_echeances(self):
+        self.en_relecture()
+        s = frappe.get_doc("LMS Assignment Submission", {"member": A, "assignment": self.livrable})
+        s.answer = "https://github.com/aya/livrable-v2"
+        s.save(ignore_permissions=True)
+        ligne = self.ligne(self.a)
+        self.assertEqual((ligne.statut, ligne.etape_courante, ligne.echeance), ("en_relecture", "", None))
+        self.assertNotIn(self.a, self.depot.copies_echues(now_datetime() + datetime.timedelta(days=365)))
+        self.depot.verrouiller(self.a)
 
     def test_hook_horaire(self):
         self.assertEqual(hooks.scheduler_events["hourly"], ["openlab_academy.entrypoints.evaluation.traiter_echeances"])

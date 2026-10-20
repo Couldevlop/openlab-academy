@@ -34,6 +34,7 @@ class Etat:
 
 
 class DepotChaine(DepotCopies, Protocol):
+    def verrouiller(self, copie_id: str) -> None: ...  # sérialise les avancées concurrentes d'une même copie
     def etat(self, copie_id: str) -> Etat: ...
     def grille(self, copie_id: str) -> Grille: ...
     def copies_echues(self, maintenant: datetime) -> list[str]: ...
@@ -104,12 +105,23 @@ class FaireAvancer:
         copie = self._depot.copie(copie_id)
         self._entrer(copie, None, etape, self.chaine(copie))
 
+    def accepte_resultat(self, copie_id: str, etape: Etape) -> bool:
+        """Un résultat d'étape est-il encore à consigner ? La pré-correction, lancée en parallèle des pairs,
+        reste utile jusqu'à la publication ; les autres étapes ne valent que tant qu'elles sont courantes.
+        Une version remplacée (sans étape) n'accepte plus rien."""
+        etat = self._depot.etat(copie_id)
+        if etape == Etape.IA:
+            return bool(etat.etape) and self._depot.copie(copie_id).statut not in TERMINEES
+        return etat.etape == etape.value
+
     def executer(self, copie_id: str, terminee: Etape | None = None) -> None:
         """Passe à l'étape active suivante ; un signal d'une étape qui n'est plus la courante est ignoré."""
+        self._depot.verrouiller(copie_id)  # un second signal concurrent relira l'étape déjà avancée
         copie = self._depot.copie(copie_id)
-        if copie.statut in TERMINEES:
+        etat = self._depot.etat(copie_id)
+        if copie.statut in TERMINEES or not etat.etape:  # terminée, ou version remplacée
             return
-        courante = Etape(self._depot.etat(copie_id).etape)
+        courante = Etape(etat.etape)
         if courante == Etape.FORMATEUR or terminee not in (None, courante):
             return
         chaine = self.chaine(copie)
@@ -142,7 +154,8 @@ class FaireAvancer:
 class TraiterEcheances:
     def __init__(self, depot: DepotChaine, relectures: DepotRelectures, source: SourceReglages,
                  avancer: FaireAvancer, horloge: Callable[[], datetime], journal: Journal = lambda *_: None,
-                 isoler: Callable[[Callable[[], None]], None] = lambda action: action()):
+                 isoler: Callable[[Callable[[], None]], None] = lambda action: action(),
+                 notifier: Callable[[str, str], None] = lambda *_: None):
         self._depot = depot
         self._relectures = relectures
         self._source = source
@@ -150,18 +163,31 @@ class TraiterEcheances:
         self._horloge = horloge
         self._journal = journal
         self._isoler = isoler  # une copie en erreur n'empêche pas de traiter les autres
+        self._notifier = notifier
 
     def executer(self) -> None:
         maintenant = self._horloge()
         for r in self._relectures.relectures_echues(maintenant):
-            self._isoler(lambda r=r: self._relecture(r))
+            self._isoler(lambda r=r: self._relecture(r, maintenant))
         for copie_id in self._depot.copies_echues(maintenant):
             self._isoler(lambda copie_id=copie_id: self._copie(copie_id, maintenant))
 
-    # --- relecture échue : réattribuée ou annulée, le relecteur en retard est dispensé ----------------
-    def _relecture(self, r: Relecture) -> None:
+    # --- relecture échue : rappel, puis réattribuée ou annulée, le relecteur en retard étant dispensé ---
+    def _relecture(self, r: Relecture, maintenant: datetime) -> None:
+        self._depot.verrouiller(r.copie)
+        r = self._relectures.verrouiller_relecture(r.id)
+        if r.statut != StatutRelecture.A_FAIRE or r.echeance is None or r.echeance > maintenant:
+            return  # relue ou déjà traitée entre-temps
         copie = self._depot.copie(r.copie)
         config = self._avancer.chaine(copie).config(Etape.PAIRS)
+        if not r.rappelee:
+            echeance = maintenant + timedelta(hours=config.delai_heures)
+            self._relectures.rappeler(r.id, echeance)
+            self._notifier(r.relecteur, f"Rappel : une relecture vous attend, à rendre avant le "
+                                        f"{echeance:%d/%m/%Y à %H:%M}. Passé ce délai, elle sera retirée.")
+            self._journal(copie.id, SYSTEME, "rappel de relecture", {"echeance": r.echeance},
+                          {"echeance": echeance})
+            return
         rendues = self._relectures.copies_rendues(copie.exercice, copie.cohorte)
         nouveau = None
         if config.expiration == Expiration.REATTRIBUER:
@@ -181,8 +207,12 @@ class TraiterEcheances:
     # --- étape échue -------------------------------------------------------------------------------
     def _copie(self, copie_id: str, maintenant: datetime) -> None:
         """L'échéance enregistrée à l'entrée dans l'étape fait foi ; l'action est celle réglée pour l'étape."""
+        self._depot.verrouiller(copie_id)
         copie = self._depot.copie(copie_id)
         etat = self._depot.etat(copie_id)
+        if (copie.statut in TERMINEES or not etat.etape or etat.echeance is None
+                or etat.echeance > maintenant):
+            return  # l'étape a changé depuis la sélection : elle n'est plus échue
         etape = Etape(etat.etape)
         chaine = self._avancer.chaine(copie)
         action = chaine.config(etape).expiration
@@ -196,7 +226,7 @@ class TraiterEcheances:
                        and r.echeance and r.echeance > maintenant]
             if attente:
                 self._depot.changer_statut(copie_id, copie.statut, etape.value, max(attente))
-                self._journal(copie_id, SYSTEME, "réattribuer", {"echeance": etat.echeance},
+                self._journal(copie_id, SYSTEME, "attente des relectures", {"echeance": etat.echeance},
                               {"echeance": max(attente)})
                 return
             libelle = Expiration.PASSER.value  # personne d'autre : la copie avance avec les relectures obtenues
@@ -218,12 +248,12 @@ class TraiterEcheances:
             avant = [etat.escalade_a]
         if suivant:
             self._depot.escalader(copie.id, suivant, maintenant + timedelta(hours=delai))
-            self._journal(copie.id, SYSTEME, "escalader", {"correcteurs": avant}, {"correcteur": suivant})
+            self._journal(copie.id, SYSTEME, "escalader", {"correcteurs": avant}, {"correcteurs": [suivant]})
         elif reglages.publication_provisoire:
             self._provisoire(copie)
         else:
             self._depot.changer_statut(copie.id, copie.statut, Etape.FORMATEUR.value, None)
-            self._journal(copie.id, SYSTEME, "escalade épuisée", {"correcteurs": avant}, {})
+            self._journal(copie.id, SYSTEME, "escalade épuisée", {"correcteurs": avant}, {"correcteurs": avant})
 
     def _provisoire(self, copie: Copie) -> None:
         self._depot.changer_statut(copie.id, copie.passer_a(Statut.PROVISOIRE).statut, Etape.FORMATEUR.value, None)

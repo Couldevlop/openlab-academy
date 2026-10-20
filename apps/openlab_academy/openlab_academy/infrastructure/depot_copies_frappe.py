@@ -136,6 +136,10 @@ class DepotCopiesFrappe:
             frappe.db.set_value(RELECTURE, nom, "statut", "annulée")
 
     # --- état dans la chaîne de correction ------------------------------------
+    def verrouiller(self, copie_id: str) -> None:
+        """Verrou de ligne jusqu'à la fin de la transaction : deux avancées concurrentes se suivent."""
+        frappe.db.get_value(COPIE, copie_id, "name", for_update=True)
+
     def etat(self, copie_id: str) -> Etat:
         ligne = frappe.db.get_value(COPIE, copie_id, ["etape_courante", "echeance", "escalade_a"], as_dict=True)
         return Etat(ligne.etape_courante or "", get_datetime(ligne.echeance) if ligne.echeance else None,

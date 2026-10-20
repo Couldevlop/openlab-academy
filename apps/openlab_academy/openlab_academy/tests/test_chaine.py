@@ -28,11 +28,12 @@ class Cas(unittest.TestCase):
         self.m = Memoire(type_, yaml, taille)
         self.source = SourceMemoire(reglages, surcharges)
         self.t = DEBUT
-        self.file, self.journal = [], []
+        self.file, self.journal, self.notes = [], [], []
         horloge = lambda: self.t  # noqa: E731
         journal = lambda *args: self.journal.append(args)  # noqa: E731
         self.avancer = FaireAvancer(self.m, self.m, self.source, horloge, lambda *a: self.file.append(a), journal)
-        self.echeances = TraiterEcheances(self.m, self.m, self.source, self.avancer, horloge, journal)
+        self.echeances = TraiterEcheances(self.m, self.m, self.source, self.avancer, horloge, journal,
+                                          notifier=lambda *a: self.notes.append(a))
         self.relire = EnregistrerRelecture(self.m, self.m, self.avancer, journal)
 
     def rendre(self, apprenant, cohorte="COH1"):
@@ -153,6 +154,26 @@ class TestFaireAvancer(Cas):
         self.avancer.executer(a, Etape.PAIRS)
         self.assertEqual([r.statut for r in self.m.relectures_de(a)], [StatutRelecture.ANNULEE])
 
+    def test_double_avancee_depuis_la_meme_etape(self):
+        self.monter()
+        a = self.rendre("a@x.ci")
+        self.avancer.executer(a, Etape.CONTROLES)
+        self.avancer.executer(a, Etape.CONTROLES)  # second signal, relu après le verrou : sans effet
+        self.assertEqual(self.file, [("controler", a), ("pre_corriger", a)])
+        self.assertEqual(self.m.verrous, [a, a, a])  # démarrage + deux signaux
+        self.assertEqual(self.actions().count("étape suivante"), 3)  # contrôles, pré-correction, pairs
+
+    def test_resultat_de_la_pre_correction_accepte_jusqu_a_la_publication(self):
+        self.monter()
+        a = self.rendre("a@x.ci")
+        self.avancer.executer(a, Etape.CONTROLES)
+        self.assertEqual(self.m.etat(a).etape, "pairs")
+        self.assertTrue(self.avancer.accepte_resultat(a, Etape.IA))  # en parallèle des pairs
+        self.assertFalse(self.avancer.accepte_resultat(a, Etape.CONTROLES))
+        self.assertTrue(self.avancer.accepte_resultat(a, Etape.PAIRS))
+        self.m.copies[a] = replace(self.m.copies[a], statut=Statut.PUBLIEE)
+        self.assertFalse(self.avancer.accepte_resultat(a, Etape.IA))
+
     def test_copie_terminee_ou_signal_perime_ignores(self):
         self.monter()
         a = self.rendre("a@x.ci")
@@ -189,7 +210,7 @@ class TestFaireAvancer(Cas):
 
 
 class TestTraiterEcheances(Cas):
-    def test_pair_en_retard_reattribue(self):
+    def test_pair_en_retard_rappele_puis_reattribue(self):
         self.monter(yaml=replace(LIVRABLE, nb_pairs=1), taille=3)
         a, b, c = (self.rendre(e) for e in ("a@x.ci", "b@x.ci", "c@x.ci"))
         for cid in (a, b, c):
@@ -198,21 +219,35 @@ class TestTraiterEcheances(Cas):
         (a_relit_b,) = self.m.relectures_de(b)
         self.assertEqual((b_relit_a.relecteur, a_relit_b.relecteur), ("b@x.ci", "a@x.ci"))
         self.relire.executer("a@x.ci", a_relit_b.id, NIVEAUX, COMMENTAIRES)
+        # premier dépassement : rappel au relecteur et délai prolongé une fois
+        self.avancer_horloge(72)
+        rappelee = self.m.rel[b_relit_a.id]
+        self.assertEqual((rappelee.statut, rappelee.rappelee, rappelee.echeance),
+                         (StatutRelecture.A_FAIRE, True, self.t + timedelta(hours=72)))
+        ((destinataire, message),) = self.notes
+        self.assertEqual(destinataire, "b@x.ci")
+        self.assertIn("Rappel", message)
+        self.assertNotIn("a@x.ci", message)  # l'auteur n'est pas nommé
+        self.assertEqual(self.m.dispensees, [])
+        self.assertEqual(self.m.etat(a).echeance, rappelee.echeance)  # la copie attend la relecture rappelée
+        self.assertEqual(self.etape(c), ("formateur", Statut.A_CORRIGER))  # sans relecteur, elle avance
+        # second dépassement : réattribuée, b dispensé
         self.avancer_horloge(72)
         self.assertEqual(self.m.rel[b_relit_a.id].statut, StatutRelecture.REATTRIBUEE)
         (nouvelle,) = self.m.relectures_de(a, StatutRelecture.A_FAIRE)
         self.assertEqual((nouvelle.relecteur, nouvelle.echeance), ("c@x.ci", self.t + timedelta(hours=72)))
         self.assertEqual(self.m.dispensees, [b])  # b n'a pas relu : sa note n'est plus masquée
-        # la copie de a attend la relecture réattribuée ; celle de c, sans relecteur, avance
         self.assertEqual(self.etape(a), ("pairs", Statut.EN_RELECTURE))
         self.assertEqual(self.m.etat(a).echeance, nouvelle.echeance)
-        self.assertEqual(self.etape(c), ("formateur", Statut.A_CORRIGER))
-        for action in ("relecture réattribuée", "relectures dispensées", "réattribuer", "passer"):
+        for action in ("rappel de relecture", "relecture réattribuée", "relectures dispensées",
+                       "attente des relectures", "passer"):
             self.assertIn(action, self.actions())
-        # personne d'autre à solliciter : la copie avance avec les relectures obtenues
+        # c rappelé puis en retard, personne d'autre à solliciter : la copie avance avec les relectures obtenues
+        self.avancer_horloge(72)
         self.avancer_horloge(72)
         self.assertEqual(self.m.rel[nouvelle.id].statut, StatutRelecture.ANNULEE)
         self.assertEqual(self.etape(a), ("formateur", Statut.A_CORRIGER))
+        self.assertEqual(self.m.dispensees, [b, c])
 
     def test_pair_en_retard_dispense(self):
         pairs = ConfigEtape(Etape.PAIRS, True, 72, Expiration.DISPENSER)
@@ -221,11 +256,48 @@ class TestTraiterEcheances(Cas):
         a, b = self.rendre("a@x.ci"), self.rendre("b@x.ci")
         for cid in (a, b):
             self.avancer.executer(cid, Etape.CONTROLES)
+            self.m.etats[cid] = replace(self.m.etats[cid], echeance=self.t + timedelta(hours=1000))
+        self.avancer_horloge(72)
+        self.assertEqual(len(self.notes), 2)
         self.avancer_horloge(72)
         self.assertEqual({r.statut for r in self.m.rel.values()}, {StatutRelecture.ANNULEE})
         self.assertEqual(sorted(self.m.dispensees), [a, b])
+        self.assertIn("relecture annulée", self.actions())
+        self.t += timedelta(hours=1000)
+        self.echeances.executer()
         self.assertEqual({self.etape(a), self.etape(b)}, {("formateur", Statut.A_CORRIGER)})
         self.assertIn("dispenser", self.actions())
+
+    def test_relecture_traitee_entre_temps_ignoree(self):
+        self.monter(taille=2)
+        a, b = self.rendre("a@x.ci"), self.rendre("b@x.ci")
+        for cid in (a, b):
+            self.avancer.executer(cid, Etape.CONTROLES)
+        (r,) = self.m.relectures_de(a)
+        self.relire.executer("b@x.ci", r.id, NIVEAUX, COMMENTAIRES)
+        self.m.relectures_echues = lambda maintenant: [r]  # sélection faite avant la relecture
+        self.avancer_horloge(72)
+        self.assertEqual(self.m.rel[r.id].statut, StatutRelecture.FAITE)
+        self.assertEqual(self.notes, [])
+
+    def test_etape_plus_echue_au_moment_du_traitement_ignoree(self):
+        self.monter(yaml=chaine(Etape.CONTROLES, Etape.FORMATEUR))
+        a, b = self.rendre("a@x.ci"), self.rendre("b@x.ci")
+        self.m.etats[b] = replace(self.m.etats[b], echeance=None)
+        self.m.copies_echues = lambda maintenant: [a, b]  # sélection périmée
+        self.echeances.executer()
+        self.assertEqual((self.etape(a)[0], self.etape(b)[0]), ("controles", "controles"))
+        self.assertEqual(self.actions(), ["étape suivante", "étape suivante"])
+
+    def test_version_remplacee_hors_chaine(self):
+        self.monter()
+        a = self.rendre("a@x.ci")
+        self.m.changer_statut(a, Statut.RENDUE, "", None)  # remplacée par une nouvelle version
+        self.avancer.executer(a)
+        self.m.copies_echues = lambda maintenant: [a]
+        self.avancer_horloge(1000)
+        self.assertEqual(self.m.etat(a), Etat("", None))
+        self.assertFalse(self.avancer.accepte_resultat(a, Etape.IA))
 
     def test_formateur_echu_escalade_au_suppleant_puis_au_responsable(self):
         reglages = ReglagesEvaluation(responsable_pedagogique="resp@x.ci")
@@ -234,10 +306,10 @@ class TestTraiterEcheances(Cas):
         self.avancer_horloge(1)
         self.assertEqual(self.m.etat(a), Etat("formateur", self.t + timedelta(hours=1), "sup@x.ci"))
         self.assertEqual(self.journal[-1][1:], (SYSTEME, "escalader", {"correcteurs": ["form@x.ci"]},
-                                                {"correcteur": "sup@x.ci"}))
+                                                {"correcteurs": ["sup@x.ci"]}))
         self.avancer_horloge(1)
         self.assertEqual(self.m.etat(a).escalade_a, "resp@x.ci")
-        self.assertEqual(self.journal[-1][3:], ({"correcteurs": ["sup@x.ci"]}, {"correcteur": "resp@x.ci"}))
+        self.assertEqual(self.journal[-1][3:], ({"correcteurs": ["sup@x.ci"]}, {"correcteurs": ["resp@x.ci"]}))
         self.avancer_horloge(1)  # escalade épuisée, publication provisoire désactivée
         self.assertEqual(self.m.etat(a), Etat("formateur", None, "resp@x.ci"))
         self.assertEqual(self.m.copie(a).statut, Statut.A_CORRIGER)

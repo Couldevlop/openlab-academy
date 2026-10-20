@@ -47,10 +47,18 @@ def avanceur() -> FaireAvancer:
 
 
 def _non_disponible(copie_id: str, etape: Etape, libelle: str) -> None:
-    if DepotCopiesFrappe().etat(copie_id).etape != etape.value:
-        return  # signal périmé : la copie a déjà quitté cette étape
+    """Consigne l'indisponibilité si le résultat est encore attendu ; n'avance que si l'étape est la courante."""
+    avancer = avanceur()
+    if not avancer.accepte_resultat(copie_id, etape):
+        return  # signal périmé : la copie a quitté cette étape (ou est publiée, ou remplacée)
     journal_frappe.journaliser(copie_id, SYSTEME, libelle, {}, {"etape": etape.value})
-    avanceur().executer(copie_id, etape)
+    avancer.executer(copie_id, etape)
+
+
+def notifier(destinataire: str, message: str) -> None:
+    """Alerte dans l'espace de l'apprenant (journal des notifications Frappe)."""
+    frappe.get_doc({"doctype": "Notification Log", "for_user": destinataire, "type": "Alert",
+                    "subject": message, "email_content": message}).insert(ignore_permissions=True)
 
 
 def controler(copie_id: str) -> None:
@@ -66,7 +74,7 @@ def pre_corriger(copie_id: str) -> None:
 def traiter_echeances() -> None:
     """Tâche horaire : applique l'action réglée à chaque étape et relecture échue."""
     TraiterEcheances(DepotCopiesFrappe(), DepotRelecturesFrappe(), reglages_evaluation_frappe.SourceReglagesFrappe(),
-                     avanceur(), now_datetime, journal_frappe.journaliser, isoler).executer()
+                     avanceur(), now_datetime, journal_frappe.journaliser, isoler, notifier).executer()
 
 
 def soumettre(soumission: dict) -> str | None:

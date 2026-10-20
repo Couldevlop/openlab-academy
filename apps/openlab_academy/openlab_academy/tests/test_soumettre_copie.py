@@ -166,6 +166,7 @@ class TestSoumettreCopie(unittest.TestCase):
             self.assertEqual(self.depot.copie(v2).version, 2)
             self.assertEqual(self.depot.copie(v1).statut, statut)
             self.assertEqual(self.depot.relectures_annulees, [v1])
+            self.assertEqual(self.depot.statuts[-2], (v1, statut, "", None))  # hors chaîne : ni étape ni échéance
 
     def test_resoumission_apres_publication_ignoree_et_journalisee(self):
         uc = self.cas()

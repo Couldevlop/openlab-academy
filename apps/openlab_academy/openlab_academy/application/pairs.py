@@ -36,6 +36,7 @@ class Relecture:
     relecteur: str
     statut: StatutRelecture
     echeance: datetime | None
+    rappelee: bool = False
 
 
 class DepotRelectures(Protocol):
@@ -45,9 +46,11 @@ class DepotRelectures(Protocol):
     def taille_cohorte(self, cohorte: str) -> int: ...
     def relectures(self, exercice: str, cohorte: str) -> list[Relecture]: ...
     def relecture(self, relecture_id: str) -> Relecture | None: ...
+    def verrouiller_relecture(self, relecture_id: str) -> Relecture | None: ...  # lue et verrouillée
     def relectures_echues(self, maintenant: datetime) -> list[Relecture]: ...
-    def attribuer(self, copie_id: str, relecteur: str, echeance: datetime) -> str: ...
+    def attribuer(self, copie_id: str, relecteur: str, echeance: datetime) -> str | None: ...  # None : paire déjà là
     def changer_statut_relecture(self, relecture_id: str, statut: StatutRelecture) -> None: ...
+    def rappeler(self, relecture_id: str, echeance: datetime) -> None: ...
     def dispenser(self, copie_id: str) -> None: ...
 
 
@@ -71,16 +74,23 @@ class AttribuerPairs:
         a_relire = sorted((c for c in cohorte_rendue
                            if c.statut == Statut.EN_RELECTURE and c.apprenant != auteur
                            and (auteur, c.id) not in deja and recues[c.id] < n),
-                          key=lambda c: (recues[c.id], c.id))[:max(0, n - charge[auteur])]
+                          key=lambda c: (recues[c.id], c.id))
         confiees = []
         for c in a_relire:
-            confiees.append(self._depot.attribuer(c.id, auteur, echeance))
-            charge[auteur] += 1
+            if charge[auteur] >= n:
+                break
+            relecture = self._depot.attribuer(c.id, auteur, echeance)
+            if relecture is not None:  # None : une attribution concurrente a déjà créé cette paire
+                confiees.append(relecture)
+                charge[auteur] += 1
         relecteurs = sorted({c.apprenant for c in cohorte_rendue if c.apprenant != auteur
                              and (c.apprenant, copie.id) not in deja and charge[c.apprenant] < n},
                             key=lambda a: (charge[a], a))
-        for relecteur in relecteurs[:max(0, n - recues[copie.id])]:
-            self._depot.attribuer(copie.id, relecteur, echeance)
+        for relecteur in relecteurs:
+            if recues[copie.id] >= n:
+                break
+            if self._depot.attribuer(copie.id, relecteur, echeance) is not None:
+                recues[copie.id] += 1
         return tuple(confiees)
 
     def reattribuer(self, copie: Copie, cohorte_rendue: list[Copie], delai_heures: int) -> str | None:
@@ -88,14 +98,15 @@ class AttribuerPairs:
         toutes = self._depot.relectures(copie.exercice, copie.cohorte)
         exclus = {copie.apprenant} | {r.relecteur for r in toutes if r.copie == copie.id}
         charge = Counter(r.relecteur for r in toutes if r.statut in ACTIVES)
-        candidats = sorted({c.apprenant for c in cohorte_rendue} - exclus, key=lambda a: (charge[a], a))
-        if not candidats:
-            return None
-        self._depot.attribuer(copie.id, candidats[0], self._horloge() + timedelta(hours=delai_heures))
-        return candidats[0]
+        echeance = self._horloge() + timedelta(hours=delai_heures)
+        for candidat in sorted({c.apprenant for c in cohorte_rendue} - exclus, key=lambda a: (charge[a], a)):
+            if self._depot.attribuer(copie.id, candidat, echeance) is not None:
+                return candidat
+        return None
 
 
 class DepotCopiesRelues(Protocol):
+    def verrouiller(self, copie_id: str) -> None: ...
     def copie(self, copie_id: str) -> Copie: ...
     def grille(self, copie_id: str) -> Grille: ...
     def ajouter_proposition(self, copie_id: str, p: Proposition) -> None: ...
@@ -119,6 +130,9 @@ class EnregistrerRelecture:
         r = self._relectures.relecture(relecture_id)
         if r is None or r.relecteur != relecteur:
             raise RelectureRefusee("relecture non attribuée")
+        # verrous dans l'ordre copie puis relecture (comme l'échéancier) : un double envoi n'enregistre qu'une fois
+        self._depot.verrouiller(r.copie)
+        r = self._relectures.verrouiller_relecture(relecture_id)
         if r.statut != StatutRelecture.A_FAIRE:
             raise RelectureRefusee("cette relecture n'est plus à faire")
         grille = self._depot.grille(r.copie)

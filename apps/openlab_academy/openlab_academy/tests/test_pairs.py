@@ -72,6 +72,14 @@ class TestAttribuerPairs(unittest.TestCase):
         self.m.changer_statut_relecture(rid, StatutRelecture.REATTRIBUEE)
         self.assertEqual(self.attribuer(b, 1), ())
 
+    def test_paire_creee_en_concurrence_ignoree(self):
+        a, b, c = en_relecture(self.m, "a@x.ci", "b@x.ci", "c@x.ci")
+        self.m.paires_concurrentes = {(b, "a@x.ci"), (a, "b@x.ci")}
+        self.assertEqual(self.attribuer(a, 1), (self.m.relectures_par("a@x.ci")[0].id,))  # c plutôt que b
+        self.assertEqual(self.m.relectures_par("a@x.ci")[0].copie, c)
+        self.assertEqual([r.relecteur for r in self.m.relectures_de(a)], ["c@x.ci"])
+        self.assertIsNone(self.uc.reattribuer(self.m.copie(a), self.m.copies_rendues("EX1", "COH1"), 72))
+
     def test_anonymat_des_donnees_renvoyees(self):
         a, b = en_relecture(self.m, "a@x.ci", "b@x.ci")
         ids = self.attribuer(b, 1)
@@ -138,6 +146,7 @@ class TestEnregistrerRelecture(unittest.TestCase):
         with self.assertRaisesRegex(RelectureRefusee, "plus à faire"):
             self.uc.executer("b@x.ci", self.rid, NIVEAUX, COMMENTAIRES)
         self.assertEqual(len(self.m.propositions(self.a)), 1)
+        self.assertEqual(self.m.verrous, [self.a, self.a])  # la copie est verrouillée avant la relecture
 
     def test_commentaire_obligatoire_par_critere(self):
         with self.assertRaisesRegex(RelectureRefusee, "commentaire"):

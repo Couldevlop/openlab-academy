@@ -39,6 +39,8 @@ class Memoire:
         self.dispensees: list[str] = []
         self.tailles = {"COH1": taille}
         self.titulaires_ = {"form@x.ci"}
+        self.verrous: list[str] = []
+        self.paires_concurrentes: set[tuple[str, str]] = set()  # insérées par une autre transaction
 
     # --- préparation des cas ---------------------------------------------------
     def rendre(self, apprenant, chaine, maintenant, cohorte="COH1", exercice="EX1") -> str:
@@ -77,6 +79,9 @@ class Memoire:
             self.rel[r.id] = replace(r, statut=StatutRelecture.ANNULEE)
 
     # --- DepotChaine -------------------------------------------------------------
+    def verrouiller(self, copie_id):
+        self.verrous.append(copie_id)
+
     def etat(self, copie_id):
         return self.etats[copie_id]
 
@@ -109,17 +114,26 @@ class Memoire:
     def relecture(self, relecture_id):
         return self.rel.get(relecture_id)
 
+    def verrouiller_relecture(self, relecture_id):
+        return self.rel.get(relecture_id)
+
     def relectures_echues(self, maintenant):
         return [r for r in self.rel.values()
                 if r.statut == StatutRelecture.A_FAIRE and r.echeance is not None and r.echeance <= maintenant]
 
     def attribuer(self, copie_id, relecteur, echeance):
+        if (copie_id, relecteur) in self.paires_concurrentes or any(
+                r.copie == copie_id and r.relecteur == relecteur for r in self.rel.values()):
+            return None  # contrainte d'unicité (copie, relecteur)
         rid = f"R{len(self.rel) + 1}"
         self.rel[rid] = Relecture(rid, copie_id, relecteur, StatutRelecture.A_FAIRE, echeance)
         return rid
 
     def changer_statut_relecture(self, relecture_id, statut):
         self.rel[relecture_id] = replace(self.rel[relecture_id], statut=statut)
+
+    def rappeler(self, relecture_id, echeance):
+        self.rel[relecture_id] = replace(self.rel[relecture_id], rappelee=True, echeance=echeance)
 
     def dispenser(self, copie_id):
         self.dispensees.append(copie_id)
