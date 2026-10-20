@@ -1,0 +1,151 @@
+{
+ "doctype": "DocType",
+ "name": "Copie OpenLab",
+ "module": "OpenLab Academy",
+ "custom": 0,
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "istable": 0,
+ "issingle": 0,
+ "track_changes": 0,
+ "field_order": [
+  "soumission",
+  "apprenant",
+  "exercice",
+  "cohorte",
+  "type_exercice",
+  "version",
+  "statut",
+  "etape_courante",
+  "echeance",
+  "grille_json",
+  "empreinte",
+  "signature",
+  "contenu",
+  "source_url",
+  "commit"
+ ],
+ "fields": [
+  {
+   "fieldname": "soumission",
+   "fieldtype": "Data",
+   "label": "Soumission LMS",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "apprenant",
+   "fieldtype": "Link",
+   "label": "Apprenant",
+   "options": "User",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "exercice",
+   "fieldtype": "Data",
+   "label": "Exercice",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "cohorte",
+   "fieldtype": "Data",
+   "label": "Cohorte",
+   "search_index": 1
+  },
+  {
+   "fieldname": "type_exercice",
+   "fieldtype": "Select",
+   "label": "Type d'exercice",
+   "options": "mise_en_situation\nlivrable\nprojet\ncapstone",
+   "reqd": 1
+  },
+  {
+   "fieldname": "version",
+   "fieldtype": "Int",
+   "label": "Version",
+   "reqd": 1,
+   "default": "1",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "statut",
+   "fieldtype": "Select",
+   "label": "Statut",
+   "options": "rendue\nrenvoyee\ncontrolee\npre_corrigee\nen_relecture\na_corriger\nprovisoire\npubliee",
+   "reqd": 1,
+   "default": "rendue",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "etape_courante",
+   "fieldtype": "Data",
+   "label": "Étape courante"
+  },
+  {
+   "fieldname": "echeance",
+   "fieldtype": "Datetime",
+   "label": "Échéance de l'étape"
+  },
+  {
+   "fieldname": "grille_json",
+   "fieldtype": "Long Text",
+   "label": "Grille figée",
+   "read_only": 1
+  },
+  {
+   "fieldname": "empreinte",
+   "fieldtype": "Data",
+   "label": "Empreinte de la grille",
+   "read_only": 1
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Data",
+   "label": "Signature du rendu",
+   "read_only": 1
+  },
+  {
+   "fieldname": "contenu",
+   "fieldtype": "Long Text",
+   "label": "Contenu rendu",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_url",
+   "fieldtype": "Data",
+   "label": "Lien source"
+  },
+  {
+   "fieldname": "commit",
+   "fieldtype": "Data",
+   "label": "Commit"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "role": "Responsable pédagogique OpenLab",
+   "read": 1,
+   "report": 1
+  }
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-20 00:00:00",
+ "modified": "2026-10-20 00:00:00",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

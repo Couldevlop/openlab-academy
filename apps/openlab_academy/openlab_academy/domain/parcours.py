@@ -7,6 +7,9 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 
+from openlab_academy.domain.grille import Grille
+from openlab_academy.domain.reglages_evaluation import Chaine
+
 TITRE_MAX = 120  # laisse la place aux préfixes (« Projet 10 — ») sous la limite LMS de 140
 _SALAIRE = re.compile(r"\d+\s*k\s*€", re.IGNORECASE)
 
@@ -70,6 +73,10 @@ class Module:
     livrable: str
     quiz: tuple[Question, ...] = ()
     mise_en_situation: str = ""
+    grille_cas: Grille | None = None  # grille propre à la mise en situation (sinon grille générique)
+    correction_cas: Chaine | None = None
+    grille_livrable: Grille | None = None
+    correction_livrable: Chaine | None = None
 
 
 @dataclass(frozen=True)
@@ -91,6 +98,8 @@ class Projet:
     exigences_specifiques: tuple[str, ...]
     livrables: tuple[str, ...]
     apres_module: str | None = None
+    grille: Grille | None = None  # sinon grille dérivée du barème des réglages
+    correction: Chaine | None = None
 
     def __post_init__(self):
         _titre_court(self.titre)

@@ -70,6 +70,34 @@ class Chaine:
         if not self.active(Etape.FORMATEUR):
             raise ReglagesInvalides("l'étape formateur doit rester active : seul un humain publie une note définitive")
 
+    def vers_dict(self) -> dict:
+        return {"etapes": [{"etape": c.etape.value, "active": c.active, "delai_heures": c.delai_heures,
+                            "expiration": c.expiration.value} for c in self.etapes],
+                "nb_pairs": self.nb_pairs, "anonymat": self.anonymat,
+                "note_masquee_avant_relectures": self.note_masquee_avant_relectures,
+                "note_sur": self.note_sur, "seuil_reussite": self.seuil_reussite}
+
+    @classmethod
+    def depuis_dict(cls, donnees) -> "Chaine":
+        """Chaîne décrite par un dictionnaire (YAML d'un exercice) ; les étapes non citées sont inactives."""
+        if not isinstance(donnees, dict):
+            raise ReglagesInvalides("la chaîne doit être un dictionnaire")
+        lignes = donnees.get("etapes")
+        if not isinstance(lignes, list) or not lignes:
+            raise ReglagesInvalides("la chaîne doit lister ses « etapes »")
+        configs = {}
+        for i, ligne in enumerate(lignes):
+            try:
+                etape = Etape(ligne["etape"])
+                configs[etape] = ConfigEtape(etape, bool(ligne["active"]), int(ligne["delai_heures"]),
+                                             Expiration(ligne["expiration"]))
+            except (KeyError, TypeError, ValueError) as e:
+                raise ReglagesInvalides(
+                    f"etapes[{i}] invalide : etape, active, delai_heures et expiration attendus ({e})") from None
+        options = {c: donnees[c] for c in ("nb_pairs", "anonymat", "note_masquee_avant_relectures", "note_sur",
+                                           "seuil_reussite") if c in donnees}
+        return cls(tuple(configs.get(e) or ConfigEtape(e, False, 0, Expiration.PASSER) for e in Etape), **options)
+
     def active(self, etape: Etape) -> bool:
         return any(c.etape == etape and c.active for c in self.etapes)
 

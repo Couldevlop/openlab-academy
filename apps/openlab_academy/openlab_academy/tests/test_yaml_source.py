@@ -147,3 +147,67 @@ class TestChargementDossier(unittest.TestCase):
             self.assertEqual(len(p.portfolio), 10)
         self.assertEqual(sorted(p.title for p in lot if isinstance(p, Annonce)),
                          ["Ingénieur Cybersécurité I", "Ingénieur Cybersécurité II"])
+
+
+def critere_brut(code="clarte", poids=100, **autres):
+    return {"code": code, "libelle": "Clarté", "poids": poids,
+            "niveaux": [{"libelle": "Faible"}, {"libelle": "Bon", "descripteur": "Bien", "points": 5}], **autres}
+
+
+CORRECTION_BRUTE = {"etapes": [{"etape": "formateur", "active": True, "delai_heures": 24, "expiration": "escalader"}],
+                    "nb_pairs": 1}
+
+
+class TestGrilleEtCorrection(unittest.TestCase):
+    def test_sans_grille_ni_correction(self):
+        p = depuis_dict(parcours_brut(), "t.yaml")
+        m = p.blocs[0].modules[0]
+        self.assertEqual((m.grille_cas, m.correction_cas, m.grille_livrable, m.correction_livrable),
+                         (None, None, None, None))
+        self.assertEqual((p.portfolio[0].grille, p.capstone.correction), (None, None))
+
+    def test_grille_et_correction_d_un_module(self):
+        brut = parcours_brut()
+        m = brut["blocs"][0]["modules"][0]
+        m.update(grille_mise_en_situation=[critere_brut(controles=["c1"])], correction_mise_en_situation=CORRECTION_BRUTE,
+                 grille_livrable=[critere_brut("autre")], correction_livrable=CORRECTION_BRUTE)
+        module = depuis_dict(brut, "t.yaml").blocs[0].modules[0]
+        critere = module.grille_cas.criteres[0]
+        self.assertEqual((critere.code, critere.description, critere.controles), ("clarte", "Clarté", ("c1",)))
+        self.assertEqual([(n.libelle, n.descripteur, n.points) for n in critere.niveaux],
+                         [("Faible", "Faible", 0), ("Bon", "Bien", 5)])
+        self.assertEqual(module.correction_cas.nb_pairs, 1)
+        self.assertEqual(module.grille_livrable.criteres[0].code, "autre")
+        self.assertEqual(module.correction_livrable.nb_pairs, 1)
+
+    def test_grille_et_correction_d_un_projet(self):
+        brut = parcours_brut()
+        brut["portfolio"][0].update(grille=[critere_brut()], correction=CORRECTION_BRUTE)
+        brut["capstone"].update(grille=[critere_brut()])
+        p = depuis_dict(brut, "t.yaml")
+        self.assertEqual(p.portfolio[0].grille.criteres[0].poids, 100)
+        self.assertEqual(p.portfolio[0].correction.nb_pairs, 1)
+        self.assertIsNotNone(p.capstone.grille)
+
+    def test_grille_invalide_message_clair(self):
+        cas = [
+            ("pas une liste", "x", r"t\.yaml: portfolio\[0\]\.grille doit être une liste"),
+            ("poids 90", [critere_brut(poids=90)], r"portfolio\[0\]\.grille invalide : grille : total 90 %"),
+            ("vide", [], r"portfolio\[0\]\.grille invalide : la grille n'a aucun critère"),
+            ("critere texte", ["x"], r"grille\[0\] doit être un critère"),
+            ("niveaux faux", [{**critere_brut(), "niveaux": ["x"]}], r"grille\[0\]\.niveaux doit être une liste"),
+            ("poids texte", [critere_brut(poids="x")], r"grille\[0\]\.poids doit être un entier"),
+            ("code manquant", [{k: v for k, v in critere_brut().items() if k != "code"}], r"grille\[0\]\.code manquant"),
+            ("niveau unique", [{**critere_brut(), "niveaux": [{"libelle": "A"}]}], r"au moins 2 niveaux"),
+        ]
+        for nom, grille, message in cas:
+            brut = parcours_brut()
+            brut["portfolio"][0]["grille"] = grille
+            with self.subTest(nom), self.assertRaisesRegex(FormatInvalide, message):
+                depuis_dict(brut, "t.yaml")
+
+    def test_correction_invalide_message_clair(self):
+        brut = parcours_brut()
+        brut["blocs"][0]["modules"][0]["correction_livrable"] = {"etapes": [{"etape": "zzz"}]}
+        with self.assertRaisesRegex(FormatInvalide, r"t\.yaml: blocs\[0\]\.modules\[0\]\.correction_livrable invalide"):
+            depuis_dict(brut, "t.yaml")

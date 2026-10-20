@@ -4,14 +4,19 @@ import html
 
 import frappe
 
+from openlab_academy.domain.grille import Grille
+from openlab_academy.domain.grilles_derivees import grille_par_defaut
 from openlab_academy.domain.parcours import Annonce, Chapitre, Module, Parcours, Question
 from openlab_academy.domain.reglages import Reglages
-from openlab_academy.infrastructure import editorjs
+from openlab_academy.domain.reglages_evaluation import Chaine, ReglagesEvaluation, TypeExercice
+from openlab_academy.infrastructure import depot_copies_frappe, editorjs
 
 class DepotFrappe:
-    def __init__(self, commit: bool = True, reglages: Reglages | None = None):
+    def __init__(self, commit: bool = True, reglages: Reglages | None = None,
+                 evaluation: ReglagesEvaluation | None = None):
         self._commit = commit
         self._reglages = reglages or Reglages()
+        self._evaluation = evaluation or ReglagesEvaluation()
 
     # --- port DepotCatalogue -------------------------------------------------
     def trouver(self, titre: str) -> str | None:
@@ -56,6 +61,7 @@ class DepotFrappe:
 
     @staticmethod
     def _purger(cours_id: str) -> None:
+        depot_copies_frappe.supprimer_grilles_sans_copie(frappe.get_all("LMS Assignment", {"course": cours_id}, pluck="name"))
         for quiz in frappe.get_all("LMS Quiz", {"course": cours_id}, pluck="name"):
             questions = frappe.get_all("LMS Quiz Question", {"parent": quiz}, pluck="question")
             frappe.db.delete("LMS Quiz Question", {"parent": quiz})
@@ -85,12 +91,16 @@ class DepotFrappe:
         doc.save(ignore_permissions=True)
         return doc.name
 
-    @staticmethod
-    def _devoir(cours_id: str, titre: str, consigne: str, type_: str = "URL") -> str:
-        return frappe.get_doc({
+    def _devoir(self, cours_id: str, titre: str, consigne: str, type_exercice: TypeExercice, projet=None,
+                grille: Grille | None = None, chaine: Chaine | None = None, type_: str = "URL") -> str:
+        """Crée le devoir LMS et fige sa grille (celle du YAML, sinon dérivée des réglages) et sa chaîne éventuelle."""
+        nom = frappe.get_doc({
             "doctype": "LMS Assignment", "title": titre, "question": consigne,
             "type": type_, "course": cours_id, "grade_assignment": 1,
         }).insert(ignore_permissions=True).name
+        grille = grille or grille_par_defaut(type_exercice, projet, self._reglages, self._evaluation)
+        depot_copies_frappe.enregistrer_grille_exercice(nom, type_exercice, grille, chaine)
+        return nom
 
     @staticmethod
     def _nouvelle_lecon(cours_id: str, chapitre: str, titre: str, contenu: str, evaluations: list[dict]):
@@ -100,19 +110,24 @@ class DepotFrappe:
         }).insert(ignore_permissions=True)
 
     def _lecon_projet(self, cours_id: str, chapitre: str, ch: Chapitre) -> str:
-        devoir = self._devoir(cours_id, ch.titre, editorjs.consigne_projet(ch.projet))
+        type_exercice = TypeExercice.CAPSTONE if ch.projet.apres_module is None else TypeExercice.PROJET
+        devoir = self._devoir(cours_id, ch.titre, editorjs.consigne_projet(ch.projet), type_exercice, ch.projet,
+                              ch.projet.grille, ch.projet.correction)
         return self._nouvelle_lecon(cours_id, chapitre, f"Énoncé — {ch.projet.titre}",
                                     editorjs.lecon_projet(ch.projet, devoir, self._reglages),
                                     [{"assessment_type": "LMS Assignment", "assessment_name": devoir}]).name
 
     def _lecon_module(self, cours_id: str, chapitre: str, m: Module, heures: int) -> str:
-        devoir = self._devoir(cours_id, f"Livrable {m.num} — {m.title}", editorjs.consigne_module(m))
+        devoir = self._devoir(cours_id, f"Livrable {m.num} — {m.title}", editorjs.consigne_module(m),
+                              TypeExercice.LIVRABLE, grille=m.grille_livrable, chaine=m.correction_livrable)
         evaluations = [{"assessment_type": "LMS Assignment", "assessment_name": devoir}]
         lecon = self._nouvelle_lecon(cours_id, chapitre, f"{m.num} · {m.title}",
                                      editorjs.lecon_module(m, devoir, heures), evaluations)
         if m.quiz:
             quiz = self._quiz(cours_id, lecon.name, m)
-            cas = self._devoir(cours_id, f"Mise en situation {m.num} — {m.title}", editorjs.consigne_cas(m), "Text")
+            cas = self._devoir(cours_id, f"Mise en situation {m.num} — {m.title}", editorjs.consigne_cas(m),
+                               TypeExercice.MISE_EN_SITUATION, grille=m.grille_cas, chaine=m.correction_cas,
+                               type_="Text")
             lecon.content = editorjs.lecon_module(m, devoir, heures, quiz, cas, self._reglages)
             lecon.set("assessments", evaluations + [{"assessment_type": "LMS Quiz", "assessment_name": quiz},
                                                     {"assessment_type": "LMS Assignment", "assessment_name": cas}])

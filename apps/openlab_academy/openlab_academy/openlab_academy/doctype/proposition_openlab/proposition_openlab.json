@@ -1,0 +1,94 @@
+{
+ "doctype": "DocType",
+ "name": "Proposition OpenLab",
+ "module": "OpenLab Academy",
+ "custom": 0,
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "istable": 0,
+ "issingle": 0,
+ "track_changes": 0,
+ "field_order": [
+  "copie",
+  "source",
+  "auteur",
+  "au_nom_de",
+  "niveaux_json",
+  "commentaires_json",
+  "citations_json",
+  "confiance"
+ ],
+ "fields": [
+  {
+   "fieldname": "copie",
+   "fieldtype": "Link",
+   "label": "Copie",
+   "options": "Copie OpenLab",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "options": "auto_evaluation\ncontroles\nia\npair\njury\nformateur",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "auteur",
+   "fieldtype": "Data",
+   "label": "Auteur",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "au_nom_de",
+   "fieldtype": "Data",
+   "label": "Au nom de"
+  },
+  {
+   "fieldname": "niveaux_json",
+   "fieldtype": "Long Text",
+   "label": "Niveaux par critère"
+  },
+  {
+   "fieldname": "commentaires_json",
+   "fieldtype": "Long Text",
+   "label": "Commentaires"
+  },
+  {
+   "fieldname": "citations_json",
+   "fieldtype": "Long Text",
+   "label": "Citations"
+  },
+  {
+   "fieldname": "confiance",
+   "fieldtype": "Float",
+   "label": "Confiance"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "role": "Responsable pédagogique OpenLab",
+   "read": 1,
+   "report": 1
+  }
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-20 00:00:00",
+ "modified": "2026-10-20 00:00:00",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

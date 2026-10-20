@@ -159,3 +159,38 @@ class TestChainePour(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestChaineDict(unittest.TestCase):
+    def test_aller_retour(self):
+        c = CHAINES_DEFAUT[TypeExercice.LIVRABLE]
+        self.assertEqual(Chaine.depuis_dict(c.vers_dict()), c)
+
+    def test_etapes_absentes_inactives_et_options_par_defaut(self):
+        c = Chaine.depuis_dict({"etapes": [{"etape": "formateur", "active": True, "delai_heures": 5,
+                                            "expiration": "escalader"}]})
+        self.assertTrue(c.active(E.FORMATEUR))
+        self.assertFalse(c.active(E.IA))
+        self.assertEqual((c.nb_pairs, c.anonymat, c.note_sur), (3, True, 20))
+        self.assertEqual(c.config(E.FORMATEUR).delai_heures, 5)
+
+    def test_options_lues(self):
+        c = Chaine.depuis_dict({"etapes": [{"etape": "formateur", "active": True, "delai_heures": 1,
+                                            "expiration": "passer"}], "nb_pairs": 2, "anonymat": False,
+                                "note_masquee_avant_relectures": False, "note_sur": 100, "seuil_reussite": 50})
+        self.assertEqual((c.nb_pairs, c.anonymat, c.note_masquee_avant_relectures, c.note_sur, c.seuil_reussite),
+                         (2, False, False, 100, 50))
+
+    def test_invalides(self):
+        for donnees, message in [
+            ("x", "dictionnaire"),
+            ({}, "etapes"),
+            ({"etapes": "x"}, "etapes"),
+            ({"etapes": ["x"]}, r"etapes\[0\]"),
+            ({"etapes": [{"etape": "zzz", "active": True, "delai_heures": 1, "expiration": "passer"}]}, "zzz"),
+            ({"etapes": [{"etape": "ia", "active": True, "delai_heures": 1, "expiration": "zzz"}]}, "zzz"),
+            ({"etapes": [{"etape": "ia", "active": True}]}, r"etapes\[0\]"),
+            ({"etapes": [{"etape": "ia", "active": True, "delai_heures": 1, "expiration": "passer"}]}, "formateur"),
+        ]:
+            with self.subTest(donnees=donnees), self.assertRaisesRegex(ReglagesInvalides, message):
+                Chaine.depuis_dict(donnees)

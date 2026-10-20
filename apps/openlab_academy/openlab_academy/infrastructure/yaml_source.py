@@ -3,9 +3,11 @@ import pathlib
 
 import yaml
 
+from openlab_academy.domain.grille import Grille, GrilleInvalide
 from openlab_academy.domain.parcours import (Annonce, Bloc, Module, Niveau, Parcours, ParcoursInvalide, Projet,
                                              Question)
-from openlab_academy.domain.reglages import Reglages
+from openlab_academy.domain.reglages import Reglages, ReglagesInvalides
+from openlab_academy.domain.reglages_evaluation import Chaine
 
 PARCOURS_DIR = pathlib.Path(__file__).parents[1] / "data" / "parcours"
 _LISTES_PROJET = ("objectifs", "fonctionnalites", "stack", "criteres_acceptation", "livrables")
@@ -59,13 +61,54 @@ class _Lecteur:
                         options=self.textes(self.exiger(q, "options", chemin), f"{chemin}options"),
                         bonnes=tuple(bonnes), explication=str(self.exiger(q, "explication", chemin)))
 
+    def grille(self, brut, chemin: str) -> Grille | None:
+        """Clé facultative `grille:` : liste de critères (code, libelle, poids, niveaux[, description, controles])."""
+        if brut is None:
+            return None
+        if not isinstance(brut, list):
+            raise FormatInvalide(f"{self.source}: {chemin} doit être une liste de critères")
+        try:
+            return Grille.depuis_dict({"criteres": [self._critere(c, f"{chemin}[{i}]") for i, c in enumerate(brut)]})
+        except GrilleInvalide as e:
+            raise FormatInvalide(f"{self.source}: {chemin} invalide : {e}") from None
+
+    def _critere(self, c, chemin: str) -> dict:
+        if not isinstance(c, dict):
+            raise FormatInvalide(f"{self.source}: {chemin} doit être un critère (dictionnaire)")
+        niveaux = self.exiger(c, "niveaux", f"{chemin}.")
+        if not isinstance(niveaux, list) or not all(isinstance(n, dict) and "libelle" in n for n in niveaux):
+            raise FormatInvalide(f"{self.source}: {chemin}.niveaux doit être une liste de niveaux avec un libelle")
+        if not isinstance(c.get("poids"), int):
+            raise FormatInvalide(f"{self.source}: {chemin}.poids doit être un entier")
+        libelle = str(self.exiger(c, "libelle", f"{chemin}."))
+        return {"code": str(self.exiger(c, "code", f"{chemin}.")), "libelle": libelle, "poids": c["poids"],
+                "description": str(c.get("description") or libelle),
+                "controles": self.textes(c.get("controles") or (), f"{chemin}.controles"),
+                "niveaux": [{"libelle": str(n["libelle"]), "descripteur": str(n.get("descripteur") or n["libelle"]),
+                             "points": n.get("points", i)} for i, n in enumerate(niveaux)]}
+
+    def correction(self, brut, chemin: str) -> Chaine | None:
+        """Clé facultative `correction:` : chaîne d'étapes propre à l'exercice (voir Chaine.depuis_dict)."""
+        if brut is None:
+            return None
+        try:
+            return Chaine.depuis_dict(brut)
+        except ReglagesInvalides as e:
+            raise FormatInvalide(f"{self.source}: {chemin} invalide : {e}") from None
+
     def module(self, m: dict, chemin: str) -> Module:
         quiz = m.get("quiz") or []
         if not isinstance(quiz, list):
             raise FormatInvalide(f"{self.source}: {chemin}quiz doit être une liste de questions")
         return Module(*(str(self.exiger(m, c, chemin)) for c in ("num", "title", "contenu", "livrable")),
                       quiz=tuple(self.question(q, f"{chemin}quiz[{i}].") for i, q in enumerate(quiz)),
-                      mise_en_situation=str(m.get("mise_en_situation") or ""))
+                      mise_en_situation=str(m.get("mise_en_situation") or ""),
+                      grille_cas=self.grille(m.get("grille_mise_en_situation"), f"{chemin}grille_mise_en_situation"),
+                      correction_cas=self.correction(m.get("correction_mise_en_situation"),
+                                                     f"{chemin}correction_mise_en_situation"),
+                      grille_livrable=self.grille(m.get("grille_livrable"), f"{chemin}grille_livrable"),
+                      correction_livrable=self.correction(m.get("correction_livrable"),
+                                                          f"{chemin}correction_livrable"))
 
     def projet(self, p: dict, chemin: str, portfolio: bool) -> Projet:
         listes = {c: self.textes(self.exiger(p, c, chemin), f"{chemin}{c}") for c in _LISTES_PROJET}
@@ -84,7 +127,9 @@ class _Lecteur:
             titre=str(self.exiger(p, "titre", chemin)), duree_h=duree, niveau=niveau,
             contexte=str(self.exiger(p, "contexte", chemin)),
             exigences_specifiques=self.textes(p["exigences_specifiques"] or (), f"{chemin}exigences_specifiques"),
-            apres_module=None if apres is None else str(apres), **listes,
+            apres_module=None if apres is None else str(apres),
+            grille=self.grille(p.get("grille"), f"{chemin}grille"),
+            correction=self.correction(p.get("correction"), f"{chemin}correction"), **listes,
         )
 
     def annonce(self, d: dict) -> Annonce:

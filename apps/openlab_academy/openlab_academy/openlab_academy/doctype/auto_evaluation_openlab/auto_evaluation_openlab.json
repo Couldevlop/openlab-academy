@@ -1,0 +1,63 @@
+{
+ "doctype": "DocType",
+ "name": "Auto Evaluation OpenLab",
+ "module": "OpenLab Academy",
+ "custom": 0,
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "istable": 0,
+ "issingle": 0,
+ "track_changes": 0,
+ "field_order": [
+  "apprenant",
+  "exercice",
+  "niveaux_json"
+ ],
+ "fields": [
+  {
+   "fieldname": "apprenant",
+   "fieldtype": "Link",
+   "label": "Apprenant",
+   "options": "User",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "exercice",
+   "fieldtype": "Data",
+   "label": "Exercice (devoir LMS)",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "niveaux_json",
+   "fieldtype": "Long Text",
+   "label": "Niveaux par critère",
+   "reqd": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "role": "Responsable pédagogique OpenLab",
+   "read": 1,
+   "report": 1
+  }
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-20 00:00:00",
+ "modified": "2026-10-20 00:00:00",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

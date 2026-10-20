@@ -15,5 +15,9 @@ web_include_css = ["/assets/openlab_academy/css/openlab.css"]
 override_whitelisted_methods = {"lms.lms.utils.get_lesson": "openlab_academy.entrypoints.lms.get_lesson"}
 doc_events = {
     "LMS Quiz Submission": {"before_insert": "openlab_academy.entrypoints.lms.avant_soumission_quiz"},
-    "LMS Assignment Submission": {"before_insert": "openlab_academy.entrypoints.lms.avant_soumission_devoir"},
+    "LMS Assignment Submission": {
+        "before_insert": "openlab_academy.entrypoints.lms.avant_soumission_devoir",
+        "after_insert": "openlab_academy.entrypoints.evaluation.rendu",
+        "on_update": "openlab_academy.entrypoints.evaluation.rendu",
+    },
 }
