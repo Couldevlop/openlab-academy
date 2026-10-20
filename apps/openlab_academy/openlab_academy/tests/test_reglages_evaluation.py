@@ -1,0 +1,147 @@
+import unittest
+from dataclasses import replace
+
+from openlab_academy.domain.reglages import ReglagesInvalides
+from openlab_academy.domain.reglages_evaluation import (
+    Chaine, ConfigEtape, ConfigIA, Etape, Expiration, ReglagesEvaluation, Surcharge, TypeExercice,
+)
+
+E = Etape
+
+
+def chaine_avec(etapes_actives, **options):
+    return Chaine(tuple(ConfigEtape(e, e in etapes_actives, 1, Expiration.PASSER) for e in Etape), **options)
+
+
+class TestDefauts(unittest.TestCase):
+    def setUp(self):
+        self.r = ReglagesEvaluation()
+
+    def actives(self, type_):
+        c = self.r.chaines[type_]
+        return {e for e in Etape if c.active(e)}
+
+    def test_mise_en_situation(self):
+        self.assertEqual(self.actives(TypeExercice.MISE_EN_SITUATION), {E.CONTROLES, E.IA, E.FORMATEUR})
+
+    def test_livrable(self):
+        self.assertEqual(self.actives(TypeExercice.LIVRABLE),
+                         {E.AUTO_EVALUATION, E.CONTROLES, E.IA, E.PAIRS, E.FORMATEUR})
+
+    def test_projet(self):
+        self.assertEqual(self.actives(TypeExercice.PROJET), set(Etape) - {E.JURY})
+
+    def test_capstone(self):
+        self.assertEqual(self.actives(TypeExercice.CAPSTONE), {E.CONTROLES, E.IA, E.JURY, E.FORMATEUR})
+
+    def test_delais_et_expirations(self):
+        c = self.r.chaines[TypeExercice.PROJET]
+        self.assertEqual((c.config(E.CONTROLES).delai_heures, c.config(E.IA).delai_heures), (1, 1))
+        self.assertEqual((c.config(E.PAIRS).delai_heures, c.config(E.PAIRS).expiration), (72, Expiration.REATTRIBUER))
+        self.assertEqual((c.config(E.JURY).delai_heures, c.config(E.JURY).expiration), (168, Expiration.ESCALADER))
+        self.assertEqual((c.config(E.FORMATEUR).delai_heures, c.config(E.FORMATEUR).expiration),
+                         (72, Expiration.ESCALADER))
+
+    def test_options_par_defaut(self):
+        c = self.r.chaines[TypeExercice.PROJET]
+        self.assertEqual((c.nb_pairs, c.anonymat, c.note_masquee_avant_relectures, c.note_sur, c.seuil_reussite),
+                         (3, True, True, 20, 10.0))
+        self.assertFalse(self.r.publication_provisoire)
+        self.assertEqual(self.r.hotes_depots, ("github.com", "gitlab.com"))
+        self.assertEqual(sum(p for _, p in self.r.grille_generique), 100)
+        self.assertEqual(self.r.grille_generique[0], ("Pertinence", 30))
+        self.assertEqual(len(self.r.niveaux_generiques), 4)
+        self.assertTrue(self.r.ia.tournures_injection)
+
+    def test_config_absente(self):
+        c = Chaine((ConfigEtape(E.FORMATEUR, True, 1, Expiration.ESCALADER),))
+        self.assertFalse(c.active(E.IA))
+        with self.assertRaises(ReglagesInvalides):
+            c.config(E.IA)
+
+
+class TestValidation(unittest.TestCase):
+    def test_formateur_inactif_interdit(self):
+        with self.assertRaisesRegex(ReglagesInvalides, "formateur"):
+            chaine_avec({E.IA})
+
+    def test_formateur_absent_interdit(self):
+        with self.assertRaises(ReglagesInvalides):
+            Chaine((ConfigEtape(E.IA, True, 1, Expiration.PASSER),))
+
+    def test_nb_pairs_negatif(self):
+        with self.assertRaises(ReglagesInvalides):
+            chaine_avec({E.FORMATEUR}, nb_pairs=-1)
+
+    def test_delai_negatif(self):
+        with self.assertRaises(ReglagesInvalides):
+            Chaine((ConfigEtape(E.FORMATEUR, True, -1, Expiration.ESCALADER),))
+
+    def test_seuil_superieur_a_la_note(self):
+        with self.assertRaises(ReglagesInvalides):
+            chaine_avec({E.FORMATEUR}, seuil_reussite=21.0)
+
+    def test_note_sur_non_positive(self):
+        with self.assertRaises(ReglagesInvalides):
+            chaine_avec({E.FORMATEUR}, note_sur=0, seuil_reussite=0.0)
+
+    def test_seuil_confiance_hors_bornes(self):
+        for v in (-0.1, 1.1):
+            with self.assertRaises(ReglagesInvalides):
+                ConfigIA(seuil_confiance=v)
+
+    def test_ia_valeurs_negatives(self):
+        with self.assertRaises(ReglagesInvalides):
+            ConfigIA(delai_minutes=-1)
+        with self.assertRaises(ReglagesInvalides):
+            ConfigIA(plafond_caracteres=0)
+
+    def test_publier_provisoire_formateur_refuse_par_defaut(self):
+        c = Chaine(tuple(ConfigEtape(e, True, 1, Expiration.PUBLIER_PROVISOIRE if e == E.FORMATEUR
+                                     else Expiration.PASSER) for e in Etape))
+        with self.assertRaisesRegex(ReglagesInvalides, "provisoire"):
+            ReglagesEvaluation(chaines={TypeExercice.PROJET: c})
+        ReglagesEvaluation(chaines={TypeExercice.PROJET: c}, publication_provisoire=True)
+
+    def test_grille_generique_invalide(self):
+        with self.assertRaises(ReglagesInvalides):
+            ReglagesEvaluation(grille_generique=(("A", 50),))
+        with self.assertRaises(ReglagesInvalides):
+            ReglagesEvaluation(grille_generique=(("A", 120), ("B", -20)))
+        with self.assertRaises(ReglagesInvalides):
+            ReglagesEvaluation(niveaux_generiques=("Seul",))
+
+
+class TestChainePour(unittest.TestCase):
+    def setUp(self):
+        self.r = ReglagesEvaluation()
+        self.s_ex = chaine_avec({E.FORMATEUR}, nb_pairs=1)
+        self.s_co = chaine_avec({E.FORMATEUR}, nb_pairs=2)
+        self.yaml = chaine_avec({E.FORMATEUR}, nb_pairs=4)
+        self.surcharges = (Surcharge("C1", None, self.s_co), Surcharge(None, "EX1", self.s_ex))
+
+    def test_exercice_prime(self):
+        c = self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX1", self.surcharges, self.yaml)
+        self.assertIs(c, self.s_ex)
+
+    def test_cohorte_ensuite(self):
+        c = self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX2", self.surcharges, self.yaml)
+        self.assertIs(c, self.s_co)
+
+    def test_type_ensuite(self):
+        c = self.r.chaine_pour(TypeExercice.PROJET, "C2", "EX2", self.surcharges, self.yaml)
+        self.assertIs(c, self.r.chaines[TypeExercice.PROJET])
+
+    def test_yaml_si_type_absent(self):
+        r = replace(self.r, chaines={})
+        c = r.chaine_pour(TypeExercice.PROJET, "C2", "EX2", self.surcharges, self.yaml)
+        self.assertIs(c, self.yaml)
+
+    def test_rien_de_configure(self):
+        r = replace(self.r, chaines={})
+        with self.assertRaises(ReglagesInvalides):
+            r.chaine_pour(TypeExercice.PROJET, "C2", "EX2", (), None)
+
+
+if __name__ == "__main__":
+    unittest.main()
