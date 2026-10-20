@@ -40,8 +40,15 @@ class TestInstallation(FrappeTestCase):
         self.assertTrue(frappe.db.exists("LMS Course", {"title": "Fondamentaux de la Data Science"}))
         self.assertTrue(frappe.db.exists("LMS Batch", {"title": "Promo 1 — Fondamentaux de la Data Science · Standard 12 h"}))
 
+    def test_after_migrate_republie_les_parcours(self):
+        self.assertIn("openlab_academy.entrypoints.install.after_migrate", frappe.get_hooks("after_migrate"))
+        frappe.db.set_value("LMS Course", {"title": "AI Engineer"}, "short_introduction", "périmé")
+        install.after_migrate(commit=False)
+        self.assertNotEqual(frappe.db.get_value("LMS Course", {"title": "AI Engineer"}, "short_introduction"),
+                            "périmé")
+
     def test_installation_non_exposee_a_l_api(self):
         """OWASP A01 : aucune fonction d'installation n'est appelable via /api/method."""
-        for fonction in (install.after_install, reglages_frappe.appliquer):
+        for fonction in (install.after_install, install.after_migrate, reglages_frappe.appliquer):
             with self.subTest(fonction=fonction.__name__), self.assertRaises(frappe.PermissionError):
                 frappe.is_whitelisted(fonction)
