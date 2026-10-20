@@ -29,6 +29,7 @@ class Cas(Base):
     def setUp(self):
         super().setUp()
         self.file = mock.patch.object(evaluation.frappe, "enqueue").start()
+        self.commit = mock.patch.object(frappe.local.db, "commit").start()  # la tâche horaire valide par élément
         self.addCleanup(mock.patch.stopall)
         self.relectures = DepotRelecturesFrappe()
 
@@ -202,6 +203,11 @@ class TestPairsFrappe(Cas):
         self.assertIsNone(self.relectures.attribuer(self.a, B, echeance))  # B relit déjà la copie de A
         self.assertEqual(frappe.db.count("Relecture Pair OpenLab", {"copie": self.a, "relecteur": B}), 1)
         self.assertEqual(self.relectures.verrouiller_relecture("inexistante"), None)
+        # insérée entre la vérification et l'insertion : l'unicité en base tranche, sans message à l'écran
+        with mock.patch.object(frappe.local.db, "exists", return_value=False):
+            self.assertIsNone(self.relectures.attribuer(self.a, B, echeance))
+        self.assertEqual(frappe.local.message_log, [])
+        self.assertEqual(frappe.db.count("Relecture Pair OpenLab", {"copie": self.a, "relecteur": B}), 1)
         relecture_pair_openlab.on_doctype_update()  # idempotent : la contrainte existe déjà
         self.assertTrue(frappe.db.sql("""select 1 from information_schema.TABLE_CONSTRAINTS
             where table_name='tabRelecture Pair OpenLab' and CONSTRAINT_NAME='unique_copie_relecteur'"""))
@@ -224,6 +230,32 @@ class TestPairsFrappe(Cas):
         self.assertEqual((ligne.statut, ligne.etape_courante, ligne.echeance), ("en_relecture", "", None))
         self.assertNotIn(self.a, self.depot.copies_echues(now_datetime() + datetime.timedelta(days=365)))
         self.depot.verrouiller(self.a)
+
+    def test_lectures_verrouillantes(self):
+        self.en_relecture()
+        lire = frappe.local.db.get_value
+        with mock.patch.object(frappe.local.db, "get_value", side_effect=lire) as lecture:
+            v = self.depot.verrouiller(self.a)
+        self.assertTrue(lecture.call_args.kwargs["for_update"])
+        self.assertEqual((v.copie.id, v.copie.statut, v.etat.etape), (self.a, Statut.EN_RELECTURE, "pairs"))
+        lire_tout = frappe.local.db.get_values
+        with mock.patch.object(frappe.local.db, "get_values", side_effect=lire_tout) as lecture:
+            (r,) = self.relectures.relectures_copie(self.a)
+        self.assertTrue(lecture.call_args.kwargs["for_update"])
+        self.assertEqual((r.copie, r.relecteur), (self.a, B))
+
+    def test_tache_horaire_valide_chaque_element(self):
+        evaluation.unite(lambda: None)
+        self.commit.assert_called_once()
+        with mock.patch.object(frappe.local.db, "rollback") as annule, \
+                mock.patch.object(evaluation.frappe, "log_error") as consigne:
+            evaluation.unite(lambda: 1 / 0)
+        annule.assert_called_once_with()
+        consigne.assert_called_once()
+        self.assertEqual(self.commit.call_count, 2)  # l'erreur consignée est validée elle aussi
+        with mock.patch.object(evaluation, "TraiterEcheances") as traiter:
+            evaluation.traiter_echeances()
+        self.assertIs(traiter.call_args.args[6], evaluation.unite)
 
     def test_hook_horaire(self):
         self.assertEqual(hooks.scheduler_events["hourly"], ["openlab_academy.entrypoints.evaluation.traiter_echeances"])

@@ -3,6 +3,7 @@
 La copie suit une machine à états ; une copie renvoyée n'avance plus (un nouveau dépôt crée une nouvelle version).
 """
 from dataclasses import dataclass, field, replace
+from datetime import datetime
 from enum import Enum
 
 from openlab_academy.domain.reglages_evaluation import Chaine, Etape, TypeExercice
@@ -70,6 +71,23 @@ class Copie:
         if statut not in TRANSITIONS[self.statut]:
             raise TransitionInterdite(f"copie {self.id} : {self.statut.value} → {statut.value} interdit")
         return replace(self, statut=statut)
+
+
+@dataclass(frozen=True)
+class Etat:
+    """Où en est la copie dans sa chaîne : étape courante, échéance, destinataire d'une escalade."""
+
+    etape: str
+    echeance: datetime | None
+    escalade_a: str = ""
+
+
+@dataclass(frozen=True)
+class CopieVerrouillee:
+    """Copie et état relus par une lecture verrouillante : la dernière version validée, pas un instantané."""
+
+    copie: Copie
+    etat: Etat
 
 
 def etape_suivante(chaine: Chaine, apres: Etape | None) -> Etape:

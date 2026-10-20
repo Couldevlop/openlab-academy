@@ -163,6 +163,21 @@ class TestFaireAvancer(Cas):
         self.assertEqual(self.m.verrous, [a, a, a])  # démarrage + deux signaux
         self.assertEqual(self.actions().count("étape suivante"), 3)  # contrôles, pré-correction, pairs
 
+    def test_etat_lu_sous_verrou_et_non_dans_un_instantane(self):
+        self.monter()
+        a = self.rendre("a@x.ci")
+        perimee, etat_perime = self.m.copie(a), self.m.etat(a)
+        self.avancer.executer(a, Etape.CONTROLES)
+        # une autre transaction a avancé la copie : les lectures simples verraient encore l'instantané
+        self.m.copie = lambda cid: perimee
+        self.m.etat = lambda cid: etat_perime
+        self.avancer.executer(a, Etape.CONTROLES)
+        self.assertEqual(self.file, [("controler", a), ("pre_corriger", a)])
+        self.m.copies_echues = lambda maintenant: [a]
+        self.avancer_horloge(1)  # l'étape des contrôles, vue périmée, n'est plus échue : rien
+        self.assertEqual(self.m.etats[a].etape, "pairs")
+        self.assertNotIn("passer", self.actions())
+
     def test_resultat_de_la_pre_correction_accepte_jusqu_a_la_publication(self):
         self.monter()
         a = self.rendre("a@x.ci")
@@ -249,24 +264,35 @@ class TestTraiterEcheances(Cas):
         self.assertEqual(self.etape(a), ("formateur", Statut.A_CORRIGER))
         self.assertEqual(self.m.dispensees, [b, c])
 
-    def test_pair_en_retard_dispense(self):
-        pairs = ConfigEtape(Etape.PAIRS, True, 72, Expiration.DISPENSER)
-        self.monter(yaml=replace(LIVRABLE, etapes=tuple(pairs if c.etape == Etape.PAIRS else c
-                                                        for c in LIVRABLE.etapes)), taille=2)
+    def test_pair_en_retard_rappele_puis_dispense_dans_le_meme_passage_que_l_etape(self):
+        # relectures et étape des pairs échoient ensemble : la copie attend les relectures rappelées
+        for expiration in (Expiration.DISPENSER, Expiration.PASSER):
+            with self.subTest(expiration=expiration):
+                pairs = ConfigEtape(Etape.PAIRS, True, 72, expiration)
+                self.monter(yaml=replace(LIVRABLE, etapes=tuple(pairs if c.etape == Etape.PAIRS else c
+                                                                for c in LIVRABLE.etapes)), taille=2)
+                a, b = self.rendre("a@x.ci"), self.rendre("b@x.ci")
+                for cid in (a, b):
+                    self.avancer.executer(cid, Etape.CONTROLES)
+                self.avancer_horloge(72)
+                self.assertEqual(len(self.notes), 2)
+                self.assertEqual({self.etape(a), self.etape(b)}, {("pairs", Statut.EN_RELECTURE)})
+                self.assertEqual({r.statut for r in self.m.rel.values()}, {StatutRelecture.A_FAIRE})
+                self.avancer_horloge(72)
+                self.assertEqual({r.statut for r in self.m.rel.values()}, {StatutRelecture.ANNULEE})
+                self.assertEqual(sorted(self.m.dispensees), [a, b])
+                self.assertEqual({self.etape(a), self.etape(b)}, {("formateur", Statut.A_CORRIGER)})
+                self.assertIn(expiration.value, self.actions())
+
+    def test_relecture_restee_en_retard_retiree_et_dispensee_a_l_echeance_des_pairs(self):
+        self.monter(taille=2)
         a, b = self.rendre("a@x.ci"), self.rendre("b@x.ci")
         for cid in (a, b):
             self.avancer.executer(cid, Etape.CONTROLES)
-            self.m.etats[cid] = replace(self.m.etats[cid], echeance=self.t + timedelta(hours=1000))
+        self.m.relectures_echues = lambda maintenant: []  # traitement des relectures en échec
         self.avancer_horloge(72)
-        self.assertEqual(len(self.notes), 2)
-        self.avancer_horloge(72)
-        self.assertEqual({r.statut for r in self.m.rel.values()}, {StatutRelecture.ANNULEE})
         self.assertEqual(sorted(self.m.dispensees), [a, b])
-        self.assertIn("relecture annulée", self.actions())
-        self.t += timedelta(hours=1000)
-        self.echeances.executer()
         self.assertEqual({self.etape(a), self.etape(b)}, {("formateur", Statut.A_CORRIGER)})
-        self.assertIn("dispenser", self.actions())
 
     def test_relecture_traitee_entre_temps_ignoree(self):
         self.monter(taille=2)

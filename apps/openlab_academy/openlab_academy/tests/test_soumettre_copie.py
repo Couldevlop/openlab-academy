@@ -3,7 +3,7 @@ from dataclasses import replace
 from datetime import datetime
 
 from openlab_academy.application.soumettre_copie import Contenu, Exercice, SoumettreCopie
-from openlab_academy.domain.copie import Copie, Proposition, Source, Statut
+from openlab_academy.domain.copie import Copie, CopieVerrouillee, Etat, Proposition, Source, Statut
 from openlab_academy.domain.grille import grille_generique
 from openlab_academy.domain.reglages_evaluation import (
     CHAINES_DEFAUT, Chaine, ConfigEtape, Etape, Expiration, ReglagesEvaluation, Surcharge, TypeExercice,
@@ -23,6 +23,7 @@ class DepotMemoire:
         self.props: dict[str, list[Proposition]] = {}
         self.relectures_annulees: list[str] = []
         self.statuts: list[tuple] = []
+        self.verrous: list[str] = []
 
     def exercice(self, exercice):
         return self.exercices.get(exercice)
@@ -38,6 +39,10 @@ class DepotMemoire:
 
     def copie(self, copie_id):
         return self.copies[copie_id]
+
+    def verrouiller(self, copie_id):
+        self.verrous.append(copie_id)
+        return CopieVerrouillee(self.copies[copie_id], Etat("", None))
 
     def creer(self, copie, grille, contenu):
         copie_id = f"C{len(self.copies) + 1}"
@@ -167,6 +172,16 @@ class TestSoumettreCopie(unittest.TestCase):
             self.assertEqual(self.depot.copie(v1).statut, statut)
             self.assertEqual(self.depot.relectures_annulees, [v1])
             self.assertEqual(self.depot.statuts[-2], (v1, statut, "", None))  # hors chaîne : ni étape ni échéance
+
+    def test_version_courante_relue_sous_verrou(self):
+        uc = self.cas()
+        v1 = uc.executer(soumission())
+        perimee = self.depot.copies[v1]
+        self.depot.copies[v1] = replace(perimee, statut=Statut.PUBLIEE)  # publiée par une autre transaction
+        self.depot.version_courante = lambda s: perimee
+        self.assertEqual(uc.executer(soumission(answer="https://github.com/a/p2")), v1)
+        self.assertEqual(self.depot.verrous, [v1])
+        self.assertEqual(self.depot.relectures_annulees, [])
 
     def test_resoumission_apres_publication_ignoree_et_journalisee(self):
         uc = self.cas()

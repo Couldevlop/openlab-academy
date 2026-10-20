@@ -6,13 +6,12 @@ le jury et le formateur sont attendus. `TraiterEcheances` applique, chaque heure
 ou relecture échue, et journalise chaque action automatique au nom du système.
 """
 from collections.abc import Callable
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Protocol
 
 from openlab_academy.application.pairs import AttribuerPairs, DepotRelectures, Relecture, StatutRelecture
 from openlab_academy.application.soumettre_copie import DepotCopies
-from openlab_academy.domain.copie import Copie, Statut, etape_suivante, nb_pairs_possible
+from openlab_academy.domain.copie import Copie, Etat, Statut, etape_suivante, nb_pairs_possible
 from openlab_academy.domain.echeances import escalade
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.reglages import ReglagesInvalides
@@ -24,17 +23,7 @@ TACHES = {Etape.CONTROLES: "controler", Etape.IA: "pre_corriger"}
 TERMINEES = (Statut.RENVOYEE, Statut.PROVISOIRE, Statut.PUBLIEE)
 
 
-@dataclass(frozen=True)
-class Etat:
-    """Où en est la copie dans sa chaîne : étape courante, échéance, destinataire d'une escalade."""
-
-    etape: str
-    echeance: datetime | None
-    escalade_a: str = ""
-
-
 class DepotChaine(DepotCopies, Protocol):
-    def verrouiller(self, copie_id: str) -> None: ...  # sérialise les avancées concurrentes d'une même copie
     def etat(self, copie_id: str) -> Etat: ...
     def grille(self, copie_id: str) -> Grille: ...
     def copies_echues(self, maintenant: datetime) -> list[str]: ...
@@ -109,16 +98,15 @@ class FaireAvancer:
         """Un résultat d'étape est-il encore à consigner ? La pré-correction, lancée en parallèle des pairs,
         reste utile jusqu'à la publication ; les autres étapes ne valent que tant qu'elles sont courantes.
         Une version remplacée (sans étape) n'accepte plus rien."""
-        etat = self._depot.etat(copie_id)
+        v = self._depot.verrouiller(copie_id)
         if etape == Etape.IA:
-            return bool(etat.etape) and self._depot.copie(copie_id).statut not in TERMINEES
-        return etat.etape == etape.value
+            return bool(v.etat.etape) and v.copie.statut not in TERMINEES
+        return v.etat.etape == etape.value
 
     def executer(self, copie_id: str, terminee: Etape | None = None) -> None:
         """Passe à l'étape active suivante ; un signal d'une étape qui n'est plus la courante est ignoré."""
-        self._depot.verrouiller(copie_id)  # un second signal concurrent relira l'étape déjà avancée
-        copie = self._depot.copie(copie_id)
-        etat = self._depot.etat(copie_id)
+        v = self._depot.verrouiller(copie_id)  # un second signal concurrent lit l'étape déjà avancée
+        copie, etat = v.copie, v.etat
         if copie.statut in TERMINEES or not etat.etape:  # terminée, ou version remplacée
             return
         courante = Etape(etat.etape)
@@ -174,11 +162,10 @@ class TraiterEcheances:
 
     # --- relecture échue : rappel, puis réattribuée ou annulée, le relecteur en retard étant dispensé ---
     def _relecture(self, r: Relecture, maintenant: datetime) -> None:
-        self._depot.verrouiller(r.copie)
+        copie = self._depot.verrouiller(r.copie).copie  # copie puis relecture : ordre unique des verrous
         r = self._relectures.verrouiller_relecture(r.id)
         if r.statut != StatutRelecture.A_FAIRE or r.echeance is None or r.echeance > maintenant:
             return  # relue ou déjà traitée entre-temps
-        copie = self._depot.copie(r.copie)
         config = self._avancer.chaine(copie).config(Etape.PAIRS)
         if not r.rappelee:
             echeance = maintenant + timedelta(hours=config.delai_heures)
@@ -188,9 +175,9 @@ class TraiterEcheances:
             self._journal(copie.id, SYSTEME, "rappel de relecture", {"echeance": r.echeance},
                           {"echeance": echeance})
             return
-        rendues = self._relectures.copies_rendues(copie.exercice, copie.cohorte)
         nouveau = None
         if config.expiration == Expiration.REATTRIBUER:
+            rendues = self._relectures.copies_rendues(copie.exercice, copie.cohorte)
             nouveau = AttribuerPairs(self._relectures, self._horloge).reattribuer(copie, rendues, config.delai_heures)
         if nouveau:
             self._relectures.changer_statut_relecture(r.id, StatutRelecture.REATTRIBUEE)
@@ -199,7 +186,11 @@ class TraiterEcheances:
         else:
             self._relectures.changer_statut_relecture(r.id, StatutRelecture.ANNULEE)
             self._journal(copie.id, SYSTEME, "relecture annulée", {"relecteur": r.relecteur}, {})
-        for sienne in rendues:
+        self._dispenser(copie, r)
+
+    def _dispenser(self, copie: Copie, r: Relecture) -> None:
+        """Le relecteur en retard perd sa relecture : sa propre note n'est plus masquée faute de relectures."""
+        for sienne in self._relectures.copies_rendues(copie.exercice, copie.cohorte):
             if sienne.apprenant == r.relecteur:
                 self._relectures.dispenser(sienne.id)
                 self._journal(sienne.id, SYSTEME, "relectures dispensées", {}, {"relecture": r.id})
@@ -207,9 +198,8 @@ class TraiterEcheances:
     # --- étape échue -------------------------------------------------------------------------------
     def _copie(self, copie_id: str, maintenant: datetime) -> None:
         """L'échéance enregistrée à l'entrée dans l'étape fait foi ; l'action est celle réglée pour l'étape."""
-        self._depot.verrouiller(copie_id)
-        copie = self._depot.copie(copie_id)
-        etat = self._depot.etat(copie_id)
+        v = self._depot.verrouiller(copie_id)
+        copie, etat = v.copie, v.etat
         if (copie.statut in TERMINEES or not etat.etape or etat.echeance is None
                 or etat.echeance > maintenant):
             return  # l'étape a changé depuis la sélection : elle n'est plus échue
@@ -220,18 +210,27 @@ class TraiterEcheances:
             self._formateur(copie, etat, action, chaine.config(etape).delai_heures, maintenant)
             return
         libelle = action.value
-        if etape == Etape.PAIRS and action == Expiration.REATTRIBUER:
-            attente = [r.echeance for r in self._relectures.relectures(copie.exercice, copie.cohorte)
-                       if r.copie == copie_id and r.statut == StatutRelecture.A_FAIRE
-                       and r.echeance and r.echeance > maintenant]
-            if attente:
-                self._depot.changer_statut(copie_id, copie.statut, etape.value, max(attente))
-                self._journal(copie_id, SYSTEME, "attente des relectures", {"echeance": etat.echeance},
-                              {"echeance": max(attente)})
+        if etape == Etape.PAIRS:
+            if self._attendre_relectures(copie, etat, maintenant):
                 return
-            libelle = Expiration.PASSER.value  # personne d'autre : la copie avance avec les relectures obtenues
+            if action == Expiration.REATTRIBUER:
+                libelle = Expiration.PASSER.value  # personne d'autre : la copie avance avec les relectures obtenues
         self._journal(copie_id, SYSTEME, libelle, {"etape": etape.value}, {})
         self._avancer.executer(copie_id, etape)
+
+    def _attendre_relectures(self, copie: Copie, etat: Etat, maintenant: datetime) -> bool:
+        """Quelle que soit l'action réglée, une relecture rappelée ou réattribuée encore dans son délai est
+        attendue ; une relecture restée en retard est retirée et son relecteur dispensé."""
+        en_cours = [r for r in self._relectures.relectures_copie(copie.id) if r.statut == StatutRelecture.A_FAIRE]
+        attente = [r.echeance for r in en_cours if r.echeance and r.echeance > maintenant]
+        if attente:
+            self._depot.changer_statut(copie.id, copie.statut, Etape.PAIRS.value, max(attente))
+            self._journal(copie.id, SYSTEME, "attente des relectures", {"echeance": etat.echeance},
+                          {"echeance": max(attente)})
+            return True
+        for r in en_cours:
+            self._dispenser(copie, r)
+        return False
 
     def _formateur(self, copie: Copie, etat: Etat, action: Expiration, delai: int, maintenant: datetime) -> None:
         """Formateur échu : suppléant, puis responsable pédagogique, puis publication provisoire si elle est permise."""

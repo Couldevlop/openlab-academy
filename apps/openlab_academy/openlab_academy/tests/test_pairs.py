@@ -129,6 +129,13 @@ class TestEnregistrerRelecture(unittest.TestCase):
         self.uc.executer("c@x.ci", autre, NIVEAUX, COMMENTAIRES)
         self.assertEqual(self.avanceur.appels, [(self.a, Etape.PAIRS)])
 
+    def test_relectures_faites_comptees_sous_verrou(self):
+        autre = self.m.attribuer(self.a, "c@x.ci", DEBUT)
+        self.m.relectures = lambda exercice, cohorte: []  # instantané périmé : ignoré
+        self.uc.executer("b@x.ci", self.rid, NIVEAUX, COMMENTAIRES)
+        self.uc.executer("c@x.ci", autre, NIVEAUX, COMMENTAIRES)
+        self.assertEqual(self.avanceur.appels, [(self.a, Etape.PAIRS)])
+
     def test_copie_sortie_des_pairs_n_avance_plus(self):
         self.avanceur.requis = 1
         self.m.changer_statut(self.a, Statut.A_CORRIGER, "formateur", None)

@@ -2,10 +2,9 @@
 from dataclasses import replace
 from datetime import datetime, timedelta
 
-from openlab_academy.application.chaine import Etat
 from openlab_academy.application.pairs import Relecture, StatutRelecture
 from openlab_academy.application.soumettre_copie import Exercice
-from openlab_academy.domain.copie import Copie, Statut, etape_suivante
+from openlab_academy.domain.copie import Copie, CopieVerrouillee, Etat, Statut, etape_suivante
 from openlab_academy.domain.grille import grille_generique
 from openlab_academy.domain.reglages_evaluation import ReglagesEvaluation, TypeExercice
 
@@ -81,6 +80,7 @@ class Memoire:
     # --- DepotChaine -------------------------------------------------------------
     def verrouiller(self, copie_id):
         self.verrous.append(copie_id)
+        return CopieVerrouillee(self.copies[copie_id], self.etats[copie_id])
 
     def etat(self, copie_id):
         return self.etats[copie_id]
@@ -116,6 +116,9 @@ class Memoire:
 
     def verrouiller_relecture(self, relecture_id):
         return self.rel.get(relecture_id)
+
+    def relectures_copie(self, copie_id):
+        return self.relectures_de(copie_id)
 
     def relectures_echues(self, maintenant):
         return [r for r in self.rel.values()

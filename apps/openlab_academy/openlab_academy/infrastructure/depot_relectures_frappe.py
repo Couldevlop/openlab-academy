@@ -45,6 +45,11 @@ class DepotRelecturesFrappe:
         ligne = frappe.db.get_value(RELECTURE, relecture_id, CHAMPS, as_dict=True, for_update=True)
         return _relecture(ligne) if ligne else None
 
+    def relectures_copie(self, copie_id: str) -> list[Relecture]:
+        """Lecture verrouillante : les relectures validées par d'autres transactions sont vues."""
+        return [_relecture(ligne) for ligne in frappe.db.get_values(
+            RELECTURE, {"copie": copie_id}, CHAMPS, as_dict=True, order_by="creation", for_update=True)]
+
     def relectures_echues(self, maintenant) -> list[Relecture]:
         return [_relecture(ligne) for ligne in frappe.get_all(
             RELECTURE, [["statut", "=", StatutRelecture.A_FAIRE.value], ["echeance", "is", "set"],
@@ -52,13 +57,16 @@ class DepotRelecturesFrappe:
 
     def attribuer(self, copie_id: str, relecteur: str, echeance) -> str | None:
         """None si la paire (copie, relecteur) existe déjà (contrainte d'unicité, attribution concurrente)."""
+        if frappe.db.exists(RELECTURE, {"copie": copie_id, "relecteur": relecteur}):
+            return None
         frappe.db.savepoint(POINT)
         try:
             return frappe.get_doc({"doctype": RELECTURE, "copie": copie_id, "relecteur": relecteur,
                                    "statut": StatutRelecture.A_FAIRE.value, "echeance": echeance}
                                   ).insert(ignore_permissions=True).name
-        except frappe.UniqueValidationError:
+        except frappe.UniqueValidationError:  # insérée entre-temps par une transaction concurrente
             frappe.db.rollback(save_point=POINT)
+            frappe.clear_messages()  # pas de message d'erreur d'unicité remonté à l'utilisateur
             return None
 
     def rappeler(self, relecture_id: str, echeance) -> None:

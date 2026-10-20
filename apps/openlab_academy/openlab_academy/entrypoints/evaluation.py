@@ -31,6 +31,18 @@ def isoler(action: Callable[[], None]) -> None:
         frappe.log_error(title="openlab_academy : étape automatique en échec", message=frappe.get_traceback())
 
 
+def unite(action: Callable[[], None]) -> None:
+    """Tâche horaire : chaque copie ou relecture est sa propre transaction. Une erreur (y compris un
+    interblocage, qui annule toute la transaction) ne coûte que cet élément, consigné ; les autres sont validés."""
+    try:
+        action()
+        frappe.db.commit()
+    except Exception:
+        frappe.db.rollback()
+        frappe.log_error(title="openlab_academy : échéance non traitée", message=frappe.get_traceback())
+        frappe.db.commit()
+
+
 def file(tache: str, copie_id: str) -> None:
     """Met une étape en tâche de fond ; une file indisponible ne bloque pas : l'échéance prendra le relais."""
     if tache not in TACHES.values():
@@ -74,7 +86,7 @@ def pre_corriger(copie_id: str) -> None:
 def traiter_echeances() -> None:
     """Tâche horaire : applique l'action réglée à chaque étape et relecture échue."""
     TraiterEcheances(DepotCopiesFrappe(), DepotRelecturesFrappe(), reglages_evaluation_frappe.SourceReglagesFrappe(),
-                     avanceur(), now_datetime, journal_frappe.journaliser, isoler, notifier).executer()
+                     avanceur(), now_datetime, journal_frappe.journaliser, unite, notifier).executer()
 
 
 def soumettre(soumission: dict) -> str | None:

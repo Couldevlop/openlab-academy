@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Protocol
 
-from openlab_academy.domain.copie import Copie, Proposition, Source, Statut
+from openlab_academy.domain.copie import Copie, CopieVerrouillee, Proposition, Source, Statut
 from openlab_academy.domain.grille import Grille, GrilleInvalide
 from openlab_academy.domain.reglages_evaluation import Etape
 
@@ -47,6 +47,7 @@ class DepotRelectures(Protocol):
     def relectures(self, exercice: str, cohorte: str) -> list[Relecture]: ...
     def relecture(self, relecture_id: str) -> Relecture | None: ...
     def verrouiller_relecture(self, relecture_id: str) -> Relecture | None: ...  # lue et verrouillée
+    def relectures_copie(self, copie_id: str) -> list[Relecture]: ...  # lues et verrouillées
     def relectures_echues(self, maintenant: datetime) -> list[Relecture]: ...
     def attribuer(self, copie_id: str, relecteur: str, echeance: datetime) -> str | None: ...  # None : paire déjà là
     def changer_statut_relecture(self, relecture_id: str, statut: StatutRelecture) -> None: ...
@@ -106,8 +107,7 @@ class AttribuerPairs:
 
 
 class DepotCopiesRelues(Protocol):
-    def verrouiller(self, copie_id: str) -> None: ...
-    def copie(self, copie_id: str) -> Copie: ...
+    def verrouiller(self, copie_id: str) -> CopieVerrouillee: ...
     def grille(self, copie_id: str) -> Grille: ...
     def ajouter_proposition(self, copie_id: str, p: Proposition) -> None: ...
 
@@ -131,7 +131,7 @@ class EnregistrerRelecture:
         if r is None or r.relecteur != relecteur:
             raise RelectureRefusee("relecture non attribuée")
         # verrous dans l'ordre copie puis relecture (comme l'échéancier) : un double envoi n'enregistre qu'une fois
-        self._depot.verrouiller(r.copie)
+        copie = self._depot.verrouiller(r.copie).copie
         r = self._relectures.verrouiller_relecture(relecture_id)
         if r.statut != StatutRelecture.A_FAIRE:
             raise RelectureRefusee("cette relecture n'est plus à faire")
@@ -149,10 +149,10 @@ class EnregistrerRelecture:
         self._depot.ajouter_proposition(r.copie, Proposition(Source.PAIR, relecteur, dict(niveaux), nets))
         self._relectures.changer_statut_relecture(r.id, StatutRelecture.FAITE)
         self._journal(r.copie, relecteur, "relecture", {}, {"relecture": r.id})
-        copie = self._depot.copie(r.copie)
         if copie.statut != Statut.EN_RELECTURE:
             return
-        faites = sum(1 for x in self._relectures.relectures(copie.exercice, copie.cohorte)
-                     if x.copie == copie.id and x.statut == StatutRelecture.FAITE)
+        # lecture verrouillante après le verrou de la copie : le dernier de deux relecteurs simultanés
+        # voit la relecture validée par l'autre et fait avancer la copie
+        faites = sum(1 for x in self._relectures.relectures_copie(copie.id) if x.statut == StatutRelecture.FAITE)
         if faites >= self._avanceur.pairs_requis(copie):
             self._avanceur.executer(copie.id, Etape.PAIRS)

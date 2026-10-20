@@ -4,9 +4,8 @@ import json
 import frappe
 from frappe.utils import get_datetime
 
-from openlab_academy.application.chaine import Etat
 from openlab_academy.application.soumettre_copie import Contenu, Exercice
-from openlab_academy.domain.copie import Copie, Proposition, Source, Statut
+from openlab_academy.domain.copie import Copie, CopieVerrouillee, Etat, Proposition, Source, Statut
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.reglages_evaluation import Chaine, TypeExercice
 
@@ -51,6 +50,15 @@ def supprimer_grilles_sans_copie(exercices: list[str]) -> None:
     for exercice in exercices:
         if not frappe.db.exists(COPIE, {"exercice": exercice}):
             frappe.db.delete(GRILLE_EXERCICE, {"exercice": exercice})
+
+
+CHAMPS_COPIE = ["name", "apprenant", "exercice", "cohorte", "type_exercice", "version", "statut"]
+CHAMPS_ETAT = ["etape_courante", "echeance", "escalade_a"]
+
+
+def _etat(ligne) -> Etat:
+    return Etat(ligne.etape_courante or "", get_datetime(ligne.echeance) if ligne.echeance else None,
+                ligne.escalade_a or "")
 
 
 def _copie(doc) -> Copie:
@@ -136,14 +144,14 @@ class DepotCopiesFrappe:
             frappe.db.set_value(RELECTURE, nom, "statut", "annulée")
 
     # --- état dans la chaîne de correction ------------------------------------
-    def verrouiller(self, copie_id: str) -> None:
-        """Verrou de ligne jusqu'à la fin de la transaction : deux avancées concurrentes se suivent."""
-        frappe.db.get_value(COPIE, copie_id, "name", for_update=True)
+    def verrouiller(self, copie_id: str) -> CopieVerrouillee:
+        """Verrou de ligne jusqu'à la fin de la transaction, et lecture verrouillante : elle rend la dernière
+        version validée de la ligne, pas l'instantané REPEATABLE READ de la transaction."""
+        ligne = frappe.db.get_value(COPIE, copie_id, CHAMPS_COPIE + CHAMPS_ETAT, as_dict=True, for_update=True)
+        return CopieVerrouillee(_copie(ligne), _etat(ligne))
 
     def etat(self, copie_id: str) -> Etat:
-        ligne = frappe.db.get_value(COPIE, copie_id, ["etape_courante", "echeance", "escalade_a"], as_dict=True)
-        return Etat(ligne.etape_courante or "", get_datetime(ligne.echeance) if ligne.echeance else None,
-                    ligne.escalade_a or "")
+        return _etat(frappe.db.get_value(COPIE, copie_id, CHAMPS_ETAT, as_dict=True))
 
     def grille(self, copie_id: str) -> Grille:
         return Grille.depuis_dict(json.loads(frappe.db.get_value(COPIE, copie_id, "grille_json")))

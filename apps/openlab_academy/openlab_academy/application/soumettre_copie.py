@@ -8,7 +8,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Protocol
 
-from openlab_academy.domain.copie import Copie, Proposition, Source, Statut, TransitionInterdite, etape_suivante
+from openlab_academy.domain.copie import (
+    Copie, CopieVerrouillee, Proposition, Source, Statut, TransitionInterdite, etape_suivante)
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.reglages_evaluation import Chaine, ReglagesEvaluation, Surcharge, TypeExercice
 
@@ -47,6 +48,7 @@ class DepotCopies(Protocol):
     def auto_evaluation(self, apprenant: str, exercice: str) -> dict[str, int] | None: ...
     def signature(self, copie_id: str) -> str: ...
     def copie(self, copie_id: str) -> Copie: ...
+    def verrouiller(self, copie_id: str) -> CopieVerrouillee: ...  # verrou de ligne + lecture à jour
     def creer(self, copie: Copie, grille: Grille, contenu: Contenu) -> str: ...
     def version_courante(self, soumission: str) -> Copie | None: ...
     def ajouter_proposition(self, copie_id: str, p: Proposition) -> None: ...
@@ -80,6 +82,8 @@ class SoumettreCopie:
         if exercice is None:
             return None
         courante = self._depot.version_courante(soumission["name"])
+        if courante is not None:  # verrouillée d'abord, puis ses relectures : même ordre que la chaîne
+            courante = self._depot.verrouiller(courante.id).copie
         signature = Contenu.signature_de(soumission)
         if courante is not None and self._depot.signature(courante.id) == signature:
             return courante.id
