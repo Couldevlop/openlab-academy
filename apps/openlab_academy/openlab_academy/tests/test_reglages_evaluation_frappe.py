@@ -7,7 +7,7 @@ from frappe.utils import add_days, now_datetime
 
 from openlab_academy.domain.delegation import Delegation
 from openlab_academy.domain.reglages_evaluation import (
-    CHAINES_DEFAUT, ConfigIA, Etape, Expiration, ReglagesEvaluation, Surcharge, TypeExercice)
+    CHAINES_DEFAUT, ConfigIA, Etape, Expiration, ReglagesEvaluation, TypeExercice)
 from openlab_academy.entrypoints import install
 from openlab_academy.infrastructure import journal_frappe
 from openlab_academy.infrastructure import reglages_evaluation_frappe as source
@@ -383,6 +383,39 @@ class TestSurcharges(FrappeTestCase):
         self.assertEqual(s.options, {"pairs_attente_max_jours": 0, "pairs_reattributions_max": 0})
         with self.assertRaisesRegex(frappe.ValidationError, "pairs_minimum_releves"):
             self._surcharge(exercice=un_devoir(), cohorte=un_lot(), pairs_minimum_releves="9").insert()
+
+    def test_combinaison_avec_une_autre_surcharge_refusee(self):
+        lot, devoir = un_lot(), un_devoir()
+        self._surcharge(cohorte=lot, pairs_minimum_releves="3").insert()
+        with self.assertRaisesRegex(frappe.ValidationError,
+                                    f"cohorte {lot} \\+ exercice {devoir}.*pairs_minimum_releves"):
+            self._surcharge(exercice=devoir, nb_pairs="2").insert()
+        self._surcharge(exercice=devoir, nb_pairs="4").insert()
+
+    def test_reglage_global_qui_invaliderait_une_surcharge_refuse(self):
+        reglages = frappe.get_single(REGLAGES)
+        reglages.publication_provisoire = 1
+        reglages.save(ignore_permissions=True)
+        lot = un_lot()
+        self._surcharge(cohorte=lot, etapes=etapes_formateur(expiration="publier_provisoire")).insert()
+        reglages = frappe.get_single(REGLAGES)
+        reglages.publication_provisoire = 0
+        with self.assertRaisesRegex(frappe.ValidationError,
+                                    f"invalideraient 1 surcharge\\(s\\) : cohorte {lot} .*provisoire"):
+            reglages.save(ignore_permissions=True)
+        reglages = frappe.get_single(REGLAGES)
+        reglages.responsable_pedagogique = ""
+        reglages.save(ignore_permissions=True)  # un réglage sans effet sur les surcharges reste enregistrable
+
+    def test_surcharge_deja_invalide_ne_bloque_pas_le_reste_de_la_console(self):
+        lot = un_lot()
+        frappe.db.set_single_value(REGLAGES, "publication_provisoire", 1)
+        self._surcharge(cohorte=lot, etapes=etapes_formateur(expiration="publier_provisoire")).insert()
+        frappe.db.set_single_value(REGLAGES, "publication_provisoire", 0)  # hors console : déjà invalide
+        reglages = frappe.get_single(REGLAGES)
+        reglages.responsable_pedagogique = ""
+        reglages.save(ignore_permissions=True)
+        self._surcharge(exercice=un_devoir(), note_sur="10").insert()
 
 
 class TestEquipes(FrappeTestCase):

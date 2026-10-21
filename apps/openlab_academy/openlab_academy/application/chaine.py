@@ -44,7 +44,8 @@ Journal = Callable[[str, str, str, dict, dict], None]
 
 
 def chaine_de(copie: Copie, depot: DepotCopies, source: SourceReglages) -> Chaine:
-    """Chaîne effective de la copie ; une surcharge devenue dangereuse ne bloque pas : la chaîne du type s'applique."""
+    """Chaîne effective de la copie ; une surcharge devenue dangereuse ne bloque pas : la chaîne de secours
+    (formateur seul) s'applique."""
     exercice = depot.exercice(copie.exercice)
     chaine, _ = source.reglages().chaine_effective(copie.type_, copie.cohorte or None, copie.exercice,
                                                    source.surcharges(), exercice.chaine if exercice else None)

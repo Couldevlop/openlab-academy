@@ -222,7 +222,8 @@ class TestFaireAvancer(Cas):
             for c in LIVRABLE.etapes))
         self.monter(type_=TypeExercice.MISE_EN_SITUATION, surcharges=(Surcharge.complete(None, "EX1", dangereuse),))
         copie = _copie_type(self.m, "COH1")
-        self.assertEqual(chaine_de(copie, self.m, self.source), CHAINES_DEFAUT[TypeExercice.MISE_EN_SITUATION])
+        self.assertEqual(chaine_de(copie, self.m, self.source),
+                         ReglagesEvaluation().chaine_de_secours(TypeExercice.MISE_EN_SITUATION))
         self.m.exercices.clear()
         configuree = chaine(Etape.FORMATEUR)
         self.source.reglages_ = ReglagesEvaluation(chaines={TypeExercice.MISE_EN_SITUATION: configuree})

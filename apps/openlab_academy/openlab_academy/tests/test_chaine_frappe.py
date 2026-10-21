@@ -163,15 +163,14 @@ class TestDemarrage(Cas):
         reglages.save(ignore_permissions=True)
         frappe.get_doc({"doctype": "Surcharge Evaluation OpenLab", "exercice": self.livrable,
                         "etapes": etapes_formateur(expiration="publier_provisoire")}).insert()
-        reglages = frappe.get_single("Reglages Evaluation OpenLab")
-        reglages.publication_provisoire = 0  # la surcharge enregistrée devient dangereuse
-        reglages.save(ignore_permissions=True)
+        # la console refuse ce changement ; hors console (base modifiée à la main), la surcharge devient dangereuse
+        frappe.db.set_single_value("Reglages Evaluation OpenLab", "publication_provisoire", 0)
         with mock.patch.object(evaluation.frappe, "log_error") as consigne:
             self.soumettre(self.livrable)
         consigne.assert_not_called()
         copie = self.copie_de()
-        self.assertEqual(self.ligne(copie).etape_courante, "controles")  # chaîne du type livrable
-        self.assertIn("chaîne invalide : chaîne du type appliquée", self.actions(copie))
+        self.assertEqual(self.ligne(copie).etape_courante, "formateur")  # chaîne de secours
+        self.assertIn("chaîne invalide, secours formateur", self.actions(copie))
 
     def test_tache_inconnue_refusee(self):
         with self.assertRaisesRegex(ValueError, "tâche inconnue"):

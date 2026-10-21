@@ -245,9 +245,9 @@ class TestSoumettreCopie(unittest.TestCase):
         self.assertEqual(self.depot.relectures_annulees, [])
         self.assertEqual(self.journal[-1][:3], (v1, "a@x.ci", "rendu après publication ignoré"))
 
-    def test_chaine_devenue_invalide_la_copie_part_avec_la_chaine_du_type(self):
+    def test_chaine_devenue_invalide_la_copie_part_avec_la_chaine_de_secours(self):
         demarrees = []
-        uc = self.cas()
+        uc = self.cas(reglages=ReglagesEvaluation(responsable_pedagogique="resp@x.ci"))
         uc._demarrer = demarrees.append
         v1 = uc.executer(soumission())
         dangereuse = Chaine(tuple(ConfigEtape(e, e == Etape.FORMATEUR, 1, Expiration.PUBLIER_PROVISOIRE)
@@ -257,11 +257,28 @@ class TestSoumettreCopie(unittest.TestCase):
         self.assertNotEqual(v2, v1)
         self.assertEqual(demarrees, [v1, v2])
         self.assertEqual(self.depot.copie(v2).version, 2)
-        premiere = CHAINES_DEFAUT[TypeExercice.LIVRABLE].config(Etape.AUTO_EVALUATION)
-        self.assertEqual(self.depot.statuts[-1], (v2, Statut.RENDUE, "auto_evaluation",
-                                                  MAINTENANT + timedelta(hours=premiere.delai_heures)))
-        self.assertIn((v2, "systeme", "chaîne invalide : chaîne du type appliquée"), [j[:3] for j in self.journal])
+        formateur = CHAINES_DEFAUT[TypeExercice.LIVRABLE].config(Etape.FORMATEUR)
+        self.assertEqual(self.depot.statuts[-1], (v2, Statut.RENDUE, "formateur",
+                                                  MAINTENANT + timedelta(hours=formateur.delai_heures)))
+        secours = [j for j in self.journal if j[2] == "chaîne invalide, secours formateur"]
+        self.assertEqual(len(secours), 1)
+        self.assertEqual(secours[0][0], v2)
+        self.assertEqual(secours[0][4]["type_exercice"], "livrable")
+        self.assertIn("provisoire", secours[0][4]["cause"])
+        self.assertEqual(len(self.notes), 1)
+        self.assertEqual(self.notes[0][0], "resp@x.ci")
+        self.assertIn("secours", self.notes[0][1])
         self.assertEqual(self.depot.relectures_annulees, [v1])
+
+    def test_chaine_de_secours_sans_responsable_rien_a_notifier(self):
+        uc = self.cas()
+        dangereuse = Chaine(tuple(ConfigEtape(e, e == Etape.FORMATEUR, 1, Expiration.PUBLIER_PROVISOIRE)
+                                  for e in Etape))
+        uc._surcharges = lambda: (Surcharge.complete(None, "EX1", dangereuse),)
+        copie_id = uc.executer(soumission())
+        self.assertEqual(self.depot.statuts[-1][2], "formateur")
+        self.assertEqual(self.notes, [])
+        self.assertIn("chaîne invalide, secours formateur", [j[2] for j in self.journal if j[0] == copie_id])
 
     def test_nouvelle_copie_demarree_une_seule_fois(self):
         demarrees = []

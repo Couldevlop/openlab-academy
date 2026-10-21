@@ -123,8 +123,8 @@ class SoumettreCopie:
                               f"votre rendu précédent reste celui qui est corrigé.")
         # tout ce qui peut échouer est calculé avant la première écriture
         cohorte = self._depot.cohorte(apprenant, assignment)
-        # une surcharge ou un YAML devenus invalides ne bloquent pas le rendu : la chaîne du type s'applique
-        chaine, repli = self._reglages.chaine_effective(exercice.type_, cohorte, assignment, self._surcharges(),
+        # une surcharge ou un YAML devenus invalides ne bloquent pas le rendu : chaîne de secours, formateur seul
+        chaine, cause = self._reglages.chaine_effective(exercice.type_, cohorte, assignment, self._surcharges(),
                                                         exercice.chaine)
         etape = etape_suivante(chaine, None)
         echeance = self._horloge() + timedelta(hours=chaine.config(etape).delai_heures)
@@ -138,9 +138,14 @@ class SoumettreCopie:
         self._journal(copie_id, apprenant, "accusé de dépôt", {},
                       {"depose_le": f"{depose_le:%Y-%m-%dT%H:%M:%S}Z", "empreinte": signature,
                        "algorithme": "SHA-256"})
-        if repli:
-            self._journal(copie_id, SYSTEME, "chaîne invalide : chaîne du type appliquée", {},
-                          {"type_exercice": exercice.type_.value})
+        if cause:
+            self._journal(copie_id, SYSTEME, "chaîne invalide, secours formateur", {},
+                          {"type_exercice": exercice.type_.value, "cause": cause})
+            responsable = self._reglages.responsable_pedagogique
+            if responsable:
+                self._notifier(responsable, f"Réglages à revoir : la chaîne de l'exercice {assignment} est invalide "
+                                            f"({cause}). Le rendu de {apprenant} part sur la chaîne de secours "
+                                            f"(formateur seul).")
         niveaux = self._depot.auto_evaluation(apprenant, assignment)
         if niveaux is not None:
             self._depot.ajouter_proposition(copie_id, Proposition(Source.AUTO_EVALUATION, apprenant, niveaux))

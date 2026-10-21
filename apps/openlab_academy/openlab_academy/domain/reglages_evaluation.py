@@ -3,6 +3,7 @@
 Aucune étape ne bloque : chacune a un délai et une action à expiration. Le formateur reste toujours actif,
 car seul un humain publie une note définitive.
 """
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from enum import Enum
 
@@ -298,14 +299,23 @@ class ReglagesEvaluation:
         return resolu
 
     def chaine_effective(self, type_: TypeExercice, cohorte: str | None, exercice: str | None,
-                         surcharges: tuple[Surcharge, ...], yaml: Chaine | None) -> tuple[Chaine, bool]:
-        """Chaîne à appliquer, et vrai si la chaîne choisie était devenue invalide (par exemple une surcharge
-        enregistrée avant la désactivation de la publication provisoire) : rien ne bloque, la chaîne du type
-        s'applique."""
+                         surcharges: tuple[Surcharge, ...], yaml: Chaine | None) -> tuple[Chaine, str | None]:
+        """Chaîne à appliquer, et la cause si la chaîne choisie était devenue invalide (par exemple une surcharge
+        enregistrée avant la désactivation de la publication provisoire) : rien ne bloque, la copie part sur la
+        chaîne de secours."""
         try:
-            return self.chaine_pour(type_, cohorte, exercice, surcharges, yaml), False
-        except ReglagesInvalides:
-            return self.chaine_du_type(type_), True
+            return self.chaine_pour(type_, cohorte, exercice, surcharges, yaml), None
+        except ReglagesInvalides as e:
+            return self.chaine_de_secours(type_), str(e)
+
+    def chaine_de_secours(self, type_: TypeExercice) -> Chaine:
+        """Le formateur seul, avec son délai pour ce type et l'escalade à l'expiration (jamais de publication
+        provisoire) ; barème, seuil et options du type gardés."""
+        base = self.chaine_du_type(type_)
+        formateur = base.config(Etape.FORMATEUR)
+        return replace(base, etapes=tuple(
+            ConfigEtape(c.etape, True, formateur.delai_heures, Expiration.ESCALADER) if c.etape == Etape.FORMATEUR
+            else replace(c, active=False) for c in base.etapes))
 
     def chaine_du_type(self, type_: TypeExercice) -> Chaine:
         return self.chaines.get(type_) or CHAINES_DEFAUT[type_]
@@ -313,3 +323,35 @@ class ReglagesEvaluation:
 
 def _config_dict(c: ConfigEtape) -> dict:
     return {"active": c.active, "delai_heures": c.delai_heures, "expiration": c.expiration.value}
+
+
+def surcharges_invalidees(reglages: ReglagesEvaluation, surcharges: tuple[Surcharge, ...],
+                          exercices: Callable[[str], tuple[TypeExercice, Chaine | None] | None],
+                          impliquant: Surcharge | None = None) -> list[tuple[str, str]]:
+    """Cibles (cohorte, exercice) atteintes par les surcharges dont la chaîne fusionnée serait invalide, avec le
+    motif. Chaque cohorte surchargée est croisée avec chaque exercice surchargé ; un exercice connu est vérifié
+    avec son type et son YAML, une cohorte (ou un exercice inconnu) avec chaque type. Une combinaison n'est pas
+    signalée quand une partie plus petite l'est déjà. Avec `impliquant`, seules les cibles qu'il atteint."""
+    cohortes = sorted({s.cohorte for s in surcharges if s.cohorte is not None})
+    exos = sorted({s.exercice for s in surcharges if s.exercice is not None})
+    cibles = [(c, None) for c in cohortes] + [(None, x) for x in exos] + [(c, x) for c in cohortes for x in exos]
+    contextes = []
+    for cohorte, exercice in cibles:
+        indices = [i for i, s in enumerate(surcharges) if s in surcharges_applicables((s,), cohorte, exercice)]
+        if indices:
+            contextes.append((cohorte, exercice, frozenset(indices)))
+    fautives: list[tuple[frozenset, str, str]] = []
+    for cohorte, exercice, indices in sorted(contextes, key=lambda c: len(c[2])):
+        if any(f <= indices for f, _, _ in fautives):
+            continue
+        connu = exercices(exercice) if exercice else None
+        essais = [connu] if connu else [(t, None) for t in TypeExercice]
+        for type_, yaml in essais:
+            try:
+                reglages.chaine_pour(type_, cohorte, exercice, surcharges, yaml)
+            except ReglagesInvalides as e:
+                libelle = " + ".join(s.libelle for s in surcharges_applicables(surcharges, cohorte, exercice))
+                fautives.append((indices, libelle, str(e)))
+                break
+    return [(libelle, motif) for indices, libelle, motif in fautives
+            if impliquant is None or any(surcharges[i] == impliquant for i in indices)]

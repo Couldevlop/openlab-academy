@@ -4,7 +4,7 @@ from dataclasses import replace
 from openlab_academy.domain.reglages import ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import (
     CHAINES_DEFAUT, RESERVE_REPONSE_JETONS, Chaine, ConfigEtape, ConfigIA, Etape, Expiration, ReglagesEvaluation,
-    Resoumission, Surcharge, TypeExercice,
+    Resoumission, Surcharge, TypeExercice, surcharges_invalidees,
 )
 
 E = Etape
@@ -219,13 +219,23 @@ class TestChainePour(unittest.TestCase):
             self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX1",
                                (Surcharge("C1", None, {"nb_pairs": 1, "pairs_minimum_releves": 2}),), None)
 
-    def test_chaine_effective_retombe_sur_la_chaine_du_type(self):
+    def test_chaine_effective_retombe_sur_la_chaine_de_secours(self):
         provisoire = ConfigEtape(E.FORMATEUR, True, 1, Expiration.PUBLIER_PROVISOIRE)
-        self.assertEqual(self.r.chaine_effective(TypeExercice.PROJET, "C1", "EX1", self.surcharges, self.yaml)[1],
-                         False)
-        self.assertEqual(self.r.chaine_effective(TypeExercice.PROJET, "C1", "EX1",
-                                                 (Surcharge(None, "EX1", etapes=(provisoire,)),), None),
-                         (CHAINES_DEFAUT[TypeExercice.PROJET], True))
+        self.assertIsNone(self.r.chaine_effective(TypeExercice.PROJET, "C1", "EX1", self.surcharges, self.yaml)[1])
+        chaine, motif = self.r.chaine_effective(TypeExercice.PROJET, "C1", "EX1",
+                                                (Surcharge(None, "EX1", etapes=(provisoire,)),), None)
+        self.assertEqual(chaine, self.r.chaine_de_secours(TypeExercice.PROJET))
+        self.assertIn("provisoire", motif)
+
+    def test_chaine_de_secours_formateur_seul(self):
+        configuree = chaine_avec({E.PAIRS, E.FORMATEUR}, nb_pairs=2, note_sur=40, seuil_reussite=25)
+        r = ReglagesEvaluation(chaines={TypeExercice.PROJET: configuree})
+        secours = r.chaine_de_secours(TypeExercice.PROJET)
+        self.assertEqual({c.etape for c in secours.etapes if c.active}, {E.FORMATEUR})
+        self.assertEqual(secours.config(E.FORMATEUR), ConfigEtape(E.FORMATEUR, True, 1, Expiration.ESCALADER))
+        self.assertEqual((secours.nb_pairs, secours.note_sur, secours.seuil_reussite), (2, 40, 25))
+        self.assertEqual(ReglagesEvaluation().chaine_de_secours(TypeExercice.CAPSTONE).config(E.FORMATEUR),
+                         CHAINES_DEFAUT[TypeExercice.CAPSTONE].config(E.FORMATEUR))
 
     def test_provenance_de_chaque_champ(self):
         formateur = ConfigEtape(E.FORMATEUR, True, 5, Expiration.ESCALADER)
@@ -241,6 +251,57 @@ class TestChainePour(unittest.TestCase):
                          "défauts")
         self.assertEqual(self.r.resoudre_reglages(TypeExercice.PROJET, None, None, (), self.yaml)["nb_pairs"],
                          {"valeur": 4, "source": "YAML de l'exercice"})
+
+
+class TestSurchargesInvalidees(unittest.TestCase):
+    """Revalidation à l'enregistrement : toute combinaison cible (cohorte, exercice) qu'une surcharge atteint."""
+
+    def setUp(self):
+        self.provisoire = ConfigEtape(E.FORMATEUR, True, 1, Expiration.PUBLIER_PROVISOIRE)
+        self.exercices = {"EX1": (TypeExercice.LIVRABLE, None),
+                          "EX2": (TypeExercice.PROJET, chaine_avec({E.FORMATEUR}, nb_pairs=4))}
+
+    def invalidees(self, reglages, surcharges, impliquant=None):
+        return surcharges_invalidees(reglages, surcharges, self.exercices.get, impliquant)
+
+    def test_aucune(self):
+        surcharges = (Surcharge("C1", None, {"nb_pairs": 2}), Surcharge(None, "EX2", {"note_sur": 10}))
+        self.assertEqual(self.invalidees(ReglagesEvaluation(), surcharges), [])
+
+    def test_publication_provisoire_desactivee(self):
+        surcharges = (Surcharge("C1", None, etapes=(self.provisoire,)), Surcharge(None, "EX1", {"nb_pairs": 2}),
+                      Surcharge(None, "EX9", etapes=(self.provisoire,)))
+        self.assertEqual(self.invalidees(ReglagesEvaluation(publication_provisoire=True), surcharges), [])
+        invalidees = self.invalidees(ReglagesEvaluation(), surcharges)
+        # la combinaison cohorte C1 + exercice EX1 n'est pas répétée : la cohorte C1 seule est déjà fautive
+        self.assertEqual([libelle for libelle, _ in invalidees], ["cohorte C1", "exercice EX9"])
+        self.assertTrue(all("provisoire" in motif for _, motif in invalidees))
+
+    def test_combinaison_cohorte_et_exercice(self):
+        # chacune est valide seule ; ensemble, le minimum de relectures dépasse le nombre de pairs
+        surcharges = (Surcharge("C1", None, {"pairs_minimum_releves": 3}), Surcharge(None, "EX2", {"nb_pairs": 2}))
+        self.assertEqual(self.invalidees(ReglagesEvaluation(), surcharges),
+                         [("cohorte C1 + exercice EX2", "pairs_minimum_releves doit être compris entre 0 et nb_pairs")])
+
+    def test_exercice_dans_une_cohorte_avec_le_yaml(self):
+        trop = (Surcharge("C1", "EX2", {"pairs_minimum_releves": 5}),)
+        self.assertEqual([libelle for libelle, _ in self.invalidees(ReglagesEvaluation(), trop)],
+                         ["exercice EX2 / cohorte C1"])
+        juste = (Surcharge("C1", "EX2", {"pairs_minimum_releves": 4}),)
+        self.assertEqual(self.invalidees(ReglagesEvaluation(), juste), [])
+
+    def test_impliquant_seulement(self):
+        c1 = Surcharge("C1", None, {"pairs_minimum_releves": 3})
+        ex = Surcharge(None, "EX2", {"nb_pairs": 2})
+        c2 = Surcharge("C2", None, {"anonymat": False})
+        self.assertEqual([libelle for libelle, _ in self.invalidees(ReglagesEvaluation(), (c1, ex), impliquant=ex)],
+                         ["cohorte C1 + exercice EX2"])
+        self.assertEqual(self.invalidees(ReglagesEvaluation(), (c1, ex, c2), impliquant=c2), [])
+
+    def test_surcharge_deja_fautive_ne_bloque_pas_les_autres(self):
+        fautive = Surcharge("C1", None, etapes=(self.provisoire,))
+        ex = Surcharge(None, "EX2", {"note_sur": 10})
+        self.assertEqual(self.invalidees(ReglagesEvaluation(), (fautive, ex), impliquant=ex), [])
 
 
 class TestChaineDict(unittest.TestCase):

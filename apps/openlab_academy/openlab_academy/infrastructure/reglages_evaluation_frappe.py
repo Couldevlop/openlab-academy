@@ -152,6 +152,17 @@ def equipes() -> tuple[Equipe, ...]:
                  for nom in frappe.get_all(EQUIPE, pluck="name", order_by="creation"))
 
 
+def exercice_type_yaml(exercice: str) -> tuple[TypeExercice, Chaine | None] | None:
+    """Type et chaîne YAML d'un exercice publié, pour revalider les surcharges qui le visent."""
+    from openlab_academy.infrastructure.depot_copies_frappe import DepotCopiesFrappe
+    connu = DepotCopiesFrappe().exercice(exercice)
+    return (connu.type_, connu.chaine) if connu else None
+
+
+def liste_fautives(fautives: list[tuple[str, str]]) -> str:
+    return " ; ".join(f"{libelle} ({motif})" for libelle, motif in fautives)
+
+
 def charger() -> ReglagesEvaluation:
     doc = frappe.get_single(REGLAGES)
     return vers_domaine(doc)
