@@ -17,16 +17,21 @@ export type RequeteFrappe = (options: OptionsRequete) => Promise<unknown>
 
 export type Parametres = Record<string, unknown> | undefined
 
-// erreur levée par la requête Frappe : statut HTTP, type d'exception Python et messages du serveur
-const ECHEC_FRAPPE = z.object({
-  status: z.optional(z.number()),
-  exc_type: z.optional(z.string()),
-  messages: z.optional(z.array(z.string())),
-})
+// erreur levée par la requête Frappe : statut HTTP, type d'exception Python et messages du serveur, chacun lu pour
+// lui-même (un champ malformé n'efface pas les autres), seuls les messages textuels retenus
+const STATUT = z.number()
+const TYPE = z.string()
+
+function champ<T>(schema: z.ZodMiniType<T>, valeur: unknown): T | undefined {
+  const lu = schema.safeParse(valeur)
+  return lu.success ? lu.data : undefined
+}
 
 export function erreurDepuis(erreur: unknown): ErreurDepot {
-  const lu = ECHEC_FRAPPE.safeParse(erreur)
-  const { status, exc_type: type, messages = [] } = lu.success ? lu.data : {}
+  const brut: Record<string, unknown> = typeof erreur === 'object' && erreur !== null ? { ...erreur } : {}
+  const status = champ(STATUT, brut.status)
+  const type = champ(TYPE, brut.exc_type)
+  const messages = Array.isArray(brut.messages) ? brut.messages.filter((m): m is string => typeof m === 'string') : []
   if (status === 429 || type === 'TooManyRequestsError') return new ErreurDepot('trop_de_demandes')
   if (status === 403 || type === 'PermissionError') return new ErreurDepot('acces_refuse')
   if (type === 'ValidationError' && messages.length) return new ErreurDepot('refus', messages)
@@ -53,10 +58,9 @@ export class ClientFrappe {
     }
     const lu = schema.safeParse(reponse)
     if (!lu.success) {
-      throw new ErreurDepot(
-        'reponse_invalide',
-        lu.error.issues.map((i) => `${[methode, ...i.path.map(String)].join('.')} : ${i.message}`),
-      )
+      const chemins = lu.error.issues.map((i) => `${[methode, ...i.path.map(String)].join('.')} : ${i.message}`)
+      console.error(`Réponse invalide de ${methode}`, chemins) // contrat rompu entre le serveur et l'écran
+      throw new ErreurDepot('reponse_invalide', chemins)
     }
     return lu.data
   }

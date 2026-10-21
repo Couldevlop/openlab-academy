@@ -36,6 +36,16 @@ describe('client de l’API d’évaluation', () => {
     expect((vide as ErreurDepot).details).toEqual([expect.stringMatching(/^publier : /)])
   })
 
+  it('une réponse malformée est signalée dans la console avec les chemins fautifs', async () => {
+    const console_ = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    await new ClientFrappe(async () => ({ copie: 7 })).lire('publier', {}, SCHEMA).catch(() => undefined)
+    expect(console_).toHaveBeenCalledWith('Réponse invalide de publier', [
+      expect.stringMatching(/^publier\.copie : /),
+      expect.stringMatching(/^publier\.note : /),
+    ])
+    console_.mockRestore()
+  })
+
   it('un échec d’appel devient une erreur typée', async () => {
     const client = new ClientFrappe(async () => {
       throw echec({ status: 429, exc_type: 'TooManyRequestsError', messages: [] })
@@ -47,6 +57,8 @@ describe('client de l’API d’évaluation', () => {
 describe('erreurs typées', () => {
   it('limitation de débit (429)', () => {
     expect(erreurDepuis(echec({ status: 429 })).sorte).toBe('trop_de_demandes')
+    expect(erreurDepuis(echec({ status: 429, messages: [{}] })).sorte).toBe('trop_de_demandes')
+    expect(erreurDepuis(echec({ status: '429', exc_type: 'TooManyRequestsError' })).sorte).toBe('trop_de_demandes')
     expect(erreurDepuis(echec({ exc_type: 'TooManyRequestsError' })).sorte).toBe('trop_de_demandes')
   })
 
@@ -59,6 +71,14 @@ describe('erreurs typées', () => {
     expect(refus).toMatchObject({ sorte: 'refus', details: ['un commentaire est obligatoire'] })
     expect(erreurDepuis(echec({ exc_type: 'ValidationError', messages: [] })).sorte).toBe('hors_ligne')
     expect(erreurDepuis(echec({ exc_type: 'ValidationError' })).sorte).toBe('hors_ligne')
+    // chaque champ lu pour lui-même : seuls les messages textuels sont retenus
+    expect(erreurDepuis(echec({ exc_type: 'ValidationError', messages: [{}, 'motif', 3] }))).toMatchObject({
+      sorte: 'refus',
+      details: ['motif'],
+    })
+    expect(erreurDepuis(echec({ exc_type: 'ValidationError', messages: [{}] })).sorte).toBe('hors_ligne')
+    expect(erreurDepuis(echec({ status: 403, messages: 'motif' })).sorte).toBe('acces_refuse')
+    expect(erreurDepuis(null).sorte).toBe('hors_ligne')
     expect(erreurDepuis(new TypeError('Failed to fetch')).sorte).toBe('hors_ligne')
     expect(erreurDepuis('panne').sorte).toBe('hors_ligne')
   })

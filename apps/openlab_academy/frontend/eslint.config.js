@@ -13,6 +13,16 @@ const RESEAU = [
   { name: 'fetch', message: "Le réseau passe par un adaptateur de l'infrastructure." },
   { name: 'XMLHttpRequest', message: "Le réseau passe par un adaptateur de l'infrastructure." },
 ]
+// fetch atteint aussi par l'objet global : window.fetch, globalThis.fetch, self.fetch
+const RESEAU_GLOBAL = ['window', 'globalThis', 'self'].flatMap((object) =>
+  ['fetch', 'XMLHttpRequest'].map((property) => ({
+    object,
+    property,
+    message: "Le réseau passe par un adaptateur de l'infrastructure.",
+  })),
+)
+// cas d'usage : les écrans les reçoivent par provide/inject, ils n'en importent que les types
+const CAS_USAGES = ['cas-usages', 'correction', 'relecture', 'retour'].map((m) => `**/application/${m}`)
 const NAVIGATEUR = [
   ...RESEAU,
   { name: 'window', message: 'Règle pure : aucun accès au navigateur.' },
@@ -32,19 +42,27 @@ const CADRES = [
   'zod/mini',
 ]
 
+// un paquet à motif (frappe-ui/*) va dans patterns : paths ne compare que des noms exacts
 const interdire = (
   couches,
   paquets = [],
   pourquoi = 'Cadre ou bibliothèque réservé aux adaptateurs et aux écrans.',
-) => ({
-  'no-restricted-imports': [
-    'error',
-    {
-      paths: paquets.map((name) => ({ name, message: pourquoi })),
-      patterns: [{ group: couches.flatMap(couche), message: 'Import contraire au sens des dépendances.' }],
-    },
-  ],
-})
+) => {
+  const motifs = paquets.filter((p) => p.includes('*'))
+  return {
+    'no-restricted-imports': [
+      'error',
+      {
+        paths: paquets.filter((p) => !p.includes('*')).map((name) => ({ name, message: pourquoi })),
+        patterns: [
+          { group: couches.flatMap(couche), message: 'Import contraire au sens des dépendances.' },
+          ...(motifs.length ? [{ group: motifs, message: pourquoi }] : []),
+        ],
+      },
+    ],
+    'no-restricted-properties': ['error', ...RESEAU_GLOBAL],
+  }
+}
 
 export default defineConfigWithVueTs(
   { ignores: ['coverage/**', 'dist/**', 'eslint.config.js', 'vite.config.ts'] },
@@ -77,7 +95,7 @@ export default defineConfigWithVueTs(
   {
     files: ['src/infrastructure/**/*.ts'],
     ignores: ['**/*.test.ts'],
-    rules: interdire(['interface']),
+    rules: { ...interdire(['interface']), 'no-restricted-properties': 'off' }, // l'adaptateur réseau
   },
   {
     files: ['src/interface/**/*.{ts,vue}'],
@@ -85,10 +103,22 @@ export default defineConfigWithVueTs(
     rules: {
       ...interdire(
         ['infrastructure'],
-        ['frappe-ui', 'frappe-ui-requete', 'zod', 'zod/mini'],
+        ['frappe-ui', 'frappe-ui-requete', 'frappe-ui/*', 'zod', 'zod/mini'],
         "Réservé aux adaptateurs de l'infrastructure.",
       ),
       'no-restricted-globals': ['error', ...RESEAU],
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: CAS_USAGES,
+              allowTypeImports: true,
+              message: "Cas d'usage reçus par injection : import de type seulement.",
+            },
+          ],
+        },
+      ],
     },
   },
   {
