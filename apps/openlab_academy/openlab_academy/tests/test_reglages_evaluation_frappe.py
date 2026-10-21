@@ -200,6 +200,30 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         source.preparer()  # une valeur réglée, même nulle, n'est jamais écrasée
         self.assertEqual(source.charger().longueur_min_caracteres, 0)
 
+    def test_limites_de_la_console(self):
+        champs = {"ia_citation_min_caracteres": 5, "instantane_fichiers_max": 3, "instantane_delai_s": 4,
+                  "instantane_budget_s": 7, "instantane_budget_tache_s": 30}
+        vider()
+        source.initialiser()
+        self.assertEqual({c: frappe.db.get_single_value(REGLAGES, c) for c in champs},
+                         {"ia_citation_min_caracteres": 8, "instantane_fichiers_max": 12, "instantane_delai_s": 10,
+                          "instantane_budget_s": 20, "instantane_budget_tache_s": 60})
+        doc = frappe.get_single(REGLAGES)
+        doc.update(champs)
+        doc.save(ignore_permissions=True)
+        r = source.charger()
+        self.assertEqual((r.ia.citation_min_caracteres, r.instantane_fichiers_max, r.instantane_delai_s,
+                          r.instantane_budget_s, r.instantane_budget_tache_s), (5, 3, 4, 7, 30))
+        for champ in champs:  # site antérieur au réglage : champ vide, défaut du domaine puis complété
+            frappe.db.sql("delete from `tabSingles` where doctype=%s and field=%s", (REGLAGES, champ))
+        self.assertEqual(source.charger().instantane_budget_tache_s, 60)
+        self.assertEqual(source.charger().ia, ConfigIA())
+        frappe.db.set_single_value(REGLAGES, "instantane_delai_s", 2)
+        source.preparer()  # complète les champs absents, jamais une valeur réglée
+        r = source.charger()
+        self.assertEqual((r.ia.citation_min_caracteres, r.instantane_fichiers_max, r.instantane_delai_s,
+                          r.instantane_budget_s, r.instantane_budget_tache_s), (8, 12, 2, 20, 60))
+
     def test_cle_ia_vide_par_defaut(self):
         self.assertEqual(source.cle_ia(), "")
 

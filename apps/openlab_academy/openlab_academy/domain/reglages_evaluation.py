@@ -126,6 +126,7 @@ class ConfigIA:
     tournures_injection: tuple[str, ...] = TOURNURES_DEFAUT
     plafond_caracteres: int = 60000
     contexte_tokens: int = 4096  # fenêtre du modèle servi, prompt et réponse compris
+    citation_min_caracteres: int = 8  # hors blancs : en deçà, un extrait figure dans toute copie
 
     def __post_init__(self):
         if not 0 <= self.seuil_confiance <= 1:
@@ -137,6 +138,8 @@ class ConfigIA:
         if self.contexte_tokens <= RESERVE_REPONSE_JETONS:
             raise ReglagesInvalides(f"le contexte du modèle doit dépasser {RESERVE_REPONSE_JETONS} jetons "
                                     "(réserve de la réponse)")
+        if self.citation_min_caracteres < 1:
+            raise ReglagesInvalides("citation_min_caracteres doit être d'au moins 1 (une citation vide ne prouve rien)")
 
 
 def _chaine(actives: set[Etape]) -> Chaine:
@@ -192,6 +195,10 @@ class ReglagesEvaluation:
     longueur_min_caracteres: int = 200  # contrôle d'une copie texte ; 0 = aucun minimum
     grille_generique: tuple[tuple[str, int], ...] = GRILLE_GENERIQUE_DEFAUT
     niveaux_generiques: tuple[str, ...] = NIVEAUX_GENERIQUES_DEFAUT
+    instantane_fichiers_max: int = 12  # fichiers lus dans un dépôt rendu par lien
+    instantane_delai_s: int = 10  # délai de chaque appel à l'hébergeur
+    instantane_budget_s: int = 20  # durée totale d'un instantané pris pendant le rendu de l'apprenant
+    instantane_budget_tache_s: int = 60  # durée totale d'un instantané repris en tâche de fond
 
     def __post_init__(self):
         for type_, chaine in self.chaines.items():
@@ -202,6 +209,10 @@ class ReglagesEvaluation:
             raise ReglagesInvalides("niveaux génériques : au moins 2 niveaux requis")
         if self.longueur_min_caracteres < 0:
             raise ReglagesInvalides("longueur_min_caracteres ne peut pas être négative")
+        for champ in ("instantane_fichiers_max", "instantane_delai_s", "instantane_budget_s",
+                      "instantane_budget_tache_s"):
+            if getattr(self, champ) <= 0:
+                raise ReglagesInvalides(f"{champ} doit être positif")
 
     def _verifier_publication(self, chaine: Chaine, type_: TypeExercice) -> Chaine:
         if (not self.publication_provisoire

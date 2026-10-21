@@ -59,6 +59,13 @@ class TestPreCorriger(Cas):
                                                 {"modele": "texte-8b", "confiance": 0.9}))
         self.assertEqual(self.etape(self.a), ("formateur", Statut.A_CORRIGER))
 
+    def test_longueur_minimale_de_citation_de_la_console(self):
+        for minimum, retenue in ((8, False), (5, True)):
+            with self.subTest(minimum=minimum):
+                self.preparer(ia=replace(IA, citation_min_caracteres=minimum))
+                self.corriger(Correcteur(reponse(citation="stock")))
+                self.assertEqual("pertinence" in self.props_ia()[0].niveaux, retenue)
+
     def test_modele_code_pour_un_rendu_en_url(self):
         self.preparer(url="https://github.com/aya/livrable")
         correcteur = Correcteur()

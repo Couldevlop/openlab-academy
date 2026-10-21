@@ -38,6 +38,11 @@ def _chaine(params, lignes) -> Chaine:
                   attente_max_heures=int(params.attente_max_heures or 0))
 
 
+def _entier(valeur, defaut: int) -> int:
+    """Champ numérique de la console ; vide (site antérieur au réglage), le défaut du domaine."""
+    return defaut if valeur in (None, "") else int(valeur)
+
+
 def vers_domaine(doc) -> ReglagesEvaluation:
     par_type: dict[TypeExercice, list] = {}
     for ligne in doc.etapes:
@@ -54,12 +59,14 @@ def vers_domaine(doc) -> ReglagesEvaluation:
                     delai_minutes=int(doc.ia_delai_minutes or 0), seuil_confiance=float(doc.ia_seuil_confiance or 0),
                     tournures_injection=tuple(t.texte for t in doc.tournures) or TOURNURES_DEFAUT,
                     plafond_caracteres=int(doc.ia_plafond_caracteres or 0),
-                    contexte_tokens=int(doc.contexte_ia_tokens or 0) or defaut.ia.contexte_tokens),
+                    contexte_tokens=int(doc.contexte_ia_tokens or 0) or defaut.ia.contexte_tokens,
+                    citation_min_caracteres=_entier(doc.ia_citation_min_caracteres, defaut.ia.citation_min_caracteres)),
         publication_provisoire=bool(doc.publication_provisoire),
         responsable_pedagogique=doc.responsable_pedagogique or "", hotes_depots=_lignes(doc.hotes_depots) or defaut.hotes_depots,
         longueur_min_caracteres=int(doc.longueur_min_caracteres or 0),
         grille_generique=tuple((c.nom, int(c.poids or 0)) for c in doc.grille_generique) or GRILLE_GENERIQUE_DEFAUT,
         niveaux_generiques=_lignes(doc.niveaux_generiques) or defaut.niveaux_generiques,
+        **{champ: _entier(doc.get(champ), getattr(defaut, champ)) for champ in CHAMPS_INSTANTANE},
     )
 
 
@@ -149,7 +156,7 @@ def initialiser() -> None:
         "ia_plafond_caracteres": ia.plafond_caracteres, "contexte_ia_tokens": ia.contexte_tokens,
         "hotes_depots": "\n".join(defaut.hotes_depots),
         "niveaux_generiques": "\n".join(defaut.niveaux_generiques),
-        "longueur_min_caracteres": defaut.longueur_min_caracteres,
+        **_champs_completes(defaut),
     })
     doc.set("etapes", [{"type_exercice": type_.value, "etape": c.etape.value, "active": c.active,
                         "delai_heures": c.delai_heures, "expiration": c.expiration.value}
@@ -160,10 +167,23 @@ def initialiser() -> None:
     doc.save(ignore_permissions=True)
 
 
+CHAMPS_INSTANTANE = ("instantane_fichiers_max", "instantane_delai_s", "instantane_budget_s",
+                     "instantane_budget_tache_s")  # même nom dans la console et dans le domaine
+
+
+def _champs_completes(defaut: ReglagesEvaluation) -> dict:
+    """Champs de la console ajoutés après l'initialisation des premiers sites, avec le défaut du domaine."""
+    return {"longueur_min_caracteres": defaut.longueur_min_caracteres,
+            "ia_citation_min_caracteres": defaut.ia.citation_min_caracteres,
+            **{champ: getattr(defaut, champ) for champ in CHAMPS_INSTANTANE}}
+
+
 def completer_champs() -> None:
-    """Champ ajouté après l'initialisation d'un site : il reçoit le défaut du domaine, jamais par-dessus une valeur réglée."""
-    if not frappe.db.sql("select 1 from `tabSingles` where doctype=%s and field='longueur_min_caracteres'", REGLAGES):
-        frappe.db.set_single_value(REGLAGES, "longueur_min_caracteres", ReglagesEvaluation().longueur_min_caracteres)
+    """Champ ajouté après l'initialisation d'un site : il reçoit le défaut du domaine, jamais par-dessus une valeur
+    réglée (même nulle)."""
+    for champ, valeur in _champs_completes(ReglagesEvaluation()).items():
+        if not frappe.db.sql("select 1 from `tabSingles` where doctype=%s and field=%s", (REGLAGES, champ)):
+            frappe.db.set_single_value(REGLAGES, champ, valeur)
 
 
 def creer_role() -> None:

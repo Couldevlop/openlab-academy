@@ -248,6 +248,12 @@ class TestInterpreter(unittest.TestCase):
         p = interpreter(_avec_pertinence(_crit(3, citation="le marché")), GRILLE, COPIE)
         self.assertEqual(p.niveaux["pertinence"], 3)
 
+    def test_longueur_minimale_de_citation_reglable(self):
+        brut = _avec_pertinence(_crit(3, citation="ANSUT"))  # 5 caractères, présents dans la copie
+        self.assertNotIn("pertinence", interpreter(brut, GRILLE, COPIE).niveaux)  # défaut : 8
+        self.assertEqual(interpreter(brut, GRILLE, COPIE, citation_min=5).niveaux["pertinence"], 3)
+        self.assertNotIn("pertinence", interpreter(brut, GRILLE, COPIE, citation_min=6).niveaux)
+
     def test_citation_vide_critere_a_revoir(self):
         p = interpreter(_avec_pertinence(_crit(3, citation="   ")), GRILLE, COPIE)
         self.assertNotIn("pertinence", p.niveaux)

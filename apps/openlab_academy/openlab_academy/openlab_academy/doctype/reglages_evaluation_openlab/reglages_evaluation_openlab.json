@@ -22,11 +22,16 @@
   "ia_seuil_confiance",
   "ia_plafond_caracteres",
   "contexte_ia_tokens",
+  "ia_citation_min_caracteres",
   "section_tournures",
   "tournures",
   "section_depots",
   "hotes_depots",
   "jeton_depots",
+  "instantane_fichiers_max",
+  "instantane_delai_s",
+  "instantane_budget_s",
+  "instantane_budget_tache_s",
   "longueur_min_caracteres",
   "niveaux_generiques",
   "grille_generique"
@@ -127,6 +132,14 @@
    "description": "Fenêtre du serveur d'inférence, prompt et réponse compris. Une copie dont le prompt estimé dépasse ce contexte (moins 1024 jetons réservés à la réponse) n'est pas envoyée : l'étape IA est marquée non disponible, jamais tronquée."
   },
   {
+   "fieldname": "ia_citation_min_caracteres",
+   "fieldtype": "Int",
+   "label": "Longueur minimale d'une citation (caractères)",
+   "default": "8",
+   "non_negative": 1,
+   "description": "Hors blancs. Une citation plus courte, ou absente de la copie, met le critère « à revoir » (au moins 1)."
+  },
+  {
    "fieldname": "section_tournures",
    "fieldtype": "Section Break",
    "label": "Tournures d'injection détectées"
@@ -151,6 +164,38 @@
    "fieldname": "jeton_depots",
    "fieldtype": "Password",
    "label": "Jeton d'accès à l'API GitHub (facultatif, lecture seule)"
+  },
+  {
+   "fieldname": "instantane_fichiers_max",
+   "fieldtype": "Int",
+   "label": "Fichiers lus par instantané de dépôt",
+   "default": "12",
+   "non_negative": 1,
+   "description": "Nombre maximal de fichiers lus dans un dépôt rendu par lien."
+  },
+  {
+   "fieldname": "instantane_delai_s",
+   "fieldtype": "Int",
+   "label": "Délai d'un appel à l'hébergeur (s)",
+   "default": "10",
+   "non_negative": 1,
+   "description": "Au-delà, l'appel est abandonné."
+  },
+  {
+   "fieldname": "instantane_budget_s",
+   "fieldtype": "Int",
+   "label": "Durée maximale de l'instantané au rendu (s)",
+   "default": "20",
+   "non_negative": 1,
+   "description": "Au-delà, l'apprenant n'attend plus : l'instantané est repris en tâche de fond."
+  },
+  {
+   "fieldname": "instantane_budget_tache_s",
+   "fieldtype": "Int",
+   "label": "Durée maximale de l'instantané en tâche de fond (s)",
+   "default": "60",
+   "non_negative": 1,
+   "description": "Au-delà, l'instantané est abandonné : un hébergeur indisponible ne bloque jamais la copie."
   },
   {
    "fieldname": "longueur_min_caracteres",
@@ -188,7 +233,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-21 04:00:00",
+ "modified": "2026-10-21 14:00:00",
  "sort_field": "modified",
  "sort_order": "DESC",
  "custom": 0,

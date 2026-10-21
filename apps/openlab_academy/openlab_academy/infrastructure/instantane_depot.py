@@ -19,7 +19,6 @@ from openlab_academy.application.controler import EtapeIndisponible
 
 DELAI_S = 10
 BUDGET_S = 20  # durée totale d'un instantané pris pendant le rendu de l'apprenant
-BUDGET_TACHE_S = 60  # durée totale d'un instantané repris en tâche de fond
 JSON_MAX = 8 * 1024 * 1024
 FICHIERS_MAX = 12
 PAGES_MAX = 10

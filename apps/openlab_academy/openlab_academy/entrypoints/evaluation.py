@@ -19,7 +19,7 @@ from openlab_academy.infrastructure.depot_copies_frappe import DepotCopiesFrappe
 from openlab_academy.infrastructure.depot_relectures_frappe import DepotRelecturesFrappe
 from openlab_academy.infrastructure.controles import ControleurDepots
 from openlab_academy.infrastructure.correcteur_ia import CorrecteurCompatibleOpenAI
-from openlab_academy.infrastructure.instantane_depot import BUDGET_TACHE_S, InstantaneDepot
+from openlab_academy.infrastructure.instantane_depot import InstantaneDepot
 
 CHAMPS = ("name", "assignment", "member", "type", "answer", "assignment_attachment")
 POINT = "openlab_rendu"
@@ -84,13 +84,19 @@ def _executer(copie_id: str, etape: Etape, libelle: str, construire: Callable[[]
     cas.executer(copie_id)
 
 
+def instantane_depot(reglages, jeton: str, budget_s: int) -> InstantaneDepot:
+    """Limites de l'instantané réglées dans la console ; le budget dépend du moment (rendu ou tâche de fond)."""
+    return InstantaneDepot(reglages.hotes_depots, plafond=reglages.ia.plafond_caracteres,
+                           delai_s=reglages.instantane_delai_s, fichiers_max=reglages.instantane_fichiers_max,
+                           jeton=jeton, budget_s=budget_s)
+
+
 def controler(copie_id: str) -> None:
     """Contrôles automatiques : un échec bloquant renvoie la copie, un hébergeur indisponible la laisse avancer.
     Un rendu en URL sans instantané (hébergeur injoignable au rendu) est photographié ici, avec plus de temps."""
     def construire():
         reglages, jeton = reglages_evaluation_frappe.charger(), reglages_evaluation_frappe.jeton_depots()
-        instantane = InstantaneDepot(reglages.hotes_depots, reglages.ia.plafond_caracteres, jeton=jeton,
-                                     budget_s=BUDGET_TACHE_S)
+        instantane = instantane_depot(reglages, jeton, reglages.instantane_budget_tache_s)
         return ControlerCopie(DepotCopiesFrappe(), ControleurDepots(reglages, jeton=jeton), avanceur(),
                               journal_frappe.journaliser, notifier, instantane)
     _executer(copie_id, Etape.CONTROLES, "contrôles non disponibles", construire)
@@ -139,8 +145,7 @@ def liberer_plus_tard(apprenant: str) -> None:
 
 def soumettre(soumission: dict) -> str | None:
     reglages = reglages_evaluation_frappe.charger()
-    instantane = InstantaneDepot(reglages.hotes_depots, reglages.ia.plafond_caracteres,
-                                 jeton=reglages_evaluation_frappe.jeton_depots())
+    instantane = instantane_depot(reglages, reglages_evaluation_frappe.jeton_depots(), reglages.instantane_budget_s)
     return SoumettreCopie(DepotCopiesFrappe(), instantane, reglages, now_datetime,
                           reglages_evaluation_frappe.surcharges, journal_frappe.journaliser,
                           lambda copie_id: isoler(lambda: avanceur().demarrer(copie_id))).executer(soumission)

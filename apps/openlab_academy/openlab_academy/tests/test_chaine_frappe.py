@@ -19,7 +19,8 @@ from openlab_academy.openlab_academy.doctype.copie_openlab import copie_openlab
 from openlab_academy.openlab_academy.doctype.relecture_pair_openlab import relecture_pair_openlab
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
 from openlab_academy.infrastructure.depot_relectures_frappe import DepotRelecturesFrappe
-from openlab_academy.infrastructure.reglages_evaluation_frappe import SourceReglagesFrappe
+from openlab_academy.infrastructure.instantane_depot import InstantaneDepot
+from openlab_academy.infrastructure.reglages_evaluation_frappe import REGLAGES, SourceReglagesFrappe
 from openlab_academy.tests.test_depot_copies_frappe import A, B, Base
 from openlab_academy.tests.http_simule import SHA, Reponse, github
 from openlab_academy.tests.test_reglages_evaluation_frappe import etapes_formateur
@@ -67,6 +68,18 @@ class Cas(Base):
 
 
 class TestDemarrage(Cas):
+    def test_instantane_regle_par_la_console(self):
+        for champ, valeur in (("instantane_fichiers_max", 3), ("instantane_delai_s", 4), ("instantane_budget_s", 7),
+                              ("instantane_budget_tache_s", 30), ("ia_plafond_caracteres", 5000)):
+            frappe.db.set_single_value(REGLAGES, champ, valeur)
+        with mock.patch.object(evaluation, "InstantaneDepot", wraps=InstantaneDepot) as instantane:
+            self.soumettre(self.livrable)
+            evaluation.controler(self.copie_de())
+        rendu, tache = instantane.call_args_list[0].kwargs, instantane.call_args_list[-1].kwargs
+        commun = {"plafond": 5000, "fichiers_max": 3, "delai_s": 4}
+        self.assertEqual({k: rendu[k] for k in (*commun, "budget_s")}, {**commun, "budget_s": 7})
+        self.assertEqual({k: tache[k] for k in (*commun, "budget_s")}, {**commun, "budget_s": 30})
+
     def test_rendu_demarre_la_chaine(self):
         self.soumettre(self.livrable)
         copie = self.copie_de()

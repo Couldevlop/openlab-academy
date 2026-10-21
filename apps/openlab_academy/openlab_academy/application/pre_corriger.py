@@ -66,7 +66,8 @@ class PreCorriger:
         if estimes > disponibles:  # jamais de troncature : la copie entière ou rien
             raise EtapeIndisponible(f"copie trop longue pour le contexte du modèle ({estimes} jetons estimés, "
                                     f"{disponibles} disponibles)")
-        proposition = interpreter(self._correcteur.proposer(messages, modele), grille, texte)
+        proposition = interpreter(self._correcteur.proposer(messages, modele), grille, texte,
+                                  self._ia.citation_min_caracteres)
         return "pré-correction proposée", {"modele": modele, "confiance": proposition.confiance}, proposition
 
     def _conclure(self, copie_id: str, action: str, details: dict, proposition=None) -> None:

@@ -13,7 +13,7 @@ from openlab_academy.domain.grille import Grille
 
 AUTEUR_IA = "ia"
 CONFIANCE_CRITERE_A_REVOIR = 0.0
-CITATION_MIN_CARACTERES = 8  # hors blancs, en forme normalisée : en deçà, un extrait figure dans toute copie
+CITATION_MIN_CARACTERES = 8  # défaut, réglable dans la console (ConfigIA) : hors blancs, en forme normalisée
 CARACTERES_PAR_JETON = 3  # estimation prudente : ≈ 3,2 mesurés en français (code compris)
 JETONS_PAR_MESSAGE = 8  # gabarit de conversation (rôle, balises) autour de chaque message
 
@@ -128,7 +128,7 @@ def _par_code(reponses: dict, grille: Grille) -> dict:
     return ramenees
 
 
-def interpreter(brut: str, grille: Grille, copie: str) -> Proposition:
+def interpreter(brut: str, grille: Grille, copie: str, citation_min: int = CITATION_MIN_CARACTERES) -> Proposition:
     donnees = _extraire_json(brut)
     reponses = donnees.get("criteres")
     if not isinstance(reponses, dict):
@@ -157,7 +157,7 @@ def interpreter(brut: str, grille: Grille, copie: str) -> Proposition:
             raise ReponseIARejetee(f"critère « {code} » : niveau {niveau} hors bornes (0 à {len(critere.niveaux) - 1})")
         citation = normaliser(reponse["citation"])
         citations[code] = reponse["citation"]
-        if len(citation.replace(" ", "")) >= CITATION_MIN_CARACTERES and citation in texte:
+        if len(citation.replace(" ", "")) >= citation_min and citation in texte:
             niveaux[code] = niveau
             commentaires[code] = reponse["justification"]
         else:

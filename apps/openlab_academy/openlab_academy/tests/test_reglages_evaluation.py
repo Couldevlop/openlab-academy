@@ -123,6 +123,19 @@ class TestValidation(unittest.TestCase):
             ReglagesEvaluation(longueur_min_caracteres=-1)
 
 
+    def test_limites_reglables(self):
+        r = ReglagesEvaluation()
+        self.assertEqual((r.ia.citation_min_caracteres, r.instantane_fichiers_max, r.instantane_delai_s,
+                          r.instantane_budget_s, r.instantane_budget_tache_s), (8, 12, 10, 20, 60))
+        for champ in ("instantane_fichiers_max", "instantane_delai_s", "instantane_budget_s",
+                      "instantane_budget_tache_s"):
+            with self.subTest(champ=champ), self.assertRaisesRegex(ReglagesInvalides, champ):
+                ReglagesEvaluation(**{champ: 0})
+        with self.assertRaisesRegex(ReglagesInvalides, "citation_min_caracteres"):
+            ConfigIA(citation_min_caracteres=0)
+        self.assertEqual(ConfigIA(citation_min_caracteres=1).citation_min_caracteres, 1)
+
+
 class TestChainePour(unittest.TestCase):
     def setUp(self):
         self.r = ReglagesEvaluation()
