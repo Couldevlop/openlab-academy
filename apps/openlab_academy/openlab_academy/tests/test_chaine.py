@@ -551,6 +551,14 @@ class TestTraiterEcheances(Cas):
                       [(j[2], j[3]) for j in self.journal])
         self.assertNotIn(a, self.m.copies_en_souffrance())
 
+    def test_souffrance_levee_entre_la_selection_et_le_verrou(self):
+        a = self.epuiser()
+        self.m.lever_souffrance(a)
+        self.m.copies_en_souffrance = lambda: [a]  # sélection périmée
+        self.avancer_horloge(48)
+        self.assertEqual(self.souffrance(), [])
+        self.assertIsNone(self.m.etat(a).rappel_souffrance)
+
     def test_souffrance_levee_quand_la_copie_est_publiee(self):
         a = self.epuiser()
         self.m.changer_statut(a, Statut.PUBLIEE, "formateur", None)

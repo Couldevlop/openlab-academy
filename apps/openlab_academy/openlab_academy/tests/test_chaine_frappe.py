@@ -314,6 +314,13 @@ class TestDemarrage(Cas):
         self.assertEqual(self.ligne(copie).etape_courante, "controles")
 
 
+    def test_point_de_sauvegarde_absent_consigne(self):
+        with mock.patch.object(evaluation.frappe.db, "rollback", side_effect=RuntimeError("savepoint absent")), \
+                mock.patch.object(evaluation.frappe, "log_error") as consigne:
+            evaluation._annuler("jamais_pose")
+        self.assertEqual(consigne.call_args.kwargs["title"], "openlab_academy : point de sauvegarde absent")
+
+
 class TestPairsFrappe(Cas):
     def test_cohorte_de_deux_se_relit_et_avance(self):
         self.en_relecture()

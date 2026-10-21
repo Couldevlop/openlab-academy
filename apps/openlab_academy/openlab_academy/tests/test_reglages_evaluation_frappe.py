@@ -9,7 +9,7 @@ from openlab_academy.domain.delegation import Delegation
 from openlab_academy.domain.reglages_evaluation import (
     CHAINES_DEFAUT, ConfigIA, Etape, Expiration, ReglagesEvaluation, TypeExercice)
 from openlab_academy.entrypoints import install
-from openlab_academy.infrastructure import journal_frappe
+from openlab_academy.infrastructure import delegations_frappe, journal_frappe
 from openlab_academy.infrastructure import reglages_evaluation_frappe as source
 from openlab_academy.patches import initialiser_reglages_evaluation, migrer_surcharges_partielles
 
@@ -488,6 +488,14 @@ class TestEquipes(FrappeTestCase):
         migrer_surcharges_partielles.execute()  # idempotent
         self.assertEqual(len(source.equipes()), 2)
 
+    def test_patch_meme_suppleant_sur_deux_surcharges_de_la_meme_cible(self):
+        lot, devoir = un_lot(), un_devoir()
+        self._surcharge_ancienne(exercice=devoir, suppleant=RESP_DELEG, nb_pairs="3")
+        self._surcharge_ancienne(exercice=devoir, cohorte=lot, suppleant=RESP_DELEG, nb_pairs="3")
+        migrer_surcharges_partielles.execute()
+        (equipe,) = source.equipes()
+        self.assertEqual((equipe.exercice, equipe.suppleants), (devoir, (RESP_DELEG,)))  # une seule fois
+
     def test_patch_rejoue_ne_touche_pas_une_surcharge_au_nouveau_format(self):
         migrer_surcharges_partielles.execute()
         lot, devoir = un_lot(), un_devoir()
@@ -586,6 +594,23 @@ class TestDelegations(FrappeTestCase):
             sujets = frappe.get_all("Notification Log", {"for_user": qui, "subject": ["like", f"%{doc.name}%"]},
                                     pluck="subject")
             self.assertEqual(len(sujets), 3, qui)
+
+    def test_formateur_du_cours_corrige_en_propre(self):
+        instructeur = "instructeur.cours@example.ci"
+        utilisateur(instructeur, "LMS Student")
+        cours = frappe.get_all("LMS Course", pluck="name", limit=1)[0]
+        d = Delegation(instructeur, RESP_DELEG, self.debut, self.fin, cours=cours)
+        self.assertFalse(delegations_frappe.en_propre(instructeur, d))
+        frappe.get_doc({"doctype": "Course Instructor", "parent": cours, "parenttype": "LMS Course",
+                        "parentfield": "instructors", "instructor": instructeur}).insert(ignore_permissions=True)
+        self.assertTrue(delegations_frappe.en_propre(instructeur, d))
+
+    def test_delegation_echue_ne_compte_pas(self):
+        nom = self._delegation().insert().name
+        d = Delegation("Administrator", "autre@example.ci", self.debut, self.fin)
+        self.assertTrue(delegations_frappe.delegataire_actif(RESP_DELEG, d))
+        frappe.db.set_value(DELEGATION, nom, "fin", add_days(now_datetime(), -1))
+        self.assertFalse(delegations_frappe.delegataire_actif(RESP_DELEG, d))
 
     def test_saisie_du_bureau_dates_en_texte(self):
         """Le bureau Frappe envoie les dates en texte et les champs vides en chaîne vide."""
