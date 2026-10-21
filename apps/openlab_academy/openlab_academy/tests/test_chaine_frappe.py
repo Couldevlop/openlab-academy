@@ -366,7 +366,7 @@ class TestPairsFrappe(Cas):
         s.answer = "https://github.com/aya/livrable-v2"
         s.save(ignore_permissions=True)
         ligne = self.ligne(self.a)
-        self.assertEqual((ligne.statut, ligne.etape_courante, ligne.echeance), ("en_relecture", "", None))
+        self.assertEqual((ligne.statut, ligne.etape_courante, ligne.echeance), ("remplacee", "", None))
         self.assertNotIn(self.a, self.depot.copies_echues(now_datetime() + datetime.timedelta(days=365)))
         self.depot.verrouiller(self.a)
 
