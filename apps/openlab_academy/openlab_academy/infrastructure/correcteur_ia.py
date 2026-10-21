@@ -5,15 +5,22 @@ d'origine ne sont ni recopiées ni chaînées), aucune redirection n'est suivie 
 Elle ne circule en HTTP clair que vers un hôte local ou interne (conteneur voisin, adresse privée).
 """
 import ipaddress
+import re
 from urllib.parse import urlsplit
 
 import requests
 
 from openlab_academy.application.controler import EtapeIndisponible
 
+_NUMERIQUE = re.compile(r"0x[0-9a-f]*|[0-9]+", re.IGNORECASE)
+
 
 def _interne(hote: str) -> bool:
-    """Hôte local ou interne (localhost, nom de conteneur sans point, adresse privée) : HTTP clair toléré."""
+    """Hôte local ou interne (localhost, nom de conteneur sans point, adresse privée) : HTTP clair toléré.
+    Un hôte numérique sans point (`134744072`, `0x7f000001`), que la résolution système lit comme une IPv4, n'est
+    jamais interne."""
+    if _NUMERIQUE.fullmatch(hote):
+        return False
     if hote == "localhost" or "." not in hote and ":" not in hote:
         return True
     try:

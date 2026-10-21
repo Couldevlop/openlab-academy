@@ -65,7 +65,9 @@ class TestCorrecteurCompatibleOpenAI(unittest.TestCase):
     def test_cle_jamais_envoyee_en_http_clair_vers_un_hote_public(self):
         with mock.patch(POST) as post:
             for url in ("http://ia.openlab.ci", "http://8.8.8.8:8080", "http://[::ffff:8.8.8.8]:8080",
-                        "http://[::ffff:808:808]"):  # IPv4 publique déguisée en IPv6 mappée
+                        "http://[::ffff:808:808]",  # IPv4 publique déguisée en IPv6 mappée
+                        "http://134744072", "http://0x8080808", "http://0X7F000001", "http://017700000001"):
+                # adresse numérique sans point : la résolution système en fait une IPv4, jamais « interne »
                 with self.subTest(url=url), self.assertRaisesRegex(CorrecteurIndisponible, "HTTPS requis"):
                     CorrecteurCompatibleOpenAI(url, CLE, 60).proposer(MESSAGES, "m")
         post.assert_not_called()

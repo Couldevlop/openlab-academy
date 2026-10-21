@@ -1,9 +1,10 @@
 """Adaptateur : copies, propositions, relectures, grilles d'exercice et cohorte de l'apprenant dans Frappe."""
 import html
 import json
+import re
 
 import frappe
-from frappe.utils import get_datetime, strip_html_tags
+from frappe.utils import get_datetime
 
 from openlab_academy.application.pre_corriger import SIGNALEMENT
 from openlab_academy.application.soumettre_copie import Contenu, Exercice
@@ -21,6 +22,21 @@ SOUMISSION = "LMS Assignment Submission"
 JOURNAL = "Journal Note OpenLab"
 EN_COURS = [s.value for s in (Statut.RENDUE, Statut.CONTROLEE, Statut.PRE_CORRIGEE, Statut.EN_RELECTURE,
                               Statut.A_CORRIGER)]
+_BLOC = re.compile(r"</?(?:p|div|li|ul|ol|h[1-6]|pre|blockquote|table|tr|section|article|header|footer)\b[^>]*>",
+                   re.IGNORECASE)
+_SAUT = re.compile(r"<br\b[^>]*>", re.IGNORECASE)
+_BALISE = re.compile(r"<[^>]*>")
+_BLANCS = re.compile(r"[^\S\n]+")
+
+
+def texte_brut(fragment: str) -> str:
+    """Texte d'un rendu HTML : un bloc devient un paragraphe, `<br>` un saut de ligne, toute autre balise une
+    espace (deux mots séparés par une balise ne se collent jamais), puis les entités sont décodées."""
+    texte = _BALISE.sub(" ", _SAUT.sub("\n", _BLOC.sub("\n\n", fragment)))
+    lignes = (_BLANCS.sub(" ", ligne).strip() for ligne in html.unescape(texte).split("\n"))
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(lignes)).strip()
+
+
 EN_CORRECTION = [Statut.A_CORRIGER.value, Statut.PROVISOIRE.value]
 
 
@@ -132,7 +148,7 @@ class DepotCopiesFrappe:
     def consigne(self, exercice: str) -> str:
         """Consigne du devoir LMS en texte brut (le HTML de la consigne n'est jamais transmis tel quel)."""
         question = frappe.db.get_value("LMS Assignment", exercice, "question") or ""
-        return html.unescape(strip_html_tags(question)).strip()
+        return texte_brut(question)
 
     def titre(self, exercice: str) -> str:
         """Titre du devoir LMS, à défaut son identifiant (texte brut, échappé à l'affichage)."""
@@ -293,7 +309,7 @@ class DepotCopiesFrappe:
         contenu = self.contenu(copie_id)
         if contenu.rendu_par_lien:
             return contenu.texte
-        return html.unescape(strip_html_tags(contenu.texte)).strip()
+        return texte_brut(contenu.texte)
 
     def existe(self, copie_id: str) -> bool:
         return bool(copie_id) and bool(frappe.db.exists(COPIE, copie_id))

@@ -13,7 +13,15 @@ from openlab_academy.domain.grille import Grille
 
 AUTEUR_IA = "ia"
 CONFIANCE_CRITERE_A_REVOIR = 0.0
-CITATION_MIN_CARACTERES = 8  # en forme normalisée : en deçà, un extrait figure dans presque toute copie
+CITATION_MIN_CARACTERES = 8  # hors blancs, en forme normalisée : en deçà, un extrait figure dans toute copie
+CARACTERES_PAR_JETON = 3  # estimation prudente : ≈ 3,2 mesurés en français (code compris)
+JETONS_PAR_MESSAGE = 8  # gabarit de conversation (rôle, balises) autour de chaque message
+
+# invisibles hors catégorie Cf, conservés par NFKC : joint de graphème, sélecteurs de variante, remplissages
+# hangûl, sélecteurs de variante mongols
+_INVISIBLES = frozenset(
+    [0x034F, 0x115F, 0x1160, 0x3164, 0xFFA0, *range(0x180B, 0x1810), *range(0xFE00, 0xFE10),
+     *range(0xE0100, 0xE01F0)])
 
 _GUILLEMETS = str.maketrans({"«": '"', "»": '"', "“": '"', "”": '"', "’": "'"})
 _BALISE_FERMANTE = re.compile(r"<\s*/\s*copie\s*>", re.IGNORECASE)
@@ -38,10 +46,11 @@ class ReponseIARejetee(ValueError):
 
 def normaliser(texte: str) -> str:
     """Forme comparable : formes de compatibilité Unicode (NFKC : pleine chasse, ligatures), caractères de mise en
-    forme invisibles retirés (largeur nulle, trait d'union conditionnel, sens d'écriture), casse, espaces,
+    forme et autres invisibles retirés (largeur nulle, trait d'union conditionnel, sens d'écriture, sélecteurs de
+    variante, remplissages), casse, espaces,
     guillemets et apostrophes typographiques unifiés."""
     texte = unicodedata.normalize("NFKC", texte)
-    texte = "".join(c for c in texte if unicodedata.category(c) != "Cf")
+    texte = "".join(c for c in texte if unicodedata.category(c) != "Cf" and ord(c) not in _INVISIBLES)
     return " ".join(texte.translate(_GUILLEMETS).lower().split())
 
 
@@ -68,6 +77,11 @@ def construire_messages(grille: Grille, consigne: str, copie: str) -> list[dict]
         f"<copie>\n{copie_neutralisee}\n</copie>"
     )
     return [{"role": "system", "content": MESSAGE_SYSTEME}, {"role": "user", "content": utilisateur}]
+
+
+def estimer_jetons(messages: list[dict]) -> int:
+    """Jetons du prompt, surestimés plutôt que sous-estimés (aucun tokeniseur du modèle n'est disponible ici)."""
+    return sum(-(-len(m["content"]) // CARACTERES_PAR_JETON) + JETONS_PAR_MESSAGE for m in messages)
 
 
 def _extraire_json(brut: str) -> dict:
@@ -142,7 +156,7 @@ def interpreter(brut: str, grille: Grille, copie: str) -> Proposition:
             raise ReponseIARejetee(f"critère « {code} » : niveau {niveau} hors bornes (0 à {len(critere.niveaux) - 1})")
         citation = normaliser(reponse["citation"])
         citations[code] = reponse["citation"]
-        if len(citation) >= CITATION_MIN_CARACTERES and citation in texte:
+        if len(citation.replace(" ", "")) >= CITATION_MIN_CARACTERES and citation in texte:
             niveaux[code] = niveau
             commentaires[code] = reponse["justification"]
         else:
