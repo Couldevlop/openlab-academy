@@ -12,10 +12,11 @@ from typing import Protocol
 from openlab_academy.application.pairs import AttribuerPairs, DepotRelectures, Relecture, StatutRelecture
 from openlab_academy.application.soumettre_copie import DepotCopies
 from openlab_academy.domain.copie import Copie, Etat, Statut, etape_suivante, nb_pairs_possible
-from openlab_academy.domain.echeances import escalade
+from openlab_academy.domain.echeances import prochain_recours
 from openlab_academy.domain.equipe import EquipeEffective
 from openlab_academy.domain.grille import Grille
-from openlab_academy.domain.reglages_evaluation import Chaine, Etape, Expiration, ReglagesEvaluation, Surcharge
+from openlab_academy.domain.reglages_evaluation import (
+    Chaine, Etape, Expiration, ReglagesEvaluation, Surcharge, reste_avant_action_souffrance)
 
 SYSTEME = "systeme"
 TACHES = {Etape.CONTROLES: "controler", Etape.IA: "pre_corriger"}
@@ -32,6 +33,11 @@ class DepotChaine(DepotCopies, Protocol):
     def fixer_butoir(self, copie_id: str, butoir: datetime | None) -> None: ...
     def titulaires(self, copie_id: str) -> set[str]: ...
     def equipe(self, copie_id: str) -> EquipeEffective: ...  # équipe de correction résolue pour la copie
+    # copie en souffrance (escalade épuisée) : marquée, rappelée chaque jour, levée une fois sortie de la chaîne
+    def marquer_souffrance(self, copie_id: str, depuis: datetime) -> None: ...
+    def rappeler_souffrance(self, copie_id: str, quand: datetime) -> None: ...
+    def lever_souffrance(self, copie_id: str) -> None: ...
+    def copies_en_souffrance(self) -> list[str]: ...
     def jures(self, copie_id: str) -> set[str]: ...
 
 
@@ -164,6 +170,8 @@ class TraiterEcheances:
             self._isoler(lambda r=r: self._relecture(r, maintenant))
         for copie_id in self._depot.copies_echues(maintenant):
             self._isoler(lambda copie_id=copie_id: self._copie(copie_id, maintenant))
+        for copie_id in self._depot.copies_en_souffrance():
+            self._isoler(lambda copie_id=copie_id: self._souffrance(copie_id, maintenant))
 
     # --- relecture échue : rappel, puis réattribuée ou annulée, le relecteur en retard étant dispensé ---
     def _relecture(self, r: Relecture, maintenant: datetime) -> None:
@@ -257,31 +265,56 @@ class TraiterEcheances:
         return False
 
     def _formateur(self, copie: Copie, etat: Etat, action: Expiration, delai: int, maintenant: datetime) -> None:
-        """Formateur échu : suppléant, puis responsable pédagogique, puis publication provisoire si elle est permise."""
+        """Formateur échu : les suppléants dans l'ordre, puis le responsable pédagogique, chacun prévenu ; l'escalade
+        épuisée, la copie est en souffrance (rappels quotidiens, puis l'action réglée dans la console)."""
         reglages = self._source.reglages()
         if action == Expiration.PUBLIER_PROVISOIRE and reglages.publication_provisoire:
             self._provisoire(copie)
             return
         equipe = self._depot.equipe(copie.id)
         responsable = equipe.responsable or reglages.responsable_pedagogique
-        if not etat.escalade_a:
-            suivant = escalade(Etape.FORMATEUR, equipe.suppleants[0] if equipe.suppleants else None, responsable)
-            avant = sorted(self._depot.titulaires(copie.id))
-        else:
-            suivant = responsable if etat.escalade_a != responsable else ""
-            avant = [etat.escalade_a]
+        suivant = prochain_recours(etat.escalade_a, equipe.suppleants, responsable)
+        avant = [etat.escalade_a] if etat.escalade_a else sorted(self._depot.titulaires(copie.id))
         lien = LIEN_CORRECTEUR.format(copie.id)
         if suivant:
             self._depot.escalader(copie.id, suivant, maintenant + timedelta(hours=delai))
             self._journal(copie.id, SYSTEME, "escalader", {"correcteurs": avant}, {"correcteurs": [suivant]})
             self._notifier(suivant, f"Une copie vous est confiée (formateur en retard) : {lien}")
-        elif reglages.publication_provisoire:
+            return
+        # plus d'échéance : prévenus une seule fois, la copie attend qu'un humain publie
+        self._depot.changer_statut(copie.id, copie.statut, Etape.FORMATEUR.value, None)
+        self._depot.marquer_souffrance(copie.id, maintenant)
+        self._journal(copie.id, SYSTEME, "escalade épuisée", {"correcteurs": avant}, {"correcteurs": avant})
+        for destinataire in sorted((self._depot.titulaires(copie.id) | set(avant) | {responsable}) - {""}):
+            self._notifier(destinataire, f"Copie en attente de correction, sans autre recours : {lien}")
+
+    def _souffrance(self, copie_id: str, maintenant: datetime) -> None:
+        """Copie en souffrance : levée une fois sortie de la chaîne ; sinon, passé le délai réglé, l'action réglée
+        (publication provisoire si elle est permise) ; sinon, au plus un rappel par jour au responsable."""
+        v = self._depot.verrouiller(copie_id)
+        copie, etat = v.copie, v.etat
+        if etat.souffrance_depuis is None:
+            return
+        if copie.statut in TERMINEES:
+            self._depot.lever_souffrance(copie_id)
+            return
+        reglages = self._source.reglages()
+        reste = reste_avant_action_souffrance(reglages, etat.souffrance_depuis, maintenant)
+        if reste is not None and not reste:
+            self._journal(copie_id, SYSTEME, "souffrance : publication provisoire",
+                          {"depuis": etat.souffrance_depuis}, {})
             self._provisoire(copie)
-        else:  # plus d'échéance : prévenus une seule fois, la copie attend qu'un humain publie
-            self._depot.changer_statut(copie.id, copie.statut, Etape.FORMATEUR.value, None)
-            self._journal(copie.id, SYSTEME, "escalade épuisée", {"correcteurs": avant}, {"correcteurs": avant})
-            for destinataire in sorted((self._depot.titulaires(copie.id) | set(avant) | {responsable}) - {""}):
-                self._notifier(destinataire, f"Copie en attente de correction, sans autre recours : {lien}")
+            self._depot.lever_souffrance(copie_id)
+            return
+        if etat.rappel_souffrance and maintenant - etat.rappel_souffrance < timedelta(days=1):
+            return
+        responsable = self._depot.equipe(copie_id).responsable or reglages.responsable_pedagogique
+        if responsable:
+            depuis = f"{etat.souffrance_depuis:%d/%m/%Y à %H:%M}"
+            self._notifier(responsable, f"Rappel : copie en souffrance depuis le {depuis}, aucun correcteur ne l'a "
+                                        f"prise : {LIEN_CORRECTEUR.format(copie_id)}")
+            self._journal(copie_id, SYSTEME, "rappel : copie en souffrance", {}, {"destinataire": responsable})
+        self._depot.rappeler_souffrance(copie_id, maintenant)
 
     def _provisoire(self, copie: Copie) -> None:
         self._depot.changer_statut(copie.id, copie.passer_a(Statut.PROVISOIRE).statut, Etape.FORMATEUR.value, None)

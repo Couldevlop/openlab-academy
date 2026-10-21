@@ -87,12 +87,16 @@ def marquer_versions_remplacees() -> None:
 
 
 CHAMPS_COPIE = ["name", "apprenant", "exercice", "cohorte", "type_exercice", "version", "statut"]
-CHAMPS_ETAT = ["etape_courante", "echeance", "escalade_a", "butoir"]
+CHAMPS_ETAT = ["etape_courante", "echeance", "escalade_a", "butoir", "souffrance_depuis", "rappel_souffrance"]
+
+
+def _date(valeur):
+    return get_datetime(valeur) if valeur else None
 
 
 def _etat(ligne) -> Etat:
-    return Etat(ligne.etape_courante or "", get_datetime(ligne.echeance) if ligne.echeance else None,
-                ligne.escalade_a or "", get_datetime(ligne.butoir) if ligne.butoir else None)
+    return Etat(ligne.etape_courante or "", _date(ligne.echeance), ligne.escalade_a or "", _date(ligne.butoir),
+                _date(ligne.souffrance_depuis), _date(ligne.rappel_souffrance))
 
 
 def _copie(doc) -> Copie:
@@ -253,6 +257,26 @@ class DepotCopiesFrappe:
 
     def escalader(self, copie_id: str, destinataire: str, echeance) -> None:
         frappe.db.set_value(COPIE, copie_id, {"escalade_a": destinataire, "echeance": echeance})
+
+    def marquer_souffrance(self, copie_id: str, depuis) -> None:
+        frappe.db.set_value(COPIE, copie_id, {"en_souffrance": 1, "souffrance_depuis": depuis,
+                                              "rappel_souffrance": depuis})
+
+    def rappeler_souffrance(self, copie_id: str, quand) -> None:
+        frappe.db.set_value(COPIE, copie_id, "rappel_souffrance", quand)
+
+    def lever_souffrance(self, copie_id: str) -> None:
+        frappe.db.set_value(COPIE, copie_id, {"en_souffrance": 0, "souffrance_depuis": None,
+                                              "rappel_souffrance": None})
+
+    def copies_en_souffrance(self) -> list[str]:
+        return frappe.get_all(COPIE, {"en_souffrance": 1}, pluck="name", order_by="souffrance_depuis")
+
+    def souffrances(self) -> list[tuple[Copie, Etat]]:
+        """Copies en souffrance encore dans la chaîne, la plus ancienne d'abord."""
+        lignes = frappe.get_all(COPIE, {"en_souffrance": 1, "statut": ["in", EN_COURS]}, CHAMPS_COPIE + CHAMPS_ETAT,
+                                order_by="souffrance_depuis")
+        return [(_copie(ligne), _etat(ligne)) for ligne in lignes]
 
     def fixer_butoir(self, copie_id: str, butoir) -> None:
         frappe.db.set_value(COPIE, copie_id, "butoir", butoir)

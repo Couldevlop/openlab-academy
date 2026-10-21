@@ -7,7 +7,8 @@ from openlab_academy.application.chaine import (
 from openlab_academy.application.pairs import EnregistrerRelecture, StatutRelecture
 from openlab_academy.domain.copie import Copie, Statut
 from openlab_academy.domain.reglages_evaluation import (
-    CHAINES_DEFAUT, Chaine, ConfigEtape, Etape, Expiration, ReglagesEvaluation, Surcharge, TypeExercice)
+    CHAINES_DEFAUT, ActionSouffrance, Chaine, ConfigEtape, Etape, Expiration, ReglagesEvaluation, Surcharge,
+    TypeExercice)
 from openlab_academy.tests.memoire_evaluation import DEBUT, Memoire, SourceMemoire
 
 LIVRABLE = CHAINES_DEFAUT[TypeExercice.LIVRABLE]
@@ -433,11 +434,13 @@ class TestTraiterEcheances(Cas):
         self.assertEqual([n[0] for n in self.notes], ["sup@x.ci", "resp@x.ci"])
         self.assertEqual(self.journal[-1][3:], ({"correcteurs": ["sup@x.ci"]}, {"correcteurs": ["resp@x.ci"]}))
         self.avancer_horloge(1)  # escalade épuisée, publication provisoire désactivée
-        self.assertEqual(self.m.etat(a), Etat("formateur", None, "resp@x.ci"))
+        self.assertEqual(self.m.etat(a), Etat("formateur", None, "resp@x.ci", souffrance_depuis=self.t,
+                                              rappel_souffrance=self.t))
         self.assertEqual(self.m.copie(a).statut, Statut.A_CORRIGER)
         self.assertEqual(self.actions()[-1], "escalade épuisée")
-        self.avancer_horloge(100)
-        self.assertEqual(self.actions()[-1], "escalade épuisée")  # plus rien à traiter
+        self.avancer_horloge(100)  # plus d'escalade : seuls les rappels de la copie en souffrance
+        self.assertEqual(self.actions().count("escalade épuisée"), 1)
+        self.assertEqual(self.actions()[-1], "rappel : copie en souffrance")
 
     def test_escalade_epuisee_previent_une_fois(self):
         self.monter(yaml=chaine(Etape.FORMATEUR), reglages=ReglagesEvaluation(responsable_pedagogique="resp@x.ci"))
@@ -478,10 +481,96 @@ class TestTraiterEcheances(Cas):
         a = self.rendre("a@x.ci")
         self.avancer_horloge(1)
         self.avancer_horloge(1)
-        self.assertEqual(self.m.etat(a), Etat("formateur", None, "r@x.ci"))
+        self.assertEqual((self.m.etat(a).echeance, self.m.etat(a).escalade_a), (None, "r@x.ci"))
+        self.assertEqual(self.m.etat(a).souffrance_depuis, self.t)
+
+    def test_escalade_par_les_suppleants_dans_l_ordre(self):
+        self.monter(yaml=chaine(Etape.FORMATEUR), reglages=ReglagesEvaluation(responsable_pedagogique="resp@x.ci"))
+        self.m.suppleants_ = ("s1@x.ci", "s2@x.ci")
+        a = self.rendre("a@x.ci")
+        for attendu in ("s1@x.ci", "s2@x.ci", "resp@x.ci"):
+            self.avancer_horloge(1)
+            self.assertEqual(self.m.etat(a).escalade_a, attendu)
+        self.assertEqual([n[0] for n in self.notes], ["s1@x.ci", "s2@x.ci", "resp@x.ci"])
+        self.assertEqual([j[3:] for j in self.journal if j[2] == "escalader"],
+                         [({"correcteurs": ["form@x.ci"]}, {"correcteurs": ["s1@x.ci"]}),
+                          ({"correcteurs": ["s1@x.ci"]}, {"correcteurs": ["s2@x.ci"]}),
+                          ({"correcteurs": ["s2@x.ci"]}, {"correcteurs": ["resp@x.ci"]})])
+        self.avancer_horloge(1)
+        self.assertEqual(self.actions()[-1], "escalade épuisée")
+
+    def test_suppleant_retire_de_l_equipe_le_responsable_prend_le_relais(self):
+        self.monter(yaml=chaine(Etape.FORMATEUR), reglages=ReglagesEvaluation(responsable_pedagogique="resp@x.ci"))
+        self.m.suppleants_ = ("s1@x.ci", "s2@x.ci")
+        a = self.rendre("a@x.ci")
+        self.avancer_horloge(1)
+        self.m.suppleants_ = ("s2@x.ci",)
+        self.avancer_horloge(1)
+        self.assertEqual(self.m.etat(a).escalade_a, "resp@x.ci")
+
+    def epuiser(self, **reglages):
+        self.monter(yaml=chaine(Etape.FORMATEUR),
+                    reglages=ReglagesEvaluation(responsable_pedagogique="resp@x.ci", **reglages))
+        a = self.rendre("a@x.ci")
+        self.avancer_horloge(1)
+        self.avancer_horloge(1)  # escalade épuisée : la copie est en souffrance
+        self.assertEqual(self.m.etat(a).souffrance_depuis, self.t)
+        self.notes.clear()
+        return a
+
+    def souffrance(self):
+        return [n for n in self.notes if "en souffrance" in n[1]]
+
+    def test_souffrance_rappel_quotidien_au_responsable(self):
+        a = self.epuiser()
+        self.avancer_horloge(23)
+        self.assertEqual(self.souffrance(), [])
+        self.avancer_horloge(1)
+        self.assertEqual([n[0] for n in self.souffrance()], ["resp@x.ci"])
+        self.assertIn(f"/espace/correcteur/{a}", self.souffrance()[0][1])
+        for _ in range(23):
+            self.avancer_horloge(1)
+        self.assertEqual(len(self.souffrance()), 1)  # au plus un rappel par jour
+        self.avancer_horloge(1)
+        self.assertEqual(len(self.souffrance()), 2)
+        self.assertEqual(self.actions().count("rappel : copie en souffrance"), 2)
+        self.avancer_horloge(24 * 10)
+        self.assertEqual(self.m.copie(a).statut, Statut.A_CORRIGER)  # action par défaut : rien
+
+    def test_souffrance_publication_provisoire_apres_le_delai(self):
+        a = self.epuiser(publication_provisoire=True, souffrance_action=ActionSouffrance.PUBLIER_PROVISOIRE,
+                         souffrance_action_jours=2)
+        depuis = self.t
+        self.avancer_horloge(47)
+        self.assertEqual(self.m.copie(a).statut, Statut.A_CORRIGER)
+        self.avancer_horloge(1)
+        self.assertEqual(self.m.copie(a).statut, Statut.PROVISOIRE)
+        self.assertIsNone(self.m.etat(a).souffrance_depuis)
+        self.assertEqual(self.actions()[-1], "publication provisoire")
+        self.assertIn(("souffrance : publication provisoire", {"depuis": depuis}),
+                      [(j[2], j[3]) for j in self.journal])
+        self.assertNotIn(a, self.m.copies_en_souffrance())
+
+    def test_souffrance_levee_quand_la_copie_est_publiee(self):
+        a = self.epuiser()
+        self.m.changer_statut(a, Statut.PUBLIEE, "formateur", None)
+        self.avancer_horloge(24)
+        self.assertIsNone(self.m.etat(a).souffrance_depuis)
+        self.assertEqual(self.souffrance(), [])
+        self.assertEqual(self.m.copies_en_souffrance(), [])
+
+    def test_souffrance_sans_responsable_pas_de_rappel(self):
+        self.monter(yaml=chaine(Etape.FORMATEUR))
+        a = self.rendre("a@x.ci")
+        self.avancer_horloge(1)  # ni suppléant ni responsable : épuisée d'emblée
+        self.assertEqual(self.m.etat(a).souffrance_depuis, self.t)
+        self.avancer_horloge(48)
+        self.assertEqual(self.souffrance(), [])
 
     def toute_la_chaine_echue(self, provisoire):
-        self.monter(reglages=ReglagesEvaluation(publication_provisoire=provisoire), taille=2)
+        reglages = (ReglagesEvaluation(publication_provisoire=True, souffrance_action=ActionSouffrance.PUBLIER_PROVISOIRE)
+                    if provisoire else ReglagesEvaluation())
+        self.monter(reglages=reglages, taille=2)
         a = self.rendre("a@x.ci")
         for _ in range(24 * 30):
             self.avancer_horloge(1)

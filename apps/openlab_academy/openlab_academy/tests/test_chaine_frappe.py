@@ -580,6 +580,35 @@ class TestDepotChaineFrappe(Cas):
                                   pluck="subject")
         self.assertIn(f"/espace/correcteur/{copie}", sujet)
 
+    def test_escalade_epuisee_copie_en_souffrance(self):
+        lot = self.lot("Administrator", A)
+        inactives = [{"etape": e, "active": 0, "delai_heures": 0, "expiration": "passer"}
+                     for e in ("auto_evaluation", "controles", "ia", "pairs", "jury")]
+        frappe.get_doc({"doctype": "Surcharge Evaluation OpenLab", "cohorte": lot,
+                        "etapes": inactives + etapes_formateur()}).insert()
+        frappe.db.set_single_value("Reglages Evaluation OpenLab", "responsable_pedagogique", "")
+        self.soumettre(self.livrable)
+        copie = self.copie_de()
+        frappe.db.set_value(COPIE, copie, "echeance", now_datetime() - datetime.timedelta(minutes=1))
+        evaluation.traiter_echeances()  # ni suppléant ni responsable : épuisée d'emblée
+        ligne = frappe.db.get_value(COPIE, copie, ["en_souffrance", "souffrance_depuis", "echeance"], as_dict=True)
+        self.assertEqual((ligne.en_souffrance, ligne.echeance), (1, None))
+        self.assertIsNotNone(ligne.souffrance_depuis)
+        self.assertEqual(self.depot.copies_en_souffrance(), [copie])
+        self.assertEqual([c.id for c, _ in self.depot.souffrances()], [copie])
+        frappe.db.set_single_value("Reglages Evaluation OpenLab", "responsable_pedagogique", B)
+        frappe.db.set_value(COPIE, copie, "rappel_souffrance", now_datetime() - datetime.timedelta(hours=25))
+        evaluation.traiter_echeances()
+        (sujet,) = frappe.get_all("Notification Log", {"for_user": B, "subject": ["like", "Rappel : copie en souffrance%"]},
+                                  pluck="subject")
+        self.assertIn(f"/espace/correcteur/{copie}", sujet)
+        frappe.db.set_single_value("Reglages Evaluation OpenLab", {
+            "publication_provisoire": 1, "souffrance_action": "publier_provisoire", "souffrance_action_jours": 0})
+        evaluation.traiter_echeances()
+        ligne = frappe.db.get_value(COPIE, copie, ["statut", "en_souffrance", "souffrance_depuis"], as_dict=True)
+        self.assertEqual((ligne.statut, ligne.en_souffrance, ligne.souffrance_depuis), ("provisoire", 0, None))
+        self.assertIn("souffrance : publication provisoire", self.actions(copie))
+
     def test_suppleant_de_l_equipe_sans_toucher_la_chaine(self):
         lot = self.lot("Administrator", A)
         self.equipe((B, "suppleant"), cohorte=lot)

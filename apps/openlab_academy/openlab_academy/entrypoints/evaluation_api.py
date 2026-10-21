@@ -20,6 +20,7 @@ from openlab_academy.application.pairs import EnregistrerRelecture, RelectureRef
 from openlab_academy.application.retours import (
     AutoEvaluer, ConsulterAccuseDepot, ConsulterRelectures, ConsulterRetour)
 from openlab_academy.domain.delegation import Delegation, DelegationRefusee
+from openlab_academy.domain.reglages_evaluation import reste_avant_action_souffrance
 from openlab_academy.entrypoints import evaluation
 from openlab_academy.infrastructure import delegations_frappe, journal_frappe, reglages_evaluation_frappe
 from openlab_academy.infrastructure.depot_copies_frappe import DepotCopiesFrappe
@@ -32,6 +33,7 @@ LIMITES = {  # requêtes par heure et par utilisateur
     "publier": 600, "deleguer": 30, "revoquer": 30, "file_correction": 300,
     "mes_relectures": 600, "relecture": 600, "mon_auto_evaluation": 600, "mon_retour": 600,
     "copie_a_corriger": 1200, "fiabilite_ia": 120, "accuse_depot": 600, "reglages_effectifs": 300,
+    "copies_en_souffrance": 300,
 }
 
 
@@ -267,6 +269,25 @@ def reglages_effectifs(exercice: str, cohorte: str | None = None) -> dict:
                        "responsable": equipe.responsable or reglages.responsable_pedagogique,
                        "provenance": {**equipe.provenance, **({} if equipe.responsable else {
                            "responsable": "réglages" if reglages.responsable_pedagogique else "aucun"})}}}
+
+
+@frappe.whitelist(methods=["GET"])
+@_api
+@_limite("copies_en_souffrance")
+def copies_en_souffrance() -> dict:
+    """Copies dont l'escalade est épuisée, avec le temps restant avant l'action réglée (aucun : elles attendent)."""
+    if not _superviseur(_moi()):
+        raise AccesRefuse("copies en souffrance réservées au super administrateur et au responsable pédagogique")
+    reglages = reglages_evaluation_frappe.charger()
+    maintenant = now_datetime()
+    copies = []
+    for copie, etat in _depot().souffrances():
+        reste = reste_avant_action_souffrance(reglages, etat.souffrance_depuis, maintenant)
+        copies.append({"copie": copie.id, "apprenant": copie.apprenant, "exercice": copie.exercice,
+                       "cohorte": copie.cohorte, "depuis": etat.souffrance_depuis, "escalade_a": etat.escalade_a,
+                       "action": reglages.souffrance_action.value,
+                       "reste_heures": None if reste is None else round(reste.total_seconds() / 3600, 1)})
+    return {"copies": copies}
 
 
 # --- délégations ---------------------------------------------------------------------------------------

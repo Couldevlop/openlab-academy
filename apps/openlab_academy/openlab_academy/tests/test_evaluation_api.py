@@ -516,6 +516,27 @@ class TestReglagesEffectifs(CasApi):
         self.assertEqual([c["copie"] for c in api.file_correction()["copies"]], [copie])
 
 
+class TestCopiesEnSouffrance(CasApi):
+    def test_reservees_aux_superviseurs_avec_le_temps_restant(self):
+        (copie,) = self.a_corriger(A)
+        depuis = add_days(now_datetime(), -1)
+        frappe.db.set_value("Copie OpenLab", copie, {"en_souffrance": 1, "souffrance_depuis": depuis,
+                                                     "rappel_souffrance": depuis, "echeance": None})
+        frappe.db.set_single_value("Reglages Evaluation OpenLab", {
+            "publication_provisoire": 1, "souffrance_action": "publier_provisoire", "souffrance_action_jours": 3})
+        for qui in ("Administrator", RESP):
+            self.en_tant_que(qui)
+            (ligne,) = api.copies_en_souffrance()["copies"]
+            self.assertEqual((ligne["copie"], ligne["apprenant"], ligne["action"]), (copie, A, "publier_provisoire"))
+            self.assertAlmostEqual(ligne["reste_heures"], 48, delta=0.2)
+        self.en_tant_que("Administrator")
+        frappe.db.set_single_value("Reglages Evaluation OpenLab", "souffrance_action", "rien")
+        self.assertIsNone(api.copies_en_souffrance()["copies"][0]["reste_heures"])
+        self.en_tant_que(FORM)
+        with self.assertRaises(frappe.PermissionError):
+            api.copies_en_souffrance()
+
+
 class TestAdaptateur(CasApi):
     def test_texte_lisible_jamais_en_html(self):
         (copie,) = self.a_corriger(A)
@@ -552,7 +573,7 @@ class TestGardes(CasApi):
         "mon_auto_evaluation": ("E",), "enregistrer_auto_evaluation": ("E", "{}"), "mon_retour": ("C",),
         "file_correction": (), "copie_a_corriger": ("C",), "corriger": ("C", "{}"), "valider_lot": ("[]",),
         "publier": ("C",), "deleguer": ("D", "2026-01-01", "2026-01-02"), "revoquer": ("D",), "fiabilite_ia": (),
-        "accuse_depot": ("C",), "reglages_effectifs": ("E",),
+        "accuse_depot": ("C",), "reglages_effectifs": ("E",), "copies_en_souffrance": (),
     }
 
     def test_visiteur_refuse_partout(self):
@@ -588,10 +609,11 @@ class TestGardes(CasApi):
                         pass
                 frappe.local.message_log = []
         self.assertEqual(set(api.LIMITES), set(self.APPELS))  # lectures comprises
-        self.assertEqual(requete.method, "GET")  # dernier point : reglages_effectifs, une lecture
+        self.assertEqual(requete.method, "GET")  # dernier point : copies_en_souffrance, une lecture
 
     LECTURES = {"mes_relectures", "relecture", "mon_auto_evaluation", "mon_retour", "file_correction",
-                "copie_a_corriger", "fiabilite_ia", "accuse_depot", "reglages_effectifs"}
+                "copie_a_corriger", "fiabilite_ia", "accuse_depot", "reglages_effectifs",
+                "copies_en_souffrance"}
 
     def test_lectures_en_get_seulement(self):
         """La liste des lectures du test de débit suit les méthodes déclarées par chaque point."""

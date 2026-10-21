@@ -18,6 +18,14 @@ def action_due(echeance: Echeance, chaine: Chaine, maintenant: datetime) -> Expi
     return None
 
 
-def escalade(etape: Etape, suppleant: str | None, responsable: str) -> str:
-    """Destinataire d'une escalade : le suppléant de l'étape, sinon le responsable pédagogique."""
-    return suppleant or responsable
+def prochain_recours(actuel: str, suppleants: tuple[str, ...], responsable: str) -> str:
+    """Après le titulaire (`actuel` vide) puis chaque recours : les suppléants dans l'ordre, puis le responsable
+    pédagogique ; vide quand l'escalade est épuisée. Un recours retiré de l'équipe entre-temps passe la main au
+    responsable."""
+    recours = [p for p in dict.fromkeys((*suppleants, responsable)) if p]
+    if not actuel:
+        return recours[0] if recours else ""
+    if actuel in recours:
+        suite = recours[recours.index(actuel) + 1:]
+        return suite[0] if suite else ""
+    return responsable

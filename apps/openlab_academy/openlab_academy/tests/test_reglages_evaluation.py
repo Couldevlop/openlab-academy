@@ -1,10 +1,11 @@
 import unittest
 from dataclasses import replace
+from datetime import datetime, timedelta
 
 from openlab_academy.domain.reglages import ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import (
     CHAINES_DEFAUT, RESERVE_REPONSE_JETONS, Chaine, ConfigEtape, ConfigIA, Etape, Expiration, ReglagesEvaluation,
-    Resoumission, Surcharge, TypeExercice, surcharges_invalidees,
+    ActionSouffrance, Resoumission, Surcharge, TypeExercice, reste_avant_action_souffrance, surcharges_invalidees,
 )
 
 E = Etape
@@ -251,6 +252,28 @@ class TestChainePour(unittest.TestCase):
                          "défauts")
         self.assertEqual(self.r.resoudre_reglages(TypeExercice.PROJET, None, None, (), self.yaml)["nb_pairs"],
                          {"valeur": 4, "source": "YAML de l'exercice"})
+
+
+class TestSouffrance(unittest.TestCase):
+    def test_defauts(self):
+        r = ReglagesEvaluation()
+        self.assertEqual((r.souffrance_action, r.souffrance_action_jours), (ActionSouffrance.RIEN, 3))
+
+    def test_publication_provisoire_seulement_si_permise(self):
+        with self.assertRaisesRegex(ReglagesInvalides, "publication provisoire"):
+            ReglagesEvaluation(souffrance_action=ActionSouffrance.PUBLIER_PROVISOIRE)
+        ReglagesEvaluation(publication_provisoire=True, souffrance_action=ActionSouffrance.PUBLIER_PROVISOIRE)
+
+    def test_delai_negatif_refuse(self):
+        with self.assertRaisesRegex(ReglagesInvalides, "souffrance_action_jours"):
+            ReglagesEvaluation(souffrance_action_jours=-1)
+
+    def test_temps_restant_avant_l_action(self):
+        depuis = datetime(2026, 10, 1, 8)
+        r = ReglagesEvaluation(publication_provisoire=True, souffrance_action=ActionSouffrance.PUBLIER_PROVISOIRE)
+        self.assertEqual(reste_avant_action_souffrance(r, depuis, depuis + timedelta(days=1)), timedelta(days=2))
+        self.assertEqual(reste_avant_action_souffrance(r, depuis, depuis + timedelta(days=5)), timedelta(0))
+        self.assertIsNone(reste_avant_action_souffrance(ReglagesEvaluation(), depuis, depuis))
 
 
 class TestSurchargesInvalidees(unittest.TestCase):

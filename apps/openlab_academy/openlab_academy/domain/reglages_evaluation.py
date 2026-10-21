@@ -5,6 +5,7 @@ car seul un humain publie une note définitive.
 """
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
+from datetime import datetime, timedelta
 from enum import Enum
 
 from openlab_academy.domain.reglages import ReglagesInvalides
@@ -41,6 +42,13 @@ class Expiration(str, Enum):
     ESCALADER = "escalader"
     DISPENSER = "dispenser"
     PUBLIER_PROVISOIRE = "publier_provisoire"
+
+
+class ActionSouffrance(str, Enum):
+    """Action appliquée à une copie restée en souffrance (escalade épuisée) au-delà du délai réglé."""
+
+    RIEN = "rien"  # la copie attend ; le responsable est rappelé chaque jour
+    PUBLIER_PROVISOIRE = "publier_provisoire"  # seulement si la publication provisoire est permise
 
 
 class Resoumission(str, Enum):
@@ -251,6 +259,8 @@ class ReglagesEvaluation:
     remise_par_heure: int = 20  # nouveaux rendus par apprenant et par heure ; au-delà, le rendu est refusé (429)
     remise_regroupement_s: int = 30  # rendus rapprochés : seul le dernier est photographié
     resoumission_jusqua: Resoumission = Resoumission.DEBUT_CORRECTION
+    souffrance_action_jours: int = 3  # jours en souffrance avant l'action réglée
+    souffrance_action: ActionSouffrance = ActionSouffrance.RIEN
 
     def __post_init__(self):
         for type_, chaine in self.chaines.items():
@@ -267,6 +277,10 @@ class ReglagesEvaluation:
                 raise ReglagesInvalides(f"{champ} doit être positif")
         if self.remise_regroupement_s < 0:
             raise ReglagesInvalides("remise_regroupement_s ne peut pas être négatif")
+        if self.souffrance_action_jours < 0:
+            raise ReglagesInvalides("souffrance_action_jours ne peut pas être négatif")
+        if self.souffrance_action == ActionSouffrance.PUBLIER_PROVISOIRE and not self.publication_provisoire:
+            raise ReglagesInvalides("copie en souffrance : publication provisoire non autorisée (option désactivée)")
 
     def _verifier_publication(self, chaine: Chaine, type_: TypeExercice) -> Chaine:
         if (not self.publication_provisoire
@@ -355,3 +369,12 @@ def surcharges_invalidees(reglages: ReglagesEvaluation, surcharges: tuple[Surcha
                 break
     return [(libelle, motif) for indices, libelle, motif in fautives
             if impliquant is None or any(surcharges[i] == impliquant for i in indices)]
+
+
+def reste_avant_action_souffrance(reglages: ReglagesEvaluation, depuis: datetime,
+                                  maintenant: datetime) -> timedelta | None:
+    """Temps restant avant l'action réglée sur une copie en souffrance ; aucun quand l'action est de ne rien faire
+    (ou que la publication provisoire n'est plus permise)."""
+    if reglages.souffrance_action != ActionSouffrance.PUBLIER_PROVISOIRE or not reglages.publication_provisoire:
+        return None
+    return max(depuis + timedelta(days=reglages.souffrance_action_jours) - maintenant, timedelta(0))

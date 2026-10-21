@@ -143,6 +143,18 @@ class Memoire:
     def escalader(self, copie_id, destinataire, echeance):
         self.etats[copie_id] = replace(self.etats[copie_id], escalade_a=destinataire, echeance=echeance)
 
+    def marquer_souffrance(self, copie_id, depuis):
+        self.etats[copie_id] = replace(self.etats[copie_id], souffrance_depuis=depuis, rappel_souffrance=depuis)
+
+    def rappeler_souffrance(self, copie_id, quand):
+        self.etats[copie_id] = replace(self.etats[copie_id], rappel_souffrance=quand)
+
+    def lever_souffrance(self, copie_id):
+        self.etats[copie_id] = replace(self.etats[copie_id], souffrance_depuis=None, rappel_souffrance=None)
+
+    def copies_en_souffrance(self):
+        return sorted(cid for cid, e in self.etats.items() if e.souffrance_depuis is not None)
+
     def titulaires(self, copie_id):
         return set(self.titulaires_)
 

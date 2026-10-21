@@ -8,7 +8,8 @@ from frappe.utils.password import get_decrypted_password
 from openlab_academy.domain.delegation import Delegation
 from openlab_academy.domain.reglages import ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import (
-    CHAINES_DEFAUT, GRILLE_GENERIQUE_DEFAUT, OPTIONS_CHAINE, Chaine, ConfigEtape, ConfigIA, Etape, Expiration,
+    CHAINES_DEFAUT, GRILLE_GENERIQUE_DEFAUT, OPTIONS_CHAINE, ActionSouffrance, Chaine, ConfigEtape, ConfigIA, Etape,
+    Expiration,
     ReglagesEvaluation, Resoumission, Surcharge, TypeExercice, TOURNURES_DEFAUT)
 from openlab_academy.domain.equipe import Equipe
 
@@ -75,6 +76,8 @@ def vers_domaine(doc) -> ReglagesEvaluation:
         niveaux_generiques=_lignes(doc.niveaux_generiques) or defaut.niveaux_generiques,
         **{champ: _entier(doc.get(champ), getattr(defaut, champ)) for champ in CHAMPS_INSTANTANE},
         resoumission_jusqua=Resoumission(doc.get("resoumission_jusqua") or defaut.resoumission_jusqua),
+        souffrance_action_jours=_entier(doc.get("souffrance_action_jours"), defaut.souffrance_action_jours),
+        souffrance_action=ActionSouffrance(doc.get("souffrance_action") or defaut.souffrance_action),
     )
 
 
@@ -269,7 +272,9 @@ def _champs_completes(defaut: ReglagesEvaluation) -> dict:
     return {"longueur_min_caracteres": defaut.longueur_min_caracteres,
             "ia_citation_min_caracteres": defaut.ia.citation_min_caracteres,
             **{champ: getattr(defaut, champ) for champ in CHAMPS_INSTANTANE},
-            "resoumission_jusqua": defaut.resoumission_jusqua.value}
+            "resoumission_jusqua": defaut.resoumission_jusqua.value,
+            "souffrance_action_jours": defaut.souffrance_action_jours,
+            "souffrance_action": defaut.souffrance_action.value}
 
 
 def completer_champs() -> None:

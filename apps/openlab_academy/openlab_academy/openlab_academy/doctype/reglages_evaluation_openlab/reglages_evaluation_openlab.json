@@ -35,6 +35,8 @@
   "remise_regroupement_s",
   "longueur_min_caracteres",
   "resoumission_jusqua",
+  "souffrance_action_jours",
+  "souffrance_action",
   "niveaux_generiques",
   "grille_generique"
  ],
@@ -223,6 +225,22 @@
    "description": "debut_correction : un nouveau rendu remplace la copie tant qu'aucun formateur ni juré ne l'a notée. echeance : jusqu'à la fin de la période de rendu du devoir, même pendant la correction. Au-delà, le rendu est ignoré, journalisé et l'apprenant prévenu ; une note publiée reste définitive."
   },
   {
+   "fieldname": "souffrance_action_jours",
+   "fieldtype": "Int",
+   "label": "Copie en souffrance : délai avant action (jours)",
+   "default": "3",
+   "non_negative": 1,
+   "description": "Escalade épuisée : le responsable est rappelé chaque jour ; passé ce délai, l'action ci-dessous s'applique."
+  },
+  {
+   "fieldname": "souffrance_action",
+   "fieldtype": "Select",
+   "label": "Copie en souffrance : action",
+   "options": "rien\npublier_provisoire",
+   "default": "rien",
+   "description": "rien : la copie attend un humain. publier_provisoire : note provisoire publiée (seulement si la publication provisoire est permise)."
+  },
+  {
    "fieldname": "niveaux_generiques",
    "fieldtype": "Small Text",
    "label": "Niveaux génériques (un par ligne)"
@@ -251,7 +269,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-21 17:00:00",
+ "modified": "2026-10-21 18:00:00",
  "sort_field": "modified",
  "sort_order": "DESC",
  "custom": 0,

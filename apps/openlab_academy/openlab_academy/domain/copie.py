@@ -95,6 +95,8 @@ class Etat:
     echeance: datetime | None
     escalade_a: str = ""
     butoir: datetime | None = None
+    souffrance_depuis: datetime | None = None  # escalade épuisée : la copie attend un humain, sans recours
+    rappel_souffrance: datetime | None = None  # dernier rappel au responsable (au plus un par jour)
 
 
 @dataclass(frozen=True)

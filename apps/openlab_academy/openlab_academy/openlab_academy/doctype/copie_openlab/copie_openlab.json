@@ -20,6 +20,9 @@
   "echeance",
   "butoir",
   "escalade_a",
+  "en_souffrance",
+  "souffrance_depuis",
+  "rappel_souffrance",
   "relectures_dispensees",
   "note",
   "note_sur",
@@ -112,6 +115,25 @@
    "fieldtype": "Link",
    "label": "Escaladée à",
    "options": "User"
+  },
+  {
+   "fieldname": "en_souffrance",
+   "fieldtype": "Check",
+   "label": "En souffrance",
+   "read_only": 1,
+   "description": "Escalade épuisée : la copie attend un humain, sans autre recours."
+  },
+  {
+   "fieldname": "souffrance_depuis",
+   "fieldtype": "Datetime",
+   "label": "En souffrance depuis",
+   "read_only": 1
+  },
+  {
+   "fieldname": "rappel_souffrance",
+   "fieldtype": "Datetime",
+   "label": "Dernier rappel au responsable",
+   "read_only": 1
   },
   {
    "fieldname": "relectures_dispensees",
@@ -213,7 +235,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-21 17:00:00",
+ "modified": "2026-10-21 18:00:00",
  "sort_field": "modified",
  "sort_order": "DESC"
 }

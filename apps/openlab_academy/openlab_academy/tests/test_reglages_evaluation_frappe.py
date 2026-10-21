@@ -242,6 +242,24 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         frappe.db.sql("delete from `tabSingles` where doctype=%s and field='resoumission_jusqua'", REGLAGES)
         self.assertEqual(source.charger().resoumission_jusqua.value, "debut_correction")  # site antérieur
 
+    def test_copie_en_souffrance_reglee_dans_la_console(self):
+        vider()
+        source.initialiser()
+        reglages = source.charger()
+        self.assertEqual((reglages.souffrance_action_jours, reglages.souffrance_action.value), (3, "rien"))
+        doc = frappe.get_single(REGLAGES)
+        doc.souffrance_action = "publier_provisoire"
+        doc.souffrance_action_jours = 5
+        with self.assertRaisesRegex(frappe.ValidationError, "souffrance"):
+            doc.save(ignore_permissions=True)
+        doc = frappe.get_single(REGLAGES)
+        doc.update({"souffrance_action": "publier_provisoire", "souffrance_action_jours": 5,
+                    "publication_provisoire": 1})
+        doc.save(ignore_permissions=True)
+        reglages = source.charger()
+        self.assertEqual((reglages.souffrance_action_jours, reglages.souffrance_action.value),
+                         (5, "publier_provisoire"))
+
     def test_cle_ia_vide_par_defaut(self):
         self.assertEqual(source.cle_ia(), "")
 
