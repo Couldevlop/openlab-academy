@@ -57,6 +57,10 @@ class ConfigEtape:
     expiration: Expiration
 
 
+OPTIONS_CHAINE = ("nb_pairs", "anonymat", "note_masquee_avant_relectures", "note_sur", "seuil_reussite",
+                  "pairs_attente_max_jours", "pairs_minimum_releves", "pairs_reattributions_max")
+
+
 @dataclass(frozen=True)
 class Chaine:
     etapes: tuple[ConfigEtape, ...]
@@ -65,15 +69,22 @@ class Chaine:
     note_masquee_avant_relectures: bool = True
     note_sur: int = 20
     seuil_reussite: float = 10.0
-    # prolongation maximale de l'étape des pairs pour attendre des relectures rappelées ou réattribuées : passé ce
-    # butoir, la copie avance avec les relectures obtenues (défaut : un rappel, soit le délai des pairs par défaut)
-    attente_max_heures: int = 72
+    # relecture par les pairs bornée (edX, « flexible peer grading ») : passé ce plafond depuis l'entrée dans
+    # l'étape, plus aucune relecture n'est attendue ; la médiane des pairs ne compte qu'à partir du minimum de
+    # relectures obtenues ; une copie n'est réattribuée qu'un nombre limité de fois
+    pairs_attente_max_jours: int = 7
+    pairs_minimum_releves: int = 1
+    pairs_reattributions_max: int = 2
 
     def __post_init__(self):
         if self.nb_pairs < 0:
             raise ReglagesInvalides("nb_pairs ne peut pas être négatif")
-        if self.attente_max_heures < 0:
-            raise ReglagesInvalides("attente_max_heures ne peut pas être négative")
+        if self.pairs_attente_max_jours < 0:
+            raise ReglagesInvalides("pairs_attente_max_jours ne peut pas être négatif")
+        if self.pairs_minimum_releves < 0 or (self.nb_pairs and self.pairs_minimum_releves > self.nb_pairs):
+            raise ReglagesInvalides("pairs_minimum_releves doit être compris entre 0 et nb_pairs")
+        if self.pairs_reattributions_max < 0:
+            raise ReglagesInvalides("pairs_reattributions_max ne peut pas être négatif")
         if self.note_sur <= 0:
             raise ReglagesInvalides("note_sur doit être positif")
         if not 0 <= self.seuil_reussite <= self.note_sur:
@@ -90,7 +101,9 @@ class Chaine:
                 "nb_pairs": self.nb_pairs, "anonymat": self.anonymat,
                 "note_masquee_avant_relectures": self.note_masquee_avant_relectures,
                 "note_sur": self.note_sur, "seuil_reussite": self.seuil_reussite,
-                "attente_max_heures": self.attente_max_heures}
+                "pairs_attente_max_jours": self.pairs_attente_max_jours,
+                "pairs_minimum_releves": self.pairs_minimum_releves,
+                "pairs_reattributions_max": self.pairs_reattributions_max}
 
     @classmethod
     def depuis_dict(cls, donnees) -> "Chaine":
@@ -109,8 +122,7 @@ class Chaine:
             except (KeyError, TypeError, ValueError) as e:
                 raise ReglagesInvalides(
                     f"etapes[{i}] invalide : etape, active, delai_heures et expiration attendus ({e})") from None
-        options = {c: donnees[c] for c in ("nb_pairs", "anonymat", "note_masquee_avant_relectures", "note_sur",
-                                           "seuil_reussite", "attente_max_heures") if c in donnees}
+        options = {c: donnees[c] for c in OPTIONS_CHAINE if c in donnees}  # une option inconnue est ignorée
         return cls(tuple(configs.get(e) or ConfigEtape(e, False, 0, Expiration.PASSER) for e in Etape), **options)
 
     def active(self, etape: Etape) -> bool:

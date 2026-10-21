@@ -437,6 +437,13 @@ class TestVersionRemplacee(Cas):
 
 
 class TestSynthese(unittest.TestCase):
+    def test_relectures_sous_le_minimum_sans_mediane(self):
+        props = [ia(MOYENS), Proposition(Source.PAIR, "p1", BONS)]
+        s = synthese(props, minimum_pairs=2)
+        self.assertEqual((s.mediane_pairs, s.niveaux_provisoires(), s.ecarts_ia_pairs, len(s.pairs)),
+                         ({}, None, set(), 1))
+        self.assertEqual(synthese(props, minimum_pairs=1).mediane_pairs, BONS)
+
     def test_sources_mediane_ecarts_et_niveaux_provisoires(self):
         props = [Proposition(Source.AUTO_EVALUATION, A, MOYENS),
                  Proposition(Source.CONTROLES, "systeme", {}, {"motif_1": "README absent"}),

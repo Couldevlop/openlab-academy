@@ -164,6 +164,9 @@ class Memoire:
     def verrouiller_relecture(self, relecture_id):
         return self.rel.get(relecture_id)
 
+    def echeances(self, copie_ids):
+        return {cid: self.etats[cid].echeance for cid in copie_ids}
+
     def relectures_copie(self, copie_id):
         return self.relectures_de(copie_id)
 

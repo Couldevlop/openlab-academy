@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import replace
 from datetime import datetime, timedelta
 
 from openlab_academy.application.corriger import Acces, AccesRefuse, CorrectionRefusee
@@ -129,6 +130,8 @@ class TestConsulterRetour(Cas):
         self.assertEqual((retour["provisoire"], retour["note"], retour["reussite"]), (True, 10.0, True))
         self.assertEqual(retour["criteres"][0]["niveau"], 1)
         self.assertEqual(retour["criteres"][0]["commentaire"], "")
+        self.chaine_ = replace(self.chaine_, pairs_minimum_releves=2)  # une seule relecture : pas de note des pairs
+        self.assertEqual(self.retour.executer(A, self.a)["note"], None)
 
 
 class TestAutoEvaluer(Cas):

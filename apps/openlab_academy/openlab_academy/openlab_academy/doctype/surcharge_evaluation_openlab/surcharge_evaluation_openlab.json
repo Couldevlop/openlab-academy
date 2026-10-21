@@ -15,7 +15,9 @@
   "col_notes",
   "note_sur",
   "seuil_reussite",
-  "attente_max_heures"
+  "pairs_attente_max_jours",
+  "pairs_minimum_releves",
+  "pairs_reattributions_max"
  ],
  "fields": [
   {
@@ -83,11 +85,28 @@
    "default": "10"
   },
   {
-   "fieldname": "attente_max_heures",
+   "fieldname": "pairs_attente_max_jours",
    "fieldtype": "Int",
-   "label": "Attente maximale des relectures (heures)",
-   "default": "72",
-   "description": "Prolongation maximale de l’étape des pairs pour des relectures rappelées ou réattribuées ; 0 = aucune."
+   "label": "Plafond de l'étape des pairs (jours)",
+   "default": "7",
+   "non_negative": 1,
+   "description": "Passé ce délai depuis l'entrée dans l'étape, plus aucune relecture n'est attendue : la copie avance."
+  },
+  {
+   "fieldname": "pairs_minimum_releves",
+   "fieldtype": "Int",
+   "label": "Relectures minimales pour la médiane",
+   "default": "1",
+   "non_negative": 1,
+   "description": "Sous ce nombre de relectures obtenues, la médiane des pairs ne compte pas."
+  },
+  {
+   "fieldname": "pairs_reattributions_max",
+   "fieldtype": "Int",
+   "label": "Réattributions maximales par copie",
+   "default": "2",
+   "non_negative": 1,
+   "description": "Au-delà, une relecture en retard est retirée sans être confiée à un autre pair."
   }
  ],
  "permissions": [
@@ -107,7 +126,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-21 12:00:00",
+ "modified": "2026-10-21 18:00:00",
  "sort_field": "modified",
  "sort_order": "DESC",
  "custom": 0,

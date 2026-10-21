@@ -130,9 +130,12 @@ class FaireAvancer:
         if statut != copie.statut:
             copie = copie.passer_a(statut)
         delai, maintenant = chaine.config(etape).delai_heures, self._horloge()
-        self._depot.changer_statut(copie.id, copie.statut, etape.value, maintenant + timedelta(hours=delai))
+        echeance = maintenant + timedelta(hours=delai)
         if etape == Etape.PAIRS:  # au-delà du butoir, plus aucune relecture n'est attendue : la copie avance
-            self._depot.fixer_butoir(copie.id, maintenant + timedelta(hours=delai + chaine.attente_max_heures))
+            butoir = maintenant + timedelta(days=chaine.pairs_attente_max_jours)
+            echeance = min(echeance, butoir)
+            self._depot.fixer_butoir(copie.id, butoir)
+        self._depot.changer_statut(copie.id, copie.statut, etape.value, echeance)
         self._journal(copie.id, SYSTEME, "étape suivante", {"etape": quittee.value if quittee else ""},
                       {"etape": etape.value})
         if etape in TACHES:
@@ -173,7 +176,8 @@ class TraiterEcheances:
         r = self._relectures.verrouiller_relecture(r.id)
         if r.statut != StatutRelecture.A_FAIRE or r.echeance is None or r.echeance > maintenant:
             return  # relue ou déjà traitée entre-temps
-        config = self._avancer.chaine(copie).config(Etape.PAIRS)
+        chaine = self._avancer.chaine(copie)
+        config = chaine.config(Etape.PAIRS)
         prolongee = maintenant + timedelta(hours=config.delai_heures)
         if not r.rappelee and butoir > maintenant:
             echeance = min(prolongee, butoir)
@@ -184,7 +188,9 @@ class TraiterEcheances:
                           {"echeance": echeance})
             return
         nouveau = None
-        if config.expiration == Expiration.REATTRIBUER and prolongee <= butoir:
+        reattribuees = sum(x.statut == StatutRelecture.REATTRIBUEE for x in self._relectures.relectures_copie(copie.id))
+        if (config.expiration == Expiration.REATTRIBUER and prolongee <= butoir
+                and reattribuees < chaine.pairs_reattributions_max):
             rendues = self._relectures.copies_rendues(copie.exercice, copie.cohorte)
             nouveau = AttribuerPairs(self._relectures, self._horloge).reattribuer(copie, rendues, config.delai_heures)
         if nouveau:
@@ -224,7 +230,16 @@ class TraiterEcheances:
             if action == Expiration.REATTRIBUER:
                 libelle = Expiration.PASSER.value  # personne d'autre : la copie avance avec les relectures obtenues
         self._journal(copie_id, SYSTEME, libelle, {"etape": etape.value}, {})
+        if etape == Etape.PAIRS:
+            self._clore_pairs(copie, chaine)
         self._avancer.executer(copie_id, etape)
+
+    def _clore_pairs(self, copie: Copie, chaine: Chaine) -> None:
+        """La copie avance avec les relectures obtenues ; sous le minimum réglé, leur médiane ne compte pas."""
+        faites = sum(r.statut == StatutRelecture.FAITE for r in self._relectures.relectures_copie(copie.id))
+        minimum = chaine.pairs_minimum_releves
+        issue = "relectures obtenues" if faites >= minimum else "relectures insuffisantes"
+        self._journal(copie.id, SYSTEME, f"pairs clos : {issue}", {}, {"faites": faites, "minimum": minimum})
 
     def _attendre_relectures(self, copie: Copie, etat: Etat, maintenant: datetime) -> bool:
         """Quelle que soit l'action réglée, une relecture rappelée ou réattribuée encore dans son délai est

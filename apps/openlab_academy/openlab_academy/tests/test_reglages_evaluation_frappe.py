@@ -1,5 +1,4 @@
 import json
-from datetime import datetime
 from unittest.mock import patch
 
 import frappe
@@ -100,11 +99,14 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         doc = frappe.get_single(REGLAGES)
         for ligne in doc.parametres:
             if ligne.type_exercice == "projet":
-                ligne.update({"note_sur": 10, "seuil_reussite": 5, "anonymat": 0, "attente_max_heures": 24})
+                ligne.update({"note_sur": 10, "seuil_reussite": 5, "anonymat": 0, "pairs_attente_max_jours": 2,
+                              "pairs_minimum_releves": 0, "pairs_reattributions_max": 0})
         doc.save(ignore_permissions=True)
         chaines = source.charger().chaines
         self.assertEqual((chaines[TypeExercice.PROJET].note_sur, chaines[TypeExercice.PROJET].anonymat), (10, False))
-        self.assertEqual(chaines[TypeExercice.PROJET].attente_max_heures, 24)
+        projet = chaines[TypeExercice.PROJET]
+        self.assertEqual((projet.pairs_attente_max_jours, projet.pairs_minimum_releves,
+                          projet.pairs_reattributions_max), (2, 0, 0))
         self.assertEqual(chaines[TypeExercice.LIVRABLE], CHAINES_DEFAUT[TypeExercice.LIVRABLE])
 
     def test_reglages_non_chaine_charges_meme_sans_etapes(self):
@@ -367,14 +369,16 @@ class TestSurcharges(FrappeTestCase):
         with self.assertRaisesRegex(frappe.ValidationError, "suppléant"):
             self._surcharge(exercice=un_devoir(), suppleant="Administrator").insert()
 
-    def test_attente_maximale_des_relectures(self):
-        self._surcharge(cohorte=un_lot(), attente_max_heures=0).insert()
+    def test_pairs_bornes(self):
+        self._surcharge(cohorte=un_lot(), pairs_attente_max_jours=0, pairs_reattributions_max=0).insert()
         (s,) = source.surcharges()
-        self.assertEqual(s.chaine.attente_max_heures, 0)
+        self.assertEqual((s.chaine.pairs_attente_max_jours, s.chaine.pairs_reattributions_max), (0, 0))
         self._surcharge(exercice=un_devoir()).insert()
-        self.assertEqual(next(x for x in source.surcharges() if x.exercice).chaine.attente_max_heures, 72)
-        with self.assertRaisesRegex(frappe.ValidationError, "attente_max_heures"):
-            self._surcharge(exercice=un_devoir(), cohorte=un_lot(), attente_max_heures=-1).insert()
+        chaine = next(x for x in source.surcharges() if x.exercice).chaine
+        self.assertEqual((chaine.pairs_attente_max_jours, chaine.pairs_minimum_releves,
+                          chaine.pairs_reattributions_max), (7, 1, 2))
+        with self.assertRaisesRegex(frappe.ValidationError, "pairs_minimum_releves"):
+            self._surcharge(exercice=un_devoir(), cohorte=un_lot(), pairs_minimum_releves=9).insert()
 
 
 class TestDelegations(FrappeTestCase):

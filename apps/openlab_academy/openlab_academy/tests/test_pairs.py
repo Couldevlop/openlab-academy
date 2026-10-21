@@ -59,6 +59,14 @@ class TestAttribuerPairs(unittest.TestCase):
         ids = self.attribuer(d, 2)
         self.assertEqual([self.m.rel[i].copie for i in ids], [b, c])
 
+    def test_copies_en_retard_d_abord_les_plus_anciennes(self):
+        a, b, c = en_relecture(self.m, "a@x.ci", "b@x.ci", "c@x.ci")
+        for cid, retard in ((b, 48), (c, 24)):
+            self.m.changer_statut(cid, Statut.EN_RELECTURE, "pairs", DEBUT - timedelta(hours=retard))
+        (d,) = en_relecture(self.m, "d@x.ci")
+        ids = self.attribuer(d, 2)
+        self.assertEqual([self.m.rel[i].copie for i in ids], [b, c])
+
     def test_copie_assez_relue_ou_hors_relecture_non_proposee(self):
         a, b = en_relecture(self.m, "a@x.ci", "b@x.ci")
         self.m.attribuer(a, "z@x.ci", DEBUT)

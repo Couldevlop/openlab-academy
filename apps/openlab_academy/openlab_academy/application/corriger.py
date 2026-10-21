@@ -165,25 +165,27 @@ class Synthese:
     pairs: tuple[Proposition, ...]
     jury: tuple[Proposition, ...]
     formateur: Proposition | None
+    minimum_pairs: int = 0  # sous ce nombre de relectures, la médiane des pairs ne compte pas
     mediane_pairs: dict[str, int] = field(init=False)
     mediane_jury: dict[str, int] = field(init=False)
 
     def __post_init__(self):
-        object.__setattr__(self, "mediane_pairs", mediane(list(self.pairs)))
+        retenues = len(self.pairs) >= self.minimum_pairs
+        object.__setattr__(self, "mediane_pairs", mediane(list(self.pairs)) if retenues else {})
         object.__setattr__(self, "mediane_jury", mediane(list(self.jury)))
 
     @property
     def ecarts(self) -> set[str]:
         """Critères où IA, médiane des pairs et formateur divergent de plus d'un niveau."""
         sources = [p for p in (self.ia, self.formateur) if p is not None]
-        if self.pairs:
+        if self.mediane_pairs:
             sources.append(Proposition(Source.PAIR, "", self.mediane_pairs))
         return ecarts(sources)
 
     @property
     def ecarts_ia_pairs(self) -> set[str]:
         """Écart de plus d'un niveau entre l'IA et la médiane des pairs : la copie sort des lots."""
-        if self.ia is None or not self.pairs:
+        if self.ia is None or not self.mediane_pairs:
             return set()
         return ecarts([self.ia, Proposition(Source.PAIR, "", self.mediane_pairs)])
 
@@ -200,11 +202,12 @@ class Synthese:
         return self.mediane_jury or self.mediane_pairs or None
 
 
-def synthese(props: list[Proposition]) -> Synthese:
+def synthese(props: list[Proposition], minimum_pairs: int = 0) -> Synthese:
     controles = derniere(props, Source.CONTROLES)
     return Synthese(derniere(props, Source.AUTO_EVALUATION),
                     tuple(controles.commentaires.values()) if controles else (), derniere(props, Source.IA),
-                    par_auteur(props, Source.PAIR), par_auteur(props, Source.JURY), derniere(props, Source.FORMATEUR))
+                    par_auteur(props, Source.PAIR), par_auteur(props, Source.JURY), derniere(props, Source.FORMATEUR),
+                    minimum_pairs)
 
 
 def fiabilite(copies: Iterable[list[Proposition]]) -> dict[str, float]:
@@ -378,7 +381,8 @@ class PublierNote:
         reussite = note >= chaine.seuil_reussite
         avant = {"statut": copie.statut.value}
         if copie.statut == Statut.PROVISOIRE:
-            avant["note"] = s.note_provisoire(grille, chaine.note_sur)
+            avant["note"] = synthese(self._depot.propositions(copie_id, verrouillee=True),
+                                     chaine.pairs_minimum_releves).note_provisoire(grille, chaine.note_sur)
         differe = note_masquee(chaine, copie, self._depot.dispensee(copie_id),
                                self._relectures.relectures(copie.exercice, copie.cohorte, verrouillee=True))
         self._depot.changer_statut(copie_id, copie.passer_a(Statut.PUBLIEE).statut, "", None)

@@ -48,6 +48,7 @@ class DepotRelectures(Protocol):
     def relecture(self, relecture_id: str) -> Relecture | None: ...
     def verrouiller_relecture(self, relecture_id: str) -> Relecture | None: ...  # lue et verrouillée
     def relectures_copie(self, copie_id: str) -> list[Relecture]: ...  # lues et verrouillées
+    def echeances(self, copie_ids: list[str]) -> dict[str, datetime | None]: ...  # échéance de l'étape courante
     def relectures_echues(self, maintenant: datetime) -> list[Relecture]: ...
     def attribuer(self, copie_id: str, relecteur: str, echeance: datetime) -> str | None: ...  # None : paire déjà là
     def changer_statut_relecture(self, relecture_id: str, statut: StatutRelecture) -> None: ...
@@ -70,12 +71,19 @@ class AttribuerPairs:
         actives = [r for r in toutes if r.statut in ACTIVES]
         recues = Counter(r.copie for r in actives)
         charge = Counter(r.relecteur for r in actives)
-        echeance = self._horloge() + timedelta(hours=delai_heures)
+        maintenant = self._horloge()
+        echeance = maintenant + timedelta(hours=delai_heures)
         auteur = copie.apprenant
-        a_relire = sorted((c for c in cohorte_rendue
-                           if c.statut == Statut.EN_RELECTURE and c.apprenant != auteur
-                           and (auteur, c.id) not in deja and recues[c.id] < n),
-                          key=lambda c: (recues[c.id], c.id))
+        candidates = [c for c in cohorte_rendue if c.statut == Statut.EN_RELECTURE and c.apprenant != auteur
+                      and (auteur, c.id) not in deja and recues[c.id] < n]
+        echeances = self._depot.echeances([c.id for c in candidates]) if candidates else {}
+
+        def priorite(c: Copie) -> tuple:
+            """Copies en retard d'abord, les plus anciennes en premier ; puis les moins relues."""
+            e = echeances.get(c.id)
+            en_retard = e is not None and e <= maintenant
+            return (0, e, recues[c.id], c.id) if en_retard else (1, maintenant, recues[c.id], c.id)
+        a_relire = sorted(candidates, key=priorite)
         confiees = []
         for c in a_relire:
             if charge[auteur] >= n:

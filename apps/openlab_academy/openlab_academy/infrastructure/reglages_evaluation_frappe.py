@@ -29,13 +29,18 @@ def _config(ligne) -> ConfigEtape:
                        Expiration(ligne.expiration))
 
 
+CHAMPS_PAIRS = ("pairs_attente_max_jours", "pairs_minimum_releves", "pairs_reattributions_max")
+DEFAUT_CHAINE = Chaine((ConfigEtape(Etape.FORMATEUR, True, 72, Expiration.ESCALADER),))  # défauts des options
+
+
 def _chaine(params, lignes) -> Chaine:
     """`params` porte nb_pairs, anonymat, etc. : la ligne du type (réglages) ou la surcharge elle-même."""
     return Chaine(tuple(_config(ligne) for ligne in lignes), nb_pairs=int(params.nb_pairs or 0),
                   anonymat=bool(params.anonymat),
                   note_masquee_avant_relectures=bool(params.note_masquee_avant_relectures),
                   note_sur=int(params.note_sur or 0), seuil_reussite=float(params.seuil_reussite or 0),
-                  attente_max_heures=int(params.attente_max_heures or 0))
+                  **{champ: _entier(getattr(params, champ, None), getattr(DEFAUT_CHAINE, champ))
+                     for champ in CHAMPS_PAIRS})
 
 
 def _entier(valeur, defaut: int) -> int:
@@ -142,7 +147,7 @@ def _remplir_parametres(doc) -> None:
     doc.set("parametres", [{"type_exercice": type_.value, "nb_pairs": ch.nb_pairs, "anonymat": ch.anonymat,
                             "note_masquee_avant_relectures": ch.note_masquee_avant_relectures,
                             "note_sur": ch.note_sur, "seuil_reussite": ch.seuil_reussite,
-                            "attente_max_heures": ch.attente_max_heures}
+                            **{champ: getattr(ch, champ) for champ in CHAMPS_PAIRS}}
                            for type_, ch in CHAINES_DEFAUT.items()])
 
 

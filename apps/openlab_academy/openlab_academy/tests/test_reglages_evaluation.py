@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import replace
 
 from openlab_academy.domain.reglages import ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import (
@@ -237,14 +238,20 @@ class TestChaineDict(unittest.TestCase):
         self.assertEqual((c.nb_pairs, c.anonymat, c.note_masquee_avant_relectures, c.note_sur, c.seuil_reussite),
                          (2, False, False, 100, 50))
 
-    def test_attente_maximale_des_relectures(self):
+    def test_pairs_bornes(self):
         c = CHAINES_DEFAUT[TypeExercice.LIVRABLE]
-        self.assertEqual(c.attente_max_heures, c.config(E.PAIRS).delai_heures)  # un rappel par défaut
-        lue = Chaine.depuis_dict({**c.vers_dict(), "attente_max_heures": 0})
-        self.assertEqual(lue.attente_max_heures, 0)
+        self.assertEqual((c.pairs_attente_max_jours, c.pairs_minimum_releves, c.pairs_reattributions_max), (7, 1, 2))
+        lue = Chaine.depuis_dict({**c.vers_dict(), "pairs_attente_max_jours": 3, "pairs_minimum_releves": 2,
+                                  "pairs_reattributions_max": 0})
+        self.assertEqual((lue.pairs_attente_max_jours, lue.pairs_minimum_releves, lue.pairs_reattributions_max),
+                         (3, 2, 0))
         self.assertEqual(Chaine.depuis_dict(lue.vers_dict()), lue)
-        with self.assertRaisesRegex(ReglagesInvalides, "attente_max_heures"):
-            chaine_avec({E.FORMATEUR}, attente_max_heures=-1)
+        ancienne = Chaine.depuis_dict({**c.vers_dict(), "attente_max_heures": 72})  # YAML antérieur : ignoré
+        self.assertEqual(ancienne.pairs_attente_max_jours, 7)
+        for champ, valeur in (("pairs_attente_max_jours", -1), ("pairs_minimum_releves", -1),
+                              ("pairs_minimum_releves", 4), ("pairs_reattributions_max", -1)):
+            with self.subTest(champ=champ, valeur=valeur), self.assertRaisesRegex(ReglagesInvalides, champ):
+                replace(c, **{champ: valeur})
 
     def test_invalides(self):
         for donnees, message in [

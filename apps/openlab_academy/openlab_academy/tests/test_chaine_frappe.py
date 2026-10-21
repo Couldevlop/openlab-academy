@@ -325,7 +325,9 @@ class TestPairsFrappe(Cas):
         self.assertEqual({(r.copie, r.relecteur) for r in relectures}, {(self.a, B), (self.b, A)})
         self.assertEqual(self.ligne(self.a).statut, "en_relecture")
         etat = self.depot.etat(self.a)
-        self.assertEqual(etat.butoir, etat.echeance + datetime.timedelta(hours=72))  # un rappel au plus
+        self.assertEqual(etat.butoir, etat.echeance + datetime.timedelta(days=4))  # 72 h, plafond de 7 jours
+        self.assertEqual(self.relectures.echeances([self.a, self.b]), {self.a: etat.echeance,
+                                                                       self.b: self.depot.etat(self.b).echeance})
         b_relit_a = next(r for r in relectures if r.copie == self.a)
         self.assertEqual(self.relectures.relecture(b_relit_a.id), b_relit_a)
         self.assertIsNone(self.relectures.relecture("inexistante"))
@@ -385,7 +387,8 @@ class TestPairsFrappe(Cas):
         self.assertEqual(frappe.db.get_value("Relecture Pair OpenLab", {"copie": self.a}, "statut"), "annulée")
         self.assertEqual(self.ligne(self.b).relectures_dispensees, 1)
         self.assertEqual(self.ligne(self.a).etape_courante, "formateur")
-        self.assertEqual(self.actions(self.a)[-3:], ["relecture annulée", "passer", "étape suivante"])
+        self.assertEqual(self.actions(self.a)[-4:], ["relecture annulée", "passer",
+                                                     "pairs clos : relectures insuffisantes", "étape suivante"])
         self.assertEqual(self.ligne(self.b).etape_courante, "pairs")
 
     def test_double_envoi_d_une_relecture_enregistre_une_fois(self):

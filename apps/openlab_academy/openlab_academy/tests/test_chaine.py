@@ -244,7 +244,7 @@ class TestFaireAvancer(Cas):
 
 class TestTraiterEcheances(Cas):
     def test_pair_en_retard_rappele_puis_reattribue(self):
-        self.monter(yaml=replace(LIVRABLE, nb_pairs=1, attente_max_heures=216), taille=3)
+        self.monter(yaml=replace(LIVRABLE, nb_pairs=1, pairs_attente_max_jours=12), taille=3)
         a, b, c = (self.rendre(e) for e in ("a@x.ci", "b@x.ci", "c@x.ci"))
         for cid in (a, b, c):
             self.avancer.executer(cid, Etape.CONTROLES)
@@ -273,7 +273,7 @@ class TestTraiterEcheances(Cas):
         self.assertEqual(self.etape(a), ("pairs", Statut.EN_RELECTURE))
         self.assertEqual(self.m.etat(a).echeance, nouvelle.echeance)
         for action in ("rappel de relecture", "relecture réattribuée", "relectures dispensées",
-                       "attente des relectures", "passer"):
+                       "attente des relectures", "pairs clos : relectures insuffisantes"):
             self.assertIn(action, self.actions())
         # c rappelé puis en retard, personne d'autre à solliciter : la copie avance avec les relectures obtenues
         self.avancer_horloge(72)
@@ -282,17 +282,17 @@ class TestTraiterEcheances(Cas):
         self.assertEqual(self.etape(a), ("formateur", Statut.A_CORRIGER))
         self.assertEqual(self.m.dispensees, [b, c])
 
-    def cohorte_absente(self, attente):
+    def cohorte_absente(self, jours, **autres):
         """Six apprenants, trois relecteurs chacun, personne ne relit ; délai des pairs de 72 h."""
-        self.monter(yaml=replace(LIVRABLE, attente_max_heures=attente), taille=6)
+        self.monter(yaml=replace(LIVRABLE, pairs_attente_max_jours=jours, **autres), taille=6)
         copies = [self.rendre(f"{e}@x.ci") for e in "abcdef"]
         for cid in copies:
             self.avancer.executer(cid, Etape.CONTROLES)
         return copies
 
     def test_personne_ne_relit_la_copie_avance_au_butoir(self):
-        copies = self.cohorte_absente(attente=144)
-        butoir = self.t + timedelta(hours=72 + 144)
+        copies = self.cohorte_absente(jours=9)
+        butoir = self.t + timedelta(days=9)
         self.assertEqual({self.m.etat(c).butoir for c in copies}, {butoir})
         for _ in range(2):  # rappel, puis réattribution aux candidats restants
             self.avancer_horloge(72)
@@ -307,9 +307,46 @@ class TestTraiterEcheances(Cas):
         self.assertLess(rappel, reattribution)
         self.assertLess(reattribution, derniere_annulation)
         self.assertTrue(all(r.echeance <= butoir for r in self.m.rel.values()))
+        self.assertIn("pairs clos : relectures insuffisantes", actions)
+
+    def test_butoir_avant_le_delai_de_l_etape(self):
+        copies = self.cohorte_absente(jours=1)  # délai des pairs : 72 h, plafond : 1 jour
+        self.assertEqual({self.m.etat(c).echeance for c in copies}, {self.t + timedelta(days=1)})
+        self.avancer_horloge(24)
+        self.assertEqual({self.etape(c) for c in copies}, {("formateur", Statut.A_CORRIGER)})
+
+    def test_reattributions_plafonnees(self):
+        copies = self.cohorte_absente(jours=30, pairs_reattributions_max=1)
+        for _ in range(6):
+            self.avancer_horloge(72)
+        reattribuees = [r for r in self.m.relectures_de(copies[0]) if r.statut == StatutRelecture.REATTRIBUEE]
+        self.assertEqual(len(reattribuees), 1)
+        self.assertEqual(self.etape(copies[0]), ("formateur", Statut.A_CORRIGER))
+
+    def test_pair_absent_la_copie_atteint_le_formateur_dans_le_plafond(self):
+        copies = self.cohorte_absente(jours=7)
+        debut = self.t
+        while self.etape(copies[0])[0] == "pairs":
+            self.avancer_horloge(1)
+        self.assertLessEqual(self.t, debut + timedelta(days=7))
+        self.assertEqual(self.etape(copies[0]), ("formateur", Statut.A_CORRIGER))
+
+    def test_relectures_obtenues_suffisantes(self):
+        self.monter(yaml=replace(LIVRABLE, nb_pairs=2, pairs_minimum_releves=1, pairs_attente_max_jours=3),
+                    taille=3)
+        a, b, c = (self.rendre(e) for e in ("a@x.ci", "b@x.ci", "c@x.ci"))
+        for cid in (a, b, c):
+            self.avancer.executer(cid, Etape.CONTROLES)
+        (premiere, *_) = self.m.relectures_de(a)
+        self.relire.executer(premiere.relecteur, premiere.id, NIVEAUX, COMMENTAIRES)
+        self.avancer_horloge(72)
+        clos = [j for j in self.journal if j[0] == a and j[2].startswith("pairs clos")]
+        self.assertEqual([(j[2], j[4]) for j in clos],
+                         [("pairs clos : relectures obtenues", {"faites": 1, "minimum": 1})])
+        self.assertEqual(self.etape(a), ("formateur", Statut.A_CORRIGER))
 
     def test_attente_nulle_la_copie_avance_a_la_premiere_echeance(self):
-        copies = self.cohorte_absente(attente=0)
+        copies = self.cohorte_absente(jours=3)
         self.avancer_horloge(72)
         self.assertEqual({self.etape(c) for c in copies}, {("formateur", Statut.A_CORRIGER)})
         self.assertNotIn("rappel de relecture", self.actions())
@@ -317,7 +354,7 @@ class TestTraiterEcheances(Cas):
         self.assertEqual(self.rappels(), [])
 
     def test_sans_butoir_enregistre_aucune_prolongation(self):
-        copies = self.cohorte_absente(attente=144)
+        copies = self.cohorte_absente(jours=9)
         for cid in copies:  # copie entrée aux pairs avant l'enregistrement du butoir
             self.m.etats[cid] = replace(self.m.etats[cid], butoir=None)
         self.avancer_horloge(72)

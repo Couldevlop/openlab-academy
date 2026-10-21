@@ -54,7 +54,7 @@ class ConsulterRetour:
                         self._relectures.relectures(copie.exercice, copie.cohorte)):
             return {**base, "masquee": True, "message": MASQUEE}
         grille = self._depot.grille(copie_id)
-        s = synthese(self._depot.propositions(copie_id))
+        s = synthese(self._depot.propositions(copie_id), chaine.pairs_minimum_releves)
         if copie.statut == Statut.PUBLIEE:
             note, note_sur, reussite = self._depot.resultat(copie_id)
             niveaux, message = s.formateur.niveaux if s.formateur else {}, ""
