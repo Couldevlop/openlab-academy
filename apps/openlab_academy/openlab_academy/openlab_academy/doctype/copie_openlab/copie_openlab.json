@@ -23,6 +23,7 @@
   "en_souffrance",
   "souffrance_depuis",
   "rappel_souffrance",
+  "ia_reservee_le",
   "relectures_dispensees",
   "note",
   "note_sur",
@@ -136,6 +137,13 @@
    "read_only": 1
   },
   {
+   "fieldname": "ia_reservee_le",
+   "fieldtype": "Datetime",
+   "label": "Pré-correction réservée le",
+   "read_only": 1,
+   "description": "Marque courte d'une tâche de pré-correction en cours ; périmée au-delà du délai réglé de l'IA."
+  },
+  {
    "fieldname": "relectures_dispensees",
    "fieldtype": "Check",
    "label": "Relectures dispensées",
@@ -235,7 +243,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-21 18:00:00",
+ "modified": "2026-10-21 20:00:00",
  "sort_field": "modified",
  "sort_order": "DESC"
 }

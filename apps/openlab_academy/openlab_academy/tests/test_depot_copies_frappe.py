@@ -373,6 +373,23 @@ class TestAtomicite(Base):
                          "rendu après publication ignoré")
 
 
+class TestReservationIA(Base):
+    def test_marque_courte_validee_aussitot(self):
+        self.soumettre(self.livrable)
+        nom, maintenant = self.copies()[0].name, datetime.datetime(2026, 12, 1, 10, 0)
+        peremption = datetime.timedelta(minutes=11)
+        with mock.patch.object(frappe.db, "commit") as commit:
+            self.assertTrue(self.depot.reserver_ia(nom, maintenant, peremption))
+            self.assertEqual(frappe.db.get_value("Copie OpenLab", nom, "ia_reservee_le"), maintenant)
+            self.assertFalse(self.depot.reserver_ia(nom, maintenant + datetime.timedelta(minutes=10), peremption))
+            self.assertTrue(self.depot.reserver_ia(nom, maintenant + peremption, peremption))  # tâche morte
+            self.depot.liberer_ia(nom)
+            self.assertIsNone(frappe.db.get_value("Copie OpenLab", nom, "ia_reservee_le"))
+            self.depot.ajouter_proposition(nom, Proposition(Source.IA, "ia", {"pertinence": 2}))
+            self.assertFalse(self.depot.reserver_ia(nom, maintenant, peremption))  # déjà proposée
+        self.assertEqual(commit.call_count, 5)
+
+
 class TestStatut(Base):
     def test_changer_statut(self):
         self.soumettre(self.livrable)

@@ -14,7 +14,7 @@ from openlab_academy.application.chaine import SYSTEME, TACHES, FaireAvancer, Tr
 from openlab_academy.application.corriger import LibererNote
 from openlab_academy.application.controler import ControlerCopie, consigner_indisponibilite
 from openlab_academy.application.instantaner import PrendreInstantane
-from openlab_academy.application.pre_corriger import PreCorriger
+from openlab_academy.application.pre_corriger import MARGE_TACHE_S, PreCorriger
 from openlab_academy.application.soumettre_copie import RenduRefuse, SoumettreCopie
 from openlab_academy.domain.reglages_evaluation import Etape
 from openlab_academy.infrastructure import journal_frappe, reglages_evaluation_frappe
@@ -27,7 +27,7 @@ from openlab_academy.infrastructure.instantane_depot import InstantaneDepot
 CHAMPS = ("name", "assignment", "member", "type", "answer", "assignment_attachment")
 POINT = "openlab_rendu"
 POINT_ETAPE = "openlab_etape"
-MARGE_S = 60  # la tâche survit au délai de l'appel au modèle : c'est lui qui expire, proprement
+MARGE_S = MARGE_TACHE_S  # la tâche survit au délai de l'appel au modèle ; une réservation plus vieille est morte
 
 
 def _annuler(point: str) -> None:
@@ -153,7 +153,8 @@ def pre_corriger(copie_id: str) -> None:
         reglages = reglages_evaluation_frappe.charger()
         correcteur = CorrecteurCompatibleOpenAI(reglages.ia.url, reglages_evaluation_frappe.cle_ia(),
                                                 reglages.ia.delai_minutes * 60)
-        return PreCorriger(DepotCopiesFrappe(), correcteur, reglages, avanceur(), journal_frappe.journaliser)
+        return PreCorriger(DepotCopiesFrappe(), correcteur, reglages, avanceur(), now_datetime,
+                           journal_frappe.journaliser)
     _executer(copie_id, Etape.IA, "pré-correction non disponible", construire)
 
 

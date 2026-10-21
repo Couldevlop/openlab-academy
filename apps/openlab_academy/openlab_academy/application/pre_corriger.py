@@ -5,8 +5,11 @@ tentative d'instruction au modèle écarte la pré-correction et signale la copi
 reçoit grille, consigne et copie encadrée ; sa réponse n'est retenue qu'après les garde-fous du domaine. Une
 copie dont le prompt dépasserait le contexte du modèle n'est jamais tronquée ni envoyée. Toute défaillance
 marque l'étape « non disponible » et la copie avance.
-L'appel au modèle (plusieurs minutes sur CPU) précède toute lecture verrouillante de la copie.
+L'appel au modèle (plusieurs minutes sur CPU) se fait sans aucun verrou tenu : une marque courte sur la copie,
+validée aussitôt, le réserve ; le résultat est consigné sous un verrou court.
 """
+from collections.abc import Callable
+from datetime import datetime, timedelta
 from typing import Protocol
 
 from openlab_academy.application.chaine import SYSTEME, Journal
@@ -17,6 +20,7 @@ from openlab_academy.domain.garde_fous_ia import construire_messages, detecter_i
 from openlab_academy.domain.reglages_evaluation import RESERVE_REPONSE_JETONS, Etape, ReglagesEvaluation
 
 SIGNALEMENT = "copie signalée : tentative d'instruction à l'IA"
+MARGE_TACHE_S = 60  # la tâche survit au délai de l'appel au modèle : c'est lui qui expire, proprement
 
 
 class CorrecteurIA(Protocol):
@@ -27,25 +31,37 @@ class DepotPreCorrection(DepotControles, Protocol):
     def consigne(self, exercice: str) -> str: ...
     def texte_lisible(self, copie_id: str) -> str: ...
     def texte_compact(self, copie_id: str) -> str: ...  # balises retirées sans séparateur : « ign<b></b>ore »
+    # réservation courte, validée aussitôt : aucun verrou n'est tenu pendant l'appel au modèle
+    def reserver_ia(self, copie_id: str, maintenant: datetime, peremption: timedelta) -> bool: ...
+    def liberer_ia(self, copie_id: str) -> None: ...
 
 
 class PreCorriger:
     def __init__(self, depot: DepotPreCorrection, correcteur: CorrecteurIA, reglages: ReglagesEvaluation,
-                 avancer: Avanceur, journal: Journal = lambda *_: None):
+                 avancer: Avanceur, horloge: Callable[[], datetime], journal: Journal = lambda *_: None):
         self._depot = depot
         self._correcteur = correcteur
         self._ia = reglages.ia
         self._avancer = avancer
+        self._horloge = horloge
         self._journal = journal
 
     def executer(self, copie_id: str) -> None:
+        """Une seule pré-correction par copie : une marque courte réserve l'appel au modèle (validée aussitôt, sans
+        verrou tenu pendant l'appel) ; une marque plus vieille que le délai réglé de l'IA plus la marge de la tâche
+        est celle d'une tâche morte, reprise."""
+        reservee = False
         try:
             if self._depot.contenu(copie_id).instantane == EtatInstantane.EN_COURS:
                 return  # la tâche de l'instantané relance la pré-correction, sinon son échéance la fait passer
-            if self._deja_proposee(copie_id):
-                return  # une autre tâche (mise en file à l'entrée, relancée par l'instantané) a conclu
+            peremption = timedelta(minutes=self._ia.delai_minutes, seconds=MARGE_TACHE_S)
+            reservee = self._depot.reserver_ia(copie_id, self._horloge(), peremption)
+            if not reservee:
+                return  # proposition déjà là, ou une autre tâche (entrée dans l'étape, instantané) la prépare
             action, details, proposition = self._proposer(copie_id)
         except Exception as erreur:  # rien ne bloque : l'étape est marquée non disponible
+            if reservee:
+                self._depot.liberer_ia(copie_id)
             consigner_indisponibilite(self._avancer, self._journal, copie_id, Etape.IA,
                                       "pré-correction non disponible", erreur)
             return
@@ -74,18 +90,15 @@ class PreCorriger:
                                   self._ia.citation_min_caracteres)
         return "pré-correction proposée", {"modele": modele, "confiance": proposition.confiance}, proposition
 
-    def _deja_proposee(self, copie_id: str) -> bool:
-        """Relue sous le verrou de la copie : deux tâches de pré-correction ne donnent qu'un appel au modèle."""
-        self._depot.verrouiller(copie_id)
-        return any(p.source == Source.IA for p in self._depot.propositions(copie_id, verrouillee=True))
-
     def _conclure(self, copie_id: str, action: str, details: dict, proposition=None) -> None:
-        """En parallèle des pairs, le résultat est consigné sans faire avancer la copie (étape non courante)."""
-        if not self._avancer.accepte_resultat(copie_id, Etape.IA):
-            return
-        if proposition is not None and self._deja_proposee(copie_id):
-            return  # conclue par une autre tâche pendant l'appel au modèle : une seule proposition
-        if proposition is not None:
-            self._depot.ajouter_proposition(copie_id, proposition)
-        self._journal(copie_id, SYSTEME, action, {}, details)
-        self._avancer.executer(copie_id, Etape.IA)
+        """En parallèle des pairs, le résultat est consigné sans faire avancer la copie (étape non courante).
+        Sous un verrou court (celui de `accepte_resultat`), la proposition est relue : une reprise de marque
+        périmée a pu conclure entre-temps. La marque est levée dans tous les cas."""
+        if self._avancer.accepte_resultat(copie_id, Etape.IA) and not (
+                proposition is not None
+                and any(p.source == Source.IA for p in self._depot.propositions(copie_id, verrouillee=True))):
+            if proposition is not None:
+                self._depot.ajouter_proposition(copie_id, proposition)
+            self._journal(copie_id, SYSTEME, action, {}, details)
+            self._avancer.executer(copie_id, Etape.IA)
+        self._depot.liberer_ia(copie_id)

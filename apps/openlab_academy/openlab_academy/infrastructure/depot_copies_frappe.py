@@ -269,6 +269,22 @@ class DepotCopiesFrappe:
         frappe.db.set_value(COPIE, copie_id, {"en_souffrance": 0, "souffrance_depuis": None,
                                               "rappel_souffrance": None})
 
+    # --- réservation de la pré-correction : marque courte, validée aussitôt ---------------------
+    def reserver_ia(self, copie_id: str, maintenant, peremption) -> bool:
+        """Sous un verrou court : ni proposition IA, ni marque vivante -> marque posée. La transaction est validée
+        aussitôt : aucun verrou n'est tenu pendant l'appel au modèle."""
+        marque = frappe.db.get_value(COPIE, copie_id, "ia_reservee_le", for_update=True)
+        deja = frappe.db.exists(PROPOSITION, {"copie": copie_id, "source": Source.IA.value})
+        libre = not deja and (not marque or get_datetime(marque) <= maintenant - peremption)
+        if libre:
+            frappe.db.set_value(COPIE, copie_id, "ia_reservee_le", maintenant)
+        frappe.db.commit()
+        return libre
+
+    def liberer_ia(self, copie_id: str) -> None:
+        frappe.db.set_value(COPIE, copie_id, "ia_reservee_le", None)
+        frappe.db.commit()
+
     def copies_en_souffrance(self) -> list[str]:
         return frappe.get_all(COPIE, {"en_souffrance": 1}, pluck="name", order_by="souffrance_depuis")
 

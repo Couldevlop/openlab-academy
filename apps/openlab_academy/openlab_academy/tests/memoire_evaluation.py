@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from openlab_academy.application.pairs import Relecture, StatutRelecture
 from openlab_academy.application.soumettre_copie import Contenu, Exercice
 from openlab_academy.domain.equipe import EquipeEffective
-from openlab_academy.domain.copie import Copie, CopieVerrouillee, Etat, Statut, etape_suivante
+from openlab_academy.domain.copie import Copie, CopieVerrouillee, Etat, Source, Statut, etape_suivante
 from openlab_academy.domain.grille import grille_generique
 from openlab_academy.domain.reglages_evaluation import ReglagesEvaluation, TypeExercice
 
@@ -43,6 +43,9 @@ class Memoire:
         self.responsable_ = ""
         self.cours_: dict[str, str] = {}
         self.verrous: list[str] = []
+        self.verrou_tenu = False
+        self.reservations_ia: dict = {}
+        self.evenements: list = []
         self.paires_concurrentes: set[tuple[str, str]] = set()  # insérées par une autre transaction
         self.contenus: dict[str, Contenu] = {}
         self.consignes = {"EX1": "Analysez le cas."}
@@ -124,7 +127,25 @@ class Memoire:
     # --- DepotChaine -------------------------------------------------------------
     def verrouiller(self, copie_id):
         self.verrous.append(copie_id)
+        self.verrou_tenu = True  # jusqu'à la prochaine validation de la transaction
         return CopieVerrouillee(self.copies[copie_id], self.etats[copie_id])
+
+    # réservation courte de la pré-correction : validée aussitôt (le verrou est rendu)
+    def reserver_ia(self, copie_id, maintenant, peremption):
+        self.verrouiller(copie_id)
+        deja = any(p.source == Source.IA for p in self.propositions(copie_id, verrouillee=True))
+        marque = self.reservations_ia.get(copie_id)
+        libre = not deja and (marque is None or marque <= maintenant - peremption)
+        if libre:
+            self.reservations_ia[copie_id] = maintenant
+        self.verrou_tenu = False
+        self.evenements.append(("reservation validée" if libre else "réservation refusée", copie_id))
+        return libre
+
+    def liberer_ia(self, copie_id):
+        self.reservations_ia.pop(copie_id, None)
+        self.verrou_tenu = False
+        self.evenements.append(("réservation levée", copie_id))
 
     def etat(self, copie_id):
         return self.etats[copie_id]

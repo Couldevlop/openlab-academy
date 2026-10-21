@@ -1,11 +1,12 @@
 """Cas d'usage : pré-correction par le modèle souverain, sans jamais bloquer la copie."""
 import json
 from dataclasses import replace
+from datetime import timedelta
 
 from openlab_academy.application.chaine import SYSTEME
 from openlab_academy.application.controler import EtapeIndisponible
 from openlab_academy.application.instantaner import PrendreInstantane
-from openlab_academy.application.pre_corriger import SIGNALEMENT, PreCorriger
+from openlab_academy.application.pre_corriger import MARGE_TACHE_S, SIGNALEMENT, PreCorriger
 from openlab_academy.application.soumettre_copie import Contenu
 from openlab_academy.domain.copie import EtatInstantane, Proposition, Source, Statut
 from openlab_academy.domain.garde_fous_ia import AUTEUR_IA
@@ -40,7 +41,7 @@ class TestPreCorriger(Cas):
         self.m.contenus[self.a] = Contenu(texte, url, "", "sig", "SUB1")
 
     def corriger(self, correcteur, reglages=None):
-        PreCorriger(self.m, correcteur, reglages or self.source.reglages(), self.avancer,
+        PreCorriger(self.m, correcteur, reglages or self.source.reglages(), self.avancer, lambda: self.t,
                     lambda *a: self.journal.append(a)).executer(self.a)
 
     def props_ia(self):
@@ -88,14 +89,57 @@ class TestPreCorriger(Cas):
         self.assertEqual(len(self.props_ia()), 1)
         self.assertEqual(self.etape(self.a), ("pairs", Statut.EN_RELECTURE))  # les pairs continuent
 
-    def test_deux_taches_un_seul_appel_au_modele(self):
+    def avec_espion(self, correcteur, pendant=lambda: None):
+        """Pendant l'appel au modèle : verrou de la copie tenu ou non, réservation déjà validée ou non."""
+        proposer, self.pendant_appel = correcteur.proposer, []
+
+        def espion(messages, modele):
+            self.pendant_appel.append((self.m.verrou_tenu, self.m.reservations_ia.get(self.a),
+                                       self.m.evenements[-1:]))
+            pendant()
+            return proposer(messages, modele)
+        correcteur.proposer = espion
+        return correcteur
+
+    def test_aucun_verrou_pendant_l_appel_au_modele(self):
+        self.preparer(Etape.IA, Etape.PAIRS, Etape.FORMATEUR)
+        self.corriger(self.avec_espion(Correcteur()))
+        self.assertEqual(self.pendant_appel, [(False, self.t, [("reservation validée", self.a)])])
+        self.assertEqual(self.m.evenements[-1], ("réservation levée", self.a))
+        self.assertNotIn(self.a, self.m.reservations_ia)
+        self.assertEqual(len(self.props_ia()), 1)
+
+    def test_deux_taches_concurrentes_un_seul_appel_au_modele(self):
         """Pré-correction mise en file à l'entrée dans l'étape IA, puis relancée par l'instantané."""
         self.preparer(Etape.IA, Etape.PAIRS, Etape.FORMATEUR)
         correcteur = Correcteur()
-        self.corriger(correcteur)
+        self.avec_espion(correcteur, pendant=lambda: self.corriger(correcteur))  # la seconde tâche démarre
         self.corriger(correcteur)
         self.assertEqual((len(correcteur.appels), len(self.props_ia())), (1, 1))
-        self.assertIn(("propositions", self.a), self.m.lectures_verrouillees)  # relue sous le verrou de la copie
+        self.corriger(correcteur)  # plus tard : la proposition existe, rien n'est réservé ni appelé
+        self.assertEqual((len(correcteur.appels), len(self.props_ia())), (1, 1))
+
+    def test_reservation_perimee_reprise(self):
+        self.preparer(Etape.IA, Etape.PAIRS, Etape.FORMATEUR, ia=replace(IA, delai_minutes=10))
+        correcteur = Correcteur()
+        self.m.reservations_ia[self.a] = self.t - timedelta(minutes=10, seconds=MARGE_TACHE_S - 1)
+        self.corriger(correcteur)  # encore vivante (délai réglé + marge de la tâche) : rien
+        self.assertEqual(correcteur.appels, [])
+        self.m.reservations_ia[self.a] = self.t - timedelta(minutes=10, seconds=MARGE_TACHE_S)
+        self.corriger(correcteur)  # tâche morte : reprise
+        self.assertEqual((len(correcteur.appels), len(self.props_ia())), (1, 1))
+
+    def test_appel_en_echec_reservation_levee(self):
+        self.preparer(Etape.IA, Etape.PAIRS, Etape.FORMATEUR)
+        self.corriger(Correcteur(erreur=EtapeIndisponible("modèle injoignable")))
+        self.assertNotIn(self.a, self.m.reservations_ia)
+        self.assertIn("pré-correction non disponible", [j[2] for j in self.journal])
+
+    def test_resultat_refuse_reservation_levee(self):
+        self.preparer(Etape.IA, Etape.PAIRS, Etape.FORMATEUR)
+        publiee = lambda: self.m.changer_statut(self.a, Statut.PUBLIEE, "formateur", None)  # noqa: E731
+        self.corriger(self.avec_espion(Correcteur(), pendant=publiee))
+        self.assertEqual((self.props_ia(), self.m.reservations_ia), ([], {}))
 
     def test_proposition_arrivee_pendant_l_appel_rien_n_est_ajoute(self):
         self.preparer(Etape.IA, Etape.PAIRS, Etape.FORMATEUR)
@@ -109,6 +153,7 @@ class TestPreCorriger(Cas):
         self.corriger(correcteur)
         self.assertEqual([p.niveaux for p in self.props_ia()], [{"pertinence": 1}])
         self.assertNotIn("pré-correction proposée", [j[2] for j in self.journal])
+        self.assertEqual(self.m.reservations_ia, {})
 
     def test_instantane_en_cours_la_pre_correction_attend(self):
         self.preparer(url="https://github.com/aya/livrable")

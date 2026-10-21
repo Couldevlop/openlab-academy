@@ -488,6 +488,15 @@ class TestEquipes(FrappeTestCase):
         migrer_surcharges_partielles.execute()  # idempotent
         self.assertEqual(len(source.equipes()), 2)
 
+    def test_patch_case_a_cocher_sans_suppleant(self):
+        lot = un_lot()
+        nom = self._surcharge_ancienne(cohorte=lot, suppleant=None, anonymat="0", nb_pairs="2",
+                                       etapes=etapes_formateur())
+        migrer_surcharges_partielles.execute()
+        doc = frappe.get_doc(SURCHARGE, nom)
+        self.assertEqual((doc.anonymat, doc.nb_pairs, len(doc.etapes)), ("non", "2", 6))
+        self.assertEqual(source.equipes(), ())  # aucun suppléant à déplacer
+
     def test_patch_meme_suppleant_sur_deux_surcharges_de_la_meme_cible(self):
         lot, devoir = un_lot(), un_devoir()
         self._surcharge_ancienne(exercice=devoir, suppleant=RESP_DELEG, nb_pairs="3")
