@@ -27,17 +27,17 @@ jobs:
   # ==========================================================================
   frontend:
     name: Frontend — lint, type, tests, build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     defaults:
       run:
         working-directory: apps/openlab_academy/frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -60,7 +60,7 @@ jobs:
         run: npm run build
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: espace
           path: apps/openlab_academy/openlab_academy/public/espace
@@ -71,7 +71,7 @@ jobs:
   # ==========================================================================
   backend:
     name: Backend — tests Frappe et couverture
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
 
     services:
@@ -91,17 +91,17 @@ jobs:
         ports: ["11000:6379"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "18"
+          node-version: ${{ env.NODE_VERSION }} # LMS exige Node >= 22
 
       - name: Install system dependencies
         run: |
