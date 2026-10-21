@@ -151,8 +151,8 @@ async function publier() {
   const suivante = copies.value[rang.value + 1]?.copie
   try {
     await ecrire('corriger', charge())
-    modifiee.value = false
     const { note: publiee } = await ecrire('publier', { copie: id.value })
+    modifiee.value = false // seulement une fois publiée : un échec garde la confirmation de sortie
     const message = `Note publiée : ${formaterNombre(publiee)} / ${copie.value.note_sur}.`
     await chargerFile()
     const restantes = copies.value.map((c) => c.copie)

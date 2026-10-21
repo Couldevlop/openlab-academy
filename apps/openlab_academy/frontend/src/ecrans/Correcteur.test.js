@@ -99,6 +99,24 @@ describe('Correcteur', () => {
     expect(w.find('[role="status"]').text()).toBe('Note publiée : 16,5 / 20.')
   })
 
+  it('publication en échec : la copie reste gardée contre une sortie sans confirmation', async () => {
+    const { w, routeur } = await ouvrir()
+    ecrire.mockImplementation(async (methode) => {
+      if (methode === 'publier') throw new Error('Publication refusée.')
+      return null
+    })
+    await touche('3')
+    await touche('4')
+    await w.find('.bouton-principal').trigger('click')
+    await flushPromises()
+    expect(w.find('[role="alert"]').exists()).toBe(true)
+    const confirmer = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    await touche('j')
+    expect(confirmer).toHaveBeenCalledTimes(1)
+    expect(routeur.currentRoute.value.params.copie).toBe('C2')
+    confirmer.mockRestore()
+  })
+
   it('limitation de débit : message clair, saisie conservée', async () => {
     const { w } = await ouvrir()
     ecrire.mockRejectedValue(Object.assign(new Error('429'), { status: 429 }))

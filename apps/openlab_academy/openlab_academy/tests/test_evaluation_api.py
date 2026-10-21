@@ -450,11 +450,12 @@ class TestGardes(CasApi):
             with self.subTest(point=nom), self.assertRaises(frappe.PermissionError):
                 getattr(api, nom)(*args)
 
-    def test_debit_par_utilisateur_sur_chaque_ecriture(self):
-        """Même adresse, deux comptes : chacun son compteur ; au-delà de la limite -> 429."""
+    def test_debit_par_utilisateur_sur_chaque_point(self):
+        """Même adresse, deux comptes : chacun son compteur ; au-delà de la limite -> 429 (limites réduites à 3)."""
         requete = mock.Mock(method="POST")
         with mock.patch.object(frappe.local, "request", requete, create=True), \
-                mock.patch.object(frappe.local, "request_ip", "10.0.0.7", create=True):
+                mock.patch.object(frappe.local, "request_ip", "10.0.0.7", create=True), \
+                mock.patch.dict(api.LIMITES, dict.fromkeys(api.LIMITES, 3)):
             for nom, limite in api.LIMITES.items():
                 for qui in (A, B):
                     frappe.cache.delete_value(api.cle_debit(nom, qui), make_keys=False)
@@ -473,8 +474,7 @@ class TestGardes(CasApi):
                     except (frappe.PermissionError, frappe.ValidationError):
                         pass
                 frappe.local.message_log = []
-        self.assertEqual(set(api.LIMITES), {"enregistrer_relecture", "enregistrer_auto_evaluation", "corriger",
-                                            "valider_lot", "publier", "deleguer", "revoquer", "file_correction"})
+        self.assertEqual(set(api.LIMITES), set(self.APPELS))  # lectures comprises
 
     def test_debit_non_compte_hors_requete(self):
         self.en_tant_que(A)

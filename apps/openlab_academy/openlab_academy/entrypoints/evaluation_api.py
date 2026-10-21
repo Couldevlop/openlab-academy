@@ -1,8 +1,9 @@
 """Points d'API de l'évaluation, appelés par les écrans de relecture, de retour et de correction.
 
 OWASP A01 : chaque point refuse le visiteur et vérifie l'accès côté serveur, dans le cas d'usage, avant toute
-lecture de la ressource ; une ressource inexistante est refusée comme une ressource d'autrui (403). Les écritures
-sont limitées en débit. Les textes des apprenants et de l'IA sont renvoyés en texte brut : l'écran les échappe.
+lecture de la ressource ; une ressource inexistante est refusée comme une ressource d'autrui (403). Écritures et
+lectures sont limitées en débit, par utilisateur. Les textes des apprenants et de l'IA sont renvoyés en texte
+brut : l'écran les échappe.
 """
 import json
 import time
@@ -28,6 +29,8 @@ LOT_MAX = 200
 LIMITES = {  # requêtes par heure et par utilisateur
     "enregistrer_relecture": 60, "enregistrer_auto_evaluation": 30, "corriger": 600, "valider_lot": 600,
     "publier": 600, "deleguer": 30, "revoquer": 30, "file_correction": 300,
+    "mes_relectures": 600, "relecture": 600, "mon_auto_evaluation": 600, "mon_retour": 600,
+    "copie_a_corriger": 1200, "fiabilite_ia": 120,
 }
 SUPERVISEURS = {"System Manager", reglages_evaluation_frappe.ROLE}
 CORRECTEURS_LMS = {"Moderator", "Course Creator", "Batch Evaluator"}
@@ -130,12 +133,14 @@ def _publier(depot: DepotCopiesFrappe) -> PublierNote:
 # --- apprenant : relectures, auto-évaluation, retour ------------------------------------------------------
 @frappe.whitelist(methods=["GET"])
 @_api
+@_limite("mes_relectures")
 def mes_relectures() -> list[dict]:
     return ConsulterRelectures(_depot(), DepotRelecturesFrappe()).mes_relectures(_moi())
 
 
 @frappe.whitelist(methods=["GET"])
 @_api
+@_limite("relecture")
 def relecture(relecture_id: str) -> dict:
     return ConsulterRelectures(_depot(), DepotRelecturesFrappe()).relecture(_moi(), relecture_id)
 
@@ -155,6 +160,7 @@ def enregistrer_relecture(relecture_id: str, niveaux: dict | str, commentaires: 
 
 @frappe.whitelist(methods=["GET"])
 @_api
+@_limite("mon_auto_evaluation")
 def mon_auto_evaluation(exercice: str) -> dict:
     return AutoEvaluer(_depot()).consulter(_moi(), exercice)
 
@@ -168,6 +174,7 @@ def enregistrer_auto_evaluation(exercice: str, niveaux: dict | str) -> None:
 
 @frappe.whitelist(methods=["GET"])
 @_api
+@_limite("mon_retour")
 def mon_retour(copie: str) -> dict:
     depot = _depot()
     return ConsulterRetour(depot, DepotRelecturesFrappe(), evaluation.avanceur().chaine).executer(
@@ -185,6 +192,7 @@ def file_correction(exercice: str | None = None) -> dict:
 
 @frappe.whitelist(methods=["GET"])
 @_api
+@_limite("copie_a_corriger")
 def copie_a_corriger(copie: str) -> dict:
     depot = _depot()
     return ConsulterCorrection(depot, _acces(depot), _seuil, evaluation.avanceur().chaine).copie(_moi(), _copie(depot, copie))
@@ -228,6 +236,7 @@ def publier(copie: str) -> dict:
 
 @frappe.whitelist(methods=["GET"])
 @_api
+@_limite("fiabilite_ia")
 def fiabilite_ia(exercice: str | None = None) -> dict[str, float]:
     """Écart moyen IA/formateur par critère sur les copies publiées : rapport de la console."""
     if not _superviseur(_moi()):
