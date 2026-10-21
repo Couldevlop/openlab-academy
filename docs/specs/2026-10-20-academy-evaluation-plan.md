@@ -314,3 +314,35 @@ identifiant de l'auteur.
   formateur absent → escalade ; délégation en congé.
 - [ ] Compétence `semgrep` puis `security-review` sur la branche ; corriger ; suite complète 100 %.
 - [ ] Commit final, mise à jour du README de l'app (console, réglages, IA).
+
+### Task 14 : front aligné sur les pratiques du back
+
+**Fichiers :** `apps/openlab_academy/frontend/` (tout `src/`, `package.json`, `vite.config.*`, `tsconfig.json`,
+`eslint.config.*`, `.prettierrc`), `.github/workflows/` (job front), `docker/Dockerfile` si besoin.
+
+Comportement inchangé : les 3 écrans, les routes et les appels API restent identiques. Toute différence visible est un défaut.
+
+- [ ] **TypeScript strict** (`strict: true`, `noUncheckedIndexedAccess`, aucun `any` implicite) ; `vue-tsc --noEmit`
+  vert. Les `.js` deviennent `.ts`, et les `.vue` passent en `<script setup lang="ts">`.
+- [ ] **Architecture hexagonale du front**, miroir du back :
+  - `src/domaine/` : types et règles pures (grille, calcul de note, médiane, citation, dates). Aucun import de Vue,
+    de frappe-ui ni de `fetch`.
+  - `src/application/` : cas d'usage (charger la file, corriger, publier, valider un lot, relire, consulter son retour)
+    et **ports** (interfaces `DepotCorrection`, `DepotRelecture`, `DepotRetour`, `Horloge`).
+  - `src/infrastructure/` : adaptateur HTTP Frappe, avec CSRF, gestion de 429 et erreurs typées. C'est le seul
+    endroit qui appelle le réseau.
+  - `src/interface/` : écrans, composants et routeur. Ils ne parlent qu'aux cas d'usage, injectés par provide/inject.
+  - Règle ESLint (`import/no-restricted-paths` ou équivalent) qui interdit les imports contraires au sens des
+    dépendances.
+- [ ] **Validation des réponses API** à la frontière de l'adaptateur (schémas, par exemple `zod` ou `valibot`). Une
+  réponse malformée donne une erreur typée et un message clair, jamais un plantage silencieux.
+- [ ] **TDD et couverture** : vitest avec `@vitest/coverage-v8`, seuil 100 % (lignes, branches, fonctions) sur
+  `domaine`, `application` et `infrastructure`. Seuil ≥ 90 % sur `interface`. Les cas d'usage sont testés avec des
+  faux ports.
+- [ ] **Qualité** : ESLint (`eslint-plugin-vue`, `typescript-eslint`, règle `vue/no-v-html` en erreur) et Prettier.
+  Scripts `lint`, `typecheck`, `test`, `build`.
+- [ ] **CI** : job front dans `.github/workflows/`. Il exécute `npm ci`, puis `lint`, `typecheck`, `test --coverage`
+  et `build`, et il échoue sous le seuil.
+- [ ] **Minors parqués de la tâche 12** (voir `task-12-review.md`) : les corriger au passage, chacun avec son test.
+- [ ] Vérification réelle sur le banc à 375 et 1280 px. Les 3 écrans doivent se comporter comme avant (non-régression).
+- [ ] Commits `refactor(academy): ...` et `ci(academy): ...`.
