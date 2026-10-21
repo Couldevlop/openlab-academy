@@ -5,12 +5,21 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read # lecture seule : la CI ne publie rien
 
 env:
   NODE_VERSION: "22"
+  # versions épinglées, identiques à docker/Dockerfile
+  FRAPPE_REF: v15.123.1
+  PAYMENTS_REF: 9885a6e500104f1f160add47d55b370773e67a81
+  LMS_REF: aa8b53b0a7e940871cdb006962a212daccb52a09
 
 jobs:
   # ==========================================================================
@@ -56,3 +65,84 @@ jobs:
           name: espace
           path: apps/openlab_academy/openlab_academy/public/espace
           retention-days: 7
+
+  # ==========================================================================
+  # Backend (app Frappe) — tests sur un site réel, couverture ≥ 99 %
+  # ==========================================================================
+  backend:
+    name: Backend — tests Frappe et couverture
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=10
+      redis-cache:
+        image: redis:7.4-alpine
+        ports: ["13000:6379"]
+      redis-queue:
+        image: redis:7.4-alpine
+        ports: ["11000:6379"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq mariadb-client
+          pip install -q frappe-bench
+
+      - name: Configure MariaDB
+        run: |
+          mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
+          mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
+
+      - name: Init bench (Frappe, payments, LMS)
+        working-directory: /home/runner
+        run: |
+          bench init --frappe-branch "$FRAPPE_REF" --skip-redis-config-generation --skip-assets \
+            --python "$(which python)" frappe-bench
+          cd frappe-bench
+          bench get-app --skip-assets payments --branch version-15
+          (cd apps/payments && git fetch --depth 1 upstream "$PAYMENTS_REF" && git checkout -q -f "$PAYMENTS_REF")
+          bench get-app --skip-assets lms --branch main
+          (cd apps/lms && git fetch --depth 1 upstream "$LMS_REF" && git checkout -q -f "$LMS_REF")
+
+      - name: Install openlab_academy and create test site
+        working-directory: /home/runner/frappe-bench
+        run: |
+          cp -r "$GITHUB_WORKSPACE/apps/openlab_academy" apps/openlab_academy
+          rm -rf apps/openlab_academy/frontend
+          ./env/bin/pip install -q -e apps/openlab_academy
+          printf "frappe\npayments\nlms\nopenlab_academy" > sites/apps.txt
+          bench new-site test_site --db-root-password root --admin-password admin \
+            --mariadb-user-host-login-scope='%'
+          for app in payments lms openlab_academy; do bench --site test_site install-app "$app"; done
+          bench --site test_site set-config allow_tests true
+
+      # même commande que docker/dev-test.sh
+      - name: Run tests with coverage
+        working-directory: /home/runner/frappe-bench/sites
+        run: |
+          ../env/bin/pip install -q coverage
+          ../env/bin/coverage run --branch --source=../apps/openlab_academy/openlab_academy \
+            --omit='*/tests/*,*/hooks.py' -m frappe.utils.bench_helper frappe --site test_site \
+            run-tests --skip-before-tests --app openlab_academy
+          ../env/bin/coverage report -m --skip-covered --fail-under=99
