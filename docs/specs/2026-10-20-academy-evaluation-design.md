@@ -198,7 +198,7 @@ console **n'est jamais écrasée** par la republication des parcours (hook `afte
     étape « non disponible »). Le plafond de l'instantané (60 000 caractères par défaut) dépasse cette fenêtre : pour
     les rendus en URL, baisser le plafond dans la console ou servir le modèle avec une fenêtre plus grande.
 - **Garde-fous ajoutés après la mesure** :
-  - contexte : la console porte la fenêtre du modèle (`contexte_ia_tokens`, défaut 4096). Avant tout appel, le prompt
+  - contexte : la console porte la fenêtre du modèle (`contexte_ia_tokens`, défaut 8192, porté de 4096 le 21 octobre 2026 ; le serveur doit être relancé avec la même fenêtre). Avant tout appel, le prompt
     est estimé à 3 caractères par jeton (prudent face aux 3,2 mesurés) plus 8 jetons par message ; s'il dépasse la
     fenêtre moins 1024 jetons réservés à la réponse, la copie n'est ni tronquée ni envoyée : l'étape IA est
     journalisée « non disponible » (cause « copie trop longue pour le contexte du modèle (N jetons estimés,

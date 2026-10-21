@@ -158,7 +158,7 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         source.initialiser()
         doc = frappe.get_single(REGLAGES)
         doc.update({"ia_url": "http://ia.local", "ia_modele_texte": "m1", "ia_modele_code": "m2",
-                    "ia_seuil_confiance": 0.6, "ia_plafond_caracteres": 1000, "contexte_ia_tokens": 8192,
+                    "ia_seuil_confiance": 0.6, "ia_plafond_caracteres": 1000, "contexte_ia_tokens": 16384,
                     "responsable_pedagogique": "Administrator",
                     "hotes_depots": "github.com\n\n gitea.local ", "niveaux_generiques": "Non\nOui",
                     "longueur_min_caracteres": 50})
@@ -168,10 +168,10 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
                                 "anonymat": 0, "note_masquee_avant_relectures": 0}])
         doc.save(ignore_permissions=True)
         r = source.charger()
-        self.assertEqual(r.ia, ConfigIA("http://ia.local", "m1", "m2", 10, 0.6, ("oublie tout",), 1000, 8192))
+        self.assertEqual(r.ia, ConfigIA("http://ia.local", "m1", "m2", 10, 0.6, ("oublie tout",), 1000, 16384))
         doc.contexte_ia_tokens = 0  # site antérieur au réglage : défaut du code
         doc.save(ignore_permissions=True)
-        self.assertEqual(source.charger().ia.contexte_tokens, 4096)
+        self.assertEqual(source.charger().ia.contexte_tokens, 8192)
         self.assertEqual((r.responsable_pedagogique, r.hotes_depots, r.niveaux_generiques, r.grille_generique),
                          ("Administrator", ("github.com", "gitea.local"), ("Non", "Oui"), (("A", 40), ("B", 60))))
         self.assertEqual(r.longueur_min_caracteres, 50)

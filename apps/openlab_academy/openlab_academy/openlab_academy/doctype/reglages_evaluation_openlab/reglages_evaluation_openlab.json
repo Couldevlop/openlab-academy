@@ -132,7 +132,7 @@
    "fieldname": "contexte_ia_tokens",
    "fieldtype": "Int",
    "label": "Contexte du modèle (jetons)",
-   "default": "4096",
+   "default": "8192",
    "description": "Fenêtre du serveur d'inférence, prompt et réponse compris. Une copie dont le prompt estimé dépasse ce contexte (moins 1024 jetons réservés à la réponse) n'est pas envoyée : l'étape IA est marquée non disponible, jamais tronquée."
   },
   {

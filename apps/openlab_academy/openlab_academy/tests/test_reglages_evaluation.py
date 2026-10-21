@@ -99,7 +99,7 @@ class TestValidation(unittest.TestCase):
             ConfigIA(plafond_caracteres=0)
 
     def test_contexte_du_modele_superieur_a_la_reserve_de_reponse(self):
-        self.assertEqual(ConfigIA().contexte_tokens, 4096)
+        self.assertEqual(ConfigIA().contexte_tokens, 8192)
         with self.assertRaisesRegex(ReglagesInvalides, "contexte"):
             ConfigIA(contexte_tokens=RESERVE_REPONSE_JETONS)
         self.assertEqual(ConfigIA(contexte_tokens=RESERVE_REPONSE_JETONS + 1).contexte_tokens, RESERVE_REPONSE_JETONS + 1)

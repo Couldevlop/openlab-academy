@@ -107,11 +107,11 @@ contient une tournure d'injection n'est pas envoyée : elle est signalée au for
 que si elle respecte le schéma JSON et si chaque citation figure dans la copie et compte au moins 8 caractères hors
 blancs (sinon le critère est « à revoir »).
 
-Contexte du modèle (réglage « Contexte du modèle (jetons) », `contexte_ia_tokens`, défaut 4096) : le prompt
+Contexte du modèle (réglage « Contexte du modèle (jetons) », `contexte_ia_tokens`, défaut 8192) : le prompt
 (consigne, grille, copie) et la réponse doivent tenir dans la fenêtre du serveur. Avant l'appel, le prompt est
 estimé (3 caractères par jeton, plus 8 par message) ; s'il dépasse le contexte moins 1024 jetons réservés à la
 réponse, la copie n'est ni tronquée ni envoyée : l'étape IA est marquée « non disponible » (« copie trop longue pour
-le contexte du modèle ») et la chaîne continue. Avec 4096 jetons, une copie doit rester sous ~8 000 caractères :
+le contexte du modèle ») et la chaîne continue. Avec 8192 jetons, une copie doit rester sous ~20 000 caractères :
 régler le plafond de caractères en conséquence ou servir le modèle avec une fenêtre plus grande.
 
 Mesure sur le vrai service, hors suite de tests (rien n'est enregistré) :

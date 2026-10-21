@@ -153,7 +153,7 @@ class ConfigIA:
     seuil_confiance: float = 0.8
     tournures_injection: tuple[str, ...] = TOURNURES_DEFAUT
     plafond_caracteres: int = 60000
-    contexte_tokens: int = 4096  # fenêtre du modèle servi, prompt et réponse compris
+    contexte_tokens: int = 8192  # fenêtre du modèle servi, prompt et réponse compris
     citation_min_caracteres: int = 8  # hors blancs : en deçà, un extrait figure dans toute copie
 
     def __post_init__(self):
