@@ -5,7 +5,7 @@ from openlab_academy.application.chaine import SYSTEME
 from openlab_academy.application.controler import EtapeIndisponible
 from openlab_academy.application.instantaner import PrendreInstantane
 from openlab_academy.application.soumettre_copie import Contenu
-from openlab_academy.domain.copie import EtatInstantane, Statut
+from openlab_academy.domain.copie import EtatInstantane, Proposition, Source, Statut
 from openlab_academy.domain.reglages_evaluation import Etape
 from openlab_academy.tests.test_chaine import Cas, chaine
 
@@ -33,7 +33,7 @@ class TestPrendreInstantane(Cas):
         self.file.clear()
 
     def prendre(self, instantane):
-        PrendreInstantane(self.m, instantane, lambda *a: self.file.append(a),
+        PrendreInstantane(self.m, instantane, lambda *a: self.file.append(a), self.avancer.chaine,
                           lambda *a: self.journal.append(a)).executer(self.a)
 
     def test_instantane_fige_puis_l_etape_en_attente_relancee(self):
@@ -76,12 +76,33 @@ class TestPrendreInstantane(Cas):
         self.prendre(instantane)
         self.assertEqual((self.m.contenu(self.a), self.file), (EN_COURS, []))
 
-    def test_etape_sans_attente_pas_de_relance(self):
+    def test_pre_correction_deja_proposee_pas_de_relance(self):
         self.avancer.executer(self.a, Etape.CONTROLES)
+        self.m.ajouter_proposition(self.a, Proposition(Source.IA, "ia", {"pertinence": 2}))
         self.avancer.executer(self.a, Etape.IA)
         self.file.clear()
         self.prendre(Instantane())
         self.assertEqual((self.m.contenu(self.a).instantane, self.file), (EtatInstantane.PRIS, []))
+
+    def test_chaine_sans_ia_rien_a_relancer_apres_les_controles(self):
+        self.monter(yaml=chaine(Etape.CONTROLES, Etape.FORMATEUR))
+        self.a = self.rendre("a@x.ci")
+        self.m.contenus[self.a] = EN_COURS
+        self.avancer.executer(self.a, Etape.CONTROLES)
+        self.file.clear()
+        self.prendre(Instantane())
+        self.assertEqual(self.file, [])
+
+    def test_ia_pas_encore_atteinte_seuls_les_controles_reprennent(self):
+        self.prendre(Instantane())  # setUp : copie aux contrôles, IA plus loin dans la chaîne
+        self.assertEqual(self.file, [("controler", self.a)])
+
+    def test_copie_publiee_rien_a_relancer(self):
+        self.avancer.executer(self.a, Etape.CONTROLES)
+        self.m.copies[self.a] = replace(self.m.copies[self.a], statut=Statut.PUBLIEE)
+        self.file.clear()
+        self.prendre(Instantane())
+        self.assertEqual(self.file, [])
 
     def test_pre_correction_en_attente_relancee(self):
         self.avancer.executer(self.a, Etape.CONTROLES)

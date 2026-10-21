@@ -118,7 +118,7 @@ def instantaner(copie_id: str) -> None:
         instantane = instantane_depot(reglages_evaluation_frappe.charger(), reglages_evaluation_frappe.jeton_depots())
     except Exception as erreur:
         instantane = _Indisponible(erreur)
-    cas = PrendreInstantane(DepotCopiesFrappe(), instantane, file, journal_frappe.journaliser)
+    cas = PrendreInstantane(DepotCopiesFrappe(), instantane, file, avanceur().chaine, journal_frappe.journaliser)
     isoler(lambda: cas.executer(copie_id))
 
 

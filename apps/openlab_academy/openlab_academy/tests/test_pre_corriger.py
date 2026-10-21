@@ -4,6 +4,7 @@ from dataclasses import replace
 
 from openlab_academy.application.chaine import SYSTEME
 from openlab_academy.application.controler import EtapeIndisponible
+from openlab_academy.application.instantaner import PrendreInstantane
 from openlab_academy.application.pre_corriger import SIGNALEMENT, PreCorriger
 from openlab_academy.application.soumettre_copie import Contenu
 from openlab_academy.domain.copie import EtatInstantane, Source, Statut
@@ -65,6 +66,27 @@ class TestPreCorriger(Cas):
                 self.preparer(ia=replace(IA, citation_min_caracteres=minimum))
                 self.corriger(Correcteur(reponse(citation="stock")))
                 self.assertEqual("pertinence" in self.props_ia()[0].niveaux, retenue)
+
+    def test_instantane_fini_pendant_les_pairs_la_pre_correction_reprend(self):
+        """Contrôles inactifs, IA en parallèle des pairs : la copie est déjà aux pairs quand l'instantané finit."""
+        self.preparer(Etape.IA, Etape.PAIRS, Etape.FORMATEUR, url="https://github.com/aya/livrable")
+        self.m.contenus[self.a] = replace(self.m.contenu(self.a), instantane=EtatInstantane.EN_COURS)
+        correcteur = Correcteur()
+        self.corriger(correcteur)  # l'instantané n'est pas pris : la pré-correction attend
+        self.assertEqual((correcteur.appels, self.etape(self.a)), ([], ("pairs", Statut.EN_RELECTURE)))
+        self.file.clear()
+
+        class Depot:
+            def prendre(self, url):
+                return "=== main.py ===\nprint(1)", "b" * 40
+        PrendreInstantane(self.m, Depot(), lambda *a: self.file.append(a), self.avancer.chaine,
+                          lambda *a: self.journal.append(a)).executer(self.a)
+        self.assertEqual(self.file, [("pre_corriger", self.a)])
+        self.assertEqual(self.journal[-1][2:], ("pré-correction relancée après l'instantané", {},
+                                                {"etape": "pairs"}))
+        self.corriger(correcteur)
+        self.assertEqual(len(self.props_ia()), 1)
+        self.assertEqual(self.etape(self.a), ("pairs", Statut.EN_RELECTURE))  # les pairs continuent
 
     def test_instantane_en_cours_la_pre_correction_attend(self):
         self.preparer(url="https://github.com/aya/livrable")
