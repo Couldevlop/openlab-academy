@@ -426,11 +426,15 @@ class TestDelegations(CasApi):
     def test_apprenant_ni_delegue_ni_delegataire(self):
         fin = str(add_days(now_datetime(), 3))
         self.en_tant_que(A)
-        with self.assertRaises(frappe.PermissionError):
+        with self.assertRaisesRegex(frappe.ValidationError, "titulaire n'est pas correcteur"):
             api.deleguer(DELEG, str(now_datetime()), fin)
+        with self.assertRaises(frappe.PermissionError):
+            api.deleguer(DELEG, str(now_datetime()), fin, titulaire=FORM)
         self.en_tant_que(FORM)
-        with self.assertRaises(frappe.ValidationError):
+        with self.assertRaisesRegex(frappe.ValidationError, "aucune habilitation"):
             api.deleguer(A, str(now_datetime()), fin)
+        with self.assertRaisesRegex(frappe.ValidationError, "soi-même"):
+            api.deleguer(FORM, str(now_datetime()), fin)
         for debut in ("pas une date", ""):
             with self.subTest(debut=debut), self.assertRaises(frappe.ValidationError):
                 api.deleguer(DELEG, debut, fin)
@@ -443,6 +447,21 @@ class TestDelegations(CasApi):
         self.en_tant_que(DELEG)
         self.assertEqual([c["copie"] for c in api.file_correction()["copies"]], [copie])
         api.corriger(copie, DIX)
+
+    def test_delegation_par_cours(self):
+        (copie,) = self.a_corriger(A)
+        self.en_tant_que(FORM)
+        nom = api.deleguer(DELEG, str(add_days(now_datetime(), -1)), str(add_days(now_datetime(), 3)),
+                           cours=self.cours)
+        self.assertEqual(frappe.db.get_value("Delegation OpenLab", nom, "cours"), self.cours)
+        self.en_tant_que(DELEG)
+        self.assertEqual(api.copie_a_corriger(copie)["copie"], copie)
+        self.en_tant_que("Administrator")
+        frappe.db.set_value("Delegation OpenLab", nom, "cours", frappe.get_all(
+            "LMS Course", {"name": ["!=", self.cours]}, pluck="name", limit=1)[0])
+        self.en_tant_que(DELEG)
+        with self.assertRaises(frappe.PermissionError):
+            api.copie_a_corriger(copie)
 
 
 class TestAdaptateur(CasApi):

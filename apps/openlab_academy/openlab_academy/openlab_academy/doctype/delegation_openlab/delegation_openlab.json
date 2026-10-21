@@ -9,6 +9,7 @@
   "delegataire",
   "debut",
   "fin",
+  "cours",
   "cohorte",
   "exercice",
   "revoquee"
@@ -43,6 +44,13 @@
    "label": "Fin",
    "reqd": 1,
    "in_list_view": 1
+  },
+  {
+   "fieldname": "cours",
+   "fieldtype": "Link",
+   "label": "Cours (optionnel)",
+   "options": "LMS Course",
+   "description": "Périmètre : cours, cohorte, exercice. Vide : tout ce que corrige le titulaire."
   },
   {
    "fieldname": "cohorte",
@@ -84,7 +92,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-20 00:00:00",
+ "modified": "2026-10-21 16:00:00",
  "sort_field": "modified",
  "sort_order": "DESC",
  "custom": 0,

@@ -160,6 +160,9 @@ class DepotCopiesFrappe:
     def completer_contenu(self, copie_id: str, texte: str, commit: str) -> None:
         frappe.db.set_value(COPIE, copie_id, {"contenu": texte, "commit": commit})
 
+    def cours(self, exercice: str) -> str | None:
+        return frappe.db.get_value("LMS Assignment", exercice, "course")
+
     def consigne(self, exercice: str) -> str:
         """Consigne du devoir LMS en texte brut (le HTML de la consigne n'est jamais transmis tel quel)."""
         question = frappe.db.get_value("LMS Assignment", exercice, "question") or ""

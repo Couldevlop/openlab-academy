@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
+from frappe.utils import add_days, now_datetime
 
 from openlab_academy.domain.delegation import Delegation
 from openlab_academy.domain.reglages_evaluation import (
@@ -18,6 +19,9 @@ SURCHARGE = "Surcharge Evaluation OpenLab"
 DELEGATION = "Delegation OpenLab"
 JOURNAL = "Journal Note OpenLab"
 ELEVE = "eleve.console@example.ci"
+ELEVE_CORRECTEUR = "eleve.correcteur.console@example.ci"
+RESP_DELEG = "resp.delegation@example.ci"
+CORRECTEUR_LMS = "correcteur.lms@example.ci"
 ROLE = "Responsable pédagogique OpenLab"
 
 
@@ -372,29 +376,81 @@ class TestSurcharges(FrappeTestCase):
 
 
 class TestDelegations(FrappeTestCase):
+    """Écran de la console : la règle commune du domaine, le journal et les notifications (comme l'API)."""
+
+    def setUp(self):
+        utilisateur(RESP_DELEG, ROLE)
+        utilisateur(CORRECTEUR_LMS, "Course Creator")
+        utilisateur(ELEVE, "LMS Student")
+        self.debut, self.fin = add_days(now_datetime(), -1).replace(microsecond=0), add_days(now_datetime(), 10)
+
     def tearDown(self):
+        frappe.set_user("Administrator")
         frappe.db.rollback()
 
     def _delegation(self, **champs):
-        base = {"doctype": DELEGATION, "titulaire": "Administrator", "delegataire": "Guest",
-                "debut": "2026-11-01 08:00:00", "fin": "2026-11-15 18:00:00"}
+        base = {"doctype": DELEGATION, "titulaire": "Administrator", "delegataire": RESP_DELEG,
+                "debut": self.debut, "fin": self.fin.replace(microsecond=0)}
         return frappe.get_doc({**base, **champs})
 
     def test_delegation_mappee_vers_le_domaine(self):
-        self._delegation(cohorte=un_lot()).insert()
-        self._delegation(delegataire="Administrator", titulaire="Guest", revoquee=1).insert()
+        lot, cours = un_lot(), frappe.get_all("LMS Course", pluck="name", limit=1)[0]
+        self._delegation(cohorte=lot, cours=cours).insert()
+        self._delegation(delegataire="Administrator", titulaire=RESP_DELEG, revoquee=1).insert()
         d = next(x for x in source.delegations() if x.titulaire == "Administrator")
-        self.assertEqual(d, Delegation("Administrator", "Guest", datetime(2026, 11, 1, 8), datetime(2026, 11, 15, 18),
-                                       cohorte=un_lot()))
+        self.assertEqual(d, Delegation("Administrator", RESP_DELEG, self.debut, self.fin.replace(microsecond=0),
+                                       cohorte=lot, cours=cours))
         self.assertTrue(any(x.revoquee for x in source.delegations()))
 
-    def test_fin_avant_debut_refusee(self):
-        with self.assertRaisesRegex(frappe.ValidationError, "fin doit suivre le début"):
-            self._delegation(fin="2026-10-01 00:00:00").insert()
+    def test_regle_commune_du_domaine(self):
+        lot = un_lot()
+        if not frappe.db.exists("LMS Batch Enrollment", {"batch": lot, "member": ELEVE}):
+            frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": lot, "member": ELEVE}).insert(
+                ignore_permissions=True)
+        utilisateur(ELEVE_CORRECTEUR, "Course Creator")
+        frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": lot, "member": ELEVE_CORRECTEUR}).insert(
+            ignore_permissions=True)
+        for champs, motif in (({"fin": self.debut}, "fin de la délégation doit suivre son début"),
+                              ({"delegataire": "Administrator"}, "soi-même"),
+                              ({"fin": None}, "date de fin"),
+                              ({"delegataire": "Guest"}, "aucune habilitation"),
+                              ({"delegataire": ELEVE_CORRECTEUR, "cohorte": lot}, "apprenant sur ce périmètre"),
+                              ({"titulaire": ELEVE, "delegataire": RESP_DELEG}, "titulaire n'est pas correcteur")):
+            with self.subTest(motif=motif), self.assertRaisesRegex(frappe.ValidationError, motif):
+                self._delegation(**champs).insert()
+            frappe.local.message_log = []
 
-    def test_auto_delegation_refusee(self):
-        with self.assertRaisesRegex(frappe.ValidationError, "titulaire et le délégataire"):
-            self._delegation(delegataire="Administrator").insert()
+    def test_redelegation_refusee(self):
+        self._delegation(delegataire=CORRECTEUR_LMS).insert()
+        with self.assertRaisesRegex(frappe.ValidationError, "ne se délègue pas à nouveau"):
+            self._delegation(titulaire=CORRECTEUR_LMS, delegataire=RESP_DELEG).insert()
+        frappe.local.message_log = []
+
+    def journal(self, nom):
+        return frappe.get_all(JOURNAL, {"copie": f"délégation:{nom}"}, ["acteur", "action"], order_by="creation")
+
+    def test_creation_modification_revocation_consignees_et_notifiees(self):
+        doc = self._delegation().insert()
+        doc.fin = add_days(self.fin, 2)
+        doc.save()
+        doc.save()  # rien de changé : rien à consigner
+        with patch.object(source, "delegation_vers_domaine", side_effect=AssertionError("règle appliquée")):
+            doc.revoquee = 1
+            doc.save()  # une révocation est toujours possible
+        self.assertEqual([(j.acteur, j.action) for j in self.journal(doc.name)],
+                         [("Administrator", "délégation créée"), ("Administrator", "délégation modifiée"),
+                          ("Administrator", "délégation révoquée")])
+        for qui in ("Administrator", RESP_DELEG):
+            sujets = frappe.get_all("Notification Log", {"for_user": qui, "subject": ["like", f"%{doc.name}%"]},
+                                    pluck="subject")
+            self.assertEqual(len(sujets), 3, qui)
+
+    def test_revocation_par_l_api_passe_par_le_document(self):
+        nom = source.DepotDelegationsFrappe().creer_delegation(
+            Delegation("Administrator", RESP_DELEG, self.debut, self.fin, cours=None))
+        source.DepotDelegationsFrappe().revoquer_delegation(nom)
+        self.assertTrue(source.DepotDelegationsFrappe().delegation(nom).revoquee)
+        self.assertEqual([j.action for j in self.journal(nom)], ["délégation créée", "délégation révoquée"])
 
 
 class TestJournal(FrappeTestCase):
@@ -451,8 +507,9 @@ class TestDroitsConsole(FrappeTestCase):
         self.ligne = frappe.get_last_doc(JOURNAL).name
         self.surcharge = frappe.get_doc({"doctype": SURCHARGE, "cohorte": un_lot(),
                                          "etapes": etapes_formateur()}).insert().name
-        self.delegation = frappe.get_doc({"doctype": DELEGATION, "titulaire": "Administrator", "delegataire": "Guest",
-                                          "debut": "2026-11-01 08:00:00", "fin": "2026-11-02 08:00:00"}).insert().name
+        self.delegation = frappe.get_doc({"doctype": DELEGATION, "titulaire": "Administrator",
+                                          "delegataire": "resp.console@example.ci", "debut": now_datetime(),
+                                          "fin": add_days(now_datetime(), 1)}).insert().name
 
     def tearDown(self):
         frappe.set_user("Administrator")

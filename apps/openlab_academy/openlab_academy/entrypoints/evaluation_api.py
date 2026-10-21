@@ -18,10 +18,10 @@ from openlab_academy.application.corriger import (
     ValiderLot, fiabilite)
 from openlab_academy.application.pairs import EnregistrerRelecture, RelectureRefusee
 from openlab_academy.application.retours import AutoEvaluer, ConsulterRelectures, ConsulterRetour
-from openlab_academy.domain.delegation import Delegation
+from openlab_academy.domain.delegation import Delegation, DelegationRefusee
 from openlab_academy.entrypoints import evaluation
-from openlab_academy.infrastructure import journal_frappe, reglages_evaluation_frappe
-from openlab_academy.infrastructure.depot_copies_frappe import INSTRUCTEUR, DepotCopiesFrappe
+from openlab_academy.infrastructure import delegations_frappe, journal_frappe, reglages_evaluation_frappe
+from openlab_academy.infrastructure.depot_copies_frappe import DepotCopiesFrappe
 from openlab_academy.infrastructure.depot_relectures_frappe import DepotRelecturesFrappe
 
 HEURE = 3600
@@ -32,8 +32,6 @@ LIMITES = {  # requêtes par heure et par utilisateur
     "mes_relectures": 600, "relecture": 600, "mon_auto_evaluation": 600, "mon_retour": 600,
     "copie_a_corriger": 1200, "fiabilite_ia": 120,
 }
-SUPERVISEURS = {"System Manager", reglages_evaluation_frappe.ROLE}
-CORRECTEURS_LMS = {"Moderator", "Course Creator", "Batch Evaluator"}
 
 
 def _api(fn: Callable) -> Callable:
@@ -46,7 +44,7 @@ def _api(fn: Callable) -> Callable:
             return fn(*args, **kwargs)
         except AccesRefuse as e:
             frappe.throw(str(e), frappe.PermissionError)
-        except (CorrectionRefusee, RelectureRefusee) as e:
+        except (CorrectionRefusee, RelectureRefusee, DelegationRefusee) as e:
             frappe.throw(str(e), frappe.ValidationError)
     return appel
 
@@ -98,13 +96,7 @@ def _administrateur(utilisateur: str) -> bool:
 
 
 def _superviseur(utilisateur: str) -> bool:
-    return bool(SUPERVISEURS & _roles(utilisateur))
-
-
-def _habilite(utilisateur: str) -> bool:
-    """Personne habilitée à corriger : superviseur, rôle LMS de correction ou formateur d'un cours ou d'un lot."""
-    return (_superviseur(utilisateur) or bool(CORRECTEURS_LMS & _roles(utilisateur))
-            or bool(frappe.db.exists(INSTRUCTEUR, {"instructor": utilisateur})))
+    return delegations_frappe.superviseur(utilisateur)
 
 
 def _depot() -> DepotCopiesFrappe:
@@ -247,22 +239,23 @@ def fiabilite_ia(exercice: str | None = None) -> dict[str, float]:
 
 # --- délégations ---------------------------------------------------------------------------------------
 def _delegations() -> GererDelegations:
-    return GererDelegations(reglages_evaluation_frappe.DepotDelegationsFrappe(), _habilite, _superviseur,
-                            now_datetime, journal_frappe.journaliser)
+    return GererDelegations(reglages_evaluation_frappe.DepotDelegationsFrappe(), delegations_frappe.faits,
+                            _superviseur, now_datetime)
 
 
 @frappe.whitelist(methods=["POST"])
 @_api
 @_limite("deleguer")
 def deleguer(delegataire: str, debut: str, fin: str, cohorte: str | None = None, exercice: str | None = None,
-             titulaire: str | None = None) -> str:
+             titulaire: str | None = None, cours: str | None = None) -> str:
     try:
         bornes = get_datetime(debut), get_datetime(fin)
     except Exception:
         bornes = None, None
     if None in bornes:
         raise CorrectionRefusee("dates de délégation invalides")
-    d = Delegation(titulaire or _moi(), delegataire, *bornes, cohorte=cohorte or None, exercice=exercice or None)
+    d = Delegation(titulaire or _moi(), delegataire, *bornes, cohorte=cohorte or None, exercice=exercice or None,
+                   cours=cours or None)
     return _delegations().deleguer(_moi(), d)
 
 

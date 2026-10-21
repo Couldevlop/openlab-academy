@@ -20,7 +20,7 @@ from openlab_academy.application.pre_corriger import SIGNALEMENT
 from openlab_academy.application.soumettre_copie import Contenu
 from openlab_academy.domain.copie import (
     Copie, CopieVerrouillee, Etat, Proposition, Source, Statut, ecarts, lots, mediane)
-from openlab_academy.domain.delegation import Delegation, peut_corriger
+from openlab_academy.domain.delegation import Delegation, FaitsDelegation, peut_corriger, verifier_delegation
 from openlab_academy.domain.grille import Grille, GrilleInvalide
 from openlab_academy.domain.reglages_evaluation import Chaine, Etape
 
@@ -42,6 +42,7 @@ class CorrectionRefusee(ValueError):
 
 class DepotCorrection(Protocol):
     def copie(self, copie_id: str) -> Copie: ...
+    def cours(self, exercice: str) -> str | None: ...  # cours de l'exercice : périmètre des délégations
     def etat(self, copie_id: str) -> Etat: ...
     def verrouiller(self, copie_id: str) -> CopieVerrouillee: ...
     def grille(self, copie_id: str) -> Grille: ...
@@ -81,6 +82,8 @@ class DepotConsultation(DepotCorrection, Protocol):
 
 
 class DepotDelegations(Protocol):
+    """Création et révocation passent par l'adaptateur, qui consigne et prévient titulaire et délégataire."""
+
     def creer_delegation(self, d: Delegation) -> str: ...
     def delegation(self, delegation_id: str) -> Delegation | None: ...
     def revoquer_delegation(self, delegation_id: str) -> None: ...
@@ -238,13 +241,15 @@ class Acces:
         """Titulaires qui délèguent actuellement à l'acteur (quel que soit le périmètre)."""
         maintenant = self._horloge()
         return frozenset(d.titulaire for d in self._delegations()
-                         if d.delegataire == acteur and not d.revoquee and d.debut <= maintenant <= d.fin)
+                         if d.delegataire == acteur and not d.revoquee and d.fin is not None
+                         and d.debut <= maintenant <= d.fin)
 
     def _mandant(self, acteur: str, copie: Copie, titulaires: set[str]) -> str | None:
         """Titulaire de la délégation active la plus spécifique dont l'acteur est délégataire."""
         maintenant = self._horloge()
+        cours = self._depot.cours(copie.exercice)
         actives = [d for d in self._delegations() if d.delegataire == acteur and d.titulaire in titulaires
-                   and d.couvre(maintenant, copie.cohorte, copie.exercice)]
+                   and d.couvre(maintenant, copie.cohorte, copie.exercice, cours)]
         return max(actives, key=lambda d: d.specificite).titulaire if actives else None
 
     def correcteur(self, acteur: str, copie: Copie, etat: Etat) -> Habilitation:
@@ -254,7 +259,8 @@ class Acces:
         titulaires = self._depot.titulaires(copie.id) | ({etat.escalade_a} if etat.escalade_a else set())
         if acteur in titulaires or self._administrateur(acteur):
             return Habilitation(Source.FORMATEUR)
-        if peut_corriger(acteur, copie, titulaires, tuple(self._delegations()), self._horloge()):
+        if peut_corriger(acteur, copie, titulaires, tuple(self._delegations()), self._horloge(),
+                         self._depot.cours(copie.exercice)):
             return Habilitation(Source.FORMATEUR, self._mandant(acteur, copie, titulaires))
         raise AccesRefuse("ni titulaire ni délégataire de cette copie")
 
@@ -501,35 +507,23 @@ class GererDelegations:
     """On ne délègue que ses propres corrections ; un superviseur (super administrateur, responsable
     pédagogique) délègue pour le compte de n'importe quel correcteur."""
 
-    def __init__(self, depot: DepotDelegations, habilite: Callable[[str], bool], superviseur: Callable[[str], bool],
-                 horloge: Callable[[], datetime], journal: Journal):
+    def __init__(self, depot: DepotDelegations, faits: Callable[[Delegation], FaitsDelegation],
+                 superviseur: Callable[[str], bool], horloge: Callable[[], datetime]):
         self._depot = depot
-        self._habilite = habilite
+        self._faits = faits
         self._superviseur = superviseur
         self._horloge = horloge
-        self._journal = journal
 
     def deleguer(self, acteur: str, d: Delegation) -> str:
+        """Refus d'autorisation : AccesRefuse ; règle commune enfreinte : DelegationRefusee."""
         if d.titulaire != acteur and not self._superviseur(acteur):
             raise AccesRefuse("vous ne pouvez déléguer que vos propres corrections")
-        if not self._habilite(d.titulaire):
-            raise AccesRefuse("seul un correcteur habilité délègue ses corrections")
-        if d.delegataire == d.titulaire or not self._habilite(d.delegataire):
-            raise CorrectionRefusee("le délégataire doit être une autre personne habilitée à corriger")
-        if d.fin <= d.debut or d.fin <= self._horloge():
-            raise CorrectionRefusee("la fin de la délégation doit suivre son début et ne pas être passée")
-        nom = self._depot.creer_delegation(d)
-        self._journal(f"délégation:{nom}", acteur, "délégation créée", {},
-                      {"titulaire": d.titulaire, "delegataire": d.delegataire, "debut": d.debut, "fin": d.fin,
-                       "cohorte": d.cohorte, "exercice": d.exercice}, None)
-        return nom
+        verifier_delegation(d, self._faits(d), self._horloge(), creation=True)
+        return self._depot.creer_delegation(d)
 
     def revoquer(self, acteur: str, delegation_id: str) -> None:
         d = self._depot.delegation(delegation_id)
         if d is None or (d.titulaire != acteur and not self._superviseur(acteur)):
             raise AccesRefuse("délégation introuvable ou hors de votre compte")
-        if d.revoquee:
-            return
-        self._depot.revoquer_delegation(delegation_id)
-        self._journal(f"délégation:{delegation_id}", acteur, "délégation révoquée", {"revoquee": False},
-                      {"revoquee": True}, None)
+        if not d.revoquee:  # toujours possible, même si les habilitations ont changé depuis
+            self._depot.revoquer_delegation(delegation_id)

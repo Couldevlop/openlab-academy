@@ -38,6 +38,7 @@ class Memoire:
         self.dispensees: list[str] = []
         self.tailles = {"COH1": taille}
         self.titulaires_ = {"form@x.ci"}
+        self.cours_: dict[str, str] = {}
         self.verrous: list[str] = []
         self.paires_concurrentes: set[tuple[str, str]] = set()  # insérées par une autre transaction
         self.contenus: dict[str, Contenu] = {}
@@ -256,6 +257,9 @@ class Memoire:
 
     def delegation(self, delegation_id):
         return self.delegations_.get(delegation_id)
+
+    def cours(self, exercice):
+        return self.cours_.get(exercice)
 
     def revoquer_delegation(self, delegation_id):
         self.delegations_[delegation_id] = replace(self.delegations_[delegation_id], revoquee=True)

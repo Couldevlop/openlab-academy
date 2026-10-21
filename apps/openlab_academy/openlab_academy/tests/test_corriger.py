@@ -10,7 +10,7 @@ from openlab_academy.application.pairs import StatutRelecture
 from openlab_academy.application.pre_corriger import SIGNALEMENT
 from openlab_academy.application.soumettre_copie import Contenu
 from openlab_academy.domain.copie import Proposition, Source, Statut
-from openlab_academy.domain.delegation import Delegation
+from openlab_academy.domain.delegation import Delegation, DelegationRefusee, FaitsDelegation
 from openlab_academy.domain.reglages_evaluation import Etape, TypeExercice
 from openlab_academy.tests.memoire_evaluation import DEBUT, Memoire, SourceMemoire
 from openlab_academy.tests.test_chaine import chaine
@@ -96,8 +96,22 @@ class TestAcces(Cas):
         cid = self.a_corriger()
         self.assertEqual(self.acces.correcteur(DELEG, self.m.copie(cid), self.m.etat(cid)).au_nom_de, "form2@x.ci")
 
+    def test_delegation_sur_le_cours_de_l_exercice(self):
+        self.monter(delegations=[delegation(cours="CRS1")])
+        self.m.cours_ = {"EX1": "CRS1"}
+        cid = self.a_corriger()
+        self.assertEqual(self.acces.correcteur(DELEG, self.m.copie(cid), self.m.etat(cid)).au_nom_de, FORM)
+        self.assertEqual(self.acces.mandants(DELEG), {FORM})
+
+    def test_delegation_sans_fin_jamais_active(self):
+        self.monter(delegations=[Delegation(FORM, DELEG, DEBUT - timedelta(days=1), None)])
+        cid = self.a_corriger()
+        self.assertEqual(self.acces.mandants(DELEG), set())
+        with self.assertRaises(AccesRefuse):
+            self.acces.correcteur(DELEG, self.m.copie(cid), self.m.etat(cid))
+
     def test_delegation_expiree_revoquee_ou_hors_perimetre_refusee(self):
-        for d in (delegation(revoquee=True), delegation(cohorte="AUTRE"),
+        for d in (delegation(revoquee=True), delegation(cohorte="AUTRE"), delegation(cours="AUTRE"),
                   Delegation(FORM, DELEG, DEBUT - timedelta(days=5), DEBUT - timedelta(days=1)),
                   delegation(titulaire="inconnu@x.ci")):
             self.monter(delegations=[d])
@@ -526,34 +540,44 @@ class TestConsulterCorrection(Cas):
 
 
 class TestGererDelegations(Cas):
+    """Autorisation dans le cas d'usage, règle commune dans le domaine ; journal et notifications dans l'adaptateur
+    (le même chemin que l'écran de la console)."""
+
     def setUp(self):
         self.monter()
-        self.gerer = GererDelegations(self.m, lambda u: u in {FORM, DELEG, AUTRE, ADMIN}, lambda u: u == ADMIN,
-                                      lambda: self.t, lambda *a: self.journal.append(a))
+        self.habilites, self.apprenants = {FORM, DELEG, AUTRE, ADMIN}, {A}
+        self.gerer = GererDelegations(self.m, self.faits, lambda u: u == ADMIN, lambda: self.t)
+
+    def faits(self, d):
+        return FaitsDelegation(delegataire_apprenant=d.delegataire in self.apprenants,
+                               delegataire_habilite=d.delegataire in self.habilites,
+                               titulaire_habilite=d.titulaire in self.habilites,
+                               titulaire_en_propre=d.titulaire in self.habilites, titulaire_delegataire=False)
 
     def test_deleguer_ses_propres_corrections(self):
-        did = self.gerer.deleguer(FORM, delegation())
-        self.assertEqual(self.m.delegation(did).delegataire, DELEG)
-        j = self.dernier("délégation créée")
-        self.assertEqual((j[0], j[1], j[4]["delegataire"]), (f"délégation:{did}", FORM, DELEG))
+        did = self.gerer.deleguer(FORM, delegation(cours="CRS1"))
+        self.assertEqual((self.m.delegation(did).delegataire, self.m.delegation(did).cours), (DELEG, "CRS1"))
 
     def test_pour_autrui_reserve_au_superviseur(self):
         with self.assertRaisesRegex(AccesRefuse, "propres corrections"):
             self.gerer.deleguer(AUTRE, delegation())
         self.assertTrue(self.gerer.deleguer(ADMIN, delegation()))
 
-    def test_titulaire_ou_delegataire_non_habilite(self):
-        with self.assertRaises(AccesRefuse):
-            self.gerer.deleguer(A, delegation(titulaire=A))
-        with self.assertRaisesRegex(CorrectionRefusee, "habilité"):
-            self.gerer.deleguer(FORM, delegation(delegataire=A))
+    def test_regle_commune_du_domaine(self):
+        echue = Delegation(FORM, DELEG, DEBUT - timedelta(days=3), DEBUT - timedelta(days=1))
+        for d, motif in ((delegation(titulaire=A), "titulaire n'est pas correcteur"),
+                         (delegation(delegataire=A), "apprenant"), (delegation(delegataire=FORM), "soi-même"),
+                         (Delegation(FORM, DELEG, DEBUT, None), "date de fin"), (echue, "déjà passée"),
+                         (delegation(delegataire="inconnu@x.ci"), "aucune habilitation")):
+            with self.subTest(motif=motif), self.assertRaisesRegex(DelegationRefusee, motif):
+                self.gerer.deleguer(d.titulaire, d)
+        self.assertEqual(self.m.delegations_, {})
 
-    def test_delegation_incoherente(self):
-        for d in (delegation(delegataire=FORM),
-                  Delegation(FORM, DELEG, DEBUT, DEBUT),
-                  Delegation(FORM, DELEG, DEBUT - timedelta(days=3), DEBUT - timedelta(days=1))):
-            with self.subTest(d=d), self.assertRaises(CorrectionRefusee):
-                self.gerer.deleguer(FORM, d)
+    def test_redelegation_refusee(self):
+        recue = GererDelegations(self.m, lambda d: replace(self.faits(d), titulaire_delegataire=True,
+                                                           titulaire_en_propre=False), lambda u: False, lambda: self.t)
+        with self.assertRaisesRegex(DelegationRefusee, "ne se délègue pas à nouveau"):
+            recue.deleguer(DELEG, delegation(titulaire=DELEG, delegataire=AUTRE))
 
     def test_revoquer(self):
         did = self.gerer.deleguer(FORM, delegation())
@@ -561,9 +585,8 @@ class TestGererDelegations(Cas):
             self.gerer.revoquer(AUTRE, did)
         with self.assertRaises(AccesRefuse):
             self.gerer.revoquer(FORM, "inconnue")
+        self.habilites.clear()  # une révocation reste possible même si les habilitations ont changé
         self.gerer.revoquer(FORM, did)
         self.assertTrue(self.m.delegation(did).revoquee)
-        self.assertEqual(self.dernier("délégation révoquée")[1], FORM)
-        n = len(self.journal)
         self.gerer.revoquer(ADMIN, did)  # déjà révoquée : rien de plus
-        self.assertEqual(len(self.journal), n)
+        self.assertTrue(self.m.delegation(did).revoquee)
