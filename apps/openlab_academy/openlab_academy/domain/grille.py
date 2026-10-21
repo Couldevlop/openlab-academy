@@ -5,6 +5,7 @@ codes de critères uniques. Son empreinte identifie de façon stable le contenu 
 """
 import hashlib
 import json
+import math
 import re
 import unicodedata
 from dataclasses import dataclass
@@ -12,6 +13,7 @@ from dataclasses import dataclass
 from openlab_academy.domain.reglages import CritereBareme
 
 PAS_NOTE = 0.5
+EPSILON_ARRONDI = 1e-9  # bruit des flottants : 20,4999999999 vaut 20,5, 20,499999998 non
 
 
 class GrilleInvalide(ValueError):
@@ -91,7 +93,12 @@ class Grille:
                 raise GrilleInvalide(f"critère « {critere.code} » : niveau {indice} inexistant")
             bas, haut = critere.niveaux[0].points, critere.niveaux[-1].points
             total += critere.poids * (critere.niveaux[indice].points - bas) / (haut - bas)
-        return round(total / 100 * note_sur / PAS_NOTE) * PAS_NOTE
+        return arrondi_au_pas(total / 100 * note_sur)
+
+
+def arrondi_au_pas(note: float) -> float:
+    """Au demi-point le plus proche, demi-pas arrondi au supérieur (10,25 -> 10,5), comme le front."""
+    return math.floor(note / PAS_NOTE + 0.5 + EPSILON_ARRONDI) * PAS_NOTE
 
 
 def _code(nom: str) -> str:

@@ -55,6 +55,16 @@ class TestNote(unittest.TestCase):
         # 40 % * 1/3 = 13,33 % de 20 = 2,67 -> 2,5
         self.assertEqual(_grille().note({"fonctionnel": 1, "qualite": 0}, 20), 2.5)
 
+    def test_demi_pas_arrondi_au_superieur(self):
+        def note(milieu, haut, sur=20):
+            niveaux = (Niveau("a", "a", 0), Niveau("b", "b", milieu), Niveau("c", "c", haut))
+            return Grille((Critere("a", "A", "A", 100, niveaux),)).note({"a": 1}, sur)
+        self.assertEqual(note(41, 80), 10.5)  # 10,25 -> 10,5 (et non 10 au pair)
+        self.assertEqual(note(39, 80), 10.0)  # 9,75 -> 10
+        self.assertEqual(note(1, 8, 10), 1.5)  # 1,25 -> 1,5
+        self.assertEqual(note(49, 80, 10), 6.0)  # 6,125 -> 6
+        self.assertEqual(note(10249999999, 20000000000), 10.0)  # 10,249999999 : pas de bascule
+
     def test_critere_absent(self):
         with self.assertRaisesRegex(GrilleInvalide, "niveau manquant"):
             _grille().note({"fonctionnel": 3}, 20)

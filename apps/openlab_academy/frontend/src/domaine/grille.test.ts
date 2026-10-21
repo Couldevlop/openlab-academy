@@ -33,12 +33,14 @@ describe('calculerNote', () => {
     expect(calculerNote(GRILLE, { pertinence: 0, rigueur: 0, clarte: 0, ancrage: 0 }, 20)).toBe(0)
   })
 
-  it('arrondit au pair comme le domaine Python', () => {
-    // 49/80*10 = 6,125 -> 12,25 demi-points -> 12
-    expect(calculerNote({ criteres: [critere('a', 100, points(0, 49, 80))] }, { a: 1 }, 10)).toBe(6)
-    const h: Grille = { criteres: [critere('a', 100, points(0, 1, 8))] }
-    expect(calculerNote(h, { a: 1 }, 10)).toBe(1) // 1,25 -> 2,5 demi-points -> 2 (pair) -> 1
-    expect(calculerNote(h, { a: 1 }, 14)).toBe(2) // 1,75 -> 3,5 -> 4 (pair) -> 2
+  it('arrondit le demi-pas au supérieur comme le domaine Python', () => {
+    const note = (milieu: number, haut: number, sur = 20) =>
+      calculerNote({ criteres: [critere('a', 100, points(0, milieu, haut))] }, { a: 1 }, sur)
+    expect(note(41, 80)).toBe(10.5) // 10,25 -> 20,5 demi-points -> 21 -> 10,5
+    expect(note(39, 80)).toBe(10) // 9,75 -> 19,5 -> 20 -> 10
+    expect(note(1, 8, 10)).toBe(1.5) // 1,25 -> 2,5 -> 3 -> 1,5
+    expect(note(49, 80, 10)).toBe(6) // 6,125 -> 12,25 -> 12 -> 6
+    expect(note(10249999999, 20000000000)).toBe(10) // 10,249999999 : pas de bascule
     const t: Grille = { criteres: [critere('a', 100, points(0, 1, 3))] }
     expect(calculerNote(t, { a: 1 }, 10)).toBe(3.5) // 3,33 -> 6,67 demi-points -> 7
   })

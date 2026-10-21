@@ -1,5 +1,5 @@
 // Grille d'évaluation et calcul de la note, identique au domaine Python (Grille.note) : somme pondérée des niveaux,
-// arrondie au demi-point, arrondi au pair le plus proche comme `round` en Python.
+// arrondie au demi-point le plus proche, demi-pas au supérieur (10,25 -> 10,5).
 
 export interface Niveau {
   libelle: string
@@ -25,12 +25,11 @@ export type Niveaux = Record<string, number>
 
 export const PAS_NOTE = 0.5
 
-function arrondiPair(x: number): number {
-  const bas = Math.floor(x)
-  const reste = x - bas
-  if (reste > 0.5) return bas + 1
-  if (reste < 0.5) return bas
-  return bas % 2 === 0 ? bas : bas + 1
+const EPSILON_ARRONDI = 1e-9 // bruit des flottants : 20,4999999999 vaut 20,5, 20,499999998 non
+
+/** Demi-pas arrondi au supérieur (10,25 -> 10,5), même formule que le domaine Python. */
+function arrondiAuPas(note: number): number {
+  return Math.floor(note / PAS_NOTE + 0.5 + EPSILON_ARRONDI) * PAS_NOTE
 }
 
 function niveauChoisi(critere: Critere, niveaux: Niveaux): Niveau | undefined {
@@ -48,7 +47,7 @@ export function calculerNote(grille: Grille, niveaux: Niveaux, noteSur: number):
     if (!choisi || !bas || !haut) return null
     total += (c.poids * (choisi.points - bas.points)) / (haut.points - bas.points)
   }
-  return arrondiPair(((total / 100) * noteSur) / PAS_NOTE) * PAS_NOTE
+  return arrondiAuPas((total / 100) * noteSur)
 }
 
 /** Descripteur d'un niveau quand il apprend quelque chose de plus que son libellé ; vide sinon. */
