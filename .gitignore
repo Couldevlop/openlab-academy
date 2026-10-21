@@ -7,3 +7,4 @@ poc/
 .remember/
 node_modules/
 apps/openlab_academy/openlab_academy/public/espace/
+apps/openlab_academy/frontend/coverage/

@@ -6,9 +6,14 @@ APP="$(cd "$(dirname "$0")/../apps/openlab_academy" && pwd)"
 FRONT="$APP/frontend"
 PAQUET="$APP/openlab_academy/public/espace/espace.js"
 export MSYS_NO_PATHCONV=1
-# écrans d'évaluation : reconstruits si leurs sources sont plus récentes que le paquet
-if [ -d "$FRONT/node_modules" ] && { [ ! -f "$PAQUET" ] || [ -n "$(find "$FRONT/src" "$FRONT/vite.config.js" "$FRONT/package.json" -newer "$PAQUET" -print -quit)" ]; }; then
+# écrans d'évaluation : dépendances installées au besoin, paquet reconstruit dès que ses sources changent (fichier
+# ajouté, modifié ou supprimé : empreinte des chemins et des dates, gardée hors du paquet servi)
+[ -d "$FRONT/node_modules" ] || (cd "$FRONT" && npm ci --no-audit --no-fund)
+EMPREINTE="$FRONT/node_modules/.empreinte-espace"
+SOURCES="$(cd "$FRONT" && find src package.json package-lock.json vite.config.ts tsconfig.json -type f -printf '%p %T@\n' | sort | sha1sum)"
+if [ ! -f "$PAQUET" ] || [ "$(cat "$EMPREINTE" 2>/dev/null)" != "$SOURCES" ]; then
   (cd "$FRONT" && npm run --silent build)
+  printf '%s' "$SOURCES" > "$EMPREINTE"
 fi
 docker exec -u frappe "$C" rm -rf "$B/apps/openlab_academy"
 docker exec -u frappe "$C" mkdir -p "$B/apps/openlab_academy"
