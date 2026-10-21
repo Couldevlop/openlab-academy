@@ -21,6 +21,7 @@
   "ia_delai_minutes",
   "ia_seuil_confiance",
   "ia_plafond_caracteres",
+  "contexte_ia_tokens",
   "section_tournures",
   "tournures",
   "section_depots",
@@ -119,6 +120,13 @@
    "default": "60000"
   },
   {
+   "fieldname": "contexte_ia_tokens",
+   "fieldtype": "Int",
+   "label": "Contexte du modèle (jetons)",
+   "default": "4096",
+   "description": "Fenêtre du serveur d'inférence, prompt et réponse compris. Une copie dont le prompt estimé dépasse ce contexte (moins 1024 jetons réservés à la réponse) n'est pas envoyée : l'étape IA est marquée non disponible, jamais tronquée."
+  },
+  {
    "fieldname": "section_tournures",
    "fieldtype": "Section Break",
    "label": "Tournures d'injection détectées"
@@ -180,7 +188,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-20 12:00:00",
+ "modified": "2026-10-21 04:00:00",
  "sort_field": "modified",
  "sort_order": "DESC",
  "custom": 0,

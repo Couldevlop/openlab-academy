@@ -2,7 +2,9 @@
 
 La copie est une donnée non fiable, lue en texte lisible (celui que voient le formateur et les pairs) : une
 tentative d'instruction au modèle écarte la pré-correction et signale la copie au formateur. Sinon le modèle
-reçoit grille, consigne et copie encadrée ; sa réponse n'est retenue qu'après les garde-fous du domaine. Toute défaillance marque l'étape « non disponible » et la copie avance.
+reçoit grille, consigne et copie encadrée ; sa réponse n'est retenue qu'après les garde-fous du domaine. Une
+copie dont le prompt dépasserait le contexte du modèle n'est jamais tronquée ni envoyée. Toute défaillance
+marque l'étape « non disponible » et la copie avance.
 L'appel au modèle (plusieurs minutes sur CPU) précède toute lecture verrouillante de la copie.
 """
 from typing import Protocol
@@ -11,8 +13,8 @@ from openlab_academy.application.chaine import SYSTEME, Journal
 from openlab_academy.application.controler import (
     Avanceur, DepotControles, EtapeIndisponible, consigner_indisponibilite)
 from openlab_academy.domain.copie import Proposition
-from openlab_academy.domain.garde_fous_ia import construire_messages, detecter_injection, interpreter
-from openlab_academy.domain.reglages_evaluation import Etape, ReglagesEvaluation
+from openlab_academy.domain.garde_fous_ia import construire_messages, detecter_injection, estimer_jetons, interpreter
+from openlab_academy.domain.reglages_evaluation import RESERVE_REPONSE_JETONS, Etape, ReglagesEvaluation
 
 SIGNALEMENT = "copie signalée : tentative d'instruction à l'IA"
 
@@ -57,6 +59,10 @@ class PreCorriger:
             raise EtapeIndisponible("copie vide")
         copie, grille = self._depot.copie(copie_id), self._depot.grille(copie_id)
         messages = construire_messages(grille, self._depot.consigne(copie.exercice), texte)
+        estimes, disponibles = estimer_jetons(messages), self._ia.contexte_tokens - RESERVE_REPONSE_JETONS
+        if estimes > disponibles:  # jamais de troncature : la copie entière ou rien
+            raise EtapeIndisponible(f"copie trop longue pour le contexte du modèle ({estimes} jetons estimés, "
+                                    f"{disponibles} disponibles)")
         proposition = interpreter(self._correcteur.proposer(messages, modele), grille, texte)
         return "pré-correction proposée", {"modele": modele, "confiance": proposition.confiance}, proposition
 

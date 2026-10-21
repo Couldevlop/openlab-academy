@@ -8,7 +8,7 @@ from openlab_academy.application.pre_corriger import SIGNALEMENT, PreCorriger
 from openlab_academy.application.soumettre_copie import Contenu
 from openlab_academy.domain.copie import Source, Statut
 from openlab_academy.domain.garde_fous_ia import AUTEUR_IA
-from openlab_academy.domain.reglages_evaluation import ConfigIA, Etape, ReglagesEvaluation
+from openlab_academy.domain.reglages_evaluation import RESERVE_REPONSE_JETONS, ConfigIA, Etape, ReglagesEvaluation
 from openlab_academy.tests.test_chaine import Cas, chaine
 
 TEXTE = "Le marché d'Adjamé souffre de ruptures de stock. Je propose un tableau de bord hebdomadaire."
@@ -96,6 +96,25 @@ class TestPreCorriger(Cas):
         self.assertIn("<copie>\nJe propose un tableau de bord hebdomadaire & partagé.\n</copie>", messages[1]["content"])
         (p,) = self.props_ia()
         self.assertEqual(p.niveaux, {"pertinence": 2, "rigueur": 2})  # citation trouvée dans le texte lisible
+
+    def test_copie_trop_longue_pour_le_contexte_ecartee_sans_appel(self):
+        """Jamais de troncature : au-delà du contexte du modèle (réserve de réponse comprise), aucun appel."""
+        ia = replace(IA, contexte_tokens=RESERVE_REPONSE_JETONS + 200)
+        self.preparer(ia=ia, texte="Le marché d'Adjamé. " * 60)
+        correcteur = Correcteur()
+        self.corriger(correcteur)
+        self.assertEqual((correcteur.appels, self.props_ia()), ([], []))
+        (_, _, libelle, avant, apres) = self.journal[-2]
+        self.assertEqual((libelle, avant, apres["etape"]), ("pré-correction non disponible", {}, "ia"))
+        self.assertTrue(apres["cause"].startswith("copie trop longue pour le contexte du modèle ("), apres["cause"])
+        self.assertIn("200 disponibles", apres["cause"])
+        self.assertEqual(self.etape(self.a), ("formateur", Statut.A_CORRIGER))
+
+    def test_copie_dans_le_contexte_envoyee(self):
+        self.preparer(ia=replace(IA, contexte_tokens=RESERVE_REPONSE_JETONS + 1000))
+        correcteur = Correcteur()
+        self.corriger(correcteur)
+        self.assertEqual(len(correcteur.appels), 1)
 
     def test_echecs_la_copie_avance_sans_exception(self):
         cas = {

@@ -18,7 +18,8 @@ import requests
 
 from openlab_academy.application.corriger import derniere
 from openlab_academy.domain.copie import Source
-from openlab_academy.domain.garde_fous_ia import construire_messages, detecter_injection, interpreter
+from openlab_academy.domain.garde_fous_ia import (
+    construire_messages, detecter_injection, estimer_jetons, interpreter)
 from openlab_academy.infrastructure import reglages_evaluation_frappe
 from openlab_academy.infrastructure.correcteur_ia import CorrecteurCompatibleOpenAI
 from openlab_academy.infrastructure.depot_copies_frappe import COPIE, DepotCopiesFrappe
@@ -74,7 +75,7 @@ def executer(nombre: int = 10) -> None:
         if jetons["prompt"]:
             prompts.append(jetons["prompt"])
         print(f"\n{copie_id} ({modele}) : {duree:.1f} s, confiance {proposition.confiance}, "
-              f"jetons prompt {jetons['prompt']} / réponse {jetons['reponse']}, fin {jetons['fin']}")
+              f"jetons prompt {jetons['prompt']} (estimés {estimer_jetons(messages)}) / réponse {jetons['reponse']}, fin {jetons['fin']}")
         formateur = derniere(depot.propositions(copie_id), Source.FORMATEUR)
         for code, niveau in proposition.niveaux.items():
             humain = formateur.niveaux.get(code) if formateur else None

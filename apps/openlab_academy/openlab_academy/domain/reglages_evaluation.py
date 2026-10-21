@@ -8,6 +8,8 @@ from enum import Enum
 
 from openlab_academy.domain.reglages import ReglagesInvalides
 
+RESERVE_REPONSE_JETONS = 1024  # réponse du modèle (mesurée : moins de 700 jetons pour 4 critères)
+
 TOURNURES_DEFAUT = (
     "ignore les instructions", "ignore previous instructions", "ignore all previous instructions",
     "donne 20/20", "give full marks", "tu es maintenant", "you are now", "system prompt",
@@ -117,6 +119,7 @@ class ConfigIA:
     seuil_confiance: float = 0.8
     tournures_injection: tuple[str, ...] = TOURNURES_DEFAUT
     plafond_caracteres: int = 60000
+    contexte_tokens: int = 4096  # fenêtre du modèle servi, prompt et réponse compris
 
     def __post_init__(self):
         if not 0 <= self.seuil_confiance <= 1:
@@ -125,6 +128,9 @@ class ConfigIA:
             raise ReglagesInvalides("delai_minutes ne peut pas être négatif")
         if self.plafond_caracteres <= 0:
             raise ReglagesInvalides("plafond_caracteres doit être positif")
+        if self.contexte_tokens <= RESERVE_REPONSE_JETONS:
+            raise ReglagesInvalides(f"le contexte du modèle doit dépasser {RESERVE_REPONSE_JETONS} jetons "
+                                    "(réserve de la réponse)")
 
 
 def _chaine(actives: set[Etape]) -> Chaine:

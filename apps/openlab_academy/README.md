@@ -104,12 +104,15 @@ service n'en demande pas), délai max par copie (minutes), seuil de confiance de
 l'instantané, tournures d'injection. La clé ne part jamais en HTTP clair vers un hôte public (HTTPS exigé) ; aucune
 redirection n'est suivie. La pré-correction tourne dans la file `long` de RQ, une copie à la fois. Une copie qui
 contient une tournure d'injection n'est pas envoyée : elle est signalée au formateur. La réponse n'est retenue
-que si elle respecte le schéma JSON et si chaque citation figure dans la copie (sinon le critère est « à revoir »).
+que si elle respecte le schéma JSON et si chaque citation figure dans la copie et compte au moins 8 caractères hors
+blancs (sinon le critère est « à revoir »).
 
-Contexte du modèle : le prompt (consigne, grille, copie) et la réponse doivent tenir dans la fenêtre du serveur.
-Avec une fenêtre de 4096 jetons, une copie doit rester sous ~8 000 caractères (≈ 3,2 caractères par jeton en
-français) : régler le plafond de caractères en conséquence ou servir le modèle avec une fenêtre plus grande.
-Au-delà, le service répond HTTP 400 et l'étape IA est marquée « non disponible ».
+Contexte du modèle (réglage « Contexte du modèle (jetons) », `contexte_ia_tokens`, défaut 4096) : le prompt
+(consigne, grille, copie) et la réponse doivent tenir dans la fenêtre du serveur. Avant l'appel, le prompt est
+estimé (3 caractères par jeton, plus 8 par message) ; s'il dépasse le contexte moins 1024 jetons réservés à la
+réponse, la copie n'est ni tronquée ni envoyée : l'étape IA est marquée « non disponible » (« copie trop longue pour
+le contexte du modèle ») et la chaîne continue. Avec 4096 jetons, une copie doit rester sous ~8 000 caractères :
+régler le plafond de caractères en conséquence ou servir le modèle avec une fenêtre plus grande.
 
 Mesure sur le vrai service, hors suite de tests (rien n'est enregistré) :
 

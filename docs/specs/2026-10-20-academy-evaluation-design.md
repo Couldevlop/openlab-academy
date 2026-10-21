@@ -197,6 +197,17 @@ console **n'est jamais écrasée** par la republication des parcours (hook `afte
     700 de réponse ; une copie doit rester sous ~8 000 caractères. Un prompt de 5 055 jetons est refusé (HTTP 400,
     étape « non disponible »). Le plafond de l'instantané (60 000 caractères par défaut) dépasse cette fenêtre : pour
     les rendus en URL, baisser le plafond dans la console ou servir le modèle avec une fenêtre plus grande.
+- **Garde-fous ajoutés après la mesure** :
+  - contexte : la console porte la fenêtre du modèle (`contexte_ia_tokens`, défaut 4096). Avant tout appel, le prompt
+    est estimé à 3 caractères par jeton (prudent face aux 3,2 mesurés) plus 8 jetons par message ; s'il dépasse la
+    fenêtre moins 1024 jetons réservés à la réponse, la copie n'est ni tronquée ni envoyée : l'étape IA est
+    journalisée « non disponible » (cause « copie trop longue pour le contexte du modèle (N jetons estimés,
+    M disponibles) ») et la chaîne continue ;
+  - citation : au moins 8 caractères hors blancs (en forme normalisée), sinon le critère est « à revoir » ;
+  - texte lisible : un bloc HTML devient un paragraphe, `<br>` un saut de ligne, toute autre balise une espace ;
+    deux paragraphes ne collent jamais deux mots (« Ignore les » / « instructions » reste détecté) ;
+  - normalisation : NFKC, caractères de mise en forme (Cf) et autres invisibles (joint de graphème, sélecteurs de
+    variante, remplissages hangûl, sélecteurs mongols) retirés.
 
 ## 6. Sécurité (OWASP)
 

@@ -2,7 +2,7 @@ import unittest
 
 from openlab_academy.domain.reglages import ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import (
-    CHAINES_DEFAUT, Chaine, ConfigEtape, ConfigIA, Etape, Expiration, ReglagesEvaluation, Surcharge, TypeExercice,
+    CHAINES_DEFAUT, RESERVE_REPONSE_JETONS, Chaine, ConfigEtape, ConfigIA, Etape, Expiration, ReglagesEvaluation, Surcharge, TypeExercice,
 )
 
 E = Etape
@@ -94,6 +94,12 @@ class TestValidation(unittest.TestCase):
             ConfigIA(delai_minutes=-1)
         with self.assertRaises(ReglagesInvalides):
             ConfigIA(plafond_caracteres=0)
+
+    def test_contexte_du_modele_superieur_a_la_reserve_de_reponse(self):
+        self.assertEqual(ConfigIA().contexte_tokens, 4096)
+        with self.assertRaisesRegex(ReglagesInvalides, "contexte"):
+            ConfigIA(contexte_tokens=RESERVE_REPONSE_JETONS)
+        self.assertEqual(ConfigIA(contexte_tokens=RESERVE_REPONSE_JETONS + 1).contexte_tokens, RESERVE_REPONSE_JETONS + 1)
 
     def test_publier_provisoire_formateur_refuse_par_defaut(self):
         c = Chaine(tuple(ConfigEtape(e, True, 1, Expiration.PUBLIER_PROVISOIRE if e == E.FORMATEUR
