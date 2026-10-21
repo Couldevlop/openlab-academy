@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  # ==========================================================================
+  # Frontend (écrans d'évaluation) — lint, types, tests et couverture, build
+  # ==========================================================================
+  frontend:
+    name: Frontend — lint, type, tests, build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/openlab_academy/frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: apps/openlab_academy/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint (ESLint + Prettier)
+        run: npm run lint
+
+      - name: Type check (vue-tsc)
+        run: npm run typecheck
+
+      # seuils : 100 % sur domaine, application et infrastructure, 90 % sur l'interface (vite.config.ts)
+      - name: Run unit tests with coverage
+        run: npm test -- --coverage
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: espace
+          path: apps/openlab_academy/openlab_academy/public/espace
+          retention-days: 7
