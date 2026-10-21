@@ -27,6 +27,7 @@ from openlab_academy.domain.reglages_evaluation import Chaine, Etape
 COMMENTAIRE_MAX = 5000
 GENERAL = "general"  # commentaire d'ensemble, à côté des commentaires par critère
 CORRIGEABLES = (Statut.A_CORRIGER, Statut.PROVISOIRE)
+REMPLACEE = "version remplacée par un nouveau rendu : seule la dernière version se corrige"
 LIEN_RETOUR = "/espace/retour/{}"
 SYSTEME = "systeme"
 
@@ -51,6 +52,8 @@ class DepotCorrection(Protocol):
     def titulaires(self, copie_id: str) -> set[str]: ...
     def jures(self, copie_id: str) -> set[str]: ...
     def dispensee(self, copie_id: str) -> bool: ...
+    def courante(self, copie_id: str) -> bool:
+        """Lecture verrouillante : la copie est-elle toujours la dernière version de sa soumission ?"""
     def publier(self, copie_id: str, note: float, note_sur: int, reussite: bool, resume: str, lien: str,
                 differe: bool) -> None:
         """Différé : lien seul dans LMS, statut LMS inchangé."""
@@ -58,6 +61,7 @@ class DepotCorrection(Protocol):
 
 class DepotLiberation(Protocol):
     def verrouiller(self, copie_id: str) -> CopieVerrouillee: ...
+    def courante(self, copie_id: str) -> bool: ...
     def dispensee(self, copie_id: str) -> bool: ...
     def resultat(self, copie_id: str) -> tuple[float, int, bool]: ...
     def copies_differees(self, apprenant: str | None = None) -> list[str]: ...
@@ -73,6 +77,7 @@ class DepotConsultation(DepotCorrection, Protocol):
     def consigne(self, exercice: str) -> str: ...
     def titre(self, exercice: str) -> str: ...
     def signalee(self, copie_id: str) -> bool: ...
+    def versions(self, copie_id: str) -> list[dict]: ...  # versions antérieures : copie, version, rendue_le
 
 
 class DepotDelegations(Protocol):
@@ -266,6 +271,8 @@ class Acces:
 
 
 def _corrigeable(copie: Copie) -> None:
+    if copie.statut == Statut.REMPLACEE:
+        raise CorrectionRefusee(REMPLACEE)
     if copie.statut not in CORRIGEABLES:
         raise CorrectionRefusee(f"la copie n'est pas à corriger (statut : {copie.statut.value})")
 
@@ -354,6 +361,8 @@ class PublierNote:
         copie = v.copie
         hab = self._acces.correcteur(acteur, copie, v.etat)
         _corrigeable(copie)
+        if not self._depot.courante(copie_id):  # avant toute écriture dans LMS : un rendu a pu la remplacer
+            raise CorrectionRefusee(REMPLACEE)
         s = synthese(self._depot.propositions(copie_id, verrouillee=True))
         if s.formateur is None:
             raise CorrectionRefusee("aucune correction du formateur à publier")
@@ -398,6 +407,8 @@ class LibererNote:
         copie = self._depot.verrouiller(copie_id).copie
         if not self._depot.differee(copie_id):
             return False  # déjà libérée
+        if copie.statut == Statut.REMPLACEE or not self._depot.courante(copie_id):
+            raise CorrectionRefusee(REMPLACEE)
         if note_masquee(self._chaine(copie), copie, self._depot.dispensee(copie_id),
                         self._relectures.relectures(copie.exercice, copie.cohorte)):
             return False
@@ -481,6 +492,7 @@ class ConsulterCorrection:
                 "niveaux": formateur.niveaux, "commentaires": formateur.commentaires, "auteur": formateur.auteur,
                 "au_nom_de": formateur.au_nom_de},
             "ecarts": sorted(s.ecarts), "signalement": SIGNALEMENT if self._depot.signalee(copie_id) else "",
+            "remplacee": copie.statut == Statut.REMPLACEE, "versions_precedentes": self._depot.versions(copie_id),
         }
 
 

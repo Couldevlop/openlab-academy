@@ -1,12 +1,13 @@
 """Domaine : copie rendue, propositions de notation, médiane, écarts et lots de relecture.
 
 La copie suit une machine à états ; une copie renvoyée n'avance plus (un nouveau dépôt crée une nouvelle version).
+Un nouveau rendu remplace la copie en cours : elle devient REMPLACEE, terminale et en lecture seule.
 """
 from dataclasses import dataclass, field, replace
 from datetime import datetime
 from enum import Enum
 
-from openlab_academy.domain.reglages_evaluation import Chaine, Etape, TypeExercice
+from openlab_academy.domain.reglages_evaluation import Chaine, Etape, Resoumission, TypeExercice
 
 
 class TransitionInterdite(ValueError):
@@ -22,6 +23,7 @@ class Statut(str, Enum):
     A_CORRIGER = "a_corriger"
     PROVISOIRE = "provisoire"
     PUBLIEE = "publiee"
+    REMPLACEE = "remplacee"
 
 
 class Source(str, Enum):
@@ -35,15 +37,17 @@ class Source(str, Enum):
 
 _S = Statut
 TRANSITIONS: dict[Statut, frozenset[Statut]] = {
-    _S.RENDUE: frozenset({_S.CONTROLEE, _S.RENVOYEE, _S.PRE_CORRIGEE, _S.EN_RELECTURE, _S.A_CORRIGER}),
+    _S.RENDUE: frozenset({_S.CONTROLEE, _S.RENVOYEE, _S.PRE_CORRIGEE, _S.EN_RELECTURE, _S.A_CORRIGER, _S.REMPLACEE}),
     _S.RENVOYEE: frozenset(),
-    _S.CONTROLEE: frozenset({_S.PRE_CORRIGEE, _S.EN_RELECTURE, _S.A_CORRIGER}),
-    _S.PRE_CORRIGEE: frozenset({_S.EN_RELECTURE, _S.A_CORRIGER}),
-    _S.EN_RELECTURE: frozenset({_S.A_CORRIGER}),
-    _S.A_CORRIGER: frozenset({_S.PROVISOIRE, _S.PUBLIEE}),
-    _S.PROVISOIRE: frozenset({_S.PUBLIEE}),
+    _S.CONTROLEE: frozenset({_S.PRE_CORRIGEE, _S.EN_RELECTURE, _S.A_CORRIGER, _S.REMPLACEE}),
+    _S.PRE_CORRIGEE: frozenset({_S.EN_RELECTURE, _S.A_CORRIGER, _S.REMPLACEE}),
+    _S.EN_RELECTURE: frozenset({_S.A_CORRIGER, _S.REMPLACEE}),
+    _S.A_CORRIGER: frozenset({_S.PROVISOIRE, _S.PUBLIEE, _S.REMPLACEE}),
+    _S.PROVISOIRE: frozenset({_S.PUBLIEE, _S.REMPLACEE}),
     _S.PUBLIEE: frozenset(),
+    _S.REMPLACEE: frozenset(),
 }
+HUMAINES = (Source.JURY, Source.FORMATEUR)
 
 
 @dataclass(frozen=True)
@@ -90,6 +94,24 @@ class CopieVerrouillee:
 
     copie: Copie
     etat: Etat
+
+
+def refus_de_resoumission(courante: Copie, props: list[Proposition], regle: Resoumission, maintenant: datetime,
+                          echeance: datetime | None) -> str | None:
+    """Motif pour lequel un nouveau rendu ne remplace pas la copie courante, ou None s'il la remplace.
+
+    Une note publiée est définitive. Une copie renvoyée attend justement un nouveau rendu : il est toujours accepté.
+    Sinon, selon la console : jusqu'au premier geste humain de correction (note du formateur ou d'un juré,
+    publication provisoire), ou jusqu'à l'échéance de l'exercice (sans échéance : toujours)."""
+    if courante.statut == Statut.PUBLIEE:
+        return "rendu après publication ignoré"
+    if courante.statut == Statut.RENVOYEE:
+        return None
+    if regle == Resoumission.ECHEANCE:
+        return "rendu après l'échéance ignoré" if echeance is not None and maintenant > echeance else None
+    if courante.statut == Statut.PROVISOIRE or any(p.source in HUMAINES for p in props):
+        return "rendu après le début de la correction ignoré"
+    return None
 
 
 def etape_suivante(chaine: Chaine, apres: Etape | None) -> Etape:

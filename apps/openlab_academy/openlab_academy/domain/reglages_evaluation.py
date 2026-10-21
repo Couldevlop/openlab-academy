@@ -42,6 +42,13 @@ class Expiration(str, Enum):
     PUBLIER_PROVISOIRE = "publier_provisoire"
 
 
+class Resoumission(str, Enum):
+    """Jusqu'à quand un nouveau rendu remplace la copie en cours (au-delà, il est ignoré et l'apprenant prévenu)."""
+
+    ECHEANCE = "echeance"  # jusqu'à l'échéance de l'exercice, même pendant la correction
+    DEBUT_CORRECTION = "debut_correction"  # jusqu'au premier geste humain de correction (formateur ou jury)
+
+
 @dataclass(frozen=True)
 class ConfigEtape:
     etape: Etape
@@ -199,6 +206,7 @@ class ReglagesEvaluation:
     instantane_delai_s: int = 10  # délai de chaque appel à l'hébergeur
     instantane_budget_s: int = 20  # durée totale d'un instantané pris pendant le rendu de l'apprenant
     instantane_budget_tache_s: int = 60  # durée totale d'un instantané repris en tâche de fond
+    resoumission_jusqua: Resoumission = Resoumission.DEBUT_CORRECTION
 
     def __post_init__(self):
         for type_, chaine in self.chaines.items():

@@ -1,9 +1,14 @@
 import unittest
+from datetime import datetime, timedelta
 
 from openlab_academy.domain.copie import (
     Copie, Proposition, Source, Statut, TransitionInterdite, ecarts, etape_suivante, lots, mediane, nb_pairs_possible,
+    refus_de_resoumission,
 )
-from openlab_academy.domain.reglages_evaluation import Chaine, ConfigEtape, Etape, Expiration, TypeExercice
+from openlab_academy.domain.reglages_evaluation import (
+    Chaine, ConfigEtape, Etape, Expiration, Resoumission, TypeExercice)
+
+MAINTENANT = datetime(2026, 10, 21, 12, 0)
 
 
 def copie(statut=Statut.RENDUE):
@@ -21,14 +26,16 @@ def chaine(actives):
 class TestTransitions(unittest.TestCase):
     def test_legales(self):
         legales = {
-            Statut.RENDUE: {Statut.CONTROLEE, Statut.RENVOYEE, Statut.PRE_CORRIGEE, Statut.EN_RELECTURE, Statut.A_CORRIGER},
+            Statut.RENDUE: {Statut.CONTROLEE, Statut.RENVOYEE, Statut.PRE_CORRIGEE, Statut.EN_RELECTURE, Statut.A_CORRIGER,
+                            Statut.REMPLACEE},
             Statut.RENVOYEE: set(),
-            Statut.CONTROLEE: {Statut.PRE_CORRIGEE, Statut.EN_RELECTURE, Statut.A_CORRIGER},
-            Statut.PRE_CORRIGEE: {Statut.EN_RELECTURE, Statut.A_CORRIGER},
-            Statut.EN_RELECTURE: {Statut.A_CORRIGER},
-            Statut.A_CORRIGER: {Statut.PROVISOIRE, Statut.PUBLIEE},
-            Statut.PROVISOIRE: {Statut.PUBLIEE},
+            Statut.CONTROLEE: {Statut.PRE_CORRIGEE, Statut.EN_RELECTURE, Statut.A_CORRIGER, Statut.REMPLACEE},
+            Statut.PRE_CORRIGEE: {Statut.EN_RELECTURE, Statut.A_CORRIGER, Statut.REMPLACEE},
+            Statut.EN_RELECTURE: {Statut.A_CORRIGER, Statut.REMPLACEE},
+            Statut.A_CORRIGER: {Statut.PROVISOIRE, Statut.PUBLIEE, Statut.REMPLACEE},
+            Statut.PROVISOIRE: {Statut.PUBLIEE, Statut.REMPLACEE},
             Statut.PUBLIEE: set(),
+            Statut.REMPLACEE: set(),  # terminale, en lecture seule
         }
         for depart, cibles in legales.items():
             for cible in Statut:
@@ -48,6 +55,33 @@ class TestTransitions(unittest.TestCase):
         n = c.passer_a(Statut.CONTROLEE)
         self.assertEqual(c.statut, Statut.RENDUE)
         self.assertEqual(n.id, c.id)
+
+
+class TestResoumission(unittest.TestCase):
+    def refus(self, statut=Statut.RENDUE, props=(), regle=Resoumission.DEBUT_CORRECTION, echeance=None):
+        return refus_de_resoumission(copie(statut), list(props), regle, MAINTENANT, echeance)
+
+    def test_publiee_definitive_quelle_que_soit_la_regle(self):
+        for regle in Resoumission:
+            self.assertEqual(self.refus(Statut.PUBLIEE, regle=regle), "rendu après publication ignoré")
+
+    def test_jusqu_au_debut_de_la_correction(self):
+        for statut in (Statut.RENDUE, Statut.EN_RELECTURE, Statut.A_CORRIGER, Statut.RENVOYEE):
+            self.assertIsNone(self.refus(statut, props=[prop({"a": 1}), prop({"a": 1}, Source.IA)]))
+        debut = "rendu après le début de la correction ignoré"
+        for source in (Source.FORMATEUR, Source.JURY):  # premier geste humain de correction
+            self.assertEqual(self.refus(Statut.A_CORRIGER, props=[prop({"a": 1}, source)]), debut)
+        self.assertEqual(self.refus(Statut.PROVISOIRE), debut)
+        self.assertIsNone(self.refus(Statut.A_CORRIGER, echeance=MAINTENANT - timedelta(days=1)))  # échéance ignorée
+
+    def test_jusqu_a_l_echeance_de_l_exercice(self):
+        regle = Resoumission.ECHEANCE
+        corrigee = [prop({"a": 1}, Source.FORMATEUR)]
+        self.assertIsNone(self.refus(Statut.PROVISOIRE, corrigee, regle, MAINTENANT))  # échéance comprise
+        self.assertIsNone(self.refus(Statut.A_CORRIGER, corrigee, regle, None))  # exercice sans échéance
+        self.assertEqual(self.refus(Statut.RENDUE, (), regle, MAINTENANT - timedelta(minutes=1)),
+                         "rendu après l'échéance ignoré")
+        self.assertIsNone(self.refus(Statut.RENVOYEE, (), regle, MAINTENANT - timedelta(minutes=1)))
 
 
 class TestEtapeSuivante(unittest.TestCase):

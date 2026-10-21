@@ -137,6 +137,28 @@ class TestPublier(CasApi):
         with self.assertRaisesRegex(frappe.ValidationError, "aucune correction"):
             api.publier(copie)
 
+    def test_version_remplacee_jamais_publiee_ni_ecrite_dans_lms(self):
+        (v1,) = self.a_corriger(A)
+        soumission = frappe.db.get_value("Copie OpenLab", v1, "soumission")
+        lms_avant = frappe.db.get_value(SOUMISSION, soumission, ["status", "comments"])
+        s = frappe.get_doc(SOUMISSION, soumission)
+        s.answer = "https://github.com/aya/livrable-v2"
+        s.save(ignore_permissions=True)  # nouveau rendu avant toute correction humaine : v1 remplacée
+        v2 = self.copie_de(A)
+        self.assertEqual(frappe.db.get_value("Copie OpenLab", v1, "statut"), "remplacee")
+        self.en_tant_que(FORM)
+        with self.assertRaisesRegex(frappe.ValidationError, "version remplacée"):
+            api.corriger(v1, json.dumps(DIX))
+        with self.assertRaisesRegex(frappe.ValidationError, "version remplacée"):
+            api.publier(v1)
+        self.en_tant_que("Administrator")
+        self.depot.changer_statut(v2, Statut.A_CORRIGER, "formateur", None)
+        self.en_tant_que(FORM)
+        vue = api.copie_a_corriger(v2)
+        self.assertEqual((vue["remplacee"], [v["copie"] for v in vue["versions_precedentes"]]), (False, [v1]))
+        self.en_tant_que("Administrator")
+        self.assertEqual(frappe.db.get_value(SOUMISSION, soumission, ["status", "comments"]), lms_avant)
+
     def test_copie_inexistante_403(self):
         self.en_tant_que(FORM)
         for appel in (lambda: api.publier("inexistante"), lambda: api.corriger("inexistante", DIX),

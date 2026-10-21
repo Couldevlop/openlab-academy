@@ -73,6 +73,16 @@ def supprimer_grilles_sans_copie(exercices: list[str]) -> None:
             frappe.db.delete(GRILLE_EXERCICE, {"exercice": exercice})
 
 
+def marquer_versions_remplacees() -> None:
+    """Reprise des données : une version sortie de la chaîne (sans étape) alors qu'une version plus récente de la
+    même soumission existe était l'ancien marquage d'un remplacement ; elle reçoit le statut « remplacée »."""
+    en_chaine = [*EN_COURS, Statut.PROVISOIRE.value]
+    for ligne in frappe.get_all(COPIE, {"statut": ["in", en_chaine], "etape_courante": ["is", "not set"]},
+                                ["name", "soumission", "version"]):
+        if frappe.db.exists(COPIE, {"soumission": ligne.soumission, "version": [">", ligne.version]}):
+            frappe.db.set_value(COPIE, ligne.name, "statut", Statut.REMPLACEE.value, update_modified=False)
+
+
 CHAMPS_COPIE = ["name", "apprenant", "exercice", "cohorte", "type_exercice", "version", "statut"]
 CHAMPS_ETAT = ["etape_courante", "echeance", "escalade_a", "butoir"]
 
@@ -96,6 +106,11 @@ class DepotCopiesFrappe:
             return None
         chaine = Chaine.depuis_dict(json.loads(ligne.chaine_yaml_json)) if ligne.chaine_yaml_json else None
         return Exercice(TypeExercice(ligne.type_exercice), Grille.depuis_dict(json.loads(ligne.grille_json)), chaine)
+
+    def echeance(self, exercice: str):
+        """Fin de la période de rendu du devoir LMS, s'il en a une."""
+        fin = frappe.db.get_value("LMS Assignment", exercice, "schedule_end")
+        return get_datetime(fin) if fin else None
 
     def cohorte(self, apprenant: str, exercice: str) -> str | None:
         """Le lot (LMS Batch) où l'apprenant est inscrit et qui contient le cours de l'exercice."""
@@ -159,6 +174,19 @@ class DepotCopiesFrappe:
         noms = frappe.db.get_values(COPIE, {"soumission": soumission}, "name", order_by="version desc", limit=1,
                                     for_update=verrouillee, pluck=True)
         return self.copie(noms[0]) if noms else None
+
+    def courante(self, copie_id: str) -> bool:
+        """Lecture verrouillante de la dernière version de la soumission : voit un rendu validé entre-temps."""
+        soumission = frappe.db.get_value(COPIE, copie_id, "soumission")
+        derniere = self.version_courante(soumission, verrouillee=True)
+        return derniere is not None and derniere.id == copie_id
+
+    def versions(self, copie_id: str) -> list[dict]:
+        """Versions antérieures de la même soumission, de la plus ancienne à la plus récente."""
+        soumission, version = frappe.db.get_value(COPIE, copie_id, ["soumission", "version"])
+        lignes = frappe.get_all(COPIE, {"soumission": soumission, "version": ["<", version]},
+                                ["name", "version", "creation"], order_by="version")
+        return [{"copie": ligne.name, "version": int(ligne.version), "rendue_le": ligne.creation} for ligne in lignes]
 
     def changer_statut(self, copie_id: str, statut: Statut, etape: str, echeance) -> None:
         frappe.db.set_value(COPIE, copie_id, {"statut": statut.value, "etape_courante": etape, "echeance": echeance})

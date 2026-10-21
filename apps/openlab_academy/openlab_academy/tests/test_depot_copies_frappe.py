@@ -20,6 +20,7 @@ from openlab_academy.infrastructure import depot_copies_frappe
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
 from openlab_academy.infrastructure.depot_copies_frappe import DepotCopiesFrappe
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
+from openlab_academy.patches import marquer_versions_remplacees
 from openlab_academy.tests.fabriques import parcours
 from openlab_academy.tests.http_simule import SHA, github
 from openlab_academy.tests.test_exercices_frappe import module
@@ -160,13 +161,33 @@ class TestCopies(Base):
         s.answer = "https://github.com/aya/livrable-v2"
         s.save(ignore_permissions=True)
         v1_apres, v2 = self.copies()
-        self.assertEqual((v1_apres.statut, v2.version, v2.statut), ("renvoyee", 2, "rendue"))
+        self.assertEqual((v1_apres.statut, v2.version, v2.statut), ("remplacee", 2, "rendue"))
         self.assertEqual(frappe.db.get_value("Relecture Pair OpenLab", {"copie": v1.name}, "statut"), "annulée")
         self.assertEqual(self.depot.propositions(v2.name), [])
         (p,) = self.depot.propositions(v1.name)
         self.assertEqual((p.source, p.niveaux, p.confiance), (Source.IA, {"clarte": 1}, 0.9))
         self.assertEqual(self.depot.version_courante(s.name).id, v2.name)
         self.assertEqual(self.depot.copie(v2.name).statut, Statut.RENDUE)
+        self.assertEqual((self.depot.courante(v1.name), self.depot.courante(v2.name)), (False, True))
+        self.assertEqual(self.depot.versions(v2.name), [{"copie": v1.name, "version": 1, "rendue_le": frappe.db.get_value("Copie OpenLab", v1.name, "creation")}])
+        self.assertEqual(self.depot.versions(v1.name), [])
+
+    def test_echeance_de_l_exercice(self):
+        self.assertIsNone(self.depot.echeance(self.livrable))
+        fin = datetime.datetime(2026, 11, 30, 18, 0)
+        frappe.db.set_value("LMS Assignment", self.livrable, "schedule_end", fin)
+        self.assertEqual(self.depot.echeance(self.livrable), fin)
+
+    def test_reprise_des_versions_deja_supplantees(self):
+        s = self.soumettre(self.livrable)
+        s.answer = "https://github.com/aya/livrable-v2"
+        s.save(ignore_permissions=True)
+        v1, v2 = self.copies()
+        # ancien marquage : version avancée, sortie de la chaîne mais restée à son statut
+        frappe.db.set_value("Copie OpenLab", v1.name, {"statut": "a_corriger", "etape_courante": ""})
+        frappe.db.set_value("Copie OpenLab", v2.name, {"statut": "provisoire", "etape_courante": ""})
+        marquer_versions_remplacees.execute()
+        self.assertEqual([c.statut for c in self.copies()], ["remplacee", "provisoire"])  # la dernière reste
 
     def test_exercice_hors_openlab_ignore(self):
         devoir = frappe.get_doc({"doctype": "LMS Assignment", "title": "Devoir libre", "question": "q",

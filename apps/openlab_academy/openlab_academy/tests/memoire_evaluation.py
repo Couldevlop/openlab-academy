@@ -54,6 +54,8 @@ class Memoire:
         self.liberations: list[tuple] = []
         self.filtres_correction: list = []
         self.lectures_verrouillees: list[tuple[str, str]] = []
+        self.non_courantes: set[str] = set()  # remplacées par un rendu d'une autre transaction
+        self.rendues_le: dict[str, datetime] = {}
 
     # --- préparation des cas ---------------------------------------------------
     def rendre(self, apprenant, chaine, maintenant, cohorte="COH1", exercice="EX1") -> str:
@@ -62,6 +64,7 @@ class Memoire:
         self.copies[cid] = Copie(cid, apprenant, exercice, cohorte, self.type_, 1, Statut.RENDUE)
         etape = etape_suivante(chaine, None)
         self.etats[cid] = Etat(etape.value, maintenant + timedelta(hours=chaine.config(etape).delai_heures))
+        self.rendues_le[cid] = maintenant
         return cid
 
     def relectures_de(self, cid, statut=None):
@@ -96,6 +99,15 @@ class Memoire:
         if verrouillee:
             self.lectures_verrouillees.append(("propositions", copie_id))
         return self.props.get(copie_id, [])
+
+    def courante(self, copie_id):
+        return copie_id not in self.non_courantes
+
+    def versions(self, copie_id):
+        c = self.copies[copie_id]
+        return [{"copie": v.id, "version": v.version, "rendue_le": self.rendues_le.get(v.id)}
+                for v in sorted(self.copies.values(), key=lambda v: v.version)
+                if v.apprenant == c.apprenant and v.exercice == c.exercice and v.version < c.version]
 
     def changer_statut(self, copie_id, statut, etape, echeance):
         self.copies[copie_id] = replace(self.copies[copie_id], statut=statut)
@@ -133,7 +145,8 @@ class Memoire:
     # --- DepotRelectures ---------------------------------------------------------
     def copies_rendues(self, exercice, cohorte):
         return [c for c in self.copies.values()
-                if c.exercice == exercice and c.cohorte == cohorte and c.statut != Statut.RENVOYEE]
+                if c.exercice == exercice and c.cohorte == cohorte
+                and c.statut not in (Statut.RENVOYEE, Statut.REMPLACEE)]
 
     def taille_cohorte(self, cohorte):
         return self.tailles.get(cohorte, 0)

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from typing import Protocol
 
 from openlab_academy.domain.copie import (
-    Copie, CopieVerrouillee, Proposition, Source, Statut, TransitionInterdite, etape_suivante)
+    Copie, CopieVerrouillee, Proposition, Source, Statut, etape_suivante, refus_de_resoumission)
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.reglages_evaluation import Chaine, ReglagesEvaluation, Surcharge, TypeExercice
 
@@ -51,6 +51,7 @@ class DepotCopies(Protocol):
     """Port de persistance des copies, de leurs propositions et de leurs relectures."""
 
     def exercice(self, exercice: str) -> Exercice | None: ...
+    def echeance(self, exercice: str) -> datetime | None: ...  # échéance de l'exercice, s'il en a une
     def cohorte(self, apprenant: str, exercice: str) -> str | None: ...
     def auto_evaluation(self, apprenant: str, exercice: str) -> dict[str, int] | None: ...
     def signature(self, copie_id: str) -> str: ...
@@ -74,7 +75,8 @@ class SoumettreCopie:
     def __init__(self, depot: DepotCopies, instantane: Instantane, reglages: ReglagesEvaluation,
                  horloge: Callable[[], datetime], surcharges: Callable[[], tuple[Surcharge, ...]] = lambda: (),
                  journal: Callable[[str, str, str, dict, dict], None] = lambda *_: None,
-                 demarrer: Callable[[str], None] = lambda _: None):
+                 demarrer: Callable[[str], None] = lambda _: None,
+                 notifier: Callable[[str, str], None] = lambda *_: None):
         self._depot = depot
         self._instantane = instantane
         self._reglages = reglages
@@ -82,6 +84,7 @@ class SoumettreCopie:
         self._surcharges = surcharges
         self._journal = journal
         self._demarrer = demarrer  # déclenche la chaîne de correction d'une copie nouvellement créée
+        self._notifier = notifier
 
     def executer(self, soumission: dict) -> str | None:
         """Identifiant de la copie courante ; None si l'exercice n'a pas de grille OpenLab."""
@@ -100,9 +103,16 @@ class SoumettreCopie:
         if courante is not None and self._depot.signature(courante.id) == signature:
             return courante.id
         apprenant, assignment = soumission["member"], soumission["assignment"]
-        if courante is not None and courante.statut == Statut.PUBLIEE:  # la note publiée est définitive
-            self._journal(courante.id, apprenant, "rendu après publication ignoré", {}, {"signature": signature})
-            return courante.id
+        if courante is not None:
+            refus = refus_de_resoumission(courante, self._depot.propositions(courante.id),
+                                          self._reglages.resoumission_jusqua, self._horloge(),
+                                          self._depot.echeance(assignment))
+            if refus:  # la copie en cours reste celle qui est corrigée ; l'apprenant le sait
+                self._journal(courante.id, apprenant, refus, {}, {"signature": signature})
+                self._notifier(apprenant, f"Votre nouveau rendu de l'exercice {assignment} n'a pas été pris en "
+                                          f"compte ({refus.removesuffix(' ignoré')}) : la version précédente reste "
+                                          f"celle qui est corrigée.")
+                return courante.id
         # tout ce qui peut échouer est calculé avant la première écriture
         cohorte = self._depot.cohorte(apprenant, assignment)
         # une surcharge ou un YAML devenus invalides ne bloquent pas le rendu : la chaîne du type s'applique
@@ -126,13 +136,11 @@ class SoumettreCopie:
         return copie_id
 
     def _remplacer(self, ancienne: Copie) -> None:
+        """L'ancienne version quitte la chaîne (ni étape ni échéance) : remplacée, terminale et en lecture seule,
+        ses propositions gardées en historique. Une copie renvoyée le reste."""
         self._depot.annuler_relectures(ancienne.id)
-        try:
-            self._depot.changer_statut(ancienne.id, ancienne.passer_a(Statut.RENVOYEE).statut, "", None)
-        except TransitionInterdite:
-            # copie déjà avancée : elle garde son statut mais quitte la chaîne (ni étape ni échéance),
-            # seule la nouvelle version fait foi
-            self._depot.changer_statut(ancienne.id, ancienne.statut, "", None)
+        statut = ancienne.statut if ancienne.statut == Statut.RENVOYEE else ancienne.passer_a(Statut.REMPLACEE).statut
+        self._depot.changer_statut(ancienne.id, statut, "", None)
 
     def _contenu(self, soumission: dict, signature: str) -> Contenu:
         nom = soumission["name"]

@@ -83,7 +83,7 @@
    "fieldname": "statut",
    "fieldtype": "Select",
    "label": "Statut",
-   "options": "rendue\nrenvoyee\ncontrolee\npre_corrigee\nen_relecture\na_corriger\nprovisoire\npubliee",
+   "options": "rendue\nrenvoyee\ncontrolee\npre_corrigee\nen_relecture\na_corriger\nprovisoire\npubliee\nremplacee",
    "reqd": 1,
    "default": "rendue",
    "in_list_view": 1
@@ -196,7 +196,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-21 13:00:00",
+ "modified": "2026-10-21 15:00:00",
  "sort_field": "modified",
  "sort_order": "DESC"
 }

@@ -18,7 +18,7 @@ from openlab_academy.domain.reglages_evaluation import Chaine, Etape, Expiration
 
 SYSTEME = "systeme"
 TACHES = {Etape.CONTROLES: "controler", Etape.IA: "pre_corriger"}
-TERMINEES = (Statut.RENVOYEE, Statut.PROVISOIRE, Statut.PUBLIEE)
+TERMINEES = (Statut.RENVOYEE, Statut.PROVISOIRE, Statut.PUBLIEE, Statut.REMPLACEE)
 LIEN_CORRECTEUR = "/espace/correcteur/{}"
 LIEN_RETOUR = "/espace/retour/{}"
 

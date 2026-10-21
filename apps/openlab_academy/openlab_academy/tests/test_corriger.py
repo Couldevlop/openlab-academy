@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import replace
 from datetime import timedelta
 
 from openlab_academy.application.chaine import FaireAvancer, TraiterEcheances
@@ -364,6 +365,61 @@ class TestPublierNote(Cas):
         self.m.ajouter_proposition(cid, ia(BONS))
         with self.assertRaisesRegex(CorrectionRefusee, "aucune correction"):
             self.publier.executer(FORM, cid)
+
+
+class TestVersionRemplacee(Cas):
+    """Un nouveau rendu remplace la copie : terminale, en lecture seule, ses propositions gardées en historique."""
+
+    def remplacer(self, cid):
+        self.m.copies[cid] = replace(self.m.copies[cid], statut=Statut.REMPLACEE)
+        self.m.etats[cid] = replace(self.m.etats[cid], etape="", echeance=None)
+
+    def test_ni_corrigee_ni_validee_ni_publiee(self):
+        self.monter()
+        cid = self.a_corriger()
+        self.m.ajouter_proposition(cid, ia(MOYENS))
+        self.remplacer(cid)
+        actions = {"corriger": lambda: self.corriger.executer(FORM, cid, MOYENS),
+                   "lot": lambda: self.lot.executer(FORM, [cid]), "publier": lambda: self.publier.executer(FORM, cid)}
+        for nom, action in actions.items():
+            with self.subTest(nom), self.assertRaisesRegex(CorrectionRefusee, "version remplacée par un nouveau rendu"):
+                action()
+        self.assertEqual((self.m.publications, len(self.m.propositions(cid))), ([], 1))
+
+    def test_publication_reverifie_sous_verrou_la_version_courante(self):
+        self.monter()
+        cid = self.a_corriger()
+        self.corriger.executer(FORM, cid, MOYENS)
+        self.m.non_courantes.add(cid)  # nouveau rendu validé par une autre transaction
+        with self.assertRaisesRegex(CorrectionRefusee, "version remplacée par un nouveau rendu"):
+            self.publier.executer(FORM, cid)
+        self.assertEqual(self.m.publications, [])
+
+    def test_liberation_refusee(self):
+        self.monter()
+        cid = self.a_corriger()
+        self.corriger.executer(FORM, cid, MOYENS)
+        b = self.m.rendre(B, self.chaine_, self.t)
+        self.m.attribuer(b, A, self.t)
+        self.publier.executer(FORM, cid)
+        self.m.dispenser(cid)
+        self.m.non_courantes.add(cid)
+        with self.assertRaisesRegex(CorrectionRefusee, "version remplacée par un nouveau rendu"):
+            self.liberer.executer(cid)
+        self.assertEqual(self.m.liberations, [])
+
+    def test_vue_du_correcteur_signale_la_version_et_ses_devancieres(self):
+        self.monter()
+        v1 = self.a_corriger()
+        self.remplacer(v1)
+        v2 = self.a_corriger()
+        self.m.copies[v2] = replace(self.m.copies[v2], version=2)
+        self.assertEqual(self.vue.copie(FORM, v1)["remplacee"], True)
+        vue = self.vue.copie(FORM, v2)
+        self.assertEqual((vue["remplacee"], vue["versions_precedentes"]),
+                         (False, [{"copie": v1, "version": 1, "rendue_le": DEBUT}]))
+        self.assertEqual(self.vue.copie(FORM, v1)["versions_precedentes"], [])
+        self.assertNotIn(v1, [c["copie"] for c in self.vue.file(FORM)["copies"]])
 
 
 class TestSynthese(unittest.TestCase):

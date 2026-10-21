@@ -6,7 +6,7 @@ from openlab_academy.application.soumettre_copie import Contenu, Exercice, Soume
 from openlab_academy.domain.copie import Copie, CopieVerrouillee, Etat, Proposition, Source, Statut
 from openlab_academy.domain.grille import grille_generique
 from openlab_academy.domain.reglages_evaluation import (
-    CHAINES_DEFAUT, Chaine, ConfigEtape, Etape, Expiration, ReglagesEvaluation, Surcharge, TypeExercice,
+    CHAINES_DEFAUT, Chaine, ConfigEtape, Etape, Expiration, ReglagesEvaluation, Resoumission, Surcharge, TypeExercice,
 )
 
 GRILLE = grille_generique((("Pertinence", 60), ("Rigueur", 40)), ("Faible", "Bon"))
@@ -24,9 +24,13 @@ class DepotMemoire:
         self.relectures_annulees: list[str] = []
         self.statuts: list[tuple] = []
         self.verrous: list[str] = []
+        self.echeances = {}
 
     def exercice(self, exercice):
         return self.exercices.get(exercice)
+
+    def echeance(self, exercice):
+        return self.echeances.get(exercice)
 
     def cohorte(self, apprenant, exercice):
         return self.cohorte_
@@ -89,9 +93,10 @@ class TestSoumettreCopie(unittest.TestCase):
     def cas(self, depot=None, instantane=None, reglages=None, surcharges=lambda: ()):
         self.depot = depot or DepotMemoire()
         self.instantane = instantane or InstantaneMemoire()
-        self.journal = []
+        self.journal, self.notes = [], []
         self.uc = SoumettreCopie(self.depot, self.instantane, reglages or ReglagesEvaluation(), lambda: MAINTENANT,
-                                 surcharges, lambda *args: self.journal.append(args))
+                                 surcharges, lambda *args: self.journal.append(args),
+                                 notifier=lambda *args: self.notes.append(args))
         return self.uc
 
     def test_premier_rendu(self):
@@ -158,20 +163,50 @@ class TestSoumettreCopie(unittest.TestCase):
         self.assertNotEqual(v1, v2)
         self.assertEqual(self.depot.copie(v2).version, 2)
         self.assertEqual(self.depot.relectures_annulees, [v1])
-        self.assertEqual(self.depot.copie(v1).statut, Statut.RENVOYEE)
+        self.assertEqual(self.depot.copie(v1).statut, Statut.REMPLACEE)
         self.assertEqual(self.depot.propositions(v2), [])  # propositions de la v1 hors calcul
-        self.assertEqual(len(self.depot.propositions(v1)), 1)
+        self.assertEqual(len(self.depot.propositions(v1)), 1)  # gardées comme historique
 
-    def test_resoumission_d_une_copie_avancee_non_publiee(self):
-        for statut in (Statut.PRE_CORRIGEE, Statut.PROVISOIRE):
+    def test_resoumission_d_une_copie_avancee_non_corrigee(self):
+        for statut in (Statut.PRE_CORRIGEE, Statut.EN_RELECTURE, Statut.A_CORRIGER):
             uc = self.cas()
             v1 = uc.executer(soumission())
             self.depot.copies[v1] = replace(self.depot.copies[v1], statut=statut)
             v2 = uc.executer(soumission(answer="https://github.com/a/p2"))
             self.assertEqual(self.depot.copie(v2).version, 2)
-            self.assertEqual(self.depot.copie(v1).statut, statut)
             self.assertEqual(self.depot.relectures_annulees, [v1])
-            self.assertEqual(self.depot.statuts[-2], (v1, statut, "", None))  # hors chaîne : ni étape ni échéance
+            self.assertEqual(self.depot.statuts[-2], (v1, Statut.REMPLACEE, "", None))  # terminale, hors chaîne
+
+    def test_copie_renvoyee_reste_renvoyee(self):
+        uc = self.cas()
+        v1 = uc.executer(soumission())
+        self.depot.copies[v1] = replace(self.depot.copies[v1], statut=Statut.RENVOYEE)
+        v2 = uc.executer(soumission(answer="https://github.com/a/p2"))
+        self.assertEqual((self.depot.copie(v1).statut, self.depot.copie(v2).version), (Statut.RENVOYEE, 2))
+
+    def test_resoumission_refusee_une_fois_la_correction_commencee(self):
+        uc = self.cas()
+        v1 = uc.executer(soumission())
+        self.depot.copies[v1] = replace(self.depot.copies[v1], statut=Statut.A_CORRIGER)
+        self.depot.ajouter_proposition(v1, Proposition(Source.FORMATEUR, "form@x.ci", {"pertinence": 1}))
+        self.assertEqual(uc.executer(soumission(answer="https://github.com/a/p2")), v1)
+        self.assertEqual((len(self.depot.copies), self.depot.relectures_annulees), (1, []))
+        self.assertEqual(self.journal[-1][:3], (v1, "a@x.ci", "rendu après le début de la correction ignoré"))
+        ((destinataire, message),) = self.notes
+        self.assertEqual(destinataire, "a@x.ci")
+        self.assertIn("n'a pas été pris en compte", message)
+
+    def test_resoumission_jusqu_a_l_echeance_si_la_console_le_permet(self):
+        reglages = ReglagesEvaluation(resoumission_jusqua=Resoumission.ECHEANCE)
+        uc = self.cas(reglages=reglages)
+        self.depot.echeances["EX1"] = MAINTENANT
+        v1 = uc.executer(soumission())
+        self.depot.copies[v1] = replace(self.depot.copies[v1], statut=Statut.PROVISOIRE)
+        v2 = uc.executer(soumission(answer="https://github.com/a/p2"))
+        self.assertEqual(self.depot.copie(v1).statut, Statut.REMPLACEE)
+        self.depot.echeances["EX1"] = MAINTENANT - timedelta(hours=1)
+        self.assertEqual(uc.executer(soumission(answer="https://github.com/a/p3")), v2)
+        self.assertEqual(self.journal[-1][2], "rendu après l'échéance ignoré")
 
     def test_version_courante_relue_sous_verrou(self):
         uc = self.cas()

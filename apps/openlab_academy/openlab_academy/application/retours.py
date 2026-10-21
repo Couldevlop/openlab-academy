@@ -18,6 +18,7 @@ from openlab_academy.domain.reglages_evaluation import Chaine
 EN_COURS = "Votre copie est en cours de correction."
 MASQUEE = "Votre note sera visible dès que vous aurez terminé vos relectures."
 PROVISOIRE = "Note provisoire, en attente de validation par le formateur."
+REMPLACEE = "Cette version a été remplacée par votre nouveau rendu : seule la dernière version est corrigée."
 VISIBLES = (StatutRelecture.A_FAIRE, StatutRelecture.FAITE)
 
 
@@ -44,6 +45,8 @@ class ConsulterRetour:
                 "statut": copie.statut.value,
                 "provisoire": copie.statut == Statut.PROVISOIRE, "masquee": False, "note": None, "note_sur": None,
                 "reussite": None, "criteres": [], "commentaire_general": "", "message": EN_COURS}
+        if copie.statut == Statut.REMPLACEE:
+            return {**base, "message": REMPLACEE}
         if copie.statut not in (Statut.PUBLIEE, Statut.PROVISOIRE):
             return base
         chaine = self._chaine(copie)

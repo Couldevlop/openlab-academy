@@ -4,7 +4,7 @@ from datetime import timedelta
 from openlab_academy.application.corriger import AccesRefuse, CorrectionRefusee
 from openlab_academy.application.pairs import StatutRelecture
 from openlab_academy.application.retours import (
-    EN_COURS, MASQUEE, PROVISOIRE, AutoEvaluer, ConsulterRelectures, ConsulterRetour)
+    EN_COURS, MASQUEE, PROVISOIRE, REMPLACEE, AutoEvaluer, ConsulterRelectures, ConsulterRetour)
 from openlab_academy.application.soumettre_copie import Contenu
 from openlab_academy.domain.copie import Proposition, Source, Statut
 from openlab_academy.domain.reglages_evaluation import Etape, TypeExercice
@@ -82,6 +82,15 @@ class TestConsulterRetour(Cas):
         self.assertEqual(retour["titre"], "Mise en situation 01")
         self.assertEqual(retour["commentaire_general"], "Bravo")
         self.assertNotIn(B, repr(retour))  # pairs anonymes
+
+    def test_version_remplacee_sans_note(self):
+        self.monter()
+        self.m.changer_statut(self.a, Statut.PROVISOIRE, "formateur", None)
+        self.m.ajouter_proposition(self.a, Proposition(Source.PAIR, B, MOYENS, {"pertinence": "ok", "rigueur": "ok"}))
+        self.m.changer_statut(self.a, Statut.REMPLACEE, "", None)
+        retour = self.retour.executer(A, self.a)
+        self.assertEqual((retour["statut"], retour["provisoire"], retour["note"], retour["criteres"], retour["message"]),
+                         ("remplacee", False, None, [], REMPLACEE))
 
     def test_note_provisoire_affichee_provisoire(self):
         self.monter()

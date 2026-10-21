@@ -148,7 +148,7 @@ def soumettre(soumission: dict) -> str | None:
     instantane = instantane_depot(reglages, reglages_evaluation_frappe.jeton_depots(), reglages.instantane_budget_s)
     return SoumettreCopie(DepotCopiesFrappe(), instantane, reglages, now_datetime,
                           reglages_evaluation_frappe.surcharges, journal_frappe.journaliser,
-                          lambda copie_id: isoler(lambda: avanceur().demarrer(copie_id))).executer(soumission)
+                          lambda copie_id: isoler(lambda: avanceur().demarrer(copie_id)), notifier).executer(soumission)
 
 
 def rendu(doc, method=None) -> None:

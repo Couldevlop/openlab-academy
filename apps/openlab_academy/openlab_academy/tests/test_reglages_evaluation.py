@@ -2,7 +2,8 @@ import unittest
 
 from openlab_academy.domain.reglages import ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import (
-    CHAINES_DEFAUT, RESERVE_REPONSE_JETONS, Chaine, ConfigEtape, ConfigIA, Etape, Expiration, ReglagesEvaluation, Surcharge, TypeExercice,
+    CHAINES_DEFAUT, RESERVE_REPONSE_JETONS, Chaine, ConfigEtape, ConfigIA, Etape, Expiration, ReglagesEvaluation,
+    Resoumission, Surcharge, TypeExercice,
 )
 
 E = Etape
@@ -122,6 +123,10 @@ class TestValidation(unittest.TestCase):
         with self.assertRaisesRegex(ReglagesInvalides, "longueur_min_caracteres"):
             ReglagesEvaluation(longueur_min_caracteres=-1)
 
+
+    def test_resoumission_jusqu_au_debut_de_la_correction_par_defaut(self):
+        self.assertEqual(ReglagesEvaluation().resoumission_jusqua, Resoumission.DEBUT_CORRECTION)
+        self.assertEqual({r.value for r in Resoumission}, {"echeance", "debut_correction"})
 
     def test_limites_reglables(self):
         r = ReglagesEvaluation()

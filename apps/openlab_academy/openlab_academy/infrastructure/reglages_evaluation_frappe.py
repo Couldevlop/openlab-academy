@@ -9,7 +9,7 @@ from openlab_academy.domain.delegation import Delegation
 from openlab_academy.domain.reglages import ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import (
     CHAINES_DEFAUT, GRILLE_GENERIQUE_DEFAUT, Chaine, ConfigEtape, ConfigIA, Etape, Expiration, ReglagesEvaluation,
-    Surcharge, TypeExercice, TOURNURES_DEFAUT)
+    Resoumission, Surcharge, TypeExercice, TOURNURES_DEFAUT)
 
 REGLAGES = "Reglages Evaluation OpenLab"
 SURCHARGE = "Surcharge Evaluation OpenLab"
@@ -67,6 +67,7 @@ def vers_domaine(doc) -> ReglagesEvaluation:
         grille_generique=tuple((c.nom, int(c.poids or 0)) for c in doc.grille_generique) or GRILLE_GENERIQUE_DEFAUT,
         niveaux_generiques=_lignes(doc.niveaux_generiques) or defaut.niveaux_generiques,
         **{champ: _entier(doc.get(champ), getattr(defaut, champ)) for champ in CHAMPS_INSTANTANE},
+        resoumission_jusqua=Resoumission(doc.get("resoumission_jusqua") or defaut.resoumission_jusqua),
     )
 
 
@@ -175,7 +176,8 @@ def _champs_completes(defaut: ReglagesEvaluation) -> dict:
     """Champs de la console ajoutés après l'initialisation des premiers sites, avec le défaut du domaine."""
     return {"longueur_min_caracteres": defaut.longueur_min_caracteres,
             "ia_citation_min_caracteres": defaut.ia.citation_min_caracteres,
-            **{champ: getattr(defaut, champ) for champ in CHAMPS_INSTANTANE}}
+            **{champ: getattr(defaut, champ) for champ in CHAMPS_INSTANTANE},
+            "resoumission_jusqua": defaut.resoumission_jusqua.value}
 
 
 def completer_champs() -> None:

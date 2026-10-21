@@ -33,6 +33,7 @@
   "instantane_budget_s",
   "instantane_budget_tache_s",
   "longueur_min_caracteres",
+  "resoumission_jusqua",
   "niveaux_generiques",
   "grille_generique"
  ],
@@ -205,6 +206,14 @@
    "non_negative": 1
   },
   {
+   "fieldname": "resoumission_jusqua",
+   "fieldtype": "Select",
+   "label": "Nouveau rendu accepté jusqu'à",
+   "options": "debut_correction\necheance",
+   "default": "debut_correction",
+   "description": "debut_correction : un nouveau rendu remplace la copie tant qu'aucun formateur ni juré ne l'a notée. echeance : jusqu'à la fin de la période de rendu du devoir, même pendant la correction. Au-delà, le rendu est ignoré, journalisé et l'apprenant prévenu ; une note publiée reste définitive."
+  },
+  {
    "fieldname": "niveaux_generiques",
    "fieldtype": "Small Text",
    "label": "Niveaux génériques (un par ligne)"
@@ -233,7 +242,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-21 14:00:00",
+ "modified": "2026-10-21 15:00:00",
  "sort_field": "modified",
  "sort_order": "DESC",
  "custom": 0,

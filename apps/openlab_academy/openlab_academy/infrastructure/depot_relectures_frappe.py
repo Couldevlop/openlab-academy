@@ -17,8 +17,9 @@ def _relecture(ligne) -> Relecture:
 
 class DepotRelecturesFrappe:
     def copies_rendues(self, exercice: str, cohorte: str) -> list[Copie]:
-        """Version courante de chaque apprenant, hors copies renvoyées, dans l'ordre des rendus."""
-        lignes = frappe.get_all(COPIE, {"exercice": exercice, "cohorte": cohorte, "statut": ["!=", "renvoyee"]},
+        """Version courante de chaque apprenant, hors copies renvoyées ou remplacées, dans l'ordre des rendus."""
+        lignes = frappe.get_all(COPIE, {"exercice": exercice, "cohorte": cohorte,
+                                        "statut": ["not in", ["renvoyee", "remplacee"]]},
                                 ["name", "apprenant", "exercice", "cohorte", "type_exercice", "version", "statut",
                                  "creation"], order_by="version desc, creation desc")
         courantes = {}

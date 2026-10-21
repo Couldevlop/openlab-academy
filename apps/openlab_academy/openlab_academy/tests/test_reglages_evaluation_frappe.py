@@ -224,6 +224,15 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         self.assertEqual((r.ia.citation_min_caracteres, r.instantane_fichiers_max, r.instantane_delai_s,
                           r.instantane_budget_s, r.instantane_budget_tache_s), (8, 12, 2, 20, 60))
 
+    def test_resoumission_reglee_dans_la_console(self):
+        vider()
+        source.initialiser()
+        self.assertEqual(source.charger().resoumission_jusqua.value, "debut_correction")
+        frappe.db.set_single_value(REGLAGES, "resoumission_jusqua", "echeance")
+        self.assertEqual(source.charger().resoumission_jusqua.value, "echeance")
+        frappe.db.sql("delete from `tabSingles` where doctype=%s and field='resoumission_jusqua'", REGLAGES)
+        self.assertEqual(source.charger().resoumission_jusqua.value, "debut_correction")  # site antérieur
+
     def test_cle_ia_vide_par_defaut(self):
         self.assertEqual(source.cle_ia(), "")
 
