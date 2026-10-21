@@ -75,3 +75,46 @@ couleur) : le cours est publié en « Upcoming », sans leçon. Remplacer le fic
 Chaque module du YAML porte `quiz` (questions : `question`, `options`, `bonnes` numérotées à partir de 1,
 `explication`) et `mise_en_situation`. Nombre de questions, tentatives, score exigé et délai de déblocage
 se règlent dans l'écran de réglages. Le délai est vérifié côté serveur à chaque soumission.
+
+## Évaluation des copies (console, réglages, IA)
+
+Chaque rendu d'un devoir LMS (`LMS Assignment Submission`) devient une copie OpenLab qui suit sa chaîne :
+auto-évaluation → contrôles automatiques → pré-correction IA → pairs → jury → formateur, chaque étape activable.
+Rien ne bloque : une étape indisponible ou échue applique l'action réglée (passer, réattribuer, escalader,
+dispenser) ; la tâche horaire `traiter_echeances` s'en charge. Seul un humain publie une note définitive.
+
+**Écrans** (`/espace`, connexion requise) : relecture par les pairs (`/espace/relecture`), correcteur
+(`/espace/correcteur`, touches 1 à 4, J/K), lots (`/espace/lots`), retour de l'apprenant (`/espace/retour/<copie>`,
+lien écrit dans le commentaire de la soumission LMS à la publication).
+
+**Console** (bureau Frappe, System Manager ; lecture pour le rôle « Responsable pédagogique OpenLab ») :
+
+| Écran | Réglages |
+|---|---|
+| `/app/reglages-evaluation-openlab` | étapes par type d'exercice (actif, délai, action à expiration), paramètres par type (nombre de pairs, anonymat, note masquée avant relectures, note sur N, seuil), publication provisoire, responsable pédagogique, IA, hôtes de dépôts et jeton, longueur minimale, grille générique |
+| `/app/surcharge-evaluation-openlab` | surcharge par cohorte ou par exercice : chaîne complète, suppléant du formateur |
+| `/app/delegation-openlab` | délégations en cours (titulaire, délégataire, période, cohorte ou exercice) ; aussi par l'API `deleguer` |
+
+Priorité : surcharge exercice > surcharge cohorte > YAML de l'exercice > type d'exercice > défauts du code ;
+la republication des parcours n'écrase jamais la console.
+
+**IA** (section IA de la console) : URL d'un service compatible OpenAI (`/v1/chat/completions` : llama.cpp
+server, Ollama, vLLM), modèle pour les copies texte et pour les rendus en URL, clé (champ mot de passe, vide si le
+service n'en demande pas), délai max par copie (minutes), seuil de confiance des lots, plafond de caractères de
+l'instantané, tournures d'injection. La clé ne part jamais en HTTP clair vers un hôte public (HTTPS exigé) ; aucune
+redirection n'est suivie. La pré-correction tourne dans la file `long` de RQ, une copie à la fois. Une copie qui
+contient une tournure d'injection n'est pas envoyée : elle est signalée au formateur. La réponse n'est retenue
+que si elle respecte le schéma JSON et si chaque citation figure dans la copie (sinon le critère est « à revoir »).
+
+Contexte du modèle : le prompt (consigne, grille, copie) et la réponse doivent tenir dans la fenêtre du serveur.
+Avec une fenêtre de 4096 jetons, une copie doit rester sous ~8 000 caractères (≈ 3,2 caractères par jeton en
+français) : régler le plafond de caractères en conséquence ou servir le modèle avec une fenêtre plus grande.
+Au-delà, le service répond HTTP 400 et l'étape IA est marquée « non disponible ».
+
+Mesure sur le vrai service, hors suite de tests (rien n'est enregistré) :
+
+```bash
+bench --site lms.localhost execute openlab_academy.tests.integration_ia.executer --kwargs "{'nombre': 10}"
+```
+
+Fiabilité en continu : API `fiabilite_ia` (écart moyen IA/formateur par critère, superviseurs seulement).
