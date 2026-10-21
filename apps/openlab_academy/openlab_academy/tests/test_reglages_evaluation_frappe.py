@@ -437,6 +437,13 @@ class TestSurcharges(FrappeTestCase):
 
 
 class TestEquipes(FrappeTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # colonne d'une version antérieure, absente d'un site neuf (CI) : recréée pour simuler un site à migrer
+        frappe.db.sql_ddl(f"alter table `tab{SURCHARGE}` add column if not exists suppleant varchar(140)")
+        frappe.cache.hdel("table_columns", f"tab{SURCHARGE}")  # colonnes mises en cache par has_column
+
     def setUp(self):
         utilisateur(RESP_DELEG, ROLE)
         utilisateur(CORRECTEUR_LMS, "Course Creator")
