@@ -5,3 +5,4 @@ openlab_academy.patches.initialiser_reglages
 openlab_academy.patches.completer_reglages_exercices
 openlab_academy.patches.initialiser_reglages_evaluation
 openlab_academy.patches.marquer_versions_remplacees
+openlab_academy.patches.migrer_surcharges_partielles

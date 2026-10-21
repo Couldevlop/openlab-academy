@@ -540,20 +540,34 @@ class TestDepotChaineFrappe(Cas):
         with mock.patch.object(frappe.db, "get_single_value", return_value=None):
             self.assertEqual(self.depot.titulaires(sans_lot), set())
 
-    def test_suppleant_de_la_surcharge(self):
-        lot = self.lot()
-        frappe.get_doc({"doctype": "Surcharge Evaluation OpenLab", "cohorte": lot, "suppleant": B,
-                        "etapes": etapes_formateur()}).insert()
-        source = SourceReglagesFrappe()
-        (surcharge,) = source.surcharges()
-        self.assertEqual(surcharge.suppleant, B)
-        self.assertEqual(source.reglages().responsable_pedagogique, frappe.get_single(
+    def equipe(self, *membres, **champs):
+        return frappe.get_doc({"doctype": "Equipe Correction OpenLab", **champs,
+                               "membres": [{"utilisateur": u, "role": r} for u, r in membres]}).insert()
+
+    def test_equipe_de_la_copie(self):
+        lot = self.lot("Administrator", A)
+        self.soumettre(self.livrable)
+        copie = self.copie_de()
+        self.assertEqual(self.depot.equipe(copie).provenance["titulaires"], "formateurs LMS")
+        cours = frappe.db.get_value("LMS Assignment", self.livrable, "course")
+        self.equipe((B, "suppleant"), cours=cours, responsable="Administrator")
+        self.equipe((A, "titulaire"), exercice=self.livrable)
+        equipe = self.depot.equipe(copie)
+        self.assertEqual((equipe.titulaires, equipe.suppleants, equipe.responsable), ((A,), (B,), "Administrator"))
+        self.assertEqual(self.depot.titulaires(copie), {A})
+        self.assertEqual(equipe.provenance, {"titulaires": f"exercice {self.livrable}",
+                                             "suppleants": f"cours {cours}", "responsable": f"cours {cours}"})
+        self.assertEqual(SourceReglagesFrappe().reglages().responsable_pedagogique, frappe.get_single(
             "Reglages Evaluation OpenLab").responsable_pedagogique or "")
+        self.assertIsNotNone(lot)
 
     def test_formateur_echu_escalade(self):
         lot = self.lot("Administrator", A)
-        frappe.get_doc({"doctype": "Surcharge Evaluation OpenLab", "cohorte": lot, "suppleant": B,
-                        "etapes": etapes_formateur()}).insert()
+        inactives = [{"etape": e, "active": 0, "delai_heures": 0, "expiration": "passer"}
+                     for e in ("auto_evaluation", "controles", "ia", "pairs", "jury")]
+        frappe.get_doc({"doctype": "Surcharge Evaluation OpenLab", "cohorte": lot,
+                        "etapes": inactives + etapes_formateur()}).insert()
+        self.equipe((B, "suppleant"), cohorte=lot)
         self.soumettre(self.livrable)
         copie = self.copie_de()
         self.assertEqual(self.ligne(copie).etape_courante, "formateur")
@@ -567,9 +581,9 @@ class TestDepotChaineFrappe(Cas):
                                   pluck="subject")
         self.assertIn(f"/espace/correcteur/{copie}", sujet)
 
-    def test_suppleant_seul_de_la_cohorte_sans_toucher_la_chaine(self):
+    def test_suppleant_de_l_equipe_sans_toucher_la_chaine(self):
         lot = self.lot("Administrator", A)
-        frappe.get_doc({"doctype": "Surcharge Evaluation OpenLab", "cohorte": lot, "suppleant": B}).insert()
+        self.equipe((B, "suppleant"), cohorte=lot)
         self.soumettre(self.livrable)
         copie = self.copie_de()
         self.assertEqual(self.ligne(copie).etape_courante, "controles")  # chaîne du livrable inchangée

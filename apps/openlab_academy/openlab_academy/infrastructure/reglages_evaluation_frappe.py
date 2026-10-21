@@ -8,16 +8,18 @@ from frappe.utils.password import get_decrypted_password
 from openlab_academy.domain.delegation import Delegation
 from openlab_academy.domain.reglages import ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import (
-    CHAINES_DEFAUT, GRILLE_GENERIQUE_DEFAUT, Chaine, ConfigEtape, ConfigIA, Etape, Expiration, ReglagesEvaluation,
-    Resoumission, Surcharge, TypeExercice, TOURNURES_DEFAUT)
+    CHAINES_DEFAUT, GRILLE_GENERIQUE_DEFAUT, OPTIONS_CHAINE, Chaine, ConfigEtape, ConfigIA, Etape, Expiration,
+    ReglagesEvaluation, Resoumission, Surcharge, TypeExercice, TOURNURES_DEFAUT)
+from openlab_academy.domain.equipe import Equipe
 
 REGLAGES = "Reglages Evaluation OpenLab"
 SURCHARGE = "Surcharge Evaluation OpenLab"
 DELEGATION = "Delegation OpenLab"
+EQUIPE = "Equipe Correction OpenLab"
 ROLE = "Responsable pédagogique OpenLab"
 ESPACE = "Évaluation OpenLab"
 ECRANS = (REGLAGES, SURCHARGE, DELEGATION, "Journal Note OpenLab", "Reglages OpenLab Academy",
-          "Ouverture Lecon OpenLab")
+          "Ouverture Lecon OpenLab", EQUIPE)
 
 
 def _lignes(texte) -> tuple[str, ...]:
@@ -76,10 +78,78 @@ def vers_domaine(doc) -> ReglagesEvaluation:
     )
 
 
+OUI_NON = {"oui": True, "non": False}
+
+
+def _option(champ: str, brut):
+    texte = str(brut).strip()
+    try:
+        if champ in ("anonymat", "note_masquee_avant_relectures"):
+            return OUI_NON[texte]
+        if champ == "seuil_reussite":
+            return float(texte.replace(",", "."))
+        return int(texte)
+    except (KeyError, ValueError):
+        raise ReglagesInvalides(f"{champ} : valeur invalide « {texte} »") from None
+
+
 def surcharge_vers_domaine(doc) -> Surcharge:
-    """Une surcharge sans étapes ne porte qu'un suppléant : la chaîne de la cible reste celle du YAML ou du type."""
-    chaine = _chaine(doc, doc.etapes) if doc.etapes else None
-    return Surcharge(doc.cohorte or None, doc.exercice or None, chaine, doc.suppleant or None)
+    """Surcharge partielle : un champ vide est hérité, seules les étapes citées sont remplacées."""
+    options = {c: _option(c, doc.get(c)) for c in OPTIONS_CHAINE if str(doc.get(c) or "").strip()}
+    return Surcharge(doc.cohorte or None, doc.exercice or None, options, tuple(_config(ligne) for ligne in doc.etapes))
+
+
+def equipe_vers_domaine(doc) -> Equipe:
+    membres = sorted(doc.membres, key=lambda m: m.idx or 0)
+    return Equipe(doc.cours or None, doc.cohorte or None, doc.exercice or None,
+                  tuple(m.utilisateur for m in membres if m.role == "titulaire"),
+                  tuple(m.utilisateur for m in membres if m.role == "suppleant"), doc.responsable or "")
+
+
+def migrer_surcharges_partielles() -> None:
+    """Une surcharge d'avant fixait toute la chaîne : ses valeurs restent explicites (cases à cocher en oui / non)
+    et les étapes qu'elle ne citait pas, alors inactives, le deviennent explicitement. Sans étapes, elle ne portait
+    qu'un suppléant : ses champs, alors ignorés, deviennent hérités. Le suppléant passe
+    dans l'équipe de la cible (l'exercice s'il est visé, sinon la cohorte) ; une surcharge vide est supprimée."""
+    anciens = {}
+    if frappe.db.has_column(SURCHARGE, "suppleant"):
+        anciens = dict(frappe.db.sql(f"select name, suppleant from `tab{SURCHARGE}` where ifnull(suppleant, '') != ''"))
+    for nom in frappe.get_all(SURCHARGE, pluck="name", order_by="creation"):
+        doc = frappe.get_doc(SURCHARGE, nom)
+        for champ in OPTIONS_CHAINE:
+            valeur = str(doc.get(champ) or "").strip()
+            if not doc.etapes:
+                doc.set(champ, "")
+            elif champ in ("anonymat", "note_masquee_avant_relectures") and valeur in ("0", "1"):
+                doc.set(champ, "oui" if valeur == "1" else "non")
+        citees = {ligne.etape for ligne in doc.etapes}
+        for etape in (e for e in Etape if doc.etapes and e.value not in citees):
+            doc.append("etapes", {"etape": etape.value, "active": 0, "delai_heures": 0, "expiration": "passer"})
+        if anciens.get(nom):
+            _ajouter_suppleant(doc.exercice, None if doc.exercice else doc.cohorte, anciens[nom])
+        if doc.etapes or any(str(doc.get(c) or "").strip() for c in OPTIONS_CHAINE):
+            doc.flags.ignore_validate = True  # valeurs reprises telles quelles : la migration ne bloque jamais
+            doc.save(ignore_permissions=True)
+        else:
+            frappe.delete_doc(SURCHARGE, nom, ignore_permissions=True, force=True)
+    if anciens:
+        frappe.db.sql(f"update `tab{SURCHARGE}` set suppleant = null")
+
+
+def _ajouter_suppleant(exercice: str | None, cohorte: str | None, suppleant: str) -> None:
+    filtres = {"exercice": exercice or ["is", "not set"], "cohorte": cohorte or ["is", "not set"],
+               "cours": ["is", "not set"]}
+    nom = frappe.db.get_value(EQUIPE, filtres)
+    doc = frappe.get_doc(EQUIPE, nom) if nom else frappe.get_doc({"doctype": EQUIPE, "exercice": exercice,
+                                                                 "cohorte": cohorte})
+    if suppleant not in [m.utilisateur for m in doc.membres]:
+        doc.append("membres", {"utilisateur": suppleant, "role": "suppleant"})
+    doc.save(ignore_permissions=True)
+
+
+def equipes() -> tuple[Equipe, ...]:
+    return tuple(equipe_vers_domaine(frappe.get_doc(EQUIPE, nom))
+                 for nom in frappe.get_all(EQUIPE, pluck="name", order_by="creation"))
 
 
 def charger() -> ReglagesEvaluation:
@@ -204,22 +274,35 @@ def creer_role() -> None:
         frappe.get_doc({"doctype": "Role", "role_name": ROLE, "desk_access": 1}).insert(ignore_permissions=True)
 
 
+def _raccourci(i: int, ecran: str) -> dict:
+    return {"id": f"raccourci{i}", "type": "shortcut", "data": {"shortcut_name": ecran, "col": 4}}
+
+
 def _restreindre_espace(espace) -> None:
-    """Un espace créé par une version antérieure reçoit la restriction de rôles prévue."""
-    voulus = {"System Manager", ROLE}
+    """Un espace créé par une version antérieure reçoit la restriction de rôles prévue et les écrans ajoutés
+    depuis."""
+    voulus, modifie = {"System Manager", ROLE}, False
     if {r.role for r in espace.roles} != voulus or not espace.public:
         espace.public = 1
         espace.set("roles", [{"role": r} for r in sorted(voulus)])
+        modifie = True
+    presents = {s.link_to for s in espace.shortcuts}
+    blocs = json.loads(espace.content or "[]")
+    for ecran in (e for e in ECRANS if e not in presents):
+        espace.append("shortcuts", {"label": ecran, "type": "DocType", "link_to": ecran, "doc_view": "List"})
+        blocs.append(_raccourci(len(blocs), ecran))
+        modifie = True
+    if modifie:
+        espace.content = json.dumps(blocs, ensure_ascii=False)
         espace.save(ignore_permissions=True)
 
 
 def creer_espace_travail() -> None:
-    """Espace « Évaluation OpenLab » : raccourcis vers les six écrans de la console (créé une seule fois)."""
+    """Espace « Évaluation OpenLab » : raccourcis vers les écrans de la console (créé une seule fois)."""
     if frappe.db.exists("Workspace", ESPACE):
         _restreindre_espace(frappe.get_doc("Workspace", ESPACE))
         return
-    blocs = [{"id": f"raccourci{i}", "type": "shortcut", "data": {"shortcut_name": ecran, "col": 4}}
-             for i, ecran in enumerate(ECRANS)]
+    blocs = [_raccourci(i, ecran) for i, ecran in enumerate(ECRANS)]
     frappe.get_doc({
         "doctype": "Workspace", "name": ESPACE, "label": ESPACE, "title": ESPACE, "module": "OpenLab Academy",
         "public": 1, "roles": [{"role": "System Manager"}, {"role": ROLE}], "content": json.dumps(blocs, ensure_ascii=False),

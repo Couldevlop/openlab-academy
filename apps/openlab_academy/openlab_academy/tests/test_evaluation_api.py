@@ -479,6 +479,43 @@ class TestDelegations(CasApi):
             api.copie_a_corriger(copie)
 
 
+class TestReglagesEffectifs(CasApi):
+    def test_valeur_et_provenance_pour_les_superviseurs(self):
+        lot = self.lot(FORM, A)
+        frappe.get_doc({"doctype": "Surcharge Evaluation OpenLab", "cohorte": lot, "note_sur": "10"}).insert()
+        frappe.get_doc({"doctype": "Equipe Correction OpenLab", "exercice": self.livrable,
+                        "membres": [{"utilisateur": AUTRE, "role": "suppleant"}]}).insert()
+        for qui in ("Administrator", RESP):
+            self.en_tant_que(qui)
+            r = api.reglages_effectifs(self.livrable, lot)
+            self.assertEqual(r["type_exercice"], "livrable")
+            self.assertEqual(r["chaine"]["note_sur"], {"valeur": 10, "source": f"cohorte {lot}"})
+            self.assertEqual(r["chaine"]["nb_pairs"]["source"].split()[0], "type")
+            self.assertEqual((r["equipe"]["titulaires"], r["equipe"]["suppleants"]), ([FORM], [AUTRE]))
+            self.assertEqual(r["equipe"]["provenance"]["suppleants"], f"exercice {self.livrable}")
+        self.en_tant_que(FORM)
+        with self.assertRaises(frappe.PermissionError):
+            api.reglages_effectifs(self.livrable, lot)
+        self.en_tant_que("Administrator")
+        with self.assertRaises(frappe.ValidationError):
+            api.reglages_effectifs("inexistant")
+
+    def test_file_d_un_titulaire_d_equipe(self):
+        (copie,) = self.a_corriger(A)
+        frappe.get_doc({"doctype": "Equipe Correction OpenLab", "exercice": self.livrable,
+                        "membres": [{"utilisateur": AUTRE, "role": "titulaire"}]}).insert()
+        self.en_tant_que(AUTRE)
+        self.assertEqual([c["copie"] for c in api.file_correction()["copies"]], [copie])
+        self.en_tant_que(FORM)  # plus titulaire : l'équipe de l'exercice l'emporte
+        self.assertEqual(api.file_correction()["copies"], [])
+        self.en_tant_que("Administrator")
+        frappe.get_doc({"doctype": "Equipe Correction OpenLab",
+                        "membres": [{"utilisateur": DELEG, "role": "titulaire"}]}).insert()
+        frappe.db.delete("Equipe Correction OpenLab", {"exercice": self.livrable})
+        self.en_tant_que(DELEG)  # équipe globale : toutes les copies
+        self.assertEqual([c["copie"] for c in api.file_correction()["copies"]], [copie])
+
+
 class TestAdaptateur(CasApi):
     def test_texte_lisible_jamais_en_html(self):
         (copie,) = self.a_corriger(A)
@@ -515,7 +552,7 @@ class TestGardes(CasApi):
         "mon_auto_evaluation": ("E",), "enregistrer_auto_evaluation": ("E", "{}"), "mon_retour": ("C",),
         "file_correction": (), "copie_a_corriger": ("C",), "corriger": ("C", "{}"), "valider_lot": ("[]",),
         "publier": ("C",), "deleguer": ("D", "2026-01-01", "2026-01-02"), "revoquer": ("D",), "fiabilite_ia": (),
-        "accuse_depot": ("C",),
+        "accuse_depot": ("C",), "reglages_effectifs": ("E",),
     }
 
     def test_visiteur_refuse_partout(self):
@@ -551,10 +588,10 @@ class TestGardes(CasApi):
                         pass
                 frappe.local.message_log = []
         self.assertEqual(set(api.LIMITES), set(self.APPELS))  # lectures comprises
-        self.assertEqual(requete.method, "GET")  # dernier point : accuse_depot, une lecture
+        self.assertEqual(requete.method, "GET")  # dernier point : reglages_effectifs, une lecture
 
     LECTURES = {"mes_relectures", "relecture", "mon_auto_evaluation", "mon_retour", "file_correction",
-                "copie_a_corriger", "fiabilite_ia", "accuse_depot"}
+                "copie_a_corriger", "fiabilite_ia", "accuse_depot", "reglages_effectifs"}
 
     def test_lectures_en_get_seulement(self):
         """La liste des lectures du test de débit suit les méthodes déclarées par chaque point."""

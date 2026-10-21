@@ -252,7 +252,7 @@ class TestSoumettreCopie(unittest.TestCase):
         v1 = uc.executer(soumission())
         dangereuse = Chaine(tuple(ConfigEtape(e, e == Etape.FORMATEUR, 1, Expiration.PUBLIER_PROVISOIRE)
                                   for e in Etape))
-        uc._surcharges = lambda: (Surcharge(None, "EX1", dangereuse),)
+        uc._surcharges = lambda: (Surcharge.complete(None, "EX1", dangereuse),)
         v2 = uc.executer(soumission(answer="https://github.com/a/p2"))
         self.assertNotEqual(v2, v1)
         self.assertEqual(demarrees, [v1, v2])
@@ -283,7 +283,7 @@ class TestSoumettreCopie(unittest.TestCase):
         depot = DepotMemoire(Exercice(TypeExercice.LIVRABLE, GRILLE, yaml))
         copie_id = self.cas(depot).executer(soumission())
         self.assertEqual(self.depot.statuts, [(copie_id, Statut.RENDUE, "ia", datetime(2026, 10, 20, 10, 0))])
-        surcharge = Surcharge(None, "EX1", CHAINES_DEFAUT[TypeExercice.MISE_EN_SITUATION])
+        surcharge = Surcharge.complete(None, "EX1", CHAINES_DEFAUT[TypeExercice.MISE_EN_SITUATION])
         self.cas(DepotMemoire(Exercice(TypeExercice.LIVRABLE, GRILLE, yaml)),
                  surcharges=lambda: (surcharge,)).executer(soumission())
         self.assertEqual(self.depot.statuts[0][2:], ("controles", datetime(2026, 10, 20, 9, 0)))

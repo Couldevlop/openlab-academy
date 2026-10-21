@@ -3,7 +3,7 @@ from dataclasses import replace
 from datetime import timedelta
 
 from openlab_academy.application.chaine import (
-    SYSTEME, Etat, FaireAvancer, TraiterEcheances, chaine_de, suppleant_de)
+    SYSTEME, Etat, FaireAvancer, TraiterEcheances, chaine_de)
 from openlab_academy.application.pairs import EnregistrerRelecture, StatutRelecture
 from openlab_academy.domain.copie import Copie, Statut
 from openlab_academy.domain.reglages_evaluation import (
@@ -220,7 +220,7 @@ class TestFaireAvancer(Cas):
         dangereuse = replace(LIVRABLE, etapes=tuple(
             replace(c, expiration=Expiration.PUBLIER_PROVISOIRE) if c.etape == Etape.FORMATEUR else c
             for c in LIVRABLE.etapes))
-        self.monter(type_=TypeExercice.MISE_EN_SITUATION, surcharges=(Surcharge(None, "EX1", dangereuse),))
+        self.monter(type_=TypeExercice.MISE_EN_SITUATION, surcharges=(Surcharge.complete(None, "EX1", dangereuse),))
         copie = _copie_type(self.m, "COH1")
         self.assertEqual(chaine_de(copie, self.m, self.source), CHAINES_DEFAUT[TypeExercice.MISE_EN_SITUATION])
         self.m.exercices.clear()
@@ -229,17 +229,10 @@ class TestFaireAvancer(Cas):
         self.source.surcharges_ = ()
         self.assertEqual(chaine_de(copie, self.m, self.source), configuree)
 
-    def test_suppleant_de_la_cohorte(self):
-        copie = _copie_type(Memoire(), "COH1")
-        surcharges = (Surcharge(None, "EX1", LIVRABLE), Surcharge("COH2", None, LIVRABLE, "y@x.ci"),
-                      Surcharge("COH1", None, LIVRABLE), Surcharge("COH1", None, None, "sup@x.ci"))
-        self.assertEqual(suppleant_de(copie, surcharges), "sup@x.ci")
-        self.assertIsNone(suppleant_de(copie, surcharges[:3]))
-
-    def test_surcharge_suppleant_seul_garde_la_chaine_du_yaml(self):
+    def test_surcharge_partielle_garde_le_reste_du_yaml(self):
         yaml = chaine(Etape.CONTROLES, Etape.FORMATEUR)
-        self.monter(yaml=yaml, surcharges=(Surcharge("COH1", None, None, "sup@x.ci"),))
-        self.assertEqual(chaine_de(_copie_type(self.m, "COH1"), self.m, self.source), yaml)
+        self.monter(yaml=yaml, surcharges=(Surcharge("COH1", None, {"note_sur": 10}),))
+        self.assertEqual(chaine_de(_copie_type(self.m, "COH1"), self.m, self.source), replace(yaml, note_sur=10))
 
 
 class TestTraiterEcheances(Cas):
@@ -425,7 +418,8 @@ class TestTraiterEcheances(Cas):
 
     def test_formateur_echu_escalade_au_suppleant_puis_au_responsable(self):
         reglages = ReglagesEvaluation(responsable_pedagogique="resp@x.ci")
-        self.monter(reglages=reglages, surcharges=(Surcharge("COH1", None, chaine(Etape.FORMATEUR), "sup@x.ci"),))
+        self.monter(reglages=reglages, surcharges=(Surcharge.complete("COH1", None, chaine(Etape.FORMATEUR)),))
+        self.m.suppleants_ = ("sup@x.ci",)
         a = self.rendre("a@x.ci")
         self.avancer_horloge(1)
         self.assertEqual(self.m.etat(a), Etat("formateur", self.t + timedelta(hours=1), "sup@x.ci"))
@@ -455,12 +449,20 @@ class TestTraiterEcheances(Cas):
         self.assertTrue(all(f"/espace/correcteur/{a}" in n[1] for n in prevenus))
         self.assertEqual(self.actions().count("escalade épuisée"), 1)
 
-    def test_suppleant_seul_recoit_l_escalade(self):
-        self.monter(yaml=chaine(Etape.FORMATEUR), surcharges=(Surcharge("COH1", None, None, "sup@x.ci"),))
+    def test_suppleant_de_l_equipe_recoit_l_escalade(self):
+        self.monter(yaml=chaine(Etape.FORMATEUR))
+        self.m.suppleants_ = ("sup@x.ci",)
         a = self.rendre("a@x.ci")
         self.avancer_horloge(1)
         self.assertEqual(self.m.etat(a).escalade_a, "sup@x.ci")
         self.assertEqual(self.notes[0][0], "sup@x.ci")
+
+    def test_responsable_de_l_equipe_avant_celui_de_la_console(self):
+        self.monter(yaml=chaine(Etape.FORMATEUR), reglages=ReglagesEvaluation(responsable_pedagogique="resp@x.ci"))
+        self.m.responsable_ = "chef@x.ci"
+        a = self.rendre("a@x.ci")
+        self.avancer_horloge(1)
+        self.assertEqual(self.m.etat(a).escalade_a, "chef@x.ci")
 
     def test_sans_suppleant_escalade_au_responsable(self):
         self.monter(yaml=chaine(Etape.FORMATEUR), reglages=ReglagesEvaluation(responsable_pedagogique="resp@x.ci"))
@@ -470,7 +472,8 @@ class TestTraiterEcheances(Cas):
 
     def test_suppleant_responsable_ne_compte_qu_une_fois(self):
         self.monter(reglages=ReglagesEvaluation(responsable_pedagogique="r@x.ci"),
-                    surcharges=(Surcharge("COH1", None, chaine(Etape.FORMATEUR), "r@x.ci"),))
+                    surcharges=(Surcharge.complete("COH1", None, chaine(Etape.FORMATEUR)),))
+        self.m.suppleants_ = ("r@x.ci",)
         a = self.rendre("a@x.ci")
         self.avancer_horloge(1)
         self.avancer_horloge(1)

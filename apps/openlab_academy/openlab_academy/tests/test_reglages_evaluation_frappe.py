@@ -11,11 +11,12 @@ from openlab_academy.domain.reglages_evaluation import (
 from openlab_academy.entrypoints import install
 from openlab_academy.infrastructure import journal_frappe
 from openlab_academy.infrastructure import reglages_evaluation_frappe as source
-from openlab_academy.patches import initialiser_reglages_evaluation
+from openlab_academy.patches import initialiser_reglages_evaluation, migrer_surcharges_partielles
 
 REGLAGES = "Reglages Evaluation OpenLab"
 SURCHARGE = "Surcharge Evaluation OpenLab"
 DELEGATION = "Delegation OpenLab"
+EQUIPE = "Equipe Correction OpenLab"
 JOURNAL = "Journal Note OpenLab"
 ELEVE = "eleve.console@example.ci"
 ELEVE_CORRECTEUR = "eleve.correcteur.console@example.ci"
@@ -264,8 +265,8 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         self.assertEqual({r.role for r in espace.roles}, {"System Manager", ROLE})
         self.assertEqual({s.link_to for s in espace.shortcuts},
                          {REGLAGES, SURCHARGE, DELEGATION, JOURNAL, "Reglages OpenLab Academy",
-                          "Ouverture Lecon OpenLab"})
-        self.assertEqual(len(json.loads(espace.content)), 6)
+                          "Ouverture Lecon OpenLab", EQUIPE})
+        self.assertEqual(len(json.loads(espace.content)), 7)
         initialiser_reglages_evaluation.execute()  # idempotent
         self.assertEqual(frappe.db.count("Workspace", {"name": "Évaluation OpenLab"}), 1)
 
@@ -277,6 +278,17 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         initialiser_reglages_evaluation.execute()
         roles = {r.role for r in frappe.get_doc("Workspace", "Évaluation OpenLab").roles}
         self.assertEqual(roles, {"System Manager", ROLE})
+
+    def test_espace_existant_recoit_les_ecrans_ajoutes(self):
+        initialiser_reglages_evaluation.execute()
+        espace = frappe.get_doc("Workspace", "Évaluation OpenLab")
+        espace.set("shortcuts", [s for s in espace.shortcuts if s.link_to != EQUIPE])
+        espace.content = json.dumps(json.loads(espace.content)[:6])
+        espace.save(ignore_permissions=True)
+        initialiser_reglages_evaluation.execute()
+        espace = frappe.get_doc("Workspace", "Évaluation OpenLab")
+        self.assertIn(EQUIPE, {s.link_to for s in espace.shortcuts})
+        self.assertEqual(json.loads(espace.content)[-1]["data"]["shortcut_name"], EQUIPE)
 
     def test_initialiser_ne_sauvegarde_rien_si_tout_est_en_place(self):
         vider()
@@ -300,85 +312,144 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
 
 
 class TestSurcharges(FrappeTestCase):
+    """Surcharges partielles : un champ vide est hérité, seules les étapes citées sont remplacées."""
+
     def tearDown(self):
         frappe.db.rollback()
 
     def _surcharge(self, **champs):
-        return frappe.get_doc({"doctype": SURCHARGE, "etapes": etapes_formateur(), **champs})
+        return frappe.get_doc({"doctype": SURCHARGE, **champs})
 
-    def test_surcharge_cohorte_et_exercice(self):
+    def test_champs_vides_herites(self):
         lot, devoir = un_lot(), un_devoir()
-        self._surcharge(cohorte=lot, nb_pairs=5, note_sur=10, seuil_reussite=6).insert()
-        self._surcharge(exercice=devoir, anonymat=0).insert()
+        self._surcharge(cohorte=lot, nb_pairs="5", note_sur="10", seuil_reussite="6,5",
+                        etapes=etapes_formateur()).insert()
+        self._surcharge(exercice=devoir, anonymat="non").insert()
         surcharges = source.surcharges()
-        self.assertEqual(len(surcharges), 2)
         s_lot = next(s for s in surcharges if s.cohorte == lot)
-        self.assertEqual((s_lot.exercice, s_lot.chaine.nb_pairs, s_lot.chaine.note_sur), (None, 5, 10))
-        self.assertEqual(s_lot.chaine.config(Etape.FORMATEUR).expiration, Expiration.ESCALADER)
+        self.assertEqual((s_lot.exercice, s_lot.options), (None, {"nb_pairs": 5, "note_sur": 10,
+                                                                  "seuil_reussite": 6.5}))
+        self.assertEqual([(c.etape, c.expiration) for c in s_lot.etapes], [(Etape.FORMATEUR, Expiration.ESCALADER)])
         s_dev = next(s for s in surcharges if s.exercice == devoir)
-        self.assertFalse(s_dev.chaine.anonymat)
-        self.assertIsInstance(s_dev, Surcharge)
+        self.assertEqual((s_dev.options, s_dev.etapes), ({"anonymat": False}, ()))
+        chaine = source.charger().chaine_pour(TypeExercice.CAPSTONE, lot, devoir, surcharges, None)
+        defaut = CHAINES_DEFAUT[TypeExercice.CAPSTONE]
+        self.assertEqual((chaine.nb_pairs, chaine.anonymat, chaine.note_sur), (5, False, 10))
+        self.assertEqual(chaine.config(Etape.JURY), defaut.config(Etape.JURY))  # étape non citée : héritée
 
     def test_deux_surcharges_sur_la_meme_cible_refusees(self):
         lot, devoir = un_lot(), un_devoir()
-        self._surcharge(cohorte=lot).insert()
+        self._surcharge(cohorte=lot, nb_pairs="3").insert()
         with self.assertRaisesRegex(frappe.ValidationError, "existe déjà"):
-            self._surcharge(cohorte=lot).insert()
-        self._surcharge(cohorte=lot, exercice=devoir).insert()
+            self._surcharge(cohorte=lot, nb_pairs="2").insert()
+        self._surcharge(cohorte=lot, exercice=devoir, nb_pairs="2").insert()
         with self.assertRaisesRegex(frappe.ValidationError, "existe déjà"):
-            self._surcharge(cohorte=lot, exercice=devoir).insert()
+            self._surcharge(cohorte=lot, exercice=devoir, nb_pairs="1").insert()
         doc = frappe.get_last_doc(SURCHARGE)
-        doc.nb_pairs = 4
+        doc.nb_pairs = "4"
         doc.save()  # se modifier soi-même reste possible
 
-    def test_aucune_cible_refusee(self):
+    def test_aucune_cible_ou_aucun_reglage_refuse(self):
         with self.assertRaisesRegex(frappe.ValidationError, "cohorte ou un exercice"):
-            self._surcharge().insert()
+            self._surcharge(nb_pairs="3").insert()
+        with self.assertRaisesRegex(frappe.ValidationError, "au moins un réglage"):
+            self._surcharge(cohorte=un_lot()).insert()
+
+    def test_valeur_illisible_refusee(self):
+        with self.assertRaisesRegex(frappe.ValidationError, "nb_pairs : valeur invalide"):
+            self._surcharge(cohorte=un_lot(), nb_pairs="trois").insert()
 
     def test_formateur_obligatoire_dans_une_surcharge(self):
-        doc = self._surcharge(cohorte=un_lot())
+        doc = self._surcharge(cohorte=un_lot(), etapes=etapes_formateur())
         doc.etapes[0].active = 0
         with self.assertRaisesRegex(frappe.ValidationError, "formateur doit rester active"):
             doc.insert()
 
     def test_publication_provisoire_refusee_dans_une_surcharge(self):
-        doc = self._surcharge(cohorte=un_lot())
+        doc = self._surcharge(cohorte=un_lot(), etapes=etapes_formateur())
         doc.etapes[0].expiration = "publier_provisoire"
         with self.assertRaisesRegex(frappe.ValidationError, "publication provisoire"):
             doc.insert()
 
     def test_ligne_etape_invalide_refusee(self):
-        doc = self._surcharge(cohorte=un_lot())
+        doc = self._surcharge(cohorte=un_lot(), etapes=etapes_formateur())
         doc.etapes[0].delai_heures = -1
         with self.assertRaisesRegex(frappe.ValidationError, "délai négatif"):
             doc.insert()
 
-    def test_suppleant_seul_sans_chaine(self):
-        lot = un_lot()
-        frappe.get_doc({"doctype": SURCHARGE, "cohorte": lot, "suppleant": "Administrator"}).insert()
-        (s,) = source.surcharges()
-        self.assertEqual((s.cohorte, s.chaine, s.suppleant), (lot, None, "Administrator"))
-        self.assertEqual(source.charger().chaine_pour(TypeExercice.CAPSTONE, lot, un_devoir(), (s,), None),
-                         CHAINES_DEFAUT[TypeExercice.CAPSTONE])  # le jury du capstone reste en place
-
-    def test_ni_chaine_ni_suppleant_refuse(self):
-        with self.assertRaisesRegex(frappe.ValidationError, "chaîne ou un suppléant"):
-            frappe.get_doc({"doctype": SURCHARGE, "cohorte": un_lot()}).insert()
-
-    def test_suppleant_d_un_exercice_refuse(self):
-        with self.assertRaisesRegex(frappe.ValidationError, "suppléant"):
-            self._surcharge(exercice=un_devoir(), suppleant="Administrator").insert()
-
     def test_pairs_bornes(self):
-        self._surcharge(cohorte=un_lot(), pairs_attente_max_jours=0, pairs_reattributions_max=0).insert()
+        self._surcharge(cohorte=un_lot(), pairs_attente_max_jours="0", pairs_reattributions_max="0").insert()
         (s,) = source.surcharges()
-        self.assertEqual((s.chaine.pairs_attente_max_jours, s.chaine.pairs_reattributions_max), (0, 0))
-        self._surcharge(exercice=un_devoir()).insert()
-        chaine = next(x for x in source.surcharges() if x.exercice).chaine
-        self.assertEqual((chaine.pairs_attente_max_jours, chaine.pairs_minimum_releves,
-                          chaine.pairs_reattributions_max), (7, 1, 2))
+        self.assertEqual(s.options, {"pairs_attente_max_jours": 0, "pairs_reattributions_max": 0})
         with self.assertRaisesRegex(frappe.ValidationError, "pairs_minimum_releves"):
-            self._surcharge(exercice=un_devoir(), cohorte=un_lot(), pairs_minimum_releves=9).insert()
+            self._surcharge(exercice=un_devoir(), cohorte=un_lot(), pairs_minimum_releves="9").insert()
+
+
+class TestEquipes(FrappeTestCase):
+    def setUp(self):
+        utilisateur(RESP_DELEG, ROLE)
+        utilisateur(CORRECTEUR_LMS, "Course Creator")
+
+    def tearDown(self):
+        frappe.db.rollback()
+
+    def _equipe(self, membres=(), **champs):
+        return frappe.get_doc({"doctype": EQUIPE, "membres": [{"utilisateur": u, "role": r} for u, r in membres],
+                               **champs})
+
+    def test_equipes_mappees_vers_le_domaine(self):
+        lot = un_lot()
+        self._equipe(responsable=RESP_DELEG).insert()
+        self._equipe(((CORRECTEUR_LMS, "suppleant"), ("Administrator", "titulaire"), (RESP_DELEG, "suppleant")),
+                     cohorte=lot).insert()
+        globale, cohorte = sorted(source.equipes(), key=lambda e: e.niveau)
+        self.assertEqual((globale.niveau, globale.responsable), (0, RESP_DELEG))
+        self.assertEqual((cohorte.cohorte, cohorte.titulaires, cohorte.suppleants),
+                         (lot, ("Administrator",), (CORRECTEUR_LMS, RESP_DELEG)))
+
+    def test_regle_du_domaine_et_cible_unique(self):
+        lot = un_lot()
+        for doc, motif in ((self._equipe(cohorte=lot), "au moins"),
+                           (self._equipe(((RESP_DELEG, "titulaire"),), cohorte=lot, exercice=un_devoir()),
+                            "une seule cible"),
+                           (self._equipe(((RESP_DELEG, "titulaire"), (RESP_DELEG, "suppleant")), cohorte=lot),
+                            "deux fois")):
+            with self.subTest(motif=motif), self.assertRaisesRegex(frappe.ValidationError, motif):
+                doc.insert()
+            frappe.local.message_log = []
+        self._equipe(responsable=RESP_DELEG, cohorte=lot).insert()
+        with self.assertRaisesRegex(frappe.ValidationError, "existe déjà"):
+            self._equipe(responsable="Administrator", cohorte=lot).insert()
+
+    def test_patch_surcharges_partielles_et_suppleants_dans_les_equipes(self):
+        lot, devoir = un_lot(), un_devoir()
+        avec_chaine = self._surcharge_ancienne(cohorte=lot, nb_pairs="3", anonymat="1", suppleant=CORRECTEUR_LMS,
+                                               etapes=etapes_formateur())
+        suppleant_seul = self._surcharge_ancienne(exercice=devoir, nb_pairs="3", note_sur="20",
+                                                  suppleant=RESP_DELEG)
+        migrer_surcharges_partielles.execute()
+        doc = frappe.get_doc(SURCHARGE, avec_chaine)
+        self.assertEqual((doc.nb_pairs, doc.anonymat, len(doc.etapes)), ("3", "oui", 6))
+        self.assertEqual({e.etape for e in doc.etapes if e.active}, {"formateur"})  # les autres, jadis absentes
+        self.assertFalse(frappe.db.exists(SURCHARGE, suppleant_seul))  # ne fixait aucune chaîne : vide, supprimée
+        equipes = {(e.cohorte, e.exercice): e.suppleants for e in source.equipes()}
+        self.assertEqual(equipes, {(lot, None): (CORRECTEUR_LMS,), (None, devoir): (RESP_DELEG,)})
+        migrer_surcharges_partielles.execute()  # idempotent
+        self.assertEqual(len(source.equipes()), 2)
+
+    def test_patch_site_sans_colonne_suppleant(self):
+        with patch.object(frappe.db, "has_column", return_value=False):
+            migrer_surcharges_partielles.execute()
+        self.assertEqual(source.equipes(), ())
+
+    def _surcharge_ancienne(self, suppleant, anonymat=None, **champs):
+        """Surcharge écrite par une version antérieure : suppléant en colonne, case à cocher 0 / 1."""
+        doc = frappe.get_doc({"doctype": SURCHARGE, **champs})
+        doc.flags.ignore_validate = True
+        doc.insert()
+        frappe.db.sql(f"update `tab{SURCHARGE}` set suppleant = %s, anonymat = %s where name = %s",
+                      (suppleant, anonymat, doc.name))
+        return doc.name
 
 
 class TestDelegations(FrappeTestCase):
@@ -516,6 +587,8 @@ class TestDroitsConsole(FrappeTestCase):
         self.delegation = frappe.get_doc({"doctype": DELEGATION, "titulaire": "Administrator",
                                           "delegataire": "resp.console@example.ci", "debut": now_datetime(),
                                           "fin": add_days(now_datetime(), 1)}).insert().name
+        self.equipe = frappe.get_doc({"doctype": EQUIPE, "cohorte": un_lot(),
+                                      "responsable": "resp.console@example.ci"}).insert().name
 
     def tearDown(self):
         frappe.set_user("Administrator")
@@ -523,7 +596,7 @@ class TestDroitsConsole(FrappeTestCase):
 
     def _noms(self):
         return ((REGLAGES, REGLAGES), (SURCHARGE, self.surcharge), (DELEGATION, self.delegation),
-                (JOURNAL, self.ligne))
+                (JOURNAL, self.ligne), (EQUIPE, self.equipe))
 
     def test_apprenant_ne_lit_aucun_ecran(self):
         frappe.set_user(ELEVE)
@@ -556,3 +629,5 @@ class TestDroitsConsole(FrappeTestCase):
         self.assertTrue(frappe.has_permission(DELEGATION, "write"))
         self.assertFalse(frappe.has_permission(SURCHARGE, "write"))
         self.assertFalse(frappe.has_permission(JOURNAL, "write"))
+        self.assertTrue(frappe.has_permission(EQUIPE, "read"))
+        self.assertFalse(frappe.has_permission(EQUIPE, "write"))

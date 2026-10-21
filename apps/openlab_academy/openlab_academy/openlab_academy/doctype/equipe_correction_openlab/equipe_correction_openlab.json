@@ -1,0 +1,77 @@
+{
+ "doctype": "DocType",
+ "name": "Equipe Correction OpenLab",
+ "issingle": 0,
+ "istable": 0,
+ "editable_grid": 0,
+ "autoname": "hash",
+ "description": "Équipe de correction d'un niveau : globale (aucune cible), cours, cohorte ou exercice. Le plus spécifique l'emporte, champ par champ ; un champ vide est hérité.",
+ "field_order": [
+  "cours",
+  "cohorte",
+  "exercice",
+  "responsable",
+  "membres"
+ ],
+ "fields": [
+  {
+   "fieldname": "cours",
+   "fieldtype": "Link",
+   "label": "Cours",
+   "options": "LMS Course",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "cohorte",
+   "fieldtype": "Link",
+   "label": "Cohorte",
+   "options": "LMS Batch",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "exercice",
+   "fieldtype": "Link",
+   "label": "Exercice",
+   "options": "LMS Assignment",
+   "in_list_view": 1,
+   "description": "Une seule cible ; aucune : l'équipe globale."
+  },
+  {
+   "fieldname": "responsable",
+   "fieldtype": "Link",
+   "label": "Responsable",
+   "options": "User",
+   "description": "Dernier recours de l'escalade ; vide : hérité, sinon le responsable pédagogique des réglages."
+  },
+  {
+   "fieldname": "membres",
+   "fieldtype": "Table",
+   "label": "Titulaires et suppléants",
+   "options": "Membre Equipe OpenLab",
+   "description": "Titulaires vides : hérités, sinon les formateurs LMS de la cohorte ou du cours."
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "Responsable pédagogique OpenLab",
+   "read": 1
+  }
+ ],
+ "track_changes": 1,
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-21 19:00:00",
+ "modified": "2026-10-21 19:00:00",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "custom": 0,
+ "engine": "InnoDB",
+ "module": "OpenLab Academy"
+}

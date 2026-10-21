@@ -7,7 +7,6 @@
  "field_order": [
   "cohorte",
   "exercice",
-  "suppleant",
   "etapes",
   "nb_pairs",
   "anonymat",
@@ -35,37 +34,31 @@
    "in_list_view": 1
   },
   {
-   "fieldname": "suppleant",
-   "fieldtype": "Link",
-   "label": "Suppléant du formateur",
-   "options": "User",
-   "description": "Reçoit les copies quand le formateur dépasse son délai, avant le responsable pédagogique. Réglé par cohorte : sans étapes, la surcharge ne porte que le suppléant et la chaîne de la cohorte reste celle de l’exercice ou du type.",
-   "depends_on": "eval:!doc.exercice"
-  },
-  {
    "fieldname": "etapes",
    "fieldtype": "Table",
    "label": "Étapes",
    "options": "Etape Correction OpenLab",
-   "description": "Laisser vide pour ne régler que le suppléant de la cohorte."
+   "description": "Seules les étapes citées sont remplacées ; les autres sont héritées (YAML ou type)."
   },
   {
    "fieldname": "nb_pairs",
-   "fieldtype": "Int",
+   "fieldtype": "Data",
    "label": "Nombre de relecteurs pairs",
-   "default": "3"
+   "description": "Vide : hérité."
   },
   {
    "fieldname": "anonymat",
-   "fieldtype": "Check",
+   "fieldtype": "Select",
    "label": "Relecture anonyme",
-   "default": "1"
+   "options": "\noui\nnon",
+   "description": "Vide : hérité."
   },
   {
    "fieldname": "note_masquee_avant_relectures",
-   "fieldtype": "Check",
+   "fieldtype": "Select",
    "label": "Note masquée avant les relectures",
-   "default": "1"
+   "options": "\noui\nnon",
+   "description": "Vide : hérité."
   },
   {
    "fieldname": "col_notes",
@@ -74,39 +67,33 @@
   },
   {
    "fieldname": "note_sur",
-   "fieldtype": "Int",
+   "fieldtype": "Data",
    "label": "Note sur",
-   "default": "20"
+   "description": "Vide : hérité."
   },
   {
    "fieldname": "seuil_reussite",
-   "fieldtype": "Float",
+   "fieldtype": "Data",
    "label": "Seuil de réussite",
-   "default": "10"
+   "description": "Vide : hérité."
   },
   {
    "fieldname": "pairs_attente_max_jours",
-   "fieldtype": "Int",
+   "fieldtype": "Data",
    "label": "Plafond de l'étape des pairs (jours)",
-   "default": "7",
-   "non_negative": 1,
-   "description": "Passé ce délai depuis l'entrée dans l'étape, plus aucune relecture n'est attendue : la copie avance."
+   "description": "Passé ce délai depuis l'entrée dans l'étape, plus aucune relecture n'est attendue : la copie avance. Vide : hérité."
   },
   {
    "fieldname": "pairs_minimum_releves",
-   "fieldtype": "Int",
+   "fieldtype": "Data",
    "label": "Relectures minimales pour la médiane",
-   "default": "1",
-   "non_negative": 1,
-   "description": "Sous ce nombre de relectures obtenues, la médiane des pairs ne compte pas."
+   "description": "Sous ce nombre de relectures obtenues, la médiane des pairs ne compte pas. Vide : hérité."
   },
   {
    "fieldname": "pairs_reattributions_max",
-   "fieldtype": "Int",
+   "fieldtype": "Data",
    "label": "Réattributions maximales par copie",
-   "default": "2",
-   "non_negative": 1,
-   "description": "Au-delà, une relecture en retard est retirée sans être confiée à un autre pair."
+   "description": "Au-delà, une relecture en retard est retirée sans être confiée à un autre pair. Vide : hérité."
   }
  ],
  "permissions": [
@@ -126,11 +113,12 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-21 18:00:00",
+ "modified": "2026-10-21 19:00:00",
  "sort_field": "modified",
  "sort_order": "DESC",
  "custom": 0,
  "engine": "InnoDB",
  "module": "OpenLab Academy",
- "autoname": "hash"
+ "autoname": "hash",
+ "description": "Réglage partiel d'une cohorte ou d'un exercice : un champ vide est hérité, champ par champ (exercice dans la cohorte > exercice > cohorte > YAML > type > défauts). Titulaires, suppléants et responsable se règlent dans les équipes de correction."
 }

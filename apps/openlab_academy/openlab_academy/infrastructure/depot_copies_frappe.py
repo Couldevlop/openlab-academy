@@ -10,8 +10,10 @@ from openlab_academy.application.pre_corriger import SIGNALEMENT
 from openlab_academy.application.soumettre_copie import Contenu, Exercice
 from openlab_academy.domain.copie import (
     Copie, CopieVerrouillee, Etat, EtatInstantane, Proposition, Source, Statut)
+from openlab_academy.domain.equipe import EquipeEffective, resoudre_equipe
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.reglages_evaluation import Chaine, TypeExercice
+from openlab_academy.infrastructure import reglages_evaluation_frappe
 
 COPIE = "Copie OpenLab"
 PROPOSITION = "Proposition OpenLab"
@@ -256,17 +258,29 @@ class DepotCopiesFrappe:
         frappe.db.set_value(COPIE, copie_id, "butoir", butoir)
 
     def titulaires(self, copie_id: str) -> set[str]:
-        """Formateurs de la cohorte, sinon du cours, sinon le formateur des réglages OpenLab Academy."""
+        return set(self.equipe(copie_id).titulaires)
+
+    def equipe(self, copie_id: str) -> EquipeEffective:
+        """Équipe de correction de la copie (exercice > cohorte > cours > globale, champ par champ) ; titulaires
+        par défaut : formateurs de la cohorte, sinon du cours, sinon le formateur des réglages OpenLab Academy."""
         cohorte, exercice = frappe.db.get_value(COPIE, copie_id, ["cohorte", "exercice"])
+        return self.equipe_de(exercice, cohorte or None)
+
+    def equipe_de(self, exercice: str, cohorte: str | None) -> EquipeEffective:
+        cours = frappe.db.get_value("LMS Assignment", exercice, "course") or ""
+        return resoudre_equipe(reglages_evaluation_frappe.equipes(), cours or None, cohorte or None, exercice,
+                               self._formateurs(cohorte, cours))
+
+    @staticmethod
+    def _formateurs(cohorte: str | None, cours: str) -> tuple[str, ...]:
         noms = frappe.get_all(INSTRUCTEUR, {"parent": cohorte or "", "parenttype": "LMS Batch"},
                               pluck="instructor", parent_doctype="LMS Batch")
         if not noms:
-            cours = frappe.db.get_value("LMS Assignment", exercice, "course") or ""
             noms = frappe.get_all(INSTRUCTEUR, {"parent": cours, "parenttype": "LMS Course"},
                                   pluck="instructor", parent_doctype="LMS Course")
         if not noms:
             noms = [frappe.db.get_single_value("Reglages OpenLab Academy", "formateur")]
-        return {n for n in noms if n}
+        return tuple(sorted({n for n in noms if n}))
 
     def jures(self, copie_id: str) -> set[str]:
         """Évaluateurs de la cohorte : ceux des cours du lot (LMS Batch), qui forment le jury."""
@@ -289,15 +303,26 @@ class DepotCopiesFrappe:
             filtres.append(["exercice", "=", exercice])
         if pour is not None and frappe.db.get_single_value("Reglages OpenLab Academy", "formateur") not in pour:
             ou = self._perimetre(sorted(pour))
-            return frappe.get_all(COPIE, filtres, or_filters=ou, pluck="name", order_by="creation")
+            if ou is not None:
+                return frappe.get_all(COPIE, filtres, or_filters=ou, pluck="name", order_by="creation")
         return frappe.get_all(COPIE, filtres, pluck="name", order_by="creation")
 
     @staticmethod
-    def _perimetre(personnes: list[str]) -> list[list]:
+    def _perimetre(personnes: list[str]) -> list[list] | None:
+        """Filtres « ou » des copies que ces personnes peuvent corriger ; None : toutes (équipe globale)."""
         def parents(table, parent, filtres):
             return frappe.get_all(table, {**filtres, "parenttype": parent}, pluck="parent", parent_doctype=parent)
         lots = parents(INSTRUCTEUR, "LMS Batch", {"instructor": ["in", personnes]})
         cours = parents(INSTRUCTEUR, "LMS Course", {"instructor": ["in", personnes]})
+        exercices = []
+        equipes = frappe.get_all("Equipe Correction OpenLab", {"name": ["in", parents(
+            "Membre Equipe OpenLab", "Equipe Correction OpenLab", {"utilisateur": ["in", personnes],
+                                                                     "role": "titulaire"})]},
+                                 ["cours", "cohorte", "exercice"]) if personnes else []
+        for e in equipes:  # titulaires d'une équipe de correction : sa cible ; l'équipe globale voit tout
+            if not (e.cours or e.cohorte or e.exercice):
+                return None
+            (exercices if e.exercice else lots if e.cohorte else cours).append(e.exercice or e.cohorte or e.cours)
         evaluateurs = frappe.get_all("Course Evaluator", {"evaluator": ["in", personnes]}, pluck="name")
         if evaluateurs:  # jurés : évaluateurs des cours du lot
             lots += parents("Batch Course", "LMS Batch", {"evaluator": ["in", evaluateurs]})
@@ -305,7 +330,9 @@ class DepotCopiesFrappe:
         if lots:
             ou.append(["cohorte", "in", lots])
         if cours:
-            ou.append(["exercice", "in", frappe.get_all("LMS Assignment", {"course": ["in", cours]}, pluck="name")])
+            exercices += frappe.get_all("LMS Assignment", {"course": ["in", cours]}, pluck="name")
+        if exercices:
+            ou.append(["exercice", "in", exercices])
         return ou
 
     def copies_publiees(self, exercice: str | None = None) -> list[str]:

@@ -13,6 +13,7 @@ from openlab_academy.application.pairs import AttribuerPairs, DepotRelectures, R
 from openlab_academy.application.soumettre_copie import DepotCopies
 from openlab_academy.domain.copie import Copie, Etat, Statut, etape_suivante, nb_pairs_possible
 from openlab_academy.domain.echeances import escalade
+from openlab_academy.domain.equipe import EquipeEffective
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.reglages_evaluation import Chaine, Etape, Expiration, ReglagesEvaluation, Surcharge
 
@@ -30,6 +31,7 @@ class DepotChaine(DepotCopies, Protocol):
     def escalader(self, copie_id: str, destinataire: str, echeance: datetime) -> None: ...
     def fixer_butoir(self, copie_id: str, butoir: datetime | None) -> None: ...
     def titulaires(self, copie_id: str) -> set[str]: ...
+    def equipe(self, copie_id: str) -> EquipeEffective: ...  # équipe de correction résolue pour la copie
     def jures(self, copie_id: str) -> set[str]: ...
 
 
@@ -47,12 +49,6 @@ def chaine_de(copie: Copie, depot: DepotCopies, source: SourceReglages) -> Chain
     chaine, _ = source.reglages().chaine_effective(copie.type_, copie.cohorte or None, copie.exercice,
                                                    source.surcharges(), exercice.chaine if exercice else None)
     return chaine
-
-
-def suppleant_de(copie: Copie, surcharges: tuple[Surcharge, ...]) -> str | None:
-    """Suppléant du formateur, réglé sur la surcharge de la cohorte."""
-    return next((s.suppleant for s in surcharges
-                 if s.exercice is None and s.cohorte == copie.cohorte and s.suppleant), None)
 
 
 def _statut(actuel: Statut, quittee: Etape | None, etape: Etape) -> Statut:
@@ -265,9 +261,10 @@ class TraiterEcheances:
         if action == Expiration.PUBLIER_PROVISOIRE and reglages.publication_provisoire:
             self._provisoire(copie)
             return
-        responsable = reglages.responsable_pedagogique
+        equipe = self._depot.equipe(copie.id)
+        responsable = equipe.responsable or reglages.responsable_pedagogique
         if not etat.escalade_a:
-            suivant = escalade(Etape.FORMATEUR, suppleant_de(copie, self._source.surcharges()), responsable)
+            suivant = escalade(Etape.FORMATEUR, equipe.suppleants[0] if equipe.suppleants else None, responsable)
             avant = sorted(self._depot.titulaires(copie.id))
         else:
             suivant = responsable if etat.escalade_a != responsable else ""

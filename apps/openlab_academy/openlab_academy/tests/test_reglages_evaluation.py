@@ -147,25 +147,40 @@ class TestValidation(unittest.TestCase):
 
 
 class TestChainePour(unittest.TestCase):
+    """Surcharges partielles : un champ absent est hérité ; une étape citée ne remplace que cette étape.
+    Fusion : YAML (sinon type) < surcharge de cohorte < surcharge d'exercice < surcharge exercice et cohorte."""
+
     def setUp(self):
         self.r = ReglagesEvaluation()
-        self.s_ex = chaine_avec({E.FORMATEUR}, nb_pairs=1)
-        self.s_co = chaine_avec({E.FORMATEUR}, nb_pairs=2)
         self.yaml = chaine_avec({E.FORMATEUR}, nb_pairs=4)
-        self.surcharges = (Surcharge("C1", None, self.s_co), Surcharge(None, "EX1", self.s_ex))
+        self.surcharges = (Surcharge("C1", None, {"nb_pairs": 2, "anonymat": False}),
+                           Surcharge(None, "EX1", {"nb_pairs": 1, "note_sur": 10, "seuil_reussite": 5}))
 
-    def test_exercice_prime(self):
+    def test_exercice_prime_champ_par_champ(self):
         c = self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX1", self.surcharges, self.yaml)
-        self.assertIs(c, self.s_ex)
+        self.assertEqual(c, replace(self.yaml, nb_pairs=1, anonymat=False, note_sur=10, seuil_reussite=5))
 
     def test_cohorte_ensuite(self):
         c = self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX2", self.surcharges, self.yaml)
-        self.assertIs(c, self.s_co)
+        self.assertEqual(c, replace(self.yaml, nb_pairs=2, anonymat=False))
+
+    def test_exercice_et_cohorte_plus_specifique_que_l_exercice_seul(self):
+        surcharges = (Surcharge("C1", "EX1", {"nb_pairs": 3}), *self.surcharges)
+        self.assertEqual(self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX1", surcharges, self.yaml).nb_pairs, 3)
+        self.assertEqual(self.r.chaine_pour(TypeExercice.PROJET, "C2", "EX1", surcharges, self.yaml).nb_pairs, 1)
+
+    def test_etape_citee_remplace_seulement_cette_etape(self):
+        formateur = ConfigEtape(E.FORMATEUR, True, 5, Expiration.ESCALADER)
+        c = self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX2", (Surcharge("C1", None, etapes=(formateur,)),), None)
+        defaut = CHAINES_DEFAUT[TypeExercice.PROJET]
+        self.assertEqual(c.config(E.FORMATEUR), formateur)
+        self.assertEqual([x for x in c.etapes if x.etape != E.FORMATEUR],
+                         [x for x in defaut.etapes if x.etape != E.FORMATEUR])
+        self.assertEqual(c.nb_pairs, defaut.nb_pairs)
 
     def test_yaml_avant_le_type(self):
         r = ReglagesEvaluation(chaines={TypeExercice.PROJET: chaine_avec({E.FORMATEUR}, nb_pairs=9)})
-        c = r.chaine_pour(TypeExercice.PROJET, "C2", "EX2", self.surcharges, self.yaml)
-        self.assertIs(c, self.yaml)
+        self.assertIs(r.chaine_pour(TypeExercice.PROJET, "C2", "EX2", self.surcharges, self.yaml), self.yaml)
 
     def test_type_configure_sans_yaml(self):
         configuree = chaine_avec({E.FORMATEUR}, nb_pairs=9)
@@ -177,45 +192,55 @@ class TestChainePour(unittest.TestCase):
         c = self.r.chaine_pour(TypeExercice.PROJET, "C2", "EX2", self.surcharges, None)
         self.assertIs(c, CHAINES_DEFAUT[TypeExercice.PROJET])
 
-    def test_surcharge_sans_cible_refusee(self):
-        with self.assertRaises(ReglagesInvalides):
-            Surcharge(None, None, self.yaml)
+    def test_surcharge_sans_cible_vide_ou_inconnue_refusee(self):
+        for args, motif in (((None, None, {"nb_pairs": 1}), "cohorte ou un exercice"),
+                            (("C1", None), "au moins un réglage"),
+                            (("C1", None, {"zzz": 1}), "zzz")):
+            with self.subTest(motif=motif), self.assertRaisesRegex(ReglagesInvalides, motif):
+                Surcharge(*args)
+
+    def test_surcharge_complete_d_une_chaine(self):
+        s = Surcharge.complete("C1", None, self.yaml)
+        self.assertEqual(self.r.chaine_pour(TypeExercice.CAPSTONE, "C1", "EX9", (s,), None), self.yaml)
 
     def test_garde_publication_provisoire_sur_chaine_retournee(self):
         dangereuse = Chaine(tuple(ConfigEtape(e, True, 1, Expiration.PUBLIER_PROVISOIRE if e == E.FORMATEUR
                                               else Expiration.PASSER) for e in Etape))
+        provisoire = (Surcharge(None, "EX1", etapes=(dangereuse.config(E.FORMATEUR),)),)
         with self.assertRaisesRegex(ReglagesInvalides, "provisoire"):
-            self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX1", (Surcharge(None, "EX1", dangereuse),), None)
+            self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX1", provisoire, None)
         with self.assertRaisesRegex(ReglagesInvalides, "provisoire"):
             self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX1", (), dangereuse)
         autorise = ReglagesEvaluation(publication_provisoire=True)
         self.assertIs(autorise.chaine_pour(TypeExercice.PROJET, "C1", "EX1", (), dangereuse), dangereuse)
 
+    def test_fusion_invalide_refusee(self):
+        with self.assertRaisesRegex(ReglagesInvalides, "pairs_minimum_releves"):
+            self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX1",
+                               (Surcharge("C1", None, {"nb_pairs": 1, "pairs_minimum_releves": 2}),), None)
+
     def test_chaine_effective_retombe_sur_la_chaine_du_type(self):
-        dangereuse = Chaine(tuple(ConfigEtape(e, e == E.FORMATEUR, 1, Expiration.PUBLIER_PROVISOIRE) for e in Etape))
-        self.assertEqual(self.r.chaine_effective(TypeExercice.PROJET, "C1", "EX1", self.surcharges, self.yaml),
-                         (self.s_ex, False))
-        self.assertEqual(self.r.chaine_effective(TypeExercice.PROJET, "C1", "EX1", (Surcharge(None, "EX1", dangereuse),),
-                                                 None), (CHAINES_DEFAUT[TypeExercice.PROJET], True))
-        configuree = chaine_avec({E.FORMATEUR}, nb_pairs=9)
-        r = ReglagesEvaluation(chaines={TypeExercice.PROJET: configuree})
-        self.assertEqual(r.chaine_effective(TypeExercice.PROJET, "C1", "EX1", (), dangereuse), (configuree, True))
+        provisoire = ConfigEtape(E.FORMATEUR, True, 1, Expiration.PUBLIER_PROVISOIRE)
+        self.assertEqual(self.r.chaine_effective(TypeExercice.PROJET, "C1", "EX1", self.surcharges, self.yaml)[1],
+                         False)
+        self.assertEqual(self.r.chaine_effective(TypeExercice.PROJET, "C1", "EX1",
+                                                 (Surcharge(None, "EX1", etapes=(provisoire,)),), None),
+                         (CHAINES_DEFAUT[TypeExercice.PROJET], True))
 
-    def test_surcharge_suppleant_seul_ne_remplace_aucune_chaine(self):
-        seul = Surcharge("C1", None, None, "sup@x.ci")
-        self.assertIs(self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX2", (seul,), self.yaml), self.yaml)
-        self.assertIs(self.r.chaine_pour(TypeExercice.CAPSTONE, "C1", "EX2", (seul,), None),
-                      CHAINES_DEFAUT[TypeExercice.CAPSTONE])
-        self.assertIs(self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX1", (seul, *self.surcharges), None), self.s_ex)
-
-    def test_surcharge_sans_chaine_ni_suppleant_refusee(self):
-        with self.assertRaisesRegex(ReglagesInvalides, "chaîne ou un suppléant"):
-            Surcharge("C1", None, None)
-
-    def test_suppleant_d_une_surcharge_d_exercice_refuse(self):
-        for cohorte in (None, "C1"):
-            with self.subTest(cohorte=cohorte), self.assertRaisesRegex(ReglagesInvalides, "suppléant"):
-                Surcharge(cohorte, "EX1", self.yaml, "sup@x.ci")
+    def test_provenance_de_chaque_champ(self):
+        formateur = ConfigEtape(E.FORMATEUR, True, 5, Expiration.ESCALADER)
+        surcharges = (*self.surcharges, Surcharge("C1", None, etapes=(formateur,)))
+        r = ReglagesEvaluation(chaines={TypeExercice.PROJET: chaine_avec({E.FORMATEUR}, nb_pairs=9)})
+        resolu = r.resoudre_reglages(TypeExercice.PROJET, "C1", "EX1", surcharges, None)
+        self.assertEqual(resolu["nb_pairs"], {"valeur": 1, "source": "exercice EX1"})
+        self.assertEqual(resolu["anonymat"], {"valeur": False, "source": "cohorte C1"})
+        self.assertEqual(resolu["pairs_attente_max_jours"], {"valeur": 7, "source": "type projet"})
+        self.assertEqual(resolu["etape.formateur"], {"valeur": {"active": True, "delai_heures": 5,
+                                                               "expiration": "escalader"}, "source": "cohorte C1"})
+        self.assertEqual(self.r.resoudre_reglages(TypeExercice.PROJET, None, None, (), None)["nb_pairs"]["source"],
+                         "défauts")
+        self.assertEqual(self.r.resoudre_reglages(TypeExercice.PROJET, None, None, (), self.yaml)["nb_pairs"],
+                         {"valeur": 4, "source": "YAML de l'exercice"})
 
 
 class TestChaineDict(unittest.TestCase):

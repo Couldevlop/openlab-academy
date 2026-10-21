@@ -3,7 +3,7 @@
 Aucune étape ne bloque : chacune a un délai et une action à expiration. Le formateur reste toujours actif,
 car seul un humain publie une note définitive.
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 
 from openlab_academy.domain.reglages import ReglagesInvalides
@@ -186,22 +186,52 @@ CHAINES_DEFAUT: dict[TypeExercice, Chaine] = chaines_defaut()
 
 @dataclass(frozen=True)
 class Surcharge:
-    """Réglage ciblé : une chaîne propre, ou seulement un suppléant (la chaîne de la cible reste celle du YAML ou
-    du type d'exercice). Le suppléant se règle par cohorte."""
+    """Réglage partiel ciblé (cohorte, exercice, ou exercice dans une cohorte) : un champ absent est hérité, une
+    étape citée ne remplace que la configuration de cette étape. L'équipe de correction (titulaires, suppléants,
+    responsable) se règle à part (domain.equipe)."""
 
     cohorte: str | None
     exercice: str | None
-    chaine: Chaine | None
-    suppleant: str | None = None  # remplaçant du formateur échu, avant le responsable pédagogique
+    options: dict = field(default_factory=dict)  # sous-ensemble de OPTIONS_CHAINE
+    etapes: tuple[ConfigEtape, ...] = ()
 
     def __post_init__(self):
         if self.cohorte is None and self.exercice is None:
             raise ReglagesInvalides("une surcharge doit viser une cohorte ou un exercice")
-        if self.chaine is None and not self.suppleant:
-            raise ReglagesInvalides("une surcharge porte une chaîne ou un suppléant")
-        if self.exercice is not None and self.suppleant:
-            raise ReglagesInvalides("le suppléant du formateur se règle sur la surcharge d'une cohorte, "
-                                    "pas d'un exercice")
+        if not (self.options or self.etapes):
+            raise ReglagesInvalides("une surcharge porte au moins un réglage")
+        inconnues = sorted(set(self.options) - set(OPTIONS_CHAINE))
+        if inconnues:
+            raise ReglagesInvalides(f"réglage de chaîne inconnu : {', '.join(inconnues)}")
+
+    @classmethod
+    def complete(cls, cohorte: str | None, exercice: str | None, chaine: Chaine) -> "Surcharge":
+        """Surcharge qui fixe tous les champs d'une chaîne (forme des surcharges d'avant les surcharges
+        partielles)."""
+        return cls(cohorte, exercice, {c: getattr(chaine, c) for c in OPTIONS_CHAINE}, chaine.etapes)
+
+    @property
+    def libelle(self) -> str:
+        if self.exercice and self.cohorte:
+            return f"exercice {self.exercice} / cohorte {self.cohorte}"
+        return f"exercice {self.exercice}" if self.exercice else f"cohorte {self.cohorte}"
+
+    def appliquer(self, chaine: Chaine) -> Chaine:
+        """La chaîne obtenue est revalidée : une fusion incohérente est refusée."""
+        etapes = {c.etape: c for c in chaine.etapes} | {c.etape: c for c in self.etapes}
+        return replace(chaine, etapes=tuple(etapes[e] for e in Etape if e in etapes), **self.options)
+
+
+def surcharges_applicables(surcharges, cohorte: str | None, exercice: str | None) -> list[Surcharge]:
+    """Dans l'ordre d'application : cohorte, puis exercice, puis exercice dans cette cohorte (le plus spécifique
+    l'emporte, champ par champ)."""
+    rang = []
+    for s in surcharges:
+        if s.exercice is None and s.cohorte is not None and s.cohorte == cohorte:
+            rang.append((0, s))
+        elif s.exercice is not None and s.exercice == exercice and s.cohorte in (None, cohorte):
+            rang.append((1 if s.cohorte is None else 2, s))
+    return [s for _, s in sorted(rang, key=lambda r: r[0])]
 
 
 @dataclass(frozen=True)
@@ -246,8 +276,26 @@ class ReglagesEvaluation:
 
     def chaine_pour(self, type_: TypeExercice, cohorte: str | None, exercice: str | None,
                     surcharges: tuple[Surcharge, ...], yaml: Chaine | None) -> Chaine:
-        """Priorité : surcharge exercice > surcharge cohorte > YAML > type d'exercice > défauts du code."""
-        return self._verifier_publication(self._choisir(type_, cohorte, exercice, surcharges, yaml), type_)
+        """Priorité, champ par champ : surcharge exercice > surcharge cohorte > YAML > type d'exercice > défauts
+        du code."""
+        chaine = yaml if yaml is not None else self.chaine_du_type(type_)
+        for s in surcharges_applicables(surcharges, cohorte, exercice):
+            chaine = s.appliquer(chaine)
+        return self._verifier_publication(chaine, type_)
+
+    def resoudre_reglages(self, type_: TypeExercice, cohorte: str | None, exercice: str | None,
+                          surcharges: tuple[Surcharge, ...], yaml: Chaine | None) -> dict[str, dict]:
+        """Valeur effective et provenance de chaque champ de la chaîne : {champ: {valeur, source}}."""
+        if yaml is not None:
+            base, source = yaml, "YAML de l'exercice"
+        else:
+            base, source = self.chaine_du_type(type_), f"type {type_.value}" if type_ in self.chaines else "défauts"
+        resolu = {c: {"valeur": getattr(base, c), "source": source} for c in OPTIONS_CHAINE}
+        resolu |= {f"etape.{c.etape.value}": {"valeur": _config_dict(c), "source": source} for c in base.etapes}
+        for s in surcharges_applicables(surcharges, cohorte, exercice):
+            resolu |= {c: {"valeur": v, "source": s.libelle} for c, v in s.options.items()}
+            resolu |= {f"etape.{c.etape.value}": {"valeur": _config_dict(c), "source": s.libelle} for c in s.etapes}
+        return resolu
 
     def chaine_effective(self, type_: TypeExercice, cohorte: str | None, exercice: str | None,
                          surcharges: tuple[Surcharge, ...], yaml: Chaine | None) -> tuple[Chaine, bool]:
@@ -262,14 +310,6 @@ class ReglagesEvaluation:
     def chaine_du_type(self, type_: TypeExercice) -> Chaine:
         return self.chaines.get(type_) or CHAINES_DEFAUT[type_]
 
-    def _choisir(self, type_, cohorte, exercice, surcharges, yaml) -> Chaine:
-        avec_chaine = [s for s in surcharges if s.chaine is not None]  # un suppléant seul ne remplace rien
-        for s in avec_chaine:
-            if s.exercice is not None and s.exercice == exercice and s.cohorte in (None, cohorte):
-                return s.chaine
-        for s in avec_chaine:
-            if s.exercice is None and s.cohorte == cohorte:
-                return s.chaine
-        if yaml is not None:
-            return yaml
-        return self.chaine_du_type(type_)
+
+def _config_dict(c: ConfigEtape) -> dict:
+    return {"active": c.active, "delai_heures": c.delai_heures, "expiration": c.expiration.value}

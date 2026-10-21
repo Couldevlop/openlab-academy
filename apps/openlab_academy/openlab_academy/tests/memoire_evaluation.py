@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from openlab_academy.application.pairs import Relecture, StatutRelecture
 from openlab_academy.application.soumettre_copie import Contenu, Exercice
+from openlab_academy.domain.equipe import EquipeEffective
 from openlab_academy.domain.copie import Copie, CopieVerrouillee, Etat, Statut, etape_suivante
 from openlab_academy.domain.grille import grille_generique
 from openlab_academy.domain.reglages_evaluation import ReglagesEvaluation, TypeExercice
@@ -38,6 +39,8 @@ class Memoire:
         self.dispensees: list[str] = []
         self.tailles = {"COH1": taille}
         self.titulaires_ = {"form@x.ci"}
+        self.suppleants_: tuple[str, ...] = ()
+        self.responsable_ = ""
         self.cours_: dict[str, str] = {}
         self.verrous: list[str] = []
         self.paires_concurrentes: set[tuple[str, str]] = set()  # insérées par une autre transaction
@@ -142,6 +145,9 @@ class Memoire:
 
     def titulaires(self, copie_id):
         return set(self.titulaires_)
+
+    def equipe(self, copie_id):
+        return EquipeEffective(tuple(sorted(self.titulaires_)), tuple(self.suppleants_), self.responsable_, {})
 
     # --- DepotRelectures ---------------------------------------------------------
     def copies_rendues(self, exercice, cohorte):

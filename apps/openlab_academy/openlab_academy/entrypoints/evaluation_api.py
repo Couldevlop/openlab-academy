@@ -31,7 +31,7 @@ LIMITES = {  # requêtes par heure et par utilisateur
     "enregistrer_relecture": 60, "enregistrer_auto_evaluation": 30, "corriger": 600, "valider_lot": 600,
     "publier": 600, "deleguer": 30, "revoquer": 30, "file_correction": 300,
     "mes_relectures": 600, "relecture": 600, "mon_auto_evaluation": 600, "mon_retour": 600,
-    "copie_a_corriger": 1200, "fiabilite_ia": 120, "accuse_depot": 600,
+    "copie_a_corriger": 1200, "fiabilite_ia": 120, "accuse_depot": 600, "reglages_effectifs": 300,
 }
 
 
@@ -245,6 +245,28 @@ def fiabilite_ia(exercice: str | None = None) -> dict[str, float]:
         raise AccesRefuse("rapport réservé au super administrateur et au responsable pédagogique")
     depot = _depot()
     return fiabilite(depot.propositions(c) for c in depot.copies_publiees(exercice or None))
+
+
+@frappe.whitelist(methods=["GET"])
+@_api
+@_limite("reglages_effectifs")
+def reglages_effectifs(exercice: str, cohorte: str | None = None) -> dict:
+    """Réglages effectifs d'un exercice (dans une cohorte) et provenance de chaque champ, équipe comprise."""
+    if not _superviseur(_moi()):
+        raise AccesRefuse("réglages réservés au super administrateur et au responsable pédagogique")
+    depot = _depot()
+    ex = depot.exercice(exercice)
+    if ex is None:
+        raise CorrectionRefusee("exercice sans grille OpenLab")
+    reglages = reglages_evaluation_frappe.charger()
+    chaine = reglages.resoudre_reglages(ex.type_, cohorte or None, exercice, reglages_evaluation_frappe.surcharges(),
+                                        ex.chaine)
+    equipe = depot.equipe_de(exercice, cohorte or None)
+    return {"type_exercice": ex.type_.value, "chaine": chaine,
+            "equipe": {"titulaires": list(equipe.titulaires), "suppleants": list(equipe.suppleants),
+                       "responsable": equipe.responsable or reglages.responsable_pedagogique,
+                       "provenance": {**equipe.provenance, **({} if equipe.responsable else {
+                           "responsable": "réglages" if reglages.responsable_pedagogique else "aucun"})}}}
 
 
 # --- délégations ---------------------------------------------------------------------------------------
