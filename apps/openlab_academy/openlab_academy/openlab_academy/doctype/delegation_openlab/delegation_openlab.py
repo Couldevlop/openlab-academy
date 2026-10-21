@@ -1,12 +1,25 @@
 import frappe
 from frappe.model.document import Document
-from frappe.utils import now_datetime
+from frappe.utils import get_datetime, now_datetime
 
 from openlab_academy.domain.delegation import DelegationRefusee, verifier_delegation
 from openlab_academy.infrastructure import delegations_frappe, journal_frappe
 from openlab_academy.infrastructure.reglages_evaluation_frappe import delegation_vers_domaine
 
 CHAMPS = ("titulaire", "delegataire", "debut", "fin", "cours", "cohorte", "exercice")
+DATES = ("debut", "fin")
+
+
+def _valeur(doc, champ: str):
+    """Valeur comparable : le bureau envoie les dates en texte et les champs vides en chaîne vide."""
+    brut = doc.get(champ)
+    if not brut:
+        return None
+    return get_datetime(brut) if champ in DATES else brut
+
+
+def _inchanges(doc, avant) -> bool:
+    return all(_valeur(doc, c) == _valeur(avant, c) for c in CHAMPS)
 
 
 def _notifier(destinataire: str, message: str) -> None:
@@ -19,7 +32,7 @@ class DelegationOpenLab(Document):
 
     def validate(self):
         avant = self.get_doc_before_save()
-        if avant and not avant.revoquee and self.revoquee and all(self.get(c) == avant.get(c) for c in CHAMPS):
+        if avant and not avant.revoquee and self.revoquee and _inchanges(self, avant):
             return  # une révocation est toujours possible, même si les habilitations ont changé depuis
         d = delegation_vers_domaine(self)
         try:
@@ -47,5 +60,5 @@ class DelegationOpenLab(Document):
             return
         if not avant.revoquee and self.revoquee:
             self._consigner("délégation révoquée", {"revoquee": False}, {"revoquee": True})
-        elif any(self.get(c) != avant.get(c) for c in CHAMPS):
+        elif not _inchanges(self, avant):
             self._consigner("délégation modifiée", {c: avant.get(c) for c in CHAMPS}, self._valeurs())

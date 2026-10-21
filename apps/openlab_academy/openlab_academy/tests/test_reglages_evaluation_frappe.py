@@ -587,6 +587,19 @@ class TestDelegations(FrappeTestCase):
                                     pluck="subject")
             self.assertEqual(len(sujets), 3, qui)
 
+    def test_saisie_du_bureau_dates_en_texte(self):
+        """Le bureau Frappe envoie les dates en texte et les champs vides en chaîne vide."""
+        nom = self._delegation().insert().name
+        bureau = frappe.get_doc(DELEGATION, nom)
+        bureau.debut, bureau.fin = str(bureau.debut), str(bureau.fin)
+        bureau.cours = bureau.cohorte = bureau.exercice = ""
+        bureau.save()  # rien de changé : pas de « délégation modifiée »
+        bureau = frappe.get_doc(DELEGATION, nom)
+        bureau.debut, bureau.fin, bureau.revoquee = str(bureau.debut), str(bureau.fin), 1
+        with patch.object(source, "delegation_vers_domaine", side_effect=AssertionError("règle appliquée")):
+            bureau.save()  # révocation seule : toujours possible
+        self.assertEqual([j.action for j in self.journal(nom)], ["délégation créée", "délégation révoquée"])
+
     def test_revocation_par_l_api_passe_par_le_document(self):
         nom = source.DepotDelegationsFrappe().creer_delegation(
             Delegation("Administrator", RESP_DELEG, self.debut, self.fin, cours=None))
