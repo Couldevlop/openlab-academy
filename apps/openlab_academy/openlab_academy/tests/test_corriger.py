@@ -445,6 +445,17 @@ class TestConsulterCorrection(Cas):
         self.assertEqual(self.vue.copie(FORM, cid)["formateur"],
                          {"niveaux": MOYENS, "commentaires": {"general": "Bien"}, "auteur": FORM, "au_nom_de": None})
 
+    def test_lectures_verrouillantes_apres_le_verrou_de_la_copie(self):
+        self.monter(Etape.JURY, Etape.FORMATEUR, jures=(J1,))
+        cid = self.a_corriger()
+        self.corriger.executer(J1, cid, MOYENS)  # votants relus sous verrou
+        self.assertEqual(self.m.lectures_verrouillees, [("propositions", cid)])
+        self.m.ajouter_proposition(cid, ia(MOYENS))
+        self.lot.executer(FORM, [cid])
+        self.publier.executer(FORM, cid)
+        self.assertEqual(self.m.lectures_verrouillees[1:], [("propositions", cid), ("propositions", cid),
+                                                            ("relectures", "EX1")])
+
     def test_copie_sans_ia_ni_signalement(self):
         self.monter()
         cid = self.a_corriger()

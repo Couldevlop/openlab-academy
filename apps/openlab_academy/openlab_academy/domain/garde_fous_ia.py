@@ -24,7 +24,8 @@ _INVISIBLES = frozenset(
      *range(0xE0100, 0xE01F0)])
 
 _GUILLEMETS = str.maketrans({"«": '"', "»": '"', "“": '"', "”": '"', "’": "'"})
-_BALISE_FERMANTE = re.compile(r"<\s*/\s*copie\s*>", re.IGNORECASE)
+# toute balise « copie », ouvrante ou fermante, avec ou sans attributs ni espaces : seul l'encadrement en est une
+_BALISE_COPIE = re.compile(r"<\s*(/?)\s*(copie)\b[^>]*>", re.IGNORECASE)
 _BLOC_JSON = re.compile(r"```(?:json)?\s*(.*?)```", re.IGNORECASE | re.DOTALL)
 
 MESSAGE_SYSTEME = (
@@ -70,7 +71,7 @@ def _decrire_grille(grille: Grille) -> str:
 
 
 def construire_messages(grille: Grille, consigne: str, copie: str) -> list[dict]:
-    copie_neutralisee = _BALISE_FERMANTE.sub(r"<\\/copie>", copie)
+    copie_neutralisee = _BALISE_COPIE.sub(r"‹\1\2›", copie)
     utilisateur = (
         f"Consigne de l'exercice :\n{consigne}\n\nGrille :\n{_decrire_grille(grille)}\n\n"
         f"Clés attendues dans « criteres » : {', '.join(json.dumps(c.code) for c in grille.criteres)}.\n\n"

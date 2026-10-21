@@ -154,8 +154,10 @@ class DepotCopiesFrappe:
         """Titre du devoir LMS, à défaut son identifiant (texte brut, échappé à l'affichage)."""
         return frappe.db.get_value("LMS Assignment", exercice, "title") or exercice
 
-    def version_courante(self, soumission: str) -> Copie | None:
-        noms = frappe.get_all(COPIE, {"soumission": soumission}, pluck="name", order_by="version desc", limit=1)
+    def version_courante(self, soumission: str, verrouillee: bool = False) -> Copie | None:
+        """Verrouillée : lecture à jour, qui voit une version validée par un rendu concurrent."""
+        noms = frappe.db.get_values(COPIE, {"soumission": soumission}, "name", order_by="version desc", limit=1,
+                                    for_update=verrouillee, pluck=True)
         return self.copie(noms[0]) if noms else None
 
     def changer_statut(self, copie_id: str, statut: Statut, etape: str, echeance) -> None:
@@ -170,13 +172,14 @@ class DepotCopiesFrappe:
             "confiance": p.confiance,
         }).insert(ignore_permissions=True)
 
-    def propositions(self, copie_id: str) -> list[Proposition]:
+    def propositions(self, copie_id: str, verrouillee: bool = False) -> list[Proposition]:
+        """Verrouillée (après le verrou de la copie) : voit la correction ou le vote validés entre-temps."""
+        champs = ["source", "auteur", "niveaux_json", "commentaires_json", "citations_json", "confiance", "au_nom_de"]
         return [Proposition(Source(d.source), d.auteur, json.loads(d.niveaux_json or "{}"),
                             json.loads(d.commentaires_json or "{}"), json.loads(d.citations_json or "{}"),
                             d.confiance, d.au_nom_de or None)
-                for d in frappe.get_all(PROPOSITION, filters={"copie": copie_id}, order_by="creation",
-                                        fields=["source", "auteur", "niveaux_json", "commentaires_json",
-                                                "citations_json", "confiance", "au_nom_de"])]
+                for d in frappe.db.get_values(PROPOSITION, {"copie": copie_id}, champs, as_dict=True,
+                                              order_by="creation", for_update=verrouillee)]
 
     def annuler_relectures(self, copie_id: str) -> None:
         """Écriture conditionnelle : seules les relectures encore à faire au moment de l'écriture sont annulées,
@@ -313,6 +316,11 @@ class DepotCopiesFrappe:
         if contenu.rendu_par_lien:
             return contenu.texte
         return texte_brut(contenu.texte)
+
+    def texte_compact(self, copie_id: str) -> str:
+        """Texte de la copie, balises retirées sans rien à leur place (un mot coupé par une balise est recollé) :
+        sert seulement à la détection des tournures d'injection."""
+        return html.unescape(_BALISE.sub("", self.contenu(copie_id).texte))
 
     def existe(self, copie_id: str) -> bool:
         return bool(copie_id) and bool(frappe.db.exists(COPIE, copie_id))

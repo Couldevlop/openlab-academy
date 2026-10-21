@@ -26,6 +26,7 @@ class CorrecteurIA(Protocol):
 class DepotPreCorrection(DepotControles, Protocol):
     def consigne(self, exercice: str) -> str: ...
     def texte_lisible(self, copie_id: str) -> str: ...
+    def texte_compact(self, copie_id: str) -> str: ...  # balises retirées sans séparateur : « ign<b></b>ore »
 
 
 class PreCorriger:
@@ -49,7 +50,9 @@ class PreCorriger:
     def _proposer(self, copie_id: str) -> tuple[str, dict, Proposition | None]:
         contenu = self._depot.contenu(copie_id)
         texte = self._depot.texte_lisible(copie_id)  # balises et entités d'un rendu LMS ne masquent rien
-        tournures = detecter_injection(texte, self._ia.tournures_injection)
+        # un mot coupé par une balise vide est recollé dans le texte compact : la tournure y est cherchée aussi
+        tournures = (detecter_injection(texte, self._ia.tournures_injection)
+                     or detecter_injection(self._depot.texte_compact(copie_id), self._ia.tournures_injection))
         if tournures:  # proposition écartée, copie signalée au formateur
             return SIGNALEMENT, {"tournures": list(tournures)}, None
         modele = self._ia.modele_code if contenu.rendu_par_lien else self._ia.modele_texte

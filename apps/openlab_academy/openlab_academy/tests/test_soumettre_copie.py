@@ -51,7 +51,7 @@ class DepotMemoire:
         self.signatures[copie_id] = contenu.signature
         return copie_id
 
-    def version_courante(self, soumission):
+    def version_courante(self, soumission, verrouillee=False):
         versions = [c for c in self.copies.values() if self.contenus[c.id].soumission == soumission]
         return max(versions, key=lambda c: c.version, default=None)
 
@@ -178,10 +178,23 @@ class TestSoumettreCopie(unittest.TestCase):
         v1 = uc.executer(soumission())
         perimee = self.depot.copies[v1]
         self.depot.copies[v1] = replace(perimee, statut=Statut.PUBLIEE)  # publiée par une autre transaction
-        self.depot.version_courante = lambda s: perimee
+        self.depot.version_courante = lambda s, verrouillee=False: perimee
         self.assertEqual(uc.executer(soumission(answer="https://github.com/a/p2")), v1)
         self.assertEqual(self.depot.verrous, [v1])
         self.assertEqual(self.depot.relectures_annulees, [])
+
+    def test_version_creee_entre_temps_relue_sous_verrou(self):
+        uc = self.cas()
+        v1 = uc.executer(soumission())
+        v2 = uc.executer(soumission(answer="https://github.com/a/p2"))  # rendu concurrent, déjà validé
+        perimee = self.depot.copies[v1]
+        self.depot.version_courante = lambda s, verrouillee=False: self.depot.copies[v2] if verrouillee else perimee
+        self.depot.verrous.clear()
+        self.assertEqual(uc.executer(soumission(answer="https://github.com/a/p2")), v2)  # même rendu : rien de neuf
+        self.assertEqual(self.depot.verrous, [v1, v2])
+        self.assertEqual(len(self.depot.copies), 2)
+        v3 = uc.executer(soumission(answer="https://github.com/a/p3"))
+        self.assertEqual(self.depot.copie(v3).version, 3)  # numérotée depuis la version relue, pas la périmée
 
     def test_resoumission_apres_publication_ignoree_et_journalisee(self):
         uc = self.cas()

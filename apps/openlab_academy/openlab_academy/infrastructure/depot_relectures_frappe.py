@@ -29,13 +29,16 @@ class DepotRelecturesFrappe:
     def taille_cohorte(self, cohorte: str) -> int:
         return frappe.db.count("LMS Batch Enrollment", {"batch": cohorte}) if cohorte else 0
 
-    def relectures(self, exercice: str, cohorte: str) -> list[Relecture]:
+    def relectures(self, exercice: str, cohorte: str, verrouillee: bool = False) -> list[Relecture]:
+        """Verrouillée : lecture à jour, qui voit une relecture rendue par une autre transaction."""
         c, r = frappe.qb.DocType(COPIE), frappe.qb.DocType(RELECTURE)
-        lignes = (frappe.qb.from_(r).join(c).on(r.copie == c.name)
-                  .select(r.name, r.copie, r.relecteur, r.statut, r.echeance, r.rappel)
-                  .where((c.exercice == exercice) & (c.cohorte == cohorte))
-                  .orderby(r.creation).run(as_dict=True))
-        return [_relecture(ligne) for ligne in lignes]
+        requete = (frappe.qb.from_(r).join(c).on(r.copie == c.name)
+                   .select(r.name, r.copie, r.relecteur, r.statut, r.echeance, r.rappel)
+                   .where((c.exercice == exercice) & (c.cohorte == cohorte))
+                   .orderby(r.creation))
+        if verrouillee:
+            requete = requete.for_update()
+        return [_relecture(ligne) for ligne in requete.run(as_dict=True)]
 
     def relecture(self, relecture_id: str) -> Relecture | None:
         ligne = frappe.db.get_value(RELECTURE, relecture_id, CHAMPS, as_dict=True)

@@ -53,6 +53,7 @@ class Memoire:
         self.differees_: set[str] = set()
         self.liberations: list[tuple] = []
         self.filtres_correction: list = []
+        self.lectures_verrouillees: list[tuple[str, str]] = []
 
     # --- préparation des cas ---------------------------------------------------
     def rendre(self, apprenant, chaine, maintenant, cohorte="COH1", exercice="EX1") -> str:
@@ -91,7 +92,9 @@ class Memoire:
     def ajouter_proposition(self, copie_id, p):
         self.props.setdefault(copie_id, []).append(p)
 
-    def propositions(self, copie_id):
+    def propositions(self, copie_id, verrouillee=False):
+        if verrouillee:
+            self.lectures_verrouillees.append(("propositions", copie_id))
         return self.props.get(copie_id, [])
 
     def changer_statut(self, copie_id, statut, etape, echeance):
@@ -135,7 +138,9 @@ class Memoire:
     def taille_cohorte(self, cohorte):
         return self.tailles.get(cohorte, 0)
 
-    def relectures(self, exercice, cohorte):
+    def relectures(self, exercice, cohorte, verrouillee=False):
+        if verrouillee:
+            self.lectures_verrouillees.append(("relectures", exercice))
         return [r for r in self.rel.values()
                 if self.copies[r.copie].exercice == exercice and self.copies[r.copie].cohorte == cohorte]
 
@@ -199,6 +204,9 @@ class Memoire:
         return copie_id in self.signalees
 
     def texte_lisible(self, copie_id):
+        return self.contenu(copie_id).texte
+
+    def texte_compact(self, copie_id):
         return self.contenu(copie_id).texte
 
     def copies_en_correction(self, exercice=None, pour=None):

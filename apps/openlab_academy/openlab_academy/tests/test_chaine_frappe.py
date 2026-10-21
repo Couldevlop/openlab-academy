@@ -15,6 +15,7 @@ from openlab_academy.domain.copie import Source, Statut
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.entrypoints import evaluation
 from openlab_academy.infrastructure import journal_frappe
+from openlab_academy.openlab_academy.doctype.copie_openlab import copie_openlab
 from openlab_academy.openlab_academy.doctype.relecture_pair_openlab import relecture_pair_openlab
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
 from openlab_academy.infrastructure.depot_relectures_frappe import DepotRelecturesFrappe
@@ -378,6 +379,35 @@ class TestPairsFrappe(Cas):
             (r,) = self.relectures.relectures_copie(self.a)
         self.assertTrue(lecture.call_args.kwargs["for_update"])
         self.assertEqual((r.copie, r.relecteur), (self.a, B))
+
+    def requetes(self, lecture):
+        sql = frappe.local.db.sql
+        with mock.patch.object(frappe.local.db, "sql", side_effect=sql) as requete:
+            resultat = lecture()
+        return resultat, " ".join(str(c.args[0]).lower() for c in requete.call_args_list)
+
+    def test_lectures_verrouillantes_apres_le_verrou_de_la_copie(self):
+        self.en_relecture()
+        soumission = self.depot.contenu(self.a).soumission
+        for lecture in (lambda v: self.depot.propositions(self.a, verrouillee=v),
+                        lambda v: self.relectures.relectures(self.livrable, self.cohorte, verrouillee=v),
+                        lambda v: self.depot.version_courante(soumission, verrouillee=v)):
+            libre, sql_libre = self.requetes(lambda: lecture(False))
+            verrouillee, sql_verrou = self.requetes(lambda: lecture(True))
+            with self.subTest(lecture=lecture):
+                self.assertEqual(verrouillee, libre)
+                self.assertIn("for update", sql_verrou)
+                self.assertNotIn("for update", sql_libre)
+
+    def test_version_unique_par_soumission(self):
+        self.en_relecture()
+        doc = frappe.get_doc(COPIE, self.a)
+        double = frappe.copy_doc(doc)
+        with self.assertRaises(frappe.UniqueValidationError):
+            double.insert(ignore_permissions=True)
+        copie_openlab.on_doctype_update()  # idempotent : la contrainte existe déjà
+        self.assertTrue(frappe.db.sql("""select 1 from information_schema.TABLE_CONSTRAINTS
+            where table_name='tabCopie OpenLab' and CONSTRAINT_NAME='unique_soumission_version'"""))
 
     def test_tache_horaire_valide_chaque_element(self):
         evaluation.unite(lambda: None)

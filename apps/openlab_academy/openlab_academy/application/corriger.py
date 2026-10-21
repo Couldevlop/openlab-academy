@@ -44,7 +44,8 @@ class DepotCorrection(Protocol):
     def etat(self, copie_id: str) -> Etat: ...
     def verrouiller(self, copie_id: str) -> CopieVerrouillee: ...
     def grille(self, copie_id: str) -> Grille: ...
-    def propositions(self, copie_id: str) -> list[Proposition]: ...
+    def propositions(self, copie_id: str, verrouillee: bool = False) -> list[Proposition]:
+        """Verrouillée : lecture à jour (après le verrou de la copie), pas l'instantané de la transaction."""
     def ajouter_proposition(self, copie_id: str, p: Proposition) -> None: ...
     def changer_statut(self, copie_id: str, statut: Statut, etape: str, echeance: datetime | None) -> None: ...
     def titulaires(self, copie_id: str) -> set[str]: ...
@@ -284,7 +285,7 @@ class CorrigerCopie:
         grille = self._depot.grille(copie_id)
         niveaux = valider_niveaux(grille, niveaux)
         nets = nettoyer_commentaires(grille, commentaires)
-        props = self._depot.propositions(copie_id)
+        props = self._depot.propositions(copie_id, verrouillee=True)  # vote d'un autre juré validé entre-temps
         precedente = next((p for p in reversed(props) if p.source == hab.source
                            and (p.au_nom_de or p.auteur) == (hab.au_nom_de or acteur)), None)
         self._depot.ajouter_proposition(copie_id, Proposition(hab.source, acteur, niveaux, nets,
@@ -315,7 +316,7 @@ class ValiderLot:
             v = self._depot.verrouiller(copie_id)
             hab = self._acces.correcteur(acteur, v.copie, v.etat)
             _corrigeable(v.copie)
-            s = synthese(self._depot.propositions(copie_id))
+            s = synthese(self._depot.propositions(copie_id, verrouillee=True))  # correction d'un délégataire
             ia = s.ia
             if ia is None or ia.confiance is None or ia.confiance < self._seuil:
                 raise CorrectionRefusee(f"copie {copie_id} hors lot : proposition IA absente ou peu sûre")
@@ -353,7 +354,7 @@ class PublierNote:
         copie = v.copie
         hab = self._acces.correcteur(acteur, copie, v.etat)
         _corrigeable(copie)
-        s = synthese(self._depot.propositions(copie_id))
+        s = synthese(self._depot.propositions(copie_id, verrouillee=True))
         if s.formateur is None:
             raise CorrectionRefusee("aucune correction du formateur à publier")
         chaine = self._avanceur.chaine(copie)
@@ -364,7 +365,7 @@ class PublierNote:
         if copie.statut == Statut.PROVISOIRE:
             avant["note"] = s.note_provisoire(grille, chaine.note_sur)
         differe = note_masquee(chaine, copie, self._depot.dispensee(copie_id),
-                               self._relectures.relectures(copie.exercice, copie.cohorte))
+                               self._relectures.relectures(copie.exercice, copie.cohorte, verrouillee=True))
         self._depot.changer_statut(copie_id, copie.passer_a(Statut.PUBLIEE).statut, "", None)
         lien = LIEN_RETOUR.format(copie_id)
         resume = "" if differe else resume_note(note, chaine.note_sur, reussite)
