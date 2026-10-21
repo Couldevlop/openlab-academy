@@ -69,6 +69,24 @@ class TestReplanifier(unittest.TestCase):
         res = replanifier(Mode.UNE_FOIS, T, 0, date(2026, 12, 15), DEBUT, FIN)
         self.assertEqual(lignes(res), [(date(2027, 1, 10), 600_000)])
 
+    def test_dixieme_a_venir_ce_mois_ci(self):
+        res = replanifier(Mode.UNE_FOIS, T, 50_000, date(2026, 11, 5), DEBUT, FIN)
+        self.assertEqual(lignes(res), [(date(2026, 11, 5), 50_000), (date(2026, 11, 10), 550_000)])
+
+    def test_le_10_lui_meme_n_est_pas_a_venir(self):
+        res = replanifier(Mode.UNE_FOIS, T, 50_000, date(2026, 11, 10), DEBUT, FIN)
+        self.assertEqual(res[1].date_limite, date(2026, 12, 10))
+
+    def test_mensuel_commence_le_10_a_venir(self):
+        res = replanifier(Mode.MENSUEL, T, 50_000, date(2026, 11, 5), DEBUT, FIN)
+        self.assertEqual([e.date_limite for e in res[1:]],
+                         [date(2026, 11, 10), date(2026, 12, 10), date(2027, 1, 10), date(2027, 2, 10)])
+        self.assertEqual(sum(e.montant for e in res), 800_000)
+
+    def test_deux_tranches_depuis_le_10_a_venir(self):
+        res = replanifier(Mode.DEUX_TRANCHES, T, 50_000, date(2026, 11, 5), DEBUT, FIN)
+        self.assertEqual([e.date_limite for e in res[1:]], [date(2026, 11, 10), date(2026, 12, 10)])
+
     def test_vers_mensuel_repartit_le_reste(self):
         res = replanifier(Mode.MENSUEL, T, 50_000, date(2026, 11, 20), DEBUT, FIN)
         self.assertEqual([e.date_limite for e in res[1:]],

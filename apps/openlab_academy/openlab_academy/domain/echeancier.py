@@ -57,9 +57,13 @@ def dixieme_suivant(d: date, jour: int = 10) -> date:
     return _jour_du_mois(d.year, d.month + 1, jour)
 
 
-def _dates(mode: Mode, depuis: date, debut: date, fin: date, jour: int) -> list[date]:
-    """Dates d'échéance du mode, toutes postérieures à `depuis`."""
-    premiere = dixieme_suivant(depuis, jour)
+def _prochain_jour(d: date, jour: int) -> date:
+    """Le prochain `jour` du mois strictement postérieur à `d`."""
+    return date(d.year, d.month, jour) if d.day < jour else dixieme_suivant(d, jour)
+
+
+def _dates(mode: Mode, premiere: date, debut: date, fin: date, jour: int) -> list[date]:
+    """Dates d'échéance du mode, à partir de la première."""
     if mode is Mode.UNE_FOIS:
         return [premiere]
     if mode is Mode.DEUX_TRANCHES:
@@ -87,7 +91,7 @@ def echeancier(mode: Mode, tarif: Tarif, inscription: date, debut: date, fin: da
                jour: int = 10) -> tuple[Echeance, ...]:
     frais = Echeance(inscription, tarif.frais_inscription, "Frais d'inscription")
     reste = tarif.prix(mode) - tarif.frais_inscription
-    return (frais, *_lignes(_dates(mode, inscription, debut, fin, jour), reste))
+    return (frais, *_lignes(_dates(mode, dixieme_suivant(inscription, jour), debut, fin, jour), reste))
 
 
 def replanifier(mode: Mode, tarif: Tarif, deja_paye: int, aujourd_hui: date, debut: date, fin: date,
@@ -97,7 +101,7 @@ def replanifier(mode: Mode, tarif: Tarif, deja_paye: int, aujourd_hui: date, deb
     verse = min(deja_paye, prix)
     lignes = [Echeance(aujourd_hui, verse, "Déjà versé")] if verse else []
     if prix > verse:
-        lignes += _lignes(_dates(mode, aujourd_hui, debut, fin, jour), prix - verse)
+        lignes += _lignes(_dates(mode, _prochain_jour(aujourd_hui, jour), debut, fin, jour), prix - verse)
     return tuple(lignes)
 
 
