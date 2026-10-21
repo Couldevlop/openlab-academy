@@ -1,8 +1,8 @@
 """Cas d'usage : pré-correction d'une copie par le modèle souverain (proposition soumise au formateur).
 
-La copie est une donnée non fiable : une tentative d'instruction au modèle écarte la pré-correction et signale
-la copie au formateur. Sinon le modèle reçoit grille, consigne et copie encadrée ; sa réponse n'est retenue
-qu'après les garde-fous du domaine. Toute défaillance marque l'étape « non disponible » et la copie avance.
+La copie est une donnée non fiable, lue en texte lisible (celui que voient le formateur et les pairs) : une
+tentative d'instruction au modèle écarte la pré-correction et signale la copie au formateur. Sinon le modèle
+reçoit grille, consigne et copie encadrée ; sa réponse n'est retenue qu'après les garde-fous du domaine. Toute défaillance marque l'étape « non disponible » et la copie avance.
 L'appel au modèle (plusieurs minutes sur CPU) précède toute lecture verrouillante de la copie.
 """
 from typing import Protocol
@@ -23,6 +23,7 @@ class CorrecteurIA(Protocol):
 
 class DepotPreCorrection(DepotControles, Protocol):
     def consigne(self, exercice: str) -> str: ...
+    def texte_lisible(self, copie_id: str) -> str: ...
 
 
 class PreCorriger:
@@ -45,17 +46,18 @@ class PreCorriger:
 
     def _proposer(self, copie_id: str) -> tuple[str, dict, Proposition | None]:
         contenu = self._depot.contenu(copie_id)
-        tournures = detecter_injection(contenu.texte, self._ia.tournures_injection)
+        texte = self._depot.texte_lisible(copie_id)  # balises et entités d'un rendu LMS ne masquent rien
+        tournures = detecter_injection(texte, self._ia.tournures_injection)
         if tournures:  # proposition écartée, copie signalée au formateur
             return SIGNALEMENT, {"tournures": list(tournures)}, None
         modele = self._ia.modele_code if contenu.rendu_par_lien else self._ia.modele_texte
         if not (self._ia.url and modele):
             raise EtapeIndisponible("IA non configurée (URL ou modèle)")
-        if not contenu.texte.strip():
+        if not texte.strip():
             raise EtapeIndisponible("copie vide")
         copie, grille = self._depot.copie(copie_id), self._depot.grille(copie_id)
-        messages = construire_messages(grille, self._depot.consigne(copie.exercice), contenu.texte)
-        proposition = interpreter(self._correcteur.proposer(messages, modele), grille, contenu.texte)
+        messages = construire_messages(grille, self._depot.consigne(copie.exercice), texte)
+        proposition = interpreter(self._correcteur.proposer(messages, modele), grille, texte)
         return "pré-correction proposée", {"modele": modele, "confiance": proposition.confiance}, proposition
 
     def _conclure(self, copie_id: str, action: str, details: dict, proposition=None) -> None:

@@ -20,6 +20,7 @@ def _interne(hote: str) -> bool:
         adresse = ipaddress.ip_address(hote)
     except ValueError:
         return False
+    adresse = getattr(adresse, "ipv4_mapped", None) or adresse  # ::ffff:8.8.8.8 est jugée sur 8.8.8.8
     return adresse.is_private or adresse.is_loopback
 
 
