@@ -488,6 +488,20 @@ class TestEquipes(FrappeTestCase):
         migrer_surcharges_partielles.execute()  # idempotent
         self.assertEqual(len(source.equipes()), 2)
 
+    def test_patch_rejoue_ne_touche_pas_une_surcharge_au_nouveau_format(self):
+        migrer_surcharges_partielles.execute()
+        lot, devoir = un_lot(), un_devoir()
+        options_seules = frappe.get_doc({"doctype": SURCHARGE, "cohorte": lot, "nb_pairs": "2"}).insert().name
+        etape_seule = frappe.get_doc({"doctype": SURCHARGE, "exercice": devoir, "anonymat": "non",
+                                      "etapes": etapes_formateur()}).insert().name
+        avant = {nom: frappe.get_doc(SURCHARGE, nom).as_dict() for nom in (options_seules, etape_seule)}
+        migrer_surcharges_partielles.execute()  # rejoué (run-patch --force, patches.txt modifié)
+        for nom, doc in avant.items():
+            apres = frappe.get_doc(SURCHARGE, nom).as_dict()
+            self.assertEqual({c: apres[c] for c in ("nb_pairs", "anonymat", "modified")},
+                             {c: doc[c] for c in ("nb_pairs", "anonymat", "modified")})
+            self.assertEqual(len(apres["etapes"]), len(doc["etapes"]))
+
     def test_patch_site_sans_colonne_suppleant(self):
         with patch.object(frappe.db, "has_column", return_value=False):
             migrer_surcharges_partielles.execute()

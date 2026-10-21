@@ -82,12 +82,13 @@ def vers_domaine(doc) -> ReglagesEvaluation:
 
 
 OUI_NON = {"oui": True, "non": False}
+CASES = ("anonymat", "note_masquee_avant_relectures")  # cases à cocher d'avant, devenues oui / non
 
 
 def _option(champ: str, brut):
     texte = str(brut).strip()
     try:
-        if champ in ("anonymat", "note_masquee_avant_relectures"):
+        if champ in CASES:
             return OUI_NON[texte]
         if champ == "seuil_reussite":
             return float(texte.replace(",", "."))
@@ -113,17 +114,21 @@ def migrer_surcharges_partielles() -> None:
     """Une surcharge d'avant fixait toute la chaîne : ses valeurs restent explicites (cases à cocher en oui / non)
     et les étapes qu'elle ne citait pas, alors inactives, le deviennent explicitement. Sans étapes, elle ne portait
     qu'un suppléant : ses champs, alors ignorés, deviennent hérités. Le suppléant passe
-    dans l'équipe de la cible (l'exercice s'il est visé, sinon la cohorte) ; une surcharge vide est supprimée."""
+    dans l'équipe de la cible (l'exercice s'il est visé, sinon la cohorte) ; une surcharge vide est supprimée.
+    Rejouée, la migration ne touche que l'ancien format, reconnu strictement : un suppléant en colonne, ou une
+    case à cocher restée en 0 / 1 (le nouveau format n'écrit que oui, non ou vide)."""
     anciens = {}
     if frappe.db.has_column(SURCHARGE, "suppleant"):
         anciens = dict(frappe.db.sql(f"select name, suppleant from `tab{SURCHARGE}` where ifnull(suppleant, '') != ''"))
     for nom in frappe.get_all(SURCHARGE, pluck="name", order_by="creation"):
         doc = frappe.get_doc(SURCHARGE, nom)
+        if not (nom in anciens or any(str(doc.get(c) or "").strip() in ("0", "1") for c in CASES)):
+            continue  # déjà au nouveau format
         for champ in OPTIONS_CHAINE:
             valeur = str(doc.get(champ) or "").strip()
             if not doc.etapes:
                 doc.set(champ, "")
-            elif champ in ("anonymat", "note_masquee_avant_relectures") and valeur in ("0", "1"):
+            elif champ in CASES and valeur in ("0", "1"):
                 doc.set(champ, "oui" if valeur == "1" else "non")
         citees = {ligne.etape for ligne in doc.etapes}
         for etape in (e for e in Etape if doc.etapes and e.value not in citees):
