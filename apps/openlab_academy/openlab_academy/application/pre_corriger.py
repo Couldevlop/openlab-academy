@@ -12,7 +12,7 @@ from typing import Protocol
 from openlab_academy.application.chaine import SYSTEME, Journal
 from openlab_academy.application.controler import (
     Avanceur, DepotControles, EtapeIndisponible, consigner_indisponibilite)
-from openlab_academy.domain.copie import EtatInstantane, Proposition
+from openlab_academy.domain.copie import EtatInstantane, Proposition, Source
 from openlab_academy.domain.garde_fous_ia import construire_messages, detecter_injection, estimer_jetons, interpreter
 from openlab_academy.domain.reglages_evaluation import RESERVE_REPONSE_JETONS, Etape, ReglagesEvaluation
 
@@ -42,6 +42,8 @@ class PreCorriger:
         try:
             if self._depot.contenu(copie_id).instantane == EtatInstantane.EN_COURS:
                 return  # la tâche de l'instantané relance la pré-correction, sinon son échéance la fait passer
+            if self._deja_proposee(copie_id):
+                return  # une autre tâche (mise en file à l'entrée, relancée par l'instantané) a conclu
             action, details, proposition = self._proposer(copie_id)
         except Exception as erreur:  # rien ne bloque : l'étape est marquée non disponible
             consigner_indisponibilite(self._avancer, self._journal, copie_id, Etape.IA,
@@ -72,10 +74,17 @@ class PreCorriger:
                                   self._ia.citation_min_caracteres)
         return "pré-correction proposée", {"modele": modele, "confiance": proposition.confiance}, proposition
 
+    def _deja_proposee(self, copie_id: str) -> bool:
+        """Relue sous le verrou de la copie : deux tâches de pré-correction ne donnent qu'un appel au modèle."""
+        self._depot.verrouiller(copie_id)
+        return any(p.source == Source.IA for p in self._depot.propositions(copie_id, verrouillee=True))
+
     def _conclure(self, copie_id: str, action: str, details: dict, proposition=None) -> None:
         """En parallèle des pairs, le résultat est consigné sans faire avancer la copie (étape non courante)."""
         if not self._avancer.accepte_resultat(copie_id, Etape.IA):
             return
+        if proposition is not None and self._deja_proposee(copie_id):
+            return  # conclue par une autre tâche pendant l'appel au modèle : une seule proposition
         if proposition is not None:
             self._depot.ajouter_proposition(copie_id, proposition)
         self._journal(copie_id, SYSTEME, action, {}, details)

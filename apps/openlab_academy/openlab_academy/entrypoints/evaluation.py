@@ -68,7 +68,9 @@ def file(tache: str, copie_id: str) -> None:
         options = {}
         if tache == TACHES[Etape.IA]:  # plusieurs minutes sur CPU : file longue, délai réglé dans la console
             delai_s = reglages_evaluation_frappe.charger().ia.delai_minutes * 60
-            options = {"queue": "long", "timeout": delai_s + MARGE_S}
+            # job_id stable : relancée par l'instantané alors qu'elle attend encore, la tâche n'est pas doublée
+            options = {"queue": "long", "timeout": delai_s + MARGE_S, "job_id": f"openlab_{tache}:{copie_id}",
+                       "deduplicate": True}
         frappe.enqueue(f"{__name__}.{tache}", copie_id=copie_id, enqueue_after_commit=True, **options)
     except Exception:
         frappe.log_error(title="openlab_academy : tâche non mise en file", message=frappe.get_traceback())

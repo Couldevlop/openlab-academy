@@ -7,7 +7,7 @@ from openlab_academy.application.controler import EtapeIndisponible
 from openlab_academy.application.instantaner import PrendreInstantane
 from openlab_academy.application.pre_corriger import SIGNALEMENT, PreCorriger
 from openlab_academy.application.soumettre_copie import Contenu
-from openlab_academy.domain.copie import EtatInstantane, Source, Statut
+from openlab_academy.domain.copie import EtatInstantane, Proposition, Source, Statut
 from openlab_academy.domain.garde_fous_ia import AUTEUR_IA
 from openlab_academy.domain.reglages_evaluation import RESERVE_REPONSE_JETONS, ConfigIA, Etape, ReglagesEvaluation
 from openlab_academy.tests.test_chaine import Cas, chaine
@@ -87,6 +87,28 @@ class TestPreCorriger(Cas):
         self.corriger(correcteur)
         self.assertEqual(len(self.props_ia()), 1)
         self.assertEqual(self.etape(self.a), ("pairs", Statut.EN_RELECTURE))  # les pairs continuent
+
+    def test_deux_taches_un_seul_appel_au_modele(self):
+        """Pré-correction mise en file à l'entrée dans l'étape IA, puis relancée par l'instantané."""
+        self.preparer(Etape.IA, Etape.PAIRS, Etape.FORMATEUR)
+        correcteur = Correcteur()
+        self.corriger(correcteur)
+        self.corriger(correcteur)
+        self.assertEqual((len(correcteur.appels), len(self.props_ia())), (1, 1))
+        self.assertIn(("propositions", self.a), self.m.lectures_verrouillees)  # relue sous le verrou de la copie
+
+    def test_proposition_arrivee_pendant_l_appel_rien_n_est_ajoute(self):
+        self.preparer(Etape.IA, Etape.PAIRS, Etape.FORMATEUR)
+        correcteur = Correcteur()
+        proposer = correcteur.proposer
+
+        def concurrente(messages, modele):  # une autre tâche conclut pendant l'appel au modèle
+            self.m.ajouter_proposition(self.a, Proposition(Source.IA, AUTEUR_IA, {"pertinence": 1}))
+            return proposer(messages, modele)
+        correcteur.proposer = concurrente
+        self.corriger(correcteur)
+        self.assertEqual([p.niveaux for p in self.props_ia()], [{"pertinence": 1}])
+        self.assertNotIn("pré-correction proposée", [j[2] for j in self.journal])
 
     def test_instantane_en_cours_la_pre_correction_attend(self):
         self.preparer(url="https://github.com/aya/livrable")

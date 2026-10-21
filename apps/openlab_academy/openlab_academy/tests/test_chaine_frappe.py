@@ -188,7 +188,8 @@ class TestDemarrage(Cas):
         evaluation.controler(copie)
         self.assertEqual((self.ligne(copie).statut, self.ligne(copie).etape_courante), ("controlee", "ia"))
         self.file.assert_called_with("openlab_academy.entrypoints.evaluation.pre_corriger", copie_id=copie,
-                                     enqueue_after_commit=True, queue="long", timeout=10 * 60 + evaluation.MARGE_S)
+                                     enqueue_after_commit=True, queue="long", timeout=10 * 60 + evaluation.MARGE_S,
+                                     job_id=f"openlab_pre_corriger:{copie}", deduplicate=True)
         evaluation.controler(copie)  # signal périmé : ignoré
         evaluation.pre_corriger(copie)
         self.assertEqual((self.ligne(copie).statut, self.ligne(copie).etape_courante), ("a_corriger", "formateur"))
