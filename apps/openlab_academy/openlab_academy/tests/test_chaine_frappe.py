@@ -68,20 +68,81 @@ class Cas(Base):
 
 
 class TestDemarrage(Cas):
-    def test_instantane_regle_par_la_console(self):
-        for champ, valeur in (("instantane_fichiers_max", 3), ("instantane_delai_s", 4), ("instantane_budget_s", 7),
+    def test_instantane_regle_par_la_console_et_pris_en_tache_de_fond(self):
+        for champ, valeur in (("instantane_fichiers_max", 3), ("instantane_delai_s", 4),
                               ("instantane_budget_tache_s", 30), ("ia_plafond_caracteres", 5000)):
             frappe.db.set_single_value(REGLAGES, champ, valeur)
         with mock.patch.object(evaluation, "InstantaneDepot", wraps=InstantaneDepot) as instantane:
-            self.soumettre(self.livrable)
-            evaluation.controler(self.copie_de())
-        rendu, tache = instantane.call_args_list[0].kwargs, instantane.call_args_list[-1].kwargs
-        commun = {"plafond": 5000, "fichiers_max": 3, "delai_s": 4}
-        self.assertEqual({k: rendu[k] for k in (*commun, "budget_s")}, {**commun, "budget_s": 7})
-        self.assertEqual({k: tache[k] for k in (*commun, "budget_s")}, {**commun, "budget_s": 30})
+            self.soumettre(self.livrable, instantane=False)
+            instantane.assert_not_called()  # le rendu n'attend jamais le réseau
+            copie = self.copie_de()
+            evaluation.controler(copie)  # les contrôles attendent l'instantané
+            self.assertEqual(self.ligne(copie).etape_courante, "controles")
+            evaluation.instantaner(copie)
+        tache = instantane.call_args.kwargs
+        self.assertEqual({k: tache[k] for k in ("plafond", "fichiers_max", "delai_s", "budget_s")},
+                         {"plafond": 5000, "fichiers_max": 3, "delai_s": 4, "budget_s": 30})
+        self.assertEqual(frappe.db.get_value(COPIE, copie, "instantane"), "indisponible")  # hors ligne
+        self.assertEqual(self.actions(copie)[-1], "instantané indisponible")
+        self.assertEqual(self.file.call_args_list[-1], mock.call(CONTROLER, copie_id=copie, enqueue_after_commit=True))
+
+    def test_console_illisible_l_instantane_ne_reste_pas_en_attente(self):
+        self.soumettre(self.livrable, instantane=False)
+        copie = self.copie_de()
+        with mock.patch.object(evaluation.reglages_evaluation_frappe, "jeton_depots", side_effect=RuntimeError):
+            evaluation.instantaner(copie)
+        self.assertEqual(frappe.db.get_value(COPIE, copie, "instantane"), "indisponible")
+
+    def test_accuse_de_depot_horodate_en_utc(self):
+        avant = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None, microsecond=0)
+        self.soumettre(self.livrable, instantane=False)
+        copie = self.copie_de()
+        ligne = frappe.db.get_value(COPIE, copie, ["depose_le", "signature", "instantane"], as_dict=True)
+        self.assertEqual(ligne.instantane, "en_cours")
+        self.assertLessEqual(avant, ligne.depose_le)
+        self.assertLessEqual(ligne.depose_le, avant + datetime.timedelta(minutes=1))
+        accuse = frappe.get_all(JOURNAL, {"copie": copie, "action": "accusé de dépôt"}, ["acteur", "apres"])[0]
+        self.assertEqual(accuse.acteur, A)
+        self.assertEqual(json.loads(accuse.apres), {"depose_le": f"{ligne.depose_le:%Y-%m-%dT%H:%M:%S}Z",
+                                                    "empreinte": ligne.signature, "algorithme": "SHA-256"})
+
+    def test_rendus_rapproches_seul_le_dernier_est_photographie(self):
+        frappe.db.set_single_value(REGLAGES, "remise_regroupement_s", 30)
+        self.soumettre(self.livrable, instantane=False)
+        ancienne = self.copie_de()
+        s = frappe.get_doc("LMS Assignment Submission", {"member": A, "assignment": self.livrable})
+        s.answer = "https://github.com/aya/livrable-v2"
+        s.save(ignore_permissions=True)
+        derniere = self.copie_de()
+        self.soumettre(self.projet, instantane=False)
+        projet = self.copie_de(devoir=self.projet)
+        maintenant = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        for copie, age in ((ancienne, 120), (derniere, 60), (projet, 5)):
+            frappe.db.set_value(COPIE, copie, "depose_le", maintenant - datetime.timedelta(seconds=age))
+        self.file.reset_mock()
+        evaluation.instantaner_rendus()
+        self.file.assert_called_once_with("openlab_academy.entrypoints.evaluation.instantaner", copie_id=derniere,
+                                          queue="long", timeout=60 + evaluation.MARGE_S,
+                                          job_id=f"openlab_instantane:{derniere}", deduplicate=True)
+
+    def test_file_indisponible_la_minute_suivante_reprend(self):
+        self.soumettre(self.livrable, instantane=False)
+        frappe.db.set_single_value(REGLAGES, "remise_regroupement_s", 0)
+        self.file.side_effect = RuntimeError("redis")
+        with mock.patch.object(evaluation.frappe, "log_error") as consigne:
+            evaluation.instantaner_rendus()
+        consigne.assert_called_once()
+
+    def test_debit_de_rendus_depasse_le_rendu_lms_est_refuse(self):
+        frappe.db.set_single_value(REGLAGES, "remise_par_heure", 1)
+        self.soumettre(self.livrable, instantane=False)
+        with self.assertRaises(frappe.TooManyRequestsError):
+            self.soumettre(self.projet, instantane=False)
+        self.assertFalse(frappe.db.exists(COPIE, {"apprenant": A, "exercice": self.projet}))
+        frappe.local.message_log = []
 
     def test_rendu_demarre_la_chaine(self):
-        self.soumettre(self.livrable)
+        self.soumettre(self.livrable, instantane=False)
         copie = self.copie_de()
         self.assertEqual((self.ligne(copie).statut, self.ligne(copie).etape_courante), ("rendue", "controles"))
         self.file.assert_called_once_with(CONTROLER, copie_id=copie, enqueue_after_commit=True)
@@ -132,8 +193,9 @@ class TestDemarrage(Cas):
         evaluation.controler(copie)  # signal périmé : ignoré
         evaluation.pre_corriger(copie)
         self.assertEqual((self.ligne(copie).statut, self.ligne(copie).etape_courante), ("a_corriger", "formateur"))
-        self.assertEqual(self.actions(copie), ["étape suivante", "contrôles non disponibles", "étape suivante",
-                                               "pré-correction non disponible", "pairs sautés", "étape suivante"])
+        self.assertEqual(self.actions(copie), ["étape suivante", "instantané indisponible", "contrôles non disponibles",
+                                               "étape suivante", "pré-correction non disponible", "pairs sautés",
+                                               "étape suivante"])
 
     def test_controles_conformes_sur_un_depot_public(self):
         self.http.side_effect = github()
@@ -141,7 +203,8 @@ class TestDemarrage(Cas):
         copie = self.copie_de()
         evaluation.controler(copie)
         self.assertEqual((self.ligne(copie).statut, self.ligne(copie).etape_courante), ("controlee", "ia"))
-        self.assertEqual(self.actions(copie), ["étape suivante", "contrôles conformes", "étape suivante"])
+        self.assertEqual(self.actions(copie), ["étape suivante", "instantané pris", "contrôles conformes",
+                                               "étape suivante"])
         self.assertEqual([p.source for p in self.depot.propositions(copie)], [Source.CONTROLES])
 
     def test_jeton_des_depots_de_la_console_utilise(self):
@@ -182,11 +245,12 @@ class TestDemarrage(Cas):
         doc.save(ignore_permissions=True)
 
     def a_l_etape_ia(self):
-        """Hébergeur injoignable au rendu ; les contrôles reprennent et figent l'instantané avant de vérifier."""
-        self.soumettre(self.livrable)  # sans cohorte : pas de pairs
+        """Le rendu n'attend pas le réseau ; l'instantané, pris en tâche de fond, fige le dépôt avant les contrôles."""
+        self.soumettre(self.livrable, instantane=False)  # sans cohorte : pas de pairs
         copie = self.copie_de()
-        self.assertEqual(self.depot.contenu(copie).texte, "")
+        self.assertEqual((self.depot.contenu(copie).texte, self.depot.contenu(copie).instantane.value), ("", "en_cours"))
         self.http.side_effect = github(fichiers={"README.md": "Le tableau de bord hebdomadaire réduit les ruptures."})
+        evaluation.instantaner(copie)
         evaluation.controler(copie)
         self.assertEqual(self.depot.contenu(copie).commit, SHA)
         self.assertIn("tableau de bord hebdomadaire", self.depot.contenu(copie).texte)
@@ -203,8 +267,9 @@ class TestDemarrage(Cas):
             self.assertEqual(self.ligne(copie).etape_courante, "ia")
             evaluation.pre_corriger(copie)
         self.assertEqual(self.ligne(copie).etape_courante, "formateur")
-        self.assertEqual(self.actions(copie), ["étape suivante", "contrôles non disponibles", "étape suivante",
-                                               "pré-correction non disponible", "pairs sautés", "étape suivante"])
+        self.assertEqual(self.actions(copie), ["étape suivante", "instantané indisponible", "contrôles non disponibles",
+                                               "étape suivante", "pré-correction non disponible", "pairs sautés",
+                                               "étape suivante"])
 
     def test_pre_correction_par_le_service_de_la_console(self):
         self.configurer_ia()
@@ -435,8 +500,10 @@ class TestPairsFrappe(Cas):
             evaluation.traiter_echeances()
         self.assertIs(traiter.call_args.args[6], evaluation.unite)
 
-    def test_hook_horaire(self):
+    def test_hooks_echeancier(self):
         self.assertEqual(hooks.scheduler_events["hourly"], ["openlab_academy.entrypoints.evaluation.traiter_echeances"])
+        self.assertEqual(hooks.scheduler_events["cron"],
+                         {"* * * * *": ["openlab_academy.entrypoints.evaluation.instantaner_rendus"]})
 
 
 class TestDepotChaineFrappe(Cas):

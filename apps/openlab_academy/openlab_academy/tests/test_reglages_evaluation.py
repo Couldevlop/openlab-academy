@@ -131,9 +131,13 @@ class TestValidation(unittest.TestCase):
     def test_limites_reglables(self):
         r = ReglagesEvaluation()
         self.assertEqual((r.ia.citation_min_caracteres, r.instantane_fichiers_max, r.instantane_delai_s,
-                          r.instantane_budget_s, r.instantane_budget_tache_s), (8, 12, 10, 20, 60))
-        for champ in ("instantane_fichiers_max", "instantane_delai_s", "instantane_budget_s",
-                      "instantane_budget_tache_s"):
+                          r.instantane_budget_tache_s, r.remise_par_heure, r.remise_regroupement_s),
+                         (8, 12, 10, 60, 20, 30))
+        self.assertEqual(ReglagesEvaluation(remise_regroupement_s=0).remise_regroupement_s, 0)
+        with self.assertRaisesRegex(ReglagesInvalides, "remise_regroupement_s"):
+            ReglagesEvaluation(remise_regroupement_s=-1)
+        for champ in ("instantane_fichiers_max", "instantane_delai_s", "instantane_budget_tache_s",
+                      "remise_par_heure"):
             with self.subTest(champ=champ), self.assertRaisesRegex(ReglagesInvalides, champ):
                 ReglagesEvaluation(**{champ: 0})
         with self.assertRaisesRegex(ReglagesInvalides, "citation_min_caracteres"):

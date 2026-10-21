@@ -17,7 +17,8 @@ from openlab_academy.application.corriger import (
     Acces, AccesRefuse, ConsulterCorrection, CorrectionRefusee, CorrigerCopie, GererDelegations, PublierNote,
     ValiderLot, fiabilite)
 from openlab_academy.application.pairs import EnregistrerRelecture, RelectureRefusee
-from openlab_academy.application.retours import AutoEvaluer, ConsulterRelectures, ConsulterRetour
+from openlab_academy.application.retours import (
+    AutoEvaluer, ConsulterAccuseDepot, ConsulterRelectures, ConsulterRetour)
 from openlab_academy.domain.delegation import Delegation, DelegationRefusee
 from openlab_academy.entrypoints import evaluation
 from openlab_academy.infrastructure import delegations_frappe, journal_frappe, reglages_evaluation_frappe
@@ -30,7 +31,7 @@ LIMITES = {  # requêtes par heure et par utilisateur
     "enregistrer_relecture": 60, "enregistrer_auto_evaluation": 30, "corriger": 600, "valider_lot": 600,
     "publier": 600, "deleguer": 30, "revoquer": 30, "file_correction": 300,
     "mes_relectures": 600, "relecture": 600, "mon_auto_evaluation": 600, "mon_retour": 600,
-    "copie_a_corriger": 1200, "fiabilite_ia": 120,
+    "copie_a_corriger": 1200, "fiabilite_ia": 120, "accuse_depot": 600,
 }
 
 
@@ -171,6 +172,15 @@ def mon_retour(copie: str) -> dict:
     depot = _depot()
     return ConsulterRetour(depot, DepotRelecturesFrappe(), evaluation.avanceur().chaine).executer(
         _moi(), _copie(depot, copie))
+
+
+@frappe.whitelist(methods=["GET"])
+@_api
+@_limite("accuse_depot")
+def accuse_depot(copie: str) -> dict:
+    """Accusé de dépôt (horodatage UTC, empreinte SHA-256) : l'apprenant auteur et ses correcteurs."""
+    depot = _depot()
+    return ConsulterAccuseDepot(depot, _acces(depot)).executer(_moi(), _copie(depot, copie))
 
 
 # --- correcteur : file, copie, correction, lots, publication ------------------------------------------------

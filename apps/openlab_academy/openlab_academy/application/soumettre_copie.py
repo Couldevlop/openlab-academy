@@ -1,15 +1,17 @@
 """Cas d'usage : une soumission LMS devient une copie figée avec sa grille ; une re-soumission crée une nouvelle version.
 
-Rien ne bloque l'apprenant : si l'instantané du dépôt échoue, la copie est créée sans contenu et poursuit sa chaîne.
+Rien ne bloque l'apprenant : le rendu n'attend jamais le réseau, l'instantané d'un dépôt est pris en tâche de fond.
+Chaque copie reçoit un accusé de dépôt (horodatage UTC et empreinte SHA-256 de ce qui a été rendu). Au-delà du débit
+réglé dans la console, un nouveau rendu est refusé.
 """
 import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Protocol
 
 from openlab_academy.domain.copie import (
-    Copie, CopieVerrouillee, Proposition, Source, Statut, etape_suivante, refus_de_resoumission)
+    Copie, CopieVerrouillee, EtatInstantane, Proposition, Source, Statut, etape_suivante, refus_de_resoumission)
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.reglages_evaluation import Chaine, ReglagesEvaluation, Surcharge, TypeExercice
 
@@ -34,6 +36,8 @@ class Contenu:
     commit: str
     signature: str
     soumission: str
+    instantane: EtatInstantane = EtatInstantane.SANS
+    depose_le: datetime | None = None  # UTC, horodatage de l'accusé de dépôt
 
     @property
     def rendu_par_lien(self) -> bool:
@@ -58,6 +62,7 @@ class DepotCopies(Protocol):
     def copie(self, copie_id: str) -> Copie: ...
     def verrouiller(self, copie_id: str) -> CopieVerrouillee: ...  # verrou de ligne + lecture à jour
     def creer(self, copie: Copie, grille: Grille, contenu: Contenu) -> str: ...
+    def rendus_depuis(self, apprenant: str, depuis: datetime) -> int: ...  # copies créées pour l'apprenant
     def version_courante(self, soumission: str, verrouillee: bool = False) -> Copie | None: ...
     def ajouter_proposition(self, copie_id: str, p: Proposition) -> None: ...
     def propositions(self, copie_id: str) -> list[Proposition]: ...
@@ -65,20 +70,19 @@ class DepotCopies(Protocol):
     def annuler_relectures(self, copie_id: str) -> None: ...
 
 
-class Instantane(Protocol):
-    """Port : photographie d'un dépôt rendu par URL -> (contenu, commit)."""
-
-    def prendre(self, url: str) -> tuple[str, str]: ...
+class RenduRefuse(Exception):
+    """Le rendu dépasse le débit réglé dans la console : refusé, la copie en cours reste inchangée."""
 
 
 class SoumettreCopie:
-    def __init__(self, depot: DepotCopies, instantane: Instantane, reglages: ReglagesEvaluation,
+    def __init__(self, depot: DepotCopies, reglages: ReglagesEvaluation,
                  horloge: Callable[[], datetime], surcharges: Callable[[], tuple[Surcharge, ...]] = lambda: (),
                  journal: Callable[[str, str, str, dict, dict], None] = lambda *_: None,
                  demarrer: Callable[[str], None] = lambda _: None,
-                 notifier: Callable[[str, str], None] = lambda *_: None):
+                 notifier: Callable[[str, str], None] = lambda *_: None,
+                 horloge_utc: Callable[[], datetime] = lambda: datetime.now(timezone.utc)):
         self._depot = depot
-        self._instantane = instantane
+        self._horloge_utc = horloge_utc
         self._reglages = reglages
         self._horloge = horloge
         self._surcharges = surcharges
@@ -113,6 +117,10 @@ class SoumettreCopie:
                                           f"compte ({refus.removesuffix(' ignoré')}) : la version précédente reste "
                                           f"celle qui est corrigée.")
                 return courante.id
+        maximum = self._reglages.remise_par_heure
+        if self._depot.rendus_depuis(apprenant, self._horloge() - timedelta(hours=1)) >= maximum:
+            raise RenduRefuse(f"Trop de rendus : {maximum} rendus par heure au plus. Réessayez plus tard ; "
+                              f"votre rendu précédent reste celui qui est corrigé.")
         # tout ce qui peut échouer est calculé avant la première écriture
         cohorte = self._depot.cohorte(apprenant, assignment)
         # une surcharge ou un YAML devenus invalides ne bloquent pas le rendu : la chaîne du type s'applique
@@ -124,8 +132,12 @@ class SoumettreCopie:
             self._remplacer(courante)
         copie = Copie("", apprenant, assignment, cohorte or "", exercice.type_,
                       1 if courante is None else courante.version + 1, Statut.RENDUE)
-        copie_id = self._depot.creer(copie, exercice.grille, self._contenu(soumission, signature))
+        depose_le = self._horloge_utc().astimezone(timezone.utc).replace(tzinfo=None)
+        copie_id = self._depot.creer(copie, exercice.grille, self._contenu(soumission, signature, depose_le))
         self._depot.changer_statut(copie_id, Statut.RENDUE, etape.value, echeance)
+        self._journal(copie_id, apprenant, "accusé de dépôt", {},
+                      {"depose_le": f"{depose_le:%Y-%m-%dT%H:%M:%S}Z", "empreinte": signature,
+                       "algorithme": "SHA-256"})
         if repli:
             self._journal(copie_id, SYSTEME, "chaîne invalide : chaîne du type appliquée", {},
                           {"type_exercice": exercice.type_.value})
@@ -142,15 +154,13 @@ class SoumettreCopie:
         statut = ancienne.statut if ancienne.statut == Statut.RENVOYEE else ancienne.passer_a(Statut.REMPLACEE).statut
         self._depot.changer_statut(ancienne.id, statut, "", None)
 
-    def _contenu(self, soumission: dict, signature: str) -> Contenu:
+    @staticmethod
+    def _contenu(soumission: dict, signature: str, depose_le: datetime) -> Contenu:
         nom = soumission["name"]
         if soumission["type"] == "Text":
-            return Contenu(soumission["answer"] or "", "", "", signature, nom)
+            return Contenu(soumission["answer"] or "", "", "", signature, nom, depose_le=depose_le)
         if soumission["type"] != "URL":
-            return Contenu("", soumission.get("assignment_attachment") or "", "", signature, nom)
-        url = soumission["answer"]
-        try:
-            texte, commit = self._instantane.prendre(url)
-        except Exception:  # un dépôt injoignable ne bloque pas le rendu
-            texte, commit = "", ""
-        return Contenu(texte, url, commit, signature, nom)
+            return Contenu("", soumission.get("assignment_attachment") or "", "", signature, nom,
+                           depose_le=depose_le)
+        # le dépôt est photographié en tâche de fond : le rendu n'attend jamais le réseau
+        return Contenu("", soumission["answer"], "", signature, nom, EtatInstantane.EN_COURS, depose_le)

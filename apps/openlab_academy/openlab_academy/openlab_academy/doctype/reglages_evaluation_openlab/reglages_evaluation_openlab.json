@@ -30,8 +30,9 @@
   "jeton_depots",
   "instantane_fichiers_max",
   "instantane_delai_s",
-  "instantane_budget_s",
   "instantane_budget_tache_s",
+  "remise_par_heure",
+  "remise_regroupement_s",
   "longueur_min_caracteres",
   "resoumission_jusqua",
   "niveaux_generiques",
@@ -183,20 +184,28 @@
    "description": "Au-delà, l'appel est abandonné."
   },
   {
-   "fieldname": "instantane_budget_s",
-   "fieldtype": "Int",
-   "label": "Durée maximale de l'instantané au rendu (s)",
-   "default": "20",
-   "non_negative": 1,
-   "description": "Au-delà, l'apprenant n'attend plus : l'instantané est repris en tâche de fond."
-  },
-  {
    "fieldname": "instantane_budget_tache_s",
    "fieldtype": "Int",
-   "label": "Durée maximale de l'instantané en tâche de fond (s)",
+   "label": "Durée maximale de l'instantané (s)",
    "default": "60",
    "non_negative": 1,
    "description": "Au-delà, l'instantané est abandonné : un hébergeur indisponible ne bloque jamais la copie."
+  },
+  {
+   "fieldname": "remise_par_heure",
+   "fieldtype": "Int",
+   "label": "Rendus par apprenant et par heure",
+   "default": "20",
+   "non_negative": 1,
+   "description": "Au-delà, un nouveau rendu est refusé (réessayer plus tard)."
+  },
+  {
+   "fieldname": "remise_regroupement_s",
+   "fieldtype": "Int",
+   "label": "Regroupement des rendus rapprochés (s)",
+   "default": "30",
+   "non_negative": 1,
+   "description": "Rendus rapprochés : seul le dernier dépôt est photographié."
   },
   {
    "fieldname": "longueur_min_caracteres",
@@ -242,7 +251,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-21 15:00:00",
+ "modified": "2026-10-21 17:00:00",
  "sort_field": "modified",
  "sort_order": "DESC",
  "custom": 0,

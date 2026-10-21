@@ -84,8 +84,8 @@ class Memoire:
     def contenu(self, copie_id):
         return self.contenus.get(copie_id, Contenu("", "", "", "", ""))
 
-    def completer_contenu(self, copie_id, texte, commit):
-        self.contenus[copie_id] = replace(self.contenu(copie_id), texte=texte, commit=commit)
+    def completer_contenu(self, copie_id, texte, commit, instantane):
+        self.contenus[copie_id] = replace(self.contenu(copie_id), texte=texte, commit=commit, instantane=instantane)
 
     def consigne(self, exercice):
         return self.consignes.get(exercice, "")

@@ -1,12 +1,13 @@
 import unittest
-from datetime import timedelta
+from datetime import datetime, timedelta
 
-from openlab_academy.application.corriger import AccesRefuse, CorrectionRefusee
+from openlab_academy.application.corriger import Acces, AccesRefuse, CorrectionRefusee
 from openlab_academy.application.pairs import StatutRelecture
 from openlab_academy.application.retours import (
-    EN_COURS, MASQUEE, PROVISOIRE, REMPLACEE, AutoEvaluer, ConsulterRelectures, ConsulterRetour)
+    EN_COURS, MASQUEE, PROVISOIRE, REMPLACEE, AutoEvaluer, ConsulterAccuseDepot, ConsulterRelectures,
+    ConsulterRetour)
 from openlab_academy.application.soumettre_copie import Contenu
-from openlab_academy.domain.copie import Proposition, Source, Statut
+from openlab_academy.domain.copie import EtatInstantane, Proposition, Source, Statut
 from openlab_academy.domain.reglages_evaluation import Etape, TypeExercice
 from openlab_academy.tests.memoire_evaluation import DEBUT, Memoire
 from openlab_academy.tests.test_chaine import chaine
@@ -27,6 +28,29 @@ class Cas(unittest.TestCase):
     def publiee(self, cid, note=10.0, reussite=True):
         self.m.changer_statut(cid, Statut.PUBLIEE, "", None)
         self.m.resultats[cid] = (note, 20, reussite)
+
+
+class TestAccuseDepot(Cas):
+    def setUp(self):
+        self.monter()
+        self.m.titulaires_ = {"prof@x.ci"}
+        self.m.contenus[self.a] = Contenu("", "https://github.com/aya/l", "abc123", "f" * 64, "S1",
+                                          EtatInstantane.PRIS, datetime(2026, 10, 20, 7, 0, 5))
+        self.accuse = ConsulterAccuseDepot(self.m, Acces(self.m, lambda: (), lambda: DEBUT, lambda u: False))
+
+    def test_horodatage_utc_et_empreinte_pour_l_apprenant_et_le_formateur(self):
+        attendu = {"copie": self.a, "exercice": "EX1", "version": 1, "depose_le": "2026-10-20T07:00:05Z",
+                   "empreinte": "f" * 64, "algorithme": "SHA-256", "instantane": "pris", "commit": "abc123"}
+        self.assertEqual(self.accuse.executer(A, self.a), attendu)
+        self.assertEqual(self.accuse.executer("prof@x.ci", self.a), attendu)
+
+    def test_refuse_a_un_autre_apprenant(self):
+        with self.assertRaises(AccesRefuse):
+            self.accuse.executer(B, self.a)
+
+    def test_copie_d_avant_l_accuse(self):
+        self.m.contenus[self.a] = Contenu("texte", "", "", "e" * 64, "S1")
+        self.assertEqual(self.accuse.executer(A, self.a)["depose_le"], None)
 
 
 class TestConsulterRetour(Cas):

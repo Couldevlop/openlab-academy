@@ -204,8 +204,9 @@ class ReglagesEvaluation:
     niveaux_generiques: tuple[str, ...] = NIVEAUX_GENERIQUES_DEFAUT
     instantane_fichiers_max: int = 12  # fichiers lus dans un dépôt rendu par lien
     instantane_delai_s: int = 10  # délai de chaque appel à l'hébergeur
-    instantane_budget_s: int = 20  # durée totale d'un instantané pris pendant le rendu de l'apprenant
-    instantane_budget_tache_s: int = 60  # durée totale d'un instantané repris en tâche de fond
+    instantane_budget_tache_s: int = 60  # durée totale de l'instantané, pris en tâche de fond
+    remise_par_heure: int = 20  # nouveaux rendus par apprenant et par heure ; au-delà, le rendu est refusé (429)
+    remise_regroupement_s: int = 30  # rendus rapprochés : seul le dernier est photographié
     resoumission_jusqua: Resoumission = Resoumission.DEBUT_CORRECTION
 
     def __post_init__(self):
@@ -217,10 +218,12 @@ class ReglagesEvaluation:
             raise ReglagesInvalides("niveaux génériques : au moins 2 niveaux requis")
         if self.longueur_min_caracteres < 0:
             raise ReglagesInvalides("longueur_min_caracteres ne peut pas être négative")
-        for champ in ("instantane_fichiers_max", "instantane_delai_s", "instantane_budget_s",
-                      "instantane_budget_tache_s"):
+        for champ in ("instantane_fichiers_max", "instantane_delai_s", "instantane_budget_tache_s",
+                      "remise_par_heure"):
             if getattr(self, champ) <= 0:
                 raise ReglagesInvalides(f"{champ} doit être positif")
+        if self.remise_regroupement_s < 0:
+            raise ReglagesInvalides("remise_regroupement_s ne peut pas être négatif")
 
     def _verifier_publication(self, chaine: Chaine, type_: TypeExercice) -> Chaine:
         if (not self.publication_provisoire

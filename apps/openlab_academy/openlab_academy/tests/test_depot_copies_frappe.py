@@ -56,9 +56,15 @@ class Base(FrappeTestCase):
         frappe.set_user("Administrator")
         frappe.db.rollback()
 
-    def soumettre(self, devoir, membre=A, reponse=URL, **autres):
-        return frappe.get_doc({"doctype": "LMS Assignment Submission", "assignment": devoir, "member": membre,
-                               "answer": reponse, **autres}).insert(ignore_permissions=True)
+    def soumettre(self, devoir, membre=A, reponse=URL, instantane=True, **autres):
+        """Rendu LMS ; l'instantané d'un dépôt, pris en tâche de fond, l'est ici aussitôt (sauf demande)."""
+        doc = frappe.get_doc({"doctype": "LMS Assignment Submission", "assignment": devoir, "member": membre,
+                              "answer": reponse, **autres}).insert(ignore_permissions=True)
+        if instantane:
+            for copie in frappe.get_all("Copie OpenLab", {"soumission": doc.name, "instantane": "en_cours"},
+                                        pluck="name"):
+                evaluation.instantaner(copie)
+        return doc
 
     def copies(self, **filtres):
         return frappe.get_all("Copie OpenLab", filters=filtres, fields=["name", "version", "statut"], order_by="version")

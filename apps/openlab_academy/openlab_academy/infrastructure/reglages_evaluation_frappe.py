@@ -174,8 +174,8 @@ def initialiser() -> None:
     doc.save(ignore_permissions=True)
 
 
-CHAMPS_INSTANTANE = ("instantane_fichiers_max", "instantane_delai_s", "instantane_budget_s",
-                     "instantane_budget_tache_s")  # même nom dans la console et dans le domaine
+CHAMPS_INSTANTANE = ("instantane_fichiers_max", "instantane_delai_s", "instantane_budget_tache_s",
+                     "remise_par_heure", "remise_regroupement_s")  # même nom dans la console et dans le domaine
 
 
 def _champs_completes(defaut: ReglagesEvaluation) -> dict:

@@ -26,6 +26,15 @@ class Statut(str, Enum):
     REMPLACEE = "remplacee"
 
 
+class EtatInstantane(str, Enum):
+    """Instantané du dépôt rendu par lien, pris en tâche de fond après le rendu."""
+
+    SANS = ""  # rendu texte ou fichier : rien à photographier
+    EN_COURS = "en_cours"  # contrôles et pré-correction l'attendent (dans leurs propres délais)
+    PRIS = "pris"
+    INDISPONIBLE = "indisponible"  # hébergeur injoignable : la chaîne continue sans instantané
+
+
 class Source(str, Enum):
     AUTO_EVALUATION = "auto_evaluation"
     CONTROLES = "controles"

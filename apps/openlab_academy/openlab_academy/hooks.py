@@ -25,5 +25,8 @@ doc_events = {
     },
 }
 
-# échéances de la chaîne de correction : rien ne bloque une copie
-scheduler_events = {"hourly": ["openlab_academy.entrypoints.evaluation.traiter_echeances"]}
+# échéances de la chaîne de correction : rien ne bloque une copie ; instantanés des dépôts rendus à la minute
+scheduler_events = {
+    "hourly": ["openlab_academy.entrypoints.evaluation.traiter_echeances"],
+    "cron": {"* * * * *": ["openlab_academy.entrypoints.evaluation.instantaner_rendus"]},
+}

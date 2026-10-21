@@ -5,12 +5,11 @@ indisponible (réseau, délai, API) ne bloque rien : l'étape est marquée « no
 Le travail lent se fait avant toute lecture verrouillante : le verrou de la copie n'est pris que pour consigner.
 """
 from collections.abc import Callable
-from dataclasses import replace
 from typing import Protocol
 
 from openlab_academy.application.chaine import SYSTEME, DepotChaine, Journal
-from openlab_academy.application.soumettre_copie import Contenu, Instantane
-from openlab_academy.domain.copie import Copie, Proposition, Source, Statut
+from openlab_academy.application.soumettre_copie import Contenu
+from openlab_academy.domain.copie import Copie, EtatInstantane, Proposition, Source, Statut
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.reglages_evaluation import Etape
 
@@ -30,7 +29,6 @@ class Avanceur(Protocol):
 
 class DepotControles(DepotChaine, Protocol):
     def contenu(self, copie_id: str) -> Contenu: ...
-    def completer_contenu(self, copie_id: str, texte: str, commit: str) -> None: ...
 
 
 def cause(erreur: Exception) -> str:
@@ -49,19 +47,20 @@ def consigner_indisponibilite(avancer: Avanceur, journal: Journal, copie_id: str
 
 class ControlerCopie:
     def __init__(self, depot: DepotControles, controleur: Controleur, avancer: Avanceur,
-                 journal: Journal = lambda *_: None, notifier: Callable[[str, str], None] = lambda *_: None,
-                 instantane: Instantane | None = None):
+                 journal: Journal = lambda *_: None, notifier: Callable[[str, str], None] = lambda *_: None):
         self._depot = depot
-        self._instantane = instantane
         self._controleur = controleur
         self._avancer = avancer
         self._journal = journal
         self._notifier = notifier
 
     def executer(self, copie_id: str) -> None:
+        """Un dépôt dont l'instantané est en cours est attendu : la tâche de l'instantané relance les contrôles,
+        sinon leur échéance les fait passer."""
         try:
-            avant = self._depot.contenu(copie_id)
-            contenu = self._reprendre(avant)
+            contenu = self._depot.contenu(copie_id)
+            if contenu.instantane == EtatInstantane.EN_COURS:
+                return
             motifs = self._controleur.verifier(self._depot.copie(copie_id), self._depot.grille(copie_id), contenu)
         except Exception as erreur:  # rien ne bloque : l'étape est marquée non disponible
             consigner_indisponibilite(self._avancer, self._journal, copie_id, Etape.CONTROLES,
@@ -69,8 +68,6 @@ class ControlerCopie:
             return
         if not self._avancer.accepte_resultat(copie_id, Etape.CONTROLES):
             return
-        if contenu != avant:  # instantané repris : figé avec le résultat des contrôles
-            self._depot.completer_contenu(copie_id, contenu.texte, contenu.commit)
         self._depot.ajouter_proposition(copie_id, Proposition(
             Source.CONTROLES, SYSTEME, {}, {f"motif_{i}": m for i, m in enumerate(motifs, 1)}))
         if not motifs:
@@ -82,17 +79,3 @@ class ControlerCopie:
         self._journal(copie_id, SYSTEME, "copie renvoyée", {"statut": copie.statut.value}, {"motifs": motifs})
         self._notifier(copie.apprenant, f"Votre rendu de l'exercice {copie.exercice} vous est renvoyé : "
                                         f"{' ; '.join(motifs)}. Corrigez-le puis rendez-le à nouveau.")
-
-    def _reprendre(self, contenu: Contenu) -> Contenu:
-        """Un rendu en URL sans instantané (hébergeur injoignable au rendu) est photographié maintenant : pairs et
-        formateur travaillent sur un commit figé, jamais sur le dépôt vivant. Une indisponibilité remonte (étape
-        « non disponible ») ; un défaut du dépôt laisse le contrôleur le constater et en faire un motif."""
-        if self._instantane is None or not contenu.rendu_par_lien or contenu.texte.strip():
-            return contenu
-        try:
-            texte, commit = self._instantane.prendre(contenu.source_url)
-        except EtapeIndisponible:
-            raise
-        except Exception:
-            return contenu
-        return replace(contenu, texte=texte, commit=commit)

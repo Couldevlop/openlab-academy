@@ -1,9 +1,9 @@
 import unittest
 from dataclasses import replace
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-from openlab_academy.application.soumettre_copie import Contenu, Exercice, SoumettreCopie
-from openlab_academy.domain.copie import Copie, CopieVerrouillee, Etat, Proposition, Source, Statut
+from openlab_academy.application.soumettre_copie import Contenu, Exercice, RenduRefuse, SoumettreCopie
+from openlab_academy.domain.copie import Copie, CopieVerrouillee, EtatInstantane, Etat, Proposition, Source, Statut
 from openlab_academy.domain.grille import grille_generique
 from openlab_academy.domain.reglages_evaluation import (
     CHAINES_DEFAUT, Chaine, ConfigEtape, Etape, Expiration, ReglagesEvaluation, Resoumission, Surcharge, TypeExercice,
@@ -11,6 +11,7 @@ from openlab_academy.domain.reglages_evaluation import (
 
 GRILLE = grille_generique((("Pertinence", 60), ("Rigueur", 40)), ("Faible", "Bon"))
 MAINTENANT = datetime(2026, 10, 20, 8, 0)
+UTC = datetime(2026, 10, 20, 7, 0, tzinfo=timezone.utc)
 
 
 class DepotMemoire:
@@ -25,12 +26,16 @@ class DepotMemoire:
         self.statuts: list[tuple] = []
         self.verrous: list[str] = []
         self.echeances = {}
+        self.debit: dict[str, int] = {}
 
     def exercice(self, exercice):
         return self.exercices.get(exercice)
 
     def echeance(self, exercice):
         return self.echeances.get(exercice)
+
+    def rendus_depuis(self, apprenant, depuis):
+        return self.debit.get(apprenant, 0)
 
     def cohorte(self, apprenant, exercice):
         return self.cohorte_
@@ -73,30 +78,18 @@ class DepotMemoire:
         self.relectures_annulees.append(copie_id)
 
 
-class InstantaneMemoire:
-    def __init__(self, erreur=None):
-        self.appels, self.erreur = [], erreur
-
-    def prendre(self, url):
-        self.appels.append(url)
-        if self.erreur:
-            raise self.erreur
-        return f"contenu de {url}", "abc123"
-
-
 def soumission(**autres):
     return {"name": "SUB1", "assignment": "EX1", "member": "a@x.ci", "type": "URL",
             "answer": "https://github.com/a/p", "assignment_attachment": None, **autres}
 
 
 class TestSoumettreCopie(unittest.TestCase):
-    def cas(self, depot=None, instantane=None, reglages=None, surcharges=lambda: ()):
+    def cas(self, depot=None, reglages=None, surcharges=lambda: ()):
         self.depot = depot or DepotMemoire()
-        self.instantane = instantane or InstantaneMemoire()
         self.journal, self.notes = [], []
-        self.uc = SoumettreCopie(self.depot, self.instantane, reglages or ReglagesEvaluation(), lambda: MAINTENANT,
+        self.uc = SoumettreCopie(self.depot, reglages or ReglagesEvaluation(), lambda: MAINTENANT,
                                  surcharges, lambda *args: self.journal.append(args),
-                                 notifier=lambda *args: self.notes.append(args))
+                                 notifier=lambda *args: self.notes.append(args), horloge_utc=lambda: UTC)
         return self.uc
 
     def test_premier_rendu(self):
@@ -113,31 +106,44 @@ class TestSoumettreCopie(unittest.TestCase):
         self.assertEqual(self.depot.statuts,
                          [(copie_id, Statut.RENDUE, "auto_evaluation", datetime(2026, 10, 23, 8, 0))])
 
-    def test_rendu_url_prend_un_instantane(self):
+    def test_rendu_url_sans_attendre_le_reseau(self):
         copie_id = self.cas().executer(soumission())
-        self.assertEqual(self.instantane.appels, ["https://github.com/a/p"])
         contenu = self.depot.contenus[copie_id]
-        self.assertEqual((contenu.texte, contenu.source_url, contenu.commit, contenu.soumission),
-                         ("contenu de https://github.com/a/p", "https://github.com/a/p", "abc123", "SUB1"))
-
-    def test_instantane_en_erreur_ne_bloque_pas(self):
-        copie_id = self.cas(instantane=InstantaneMemoire(RuntimeError("hors ligne"))).executer(soumission())
-        contenu = self.depot.contenus[copie_id]
-        self.assertEqual((contenu.texte, contenu.source_url, contenu.commit), ("", "https://github.com/a/p", ""))
+        self.assertEqual((contenu.texte, contenu.source_url, contenu.commit, contenu.soumission, contenu.instantane),
+                         ("", "https://github.com/a/p", "", "SUB1", EtatInstantane.EN_COURS))  # pris en tâche de fond
         self.assertEqual(self.depot.copie(copie_id).statut, Statut.RENDUE)
+
+    def test_accuse_de_depot_horodate_en_utc_et_empreinte(self):
+        copie_id = self.cas().executer(soumission())
+        contenu = self.depot.contenus[copie_id]
+        self.assertEqual((contenu.depose_le, contenu.signature),
+                         (UTC.replace(tzinfo=None), Contenu.signature_de(soumission())))
+        self.assertIn((copie_id, "a@x.ci", "accusé de dépôt", {},
+                       {"depose_le": "2026-10-20T07:00:00Z", "empreinte": contenu.signature, "algorithme": "SHA-256"}),
+                      self.journal)
+
+    def test_debit_de_rendus_par_heure(self):
+        uc = self.cas(reglages=ReglagesEvaluation(remise_par_heure=2))
+        self.depot.debit["a@x.ci"] = 1
+        v1 = uc.executer(soumission())
+        self.depot.debit["a@x.ci"] = 2
+        with self.assertRaisesRegex(RenduRefuse, "2 rendus par heure"):
+            uc.executer(soumission(answer="https://github.com/a/p2"))
+        self.assertEqual((list(self.depot.copies), self.depot.relectures_annulees), ([v1], []))
+        self.assertEqual(uc.executer(soumission(status="Pass")), v1)  # même rendu : rien à compter
 
     def test_rendu_texte_sans_instantane(self):
         copie_id = self.cas().executer(soumission(type="Text", answer="<p>ma réponse</p>"))
-        self.assertEqual(self.instantane.appels, [])
         contenu = self.depot.contenus[copie_id]
-        self.assertEqual((contenu.texte, contenu.source_url, contenu.commit), ("<p>ma réponse</p>", "", ""))
+        self.assertEqual((contenu.texte, contenu.source_url, contenu.commit, contenu.instantane),
+                         ("<p>ma réponse</p>", "", "", EtatInstantane.SANS))
 
     def test_rendu_fichier_garde_le_lien(self):
         copie_id = self.cas().executer(
             soumission(type="PDF", answer=None, assignment_attachment="/private/files/a.pdf"))
         contenu = self.depot.contenus[copie_id]
-        self.assertEqual((contenu.texte, contenu.source_url), ("", "/private/files/a.pdf"))
-        self.assertEqual(self.instantane.appels, [])
+        self.assertEqual((contenu.texte, contenu.source_url, contenu.instantane),
+                         ("", "/private/files/a.pdf", EtatInstantane.SANS))
 
     def test_exercice_sans_grille_ignore(self):
         self.assertIsNone(self.cas(DepotMemoire(exercice=None)).executer(soumission()))
@@ -153,7 +159,6 @@ class TestSoumettreCopie(unittest.TestCase):
         # correction par le formateur : seul le statut LMS change
         self.assertEqual(uc.executer(soumission(status="Pass")), premiere)
         self.assertEqual(len(self.depot.copies), 1)
-        self.assertEqual(self.instantane.appels, ["https://github.com/a/p"])
 
     def test_resoumission_cree_la_version_2(self):
         uc = self.cas()
@@ -238,7 +243,7 @@ class TestSoumettreCopie(unittest.TestCase):
         self.assertEqual(uc.executer(soumission(answer="https://github.com/a/p2")), v1)
         self.assertEqual(len(self.depot.copies), 1)
         self.assertEqual(self.depot.relectures_annulees, [])
-        self.assertEqual(self.journal[0][:3], (v1, "a@x.ci", "rendu après publication ignoré"))
+        self.assertEqual(self.journal[-1][:3], (v1, "a@x.ci", "rendu après publication ignoré"))
 
     def test_chaine_devenue_invalide_la_copie_part_avec_la_chaine_du_type(self):
         demarrees = []

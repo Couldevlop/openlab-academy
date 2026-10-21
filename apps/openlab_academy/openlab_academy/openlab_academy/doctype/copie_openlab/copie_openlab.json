@@ -30,7 +30,9 @@
   "signature",
   "contenu",
   "source_url",
-  "commit"
+  "commit",
+  "instantane",
+  "depose_le"
  ],
  "fields": [
   {
@@ -175,6 +177,21 @@
    "fieldname": "commit",
    "fieldtype": "Data",
    "label": "Commit"
+  },
+  {
+   "fieldname": "instantane",
+   "fieldtype": "Select",
+   "label": "Instantané du dépôt",
+   "options": "\nen_cours\npris\nindisponible",
+   "read_only": 1,
+   "description": "Rendu par lien : instantané pris en tâche de fond après le rendu."
+  },
+  {
+   "fieldname": "depose_le",
+   "fieldtype": "Datetime",
+   "label": "Déposée le (UTC)",
+   "read_only": 1,
+   "description": "Accusé de dépôt : horodatage UTC ; l'empreinte SHA-256 est la signature du rendu."
   }
  ],
  "permissions": [
@@ -196,7 +213,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-21 15:00:00",
+ "modified": "2026-10-21 17:00:00",
  "sort_field": "modified",
  "sort_order": "DESC"
 }

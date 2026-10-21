@@ -8,10 +8,10 @@ from collections.abc import Callable
 from typing import Protocol
 
 from openlab_academy.application.corriger import (
-    AccesRefuse, CorrectionRefusee, GENERAL, note_masquee, synthese, valider_niveaux)
+    Acces, AccesRefuse, CorrectionRefusee, GENERAL, note_masquee, synthese, valider_niveaux)
 from openlab_academy.application.pairs import DepotRelectures, Relecture, StatutRelecture
 from openlab_academy.application.soumettre_copie import Contenu, Exercice
-from openlab_academy.domain.copie import Copie, Proposition, Statut
+from openlab_academy.domain.copie import Copie, Etat, Proposition, Statut
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.reglages_evaluation import Chaine
 
@@ -75,6 +75,31 @@ class ConsulterRetour:
                 "pairs": [p.commentaires[c.code] for p in s.pairs if p.commentaires.get(c.code)]})
         return {**base, "note": note, "note_sur": note_sur, "reussite": reussite, "criteres": criteres,
                 "commentaire_general": commentaires.get(GENERAL, ""), "message": message}
+
+
+class DepotAccuses(Protocol):
+    def copie(self, copie_id: str) -> Copie: ...
+    def etat(self, copie_id: str) -> Etat: ...
+    def contenu(self, copie_id: str) -> Contenu: ...
+
+
+class ConsulterAccuseDepot:
+    """Accusé de dépôt d'une copie : horodatage UTC et empreinte SHA-256 de ce qui a été rendu. Réservé à
+    l'apprenant auteur et à ses correcteurs (titulaires, délégataires, super administrateur)."""
+
+    def __init__(self, depot: DepotAccuses, acces: Acces):
+        self._depot = depot
+        self._acces = acces
+
+    def executer(self, acteur: str, copie_id: str) -> dict:
+        copie = self._depot.copie(copie_id)
+        if acteur != copie.apprenant:
+            self._acces.correcteur(acteur, copie, self._depot.etat(copie_id))  # refus : AccesRefuse
+        contenu = self._depot.contenu(copie_id)
+        return {"copie": copie_id, "exercice": copie.exercice, "version": copie.version,
+                "depose_le": f"{contenu.depose_le:%Y-%m-%dT%H:%M:%S}Z" if contenu.depose_le else None,
+                "empreinte": contenu.signature, "algorithme": "SHA-256", "instantane": contenu.instantane.value,
+                "commit": contenu.commit}
 
 
 class DepotAutoEvaluation(Protocol):

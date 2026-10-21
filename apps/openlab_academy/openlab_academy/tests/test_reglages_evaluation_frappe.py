@@ -206,18 +206,19 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
 
     def test_limites_de_la_console(self):
         champs = {"ia_citation_min_caracteres": 5, "instantane_fichiers_max": 3, "instantane_delai_s": 4,
-                  "instantane_budget_s": 7, "instantane_budget_tache_s": 30}
+                  "instantane_budget_tache_s": 30, "remise_par_heure": 7, "remise_regroupement_s": 0}
         vider()
         source.initialiser()
         self.assertEqual({c: frappe.db.get_single_value(REGLAGES, c) for c in champs},
                          {"ia_citation_min_caracteres": 8, "instantane_fichiers_max": 12, "instantane_delai_s": 10,
-                          "instantane_budget_s": 20, "instantane_budget_tache_s": 60})
+                          "instantane_budget_tache_s": 60, "remise_par_heure": 20, "remise_regroupement_s": 30})
         doc = frappe.get_single(REGLAGES)
         doc.update(champs)
         doc.save(ignore_permissions=True)
         r = source.charger()
         self.assertEqual((r.ia.citation_min_caracteres, r.instantane_fichiers_max, r.instantane_delai_s,
-                          r.instantane_budget_s, r.instantane_budget_tache_s), (5, 3, 4, 7, 30))
+                          r.instantane_budget_tache_s, r.remise_par_heure, r.remise_regroupement_s),
+                         (5, 3, 4, 30, 7, 0))
         for champ in champs:  # site antérieur au réglage : champ vide, défaut du domaine puis complété
             frappe.db.sql("delete from `tabSingles` where doctype=%s and field=%s", (REGLAGES, champ))
         self.assertEqual(source.charger().instantane_budget_tache_s, 60)
@@ -226,7 +227,8 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         source.preparer()  # complète les champs absents, jamais une valeur réglée
         r = source.charger()
         self.assertEqual((r.ia.citation_min_caracteres, r.instantane_fichiers_max, r.instantane_delai_s,
-                          r.instantane_budget_s, r.instantane_budget_tache_s), (8, 12, 2, 20, 60))
+                          r.instantane_budget_tache_s, r.remise_par_heure, r.remise_regroupement_s),
+                         (8, 12, 2, 60, 20, 30))
 
     def test_resoumission_reglee_dans_la_console(self):
         vider()

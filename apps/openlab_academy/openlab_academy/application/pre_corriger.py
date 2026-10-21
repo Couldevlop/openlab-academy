@@ -12,7 +12,7 @@ from typing import Protocol
 from openlab_academy.application.chaine import SYSTEME, Journal
 from openlab_academy.application.controler import (
     Avanceur, DepotControles, EtapeIndisponible, consigner_indisponibilite)
-from openlab_academy.domain.copie import Proposition
+from openlab_academy.domain.copie import EtatInstantane, Proposition
 from openlab_academy.domain.garde_fous_ia import construire_messages, detecter_injection, estimer_jetons, interpreter
 from openlab_academy.domain.reglages_evaluation import RESERVE_REPONSE_JETONS, Etape, ReglagesEvaluation
 
@@ -40,6 +40,8 @@ class PreCorriger:
 
     def executer(self, copie_id: str) -> None:
         try:
+            if self._depot.contenu(copie_id).instantane == EtatInstantane.EN_COURS:
+                return  # la tâche de l'instantané relance la pré-correction, sinon son échéance la fait passer
             action, details, proposition = self._proposer(copie_id)
         except Exception as erreur:  # rien ne bloque : l'étape est marquée non disponible
             consigner_indisponibilite(self._avancer, self._journal, copie_id, Etape.IA,

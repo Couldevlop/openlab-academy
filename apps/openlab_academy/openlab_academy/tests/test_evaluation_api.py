@@ -253,6 +253,21 @@ class TestCorrecteur(CasApi):
 
 
 class TestApprenant(CasApi):
+    def test_accuse_de_depot_pour_l_auteur_et_ses_correcteurs(self):
+        (copie,) = self.a_corriger(A)
+        self.en_tant_que(A)
+        accuse = api.accuse_depot(copie)
+        self.assertRegex(accuse["depose_le"], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
+        self.assertEqual((accuse["empreinte"], accuse["algorithme"]),
+                         (frappe.db.get_value("Copie OpenLab", copie, "signature"), "SHA-256"))
+        self.en_tant_que(FORM)
+        self.assertEqual(api.accuse_depot(copie), accuse)
+        for qui in (B, AUTRE):
+            self.en_tant_que(qui)
+            for cible in (copie, "inexistante"):
+                with self.subTest(qui=qui, cible=cible), self.assertRaises(frappe.PermissionError):
+                    api.accuse_depot(cible)
+
     def test_mon_retour_d_autrui_ou_inexistant_403(self):
         (copie,) = self.a_corriger(A)
         self.en_tant_que(B)
@@ -500,6 +515,7 @@ class TestGardes(CasApi):
         "mon_auto_evaluation": ("E",), "enregistrer_auto_evaluation": ("E", "{}"), "mon_retour": ("C",),
         "file_correction": (), "copie_a_corriger": ("C",), "corriger": ("C", "{}"), "valider_lot": ("[]",),
         "publier": ("C",), "deleguer": ("D", "2026-01-01", "2026-01-02"), "revoquer": ("D",), "fiabilite_ia": (),
+        "accuse_depot": ("C",),
     }
 
     def test_visiteur_refuse_partout(self):
@@ -535,10 +551,10 @@ class TestGardes(CasApi):
                         pass
                 frappe.local.message_log = []
         self.assertEqual(set(api.LIMITES), set(self.APPELS))  # lectures comprises
-        self.assertEqual(requete.method, "GET")  # dernier point : fiabilite_ia, une lecture
+        self.assertEqual(requete.method, "GET")  # dernier point : accuse_depot, une lecture
 
     LECTURES = {"mes_relectures", "relecture", "mon_auto_evaluation", "mon_retour", "file_correction",
-                "copie_a_corriger", "fiabilite_ia"}
+                "copie_a_corriger", "fiabilite_ia", "accuse_depot"}
 
     def test_lectures_en_get_seulement(self):
         """La liste des lectures du test de débit suit les méthodes déclarées par chaque point."""

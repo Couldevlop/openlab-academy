@@ -8,7 +8,8 @@ from frappe.utils import get_datetime
 
 from openlab_academy.application.pre_corriger import SIGNALEMENT
 from openlab_academy.application.soumettre_copie import Contenu, Exercice
-from openlab_academy.domain.copie import Copie, CopieVerrouillee, Etat, Proposition, Source, Statut
+from openlab_academy.domain.copie import (
+    Copie, CopieVerrouillee, Etat, EtatInstantane, Proposition, Source, Statut)
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.reglages_evaluation import Chaine, TypeExercice
 
@@ -148,17 +149,30 @@ class DepotCopiesFrappe:
             "exercice": copie.exercice, "cohorte": copie.cohorte, "type_exercice": copie.type_.value,
             "version": copie.version, "statut": copie.statut.value, "grille_json": _json(grille.vers_dict()),
             "empreinte": grille.empreinte(), "signature": contenu.signature, "contenu": contenu.texte,
-            "source_url": contenu.source_url, "commit": contenu.commit,
+            "source_url": contenu.source_url, "commit": contenu.commit, "instantane": contenu.instantane.value,
+            "depose_le": contenu.depose_le,
         }).insert(ignore_permissions=True).name
 
     def contenu(self, copie_id: str) -> Contenu:
-        ligne = frappe.db.get_value(COPIE, copie_id, ["contenu", "source_url", "commit", "signature", "soumission"],
-                                    as_dict=True)
+        ligne = frappe.db.get_value(COPIE, copie_id, ["contenu", "source_url", "commit", "signature", "soumission",
+                                                      "instantane", "depose_le"], as_dict=True)
         return Contenu(ligne.contenu or "", ligne.source_url or "", ligne.commit or "", ligne.signature or "",
-                       ligne.soumission or "")
+                       ligne.soumission or "", EtatInstantane(ligne.instantane or ""),
+                       get_datetime(ligne.depose_le) if ligne.depose_le else None)
 
-    def completer_contenu(self, copie_id: str, texte: str, commit: str) -> None:
-        frappe.db.set_value(COPIE, copie_id, {"contenu": texte, "commit": commit})
+    def completer_contenu(self, copie_id: str, texte: str, commit: str, instantane: EtatInstantane) -> None:
+        frappe.db.set_value(COPIE, copie_id, {"contenu": texte, "commit": commit, "instantane": instantane.value})
+
+    def rendus_depuis(self, apprenant: str, depuis) -> int:
+        """Copies créées pour l'apprenant depuis cette date (heure du site) : débit de rendus."""
+        return frappe.db.count(COPIE, {"apprenant": apprenant, "creation": [">=", depuis]})
+
+    def instantanes_en_attente(self, avant) -> list[str]:
+        """Dépôts à photographier, déposés au plus tard à cette date (UTC) ; une version remplacée ne l'est
+        jamais : de rendus rapprochés, seul le dernier est photographié."""
+        filtres = {"instantane": EtatInstantane.EN_COURS.value, "statut": ["!=", Statut.REMPLACEE.value],
+                   "depose_le": ["<=", avant]}
+        return frappe.get_all(COPIE, filtres, pluck="name", order_by="depose_le")
 
     def cours(self, exercice: str) -> str | None:
         return frappe.db.get_value("LMS Assignment", exercice, "course")

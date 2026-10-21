@@ -6,7 +6,7 @@ from openlab_academy.application.chaine import SYSTEME
 from openlab_academy.application.controler import EtapeIndisponible
 from openlab_academy.application.pre_corriger import SIGNALEMENT, PreCorriger
 from openlab_academy.application.soumettre_copie import Contenu
-from openlab_academy.domain.copie import Source, Statut
+from openlab_academy.domain.copie import EtatInstantane, Source, Statut
 from openlab_academy.domain.garde_fous_ia import AUTEUR_IA
 from openlab_academy.domain.reglages_evaluation import RESERVE_REPONSE_JETONS, ConfigIA, Etape, ReglagesEvaluation
 from openlab_academy.tests.test_chaine import Cas, chaine
@@ -65,6 +65,14 @@ class TestPreCorriger(Cas):
                 self.preparer(ia=replace(IA, citation_min_caracteres=minimum))
                 self.corriger(Correcteur(reponse(citation="stock")))
                 self.assertEqual("pertinence" in self.props_ia()[0].niveaux, retenue)
+
+    def test_instantane_en_cours_la_pre_correction_attend(self):
+        self.preparer(url="https://github.com/aya/livrable")
+        self.m.contenus[self.a] = replace(self.m.contenus[self.a], instantane=EtatInstantane.EN_COURS)
+        correcteur = Correcteur()
+        self.corriger(correcteur)
+        self.assertEqual((correcteur.appels, self.props_ia()), ([], []))
+        self.assertNotIn("pré-correction non disponible", [j[2] for j in self.journal])
 
     def test_modele_code_pour_un_rendu_en_url(self):
         self.preparer(url="https://github.com/aya/livrable")
