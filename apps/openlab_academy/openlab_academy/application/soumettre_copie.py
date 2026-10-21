@@ -13,6 +13,8 @@ from openlab_academy.domain.copie import (
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.reglages_evaluation import Chaine, ReglagesEvaluation, Surcharge, TypeExercice
 
+SYSTEME = "systeme"
+
 
 @dataclass(frozen=True)
 class Exercice:
@@ -98,7 +100,9 @@ class SoumettreCopie:
             return courante.id
         # tout ce qui peut échouer est calculé avant la première écriture
         cohorte = self._depot.cohorte(apprenant, assignment)
-        chaine = self._reglages.chaine_pour(exercice.type_, cohorte, assignment, self._surcharges(), exercice.chaine)
+        # une surcharge ou un YAML devenus invalides ne bloquent pas le rendu : la chaîne du type s'applique
+        chaine, repli = self._reglages.chaine_effective(exercice.type_, cohorte, assignment, self._surcharges(),
+                                                        exercice.chaine)
         etape = etape_suivante(chaine, None)
         echeance = self._horloge() + timedelta(hours=chaine.config(etape).delai_heures)
         if courante is not None:
@@ -107,6 +111,9 @@ class SoumettreCopie:
                       1 if courante is None else courante.version + 1, Statut.RENDUE)
         copie_id = self._depot.creer(copie, exercice.grille, self._contenu(soumission, signature))
         self._depot.changer_statut(copie_id, Statut.RENDUE, etape.value, echeance)
+        if repli:
+            self._journal(copie_id, SYSTEME, "chaîne invalide : chaîne du type appliquée", {},
+                          {"type_exercice": exercice.type_.value})
         niveaux = self._depot.auto_evaluation(apprenant, assignment)
         if niveaux is not None:
             self._depot.ajouter_proposition(copie_id, Proposition(Source.AUTO_EVALUATION, apprenant, niveaux))

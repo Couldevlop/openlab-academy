@@ -34,7 +34,8 @@ def _chaine(params, lignes) -> Chaine:
     return Chaine(tuple(_config(ligne) for ligne in lignes), nb_pairs=int(params.nb_pairs or 0),
                   anonymat=bool(params.anonymat),
                   note_masquee_avant_relectures=bool(params.note_masquee_avant_relectures),
-                  note_sur=int(params.note_sur or 0), seuil_reussite=float(params.seuil_reussite or 0))
+                  note_sur=int(params.note_sur or 0), seuil_reussite=float(params.seuil_reussite or 0),
+                  attente_max_heures=int(params.attente_max_heures or 0))
 
 
 def vers_domaine(doc) -> ReglagesEvaluation:
@@ -63,7 +64,9 @@ def vers_domaine(doc) -> ReglagesEvaluation:
 
 
 def surcharge_vers_domaine(doc) -> Surcharge:
-    return Surcharge(doc.cohorte or None, doc.exercice or None, _chaine(doc, doc.etapes), doc.suppleant or None)
+    """Une surcharge sans étapes ne porte qu'un suppléant : la chaîne de la cible reste celle du YAML ou du type."""
+    chaine = _chaine(doc, doc.etapes) if doc.etapes else None
+    return Surcharge(doc.cohorte or None, doc.exercice or None, chaine, doc.suppleant or None)
 
 
 def charger() -> ReglagesEvaluation:
@@ -124,7 +127,8 @@ def jeton_depots() -> str:
 def _remplir_parametres(doc) -> None:
     doc.set("parametres", [{"type_exercice": type_.value, "nb_pairs": ch.nb_pairs, "anonymat": ch.anonymat,
                             "note_masquee_avant_relectures": ch.note_masquee_avant_relectures,
-                            "note_sur": ch.note_sur, "seuil_reussite": ch.seuil_reussite}
+                            "note_sur": ch.note_sur, "seuil_reussite": ch.seuil_reussite,
+                            "attente_max_heures": ch.attente_max_heures}
                            for type_, ch in CHAINES_DEFAUT.items()])
 
 

@@ -96,10 +96,11 @@ class TestReglagesEvaluationFrappe(FrappeTestCase):
         doc = frappe.get_single(REGLAGES)
         for ligne in doc.parametres:
             if ligne.type_exercice == "projet":
-                ligne.update({"note_sur": 10, "seuil_reussite": 5, "anonymat": 0})
+                ligne.update({"note_sur": 10, "seuil_reussite": 5, "anonymat": 0, "attente_max_heures": 24})
         doc.save(ignore_permissions=True)
         chaines = source.charger().chaines
         self.assertEqual((chaines[TypeExercice.PROJET].note_sur, chaines[TypeExercice.PROJET].anonymat), (10, False))
+        self.assertEqual(chaines[TypeExercice.PROJET].attente_max_heures, 24)
         self.assertEqual(chaines[TypeExercice.LIVRABLE], CHAINES_DEFAUT[TypeExercice.LIVRABLE])
 
     def test_reglages_non_chaine_charges_meme_sans_etapes(self):
@@ -310,6 +311,31 @@ class TestSurcharges(FrappeTestCase):
         doc.etapes[0].delai_heures = -1
         with self.assertRaisesRegex(frappe.ValidationError, "délai négatif"):
             doc.insert()
+
+    def test_suppleant_seul_sans_chaine(self):
+        lot = un_lot()
+        frappe.get_doc({"doctype": SURCHARGE, "cohorte": lot, "suppleant": "Administrator"}).insert()
+        (s,) = source.surcharges()
+        self.assertEqual((s.cohorte, s.chaine, s.suppleant), (lot, None, "Administrator"))
+        self.assertEqual(source.charger().chaine_pour(TypeExercice.CAPSTONE, lot, un_devoir(), (s,), None),
+                         CHAINES_DEFAUT[TypeExercice.CAPSTONE])  # le jury du capstone reste en place
+
+    def test_ni_chaine_ni_suppleant_refuse(self):
+        with self.assertRaisesRegex(frappe.ValidationError, "chaîne ou un suppléant"):
+            frappe.get_doc({"doctype": SURCHARGE, "cohorte": un_lot()}).insert()
+
+    def test_suppleant_d_un_exercice_refuse(self):
+        with self.assertRaisesRegex(frappe.ValidationError, "suppléant"):
+            self._surcharge(exercice=un_devoir(), suppleant="Administrator").insert()
+
+    def test_attente_maximale_des_relectures(self):
+        self._surcharge(cohorte=un_lot(), attente_max_heures=0).insert()
+        (s,) = source.surcharges()
+        self.assertEqual(s.chaine.attente_max_heures, 0)
+        self._surcharge(exercice=un_devoir()).insert()
+        self.assertEqual(next(x for x in source.surcharges() if x.exercice).chaine.attente_max_heures, 72)
+        with self.assertRaisesRegex(frappe.ValidationError, "attente_max_heures"):
+            self._surcharge(exercice=un_devoir(), cohorte=un_lot(), attente_max_heures=-1).insert()
 
 
 class TestDelegations(FrappeTestCase):

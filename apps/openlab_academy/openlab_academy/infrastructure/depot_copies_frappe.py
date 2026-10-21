@@ -74,12 +74,12 @@ def supprimer_grilles_sans_copie(exercices: list[str]) -> None:
 
 
 CHAMPS_COPIE = ["name", "apprenant", "exercice", "cohorte", "type_exercice", "version", "statut"]
-CHAMPS_ETAT = ["etape_courante", "echeance", "escalade_a"]
+CHAMPS_ETAT = ["etape_courante", "echeance", "escalade_a", "butoir"]
 
 
 def _etat(ligne) -> Etat:
     return Etat(ligne.etape_courante or "", get_datetime(ligne.echeance) if ligne.echeance else None,
-                ligne.escalade_a or "")
+                ligne.escalade_a or "", get_datetime(ligne.butoir) if ligne.butoir else None)
 
 
 def _copie(doc) -> Copie:
@@ -203,6 +203,9 @@ class DepotCopiesFrappe:
 
     def escalader(self, copie_id: str, destinataire: str, echeance) -> None:
         frappe.db.set_value(COPIE, copie_id, {"escalade_a": destinataire, "echeance": echeance})
+
+    def fixer_butoir(self, copie_id: str, butoir) -> None:
+        frappe.db.set_value(COPIE, copie_id, "butoir", butoir)
 
     def titulaires(self, copie_id: str) -> set[str]:
         """Formateurs de la cohorte, sinon du cours, sinon le formateur des réglages OpenLab Academy."""

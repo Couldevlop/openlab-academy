@@ -58,10 +58,15 @@ class Chaine:
     note_masquee_avant_relectures: bool = True
     note_sur: int = 20
     seuil_reussite: float = 10.0
+    # prolongation maximale de l'étape des pairs pour attendre des relectures rappelées ou réattribuées : passé ce
+    # butoir, la copie avance avec les relectures obtenues (défaut : un rappel, soit le délai des pairs par défaut)
+    attente_max_heures: int = 72
 
     def __post_init__(self):
         if self.nb_pairs < 0:
             raise ReglagesInvalides("nb_pairs ne peut pas être négatif")
+        if self.attente_max_heures < 0:
+            raise ReglagesInvalides("attente_max_heures ne peut pas être négative")
         if self.note_sur <= 0:
             raise ReglagesInvalides("note_sur doit être positif")
         if not 0 <= self.seuil_reussite <= self.note_sur:
@@ -77,7 +82,8 @@ class Chaine:
                             "expiration": c.expiration.value} for c in self.etapes],
                 "nb_pairs": self.nb_pairs, "anonymat": self.anonymat,
                 "note_masquee_avant_relectures": self.note_masquee_avant_relectures,
-                "note_sur": self.note_sur, "seuil_reussite": self.seuil_reussite}
+                "note_sur": self.note_sur, "seuil_reussite": self.seuil_reussite,
+                "attente_max_heures": self.attente_max_heures}
 
     @classmethod
     def depuis_dict(cls, donnees) -> "Chaine":
@@ -97,7 +103,7 @@ class Chaine:
                 raise ReglagesInvalides(
                     f"etapes[{i}] invalide : etape, active, delai_heures et expiration attendus ({e})") from None
         options = {c: donnees[c] for c in ("nb_pairs", "anonymat", "note_masquee_avant_relectures", "note_sur",
-                                           "seuil_reussite") if c in donnees}
+                                           "seuil_reussite", "attente_max_heures") if c in donnees}
         return cls(tuple(configs.get(e) or ConfigEtape(e, False, 0, Expiration.PASSER) for e in Etape), **options)
 
     def active(self, etape: Etape) -> bool:
@@ -158,14 +164,22 @@ CHAINES_DEFAUT: dict[TypeExercice, Chaine] = chaines_defaut()
 
 @dataclass(frozen=True)
 class Surcharge:
+    """Réglage ciblé : une chaîne propre, ou seulement un suppléant (la chaîne de la cible reste celle du YAML ou
+    du type d'exercice). Le suppléant se règle par cohorte."""
+
     cohorte: str | None
     exercice: str | None
-    chaine: Chaine
+    chaine: Chaine | None
     suppleant: str | None = None  # remplaçant du formateur échu, avant le responsable pédagogique
 
     def __post_init__(self):
         if self.cohorte is None and self.exercice is None:
             raise ReglagesInvalides("une surcharge doit viser une cohorte ou un exercice")
+        if self.chaine is None and not self.suppleant:
+            raise ReglagesInvalides("une surcharge porte une chaîne ou un suppléant")
+        if self.exercice is not None and self.suppleant:
+            raise ReglagesInvalides("le suppléant du formateur se règle sur la surcharge d'une cohorte, "
+                                    "pas d'un exercice")
 
 
 @dataclass(frozen=True)
@@ -201,13 +215,27 @@ class ReglagesEvaluation:
         """Priorité : surcharge exercice > surcharge cohorte > YAML > type d'exercice > défauts du code."""
         return self._verifier_publication(self._choisir(type_, cohorte, exercice, surcharges, yaml), type_)
 
+    def chaine_effective(self, type_: TypeExercice, cohorte: str | None, exercice: str | None,
+                         surcharges: tuple[Surcharge, ...], yaml: Chaine | None) -> tuple[Chaine, bool]:
+        """Chaîne à appliquer, et vrai si la chaîne choisie était devenue invalide (par exemple une surcharge
+        enregistrée avant la désactivation de la publication provisoire) : rien ne bloque, la chaîne du type
+        s'applique."""
+        try:
+            return self.chaine_pour(type_, cohorte, exercice, surcharges, yaml), False
+        except ReglagesInvalides:
+            return self.chaine_du_type(type_), True
+
+    def chaine_du_type(self, type_: TypeExercice) -> Chaine:
+        return self.chaines.get(type_) or CHAINES_DEFAUT[type_]
+
     def _choisir(self, type_, cohorte, exercice, surcharges, yaml) -> Chaine:
-        for s in surcharges:
+        avec_chaine = [s for s in surcharges if s.chaine is not None]  # un suppléant seul ne remplace rien
+        for s in avec_chaine:
             if s.exercice is not None and s.exercice == exercice and s.cohorte in (None, cohorte):
                 return s.chaine
-        for s in surcharges:
+        for s in avec_chaine:
             if s.exercice is None and s.cohorte == cohorte:
                 return s.chaine
         if yaml is not None:
             return yaml
-        return self.chaines.get(type_) or CHAINES_DEFAUT[type_]
+        return self.chaine_du_type(type_)

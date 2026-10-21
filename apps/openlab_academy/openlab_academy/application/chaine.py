@@ -14,13 +14,13 @@ from openlab_academy.application.soumettre_copie import DepotCopies
 from openlab_academy.domain.copie import Copie, Etat, Statut, etape_suivante, nb_pairs_possible
 from openlab_academy.domain.echeances import escalade
 from openlab_academy.domain.grille import Grille
-from openlab_academy.domain.reglages import ReglagesInvalides
-from openlab_academy.domain.reglages_evaluation import (
-    CHAINES_DEFAUT, Chaine, Etape, Expiration, ReglagesEvaluation, Surcharge)
+from openlab_academy.domain.reglages_evaluation import Chaine, Etape, Expiration, ReglagesEvaluation, Surcharge
 
 SYSTEME = "systeme"
 TACHES = {Etape.CONTROLES: "controler", Etape.IA: "pre_corriger"}
 TERMINEES = (Statut.RENVOYEE, Statut.PROVISOIRE, Statut.PUBLIEE)
+LIEN_CORRECTEUR = "/espace/correcteur/{}"
+LIEN_RETOUR = "/espace/retour/{}"
 
 
 class DepotChaine(DepotCopies, Protocol):
@@ -28,7 +28,9 @@ class DepotChaine(DepotCopies, Protocol):
     def grille(self, copie_id: str) -> Grille: ...
     def copies_echues(self, maintenant: datetime) -> list[str]: ...
     def escalader(self, copie_id: str, destinataire: str, echeance: datetime) -> None: ...
+    def fixer_butoir(self, copie_id: str, butoir: datetime | None) -> None: ...
     def titulaires(self, copie_id: str) -> set[str]: ...
+    def jures(self, copie_id: str) -> set[str]: ...
 
 
 class SourceReglages(Protocol):
@@ -41,13 +43,10 @@ Journal = Callable[[str, str, str, dict, dict], None]
 
 def chaine_de(copie: Copie, depot: DepotCopies, source: SourceReglages) -> Chaine:
     """Chaîne effective de la copie ; une surcharge devenue dangereuse ne bloque pas : la chaîne du type s'applique."""
-    reglages = source.reglages()
     exercice = depot.exercice(copie.exercice)
-    try:
-        return reglages.chaine_pour(copie.type_, copie.cohorte or None, copie.exercice, source.surcharges(),
-                                    exercice.chaine if exercice else None)
-    except ReglagesInvalides:
-        return reglages.chaines.get(copie.type_) or CHAINES_DEFAUT[copie.type_]
+    chaine, _ = source.reglages().chaine_effective(copie.type_, copie.cohorte or None, copie.exercice,
+                                                   source.surcharges(), exercice.chaine if exercice else None)
+    return chaine
 
 
 def suppleant_de(copie: Copie, surcharges: tuple[Surcharge, ...]) -> str | None:
@@ -123,11 +122,17 @@ class FaireAvancer:
             self._journal(copie.id, SYSTEME, "pairs sautés", {}, {"cohorte": copie.cohorte})
             self._entrer(copie, quittee, etape_suivante(chaine, etape), chaine)
             return
+        if etape == Etape.JURY and not self._depot.jures(copie.id):  # personne à attendre
+            self._journal(copie.id, SYSTEME, "jury sauté", {}, {"cohorte": copie.cohorte})
+            self._entrer(copie, quittee, etape_suivante(chaine, etape), chaine)
+            return
         statut = _statut(copie.statut, quittee, etape)
         if statut != copie.statut:
             copie = copie.passer_a(statut)
-        delai = chaine.config(etape).delai_heures
-        self._depot.changer_statut(copie.id, copie.statut, etape.value, self._horloge() + timedelta(hours=delai))
+        delai, maintenant = chaine.config(etape).delai_heures, self._horloge()
+        self._depot.changer_statut(copie.id, copie.statut, etape.value, maintenant + timedelta(hours=delai))
+        if etape == Etape.PAIRS:  # au-delà du butoir, plus aucune relecture n'est attendue : la copie avance
+            self._depot.fixer_butoir(copie.id, maintenant + timedelta(hours=delai + chaine.attente_max_heures))
         self._journal(copie.id, SYSTEME, "étape suivante", {"etape": quittee.value if quittee else ""},
                       {"etape": etape.value})
         if etape in TACHES:
@@ -162,13 +167,16 @@ class TraiterEcheances:
 
     # --- relecture échue : rappel, puis réattribuée ou annulée, le relecteur en retard étant dispensé ---
     def _relecture(self, r: Relecture, maintenant: datetime) -> None:
-        copie = self._depot.verrouiller(r.copie).copie  # copie puis relecture : ordre unique des verrous
+        """Ni le rappel ni la réattribution ne dépassent le butoir de la copie."""
+        v = self._depot.verrouiller(r.copie)  # copie puis relecture : ordre unique des verrous
+        copie, butoir = v.copie, v.etat.butoir or maintenant  # sans butoir enregistré : aucune prolongation
         r = self._relectures.verrouiller_relecture(r.id)
         if r.statut != StatutRelecture.A_FAIRE or r.echeance is None or r.echeance > maintenant:
             return  # relue ou déjà traitée entre-temps
         config = self._avancer.chaine(copie).config(Etape.PAIRS)
-        if not r.rappelee:
-            echeance = maintenant + timedelta(hours=config.delai_heures)
+        prolongee = maintenant + timedelta(hours=config.delai_heures)
+        if not r.rappelee and butoir > maintenant:
+            echeance = min(prolongee, butoir)
             self._relectures.rappeler(r.id, echeance)
             self._notifier(r.relecteur, f"Rappel : une relecture vous attend, à rendre avant le "
                                         f"{echeance:%d/%m/%Y à %H:%M}. Passé ce délai, elle sera retirée.")
@@ -176,7 +184,7 @@ class TraiterEcheances:
                           {"echeance": echeance})
             return
         nouveau = None
-        if config.expiration == Expiration.REATTRIBUER:
+        if config.expiration == Expiration.REATTRIBUER and prolongee <= butoir:
             rendues = self._relectures.copies_rendues(copie.exercice, copie.cohorte)
             nouveau = AttribuerPairs(self._relectures, self._horloge).reattribuer(copie, rendues, config.delai_heures)
         if nouveau:
@@ -220,13 +228,15 @@ class TraiterEcheances:
 
     def _attendre_relectures(self, copie: Copie, etat: Etat, maintenant: datetime) -> bool:
         """Quelle que soit l'action réglée, une relecture rappelée ou réattribuée encore dans son délai est
-        attendue ; une relecture restée en retard est retirée et son relecteur dispensé."""
+        attendue, jamais au-delà du butoir réglé dans la console ; passé ce butoir, ou pour une relecture restée
+        en retard, la relecture est retirée et son relecteur dispensé."""
         en_cours = [r for r in self._relectures.relectures_copie(copie.id) if r.statut == StatutRelecture.A_FAIRE]
         attente = [r.echeance for r in en_cours if r.echeance and r.echeance > maintenant]
-        if attente:
-            self._depot.changer_statut(copie.id, copie.statut, Etape.PAIRS.value, max(attente))
+        if attente and etat.butoir and etat.butoir > maintenant:
+            echeance = min(max(attente), etat.butoir)
+            self._depot.changer_statut(copie.id, copie.statut, Etape.PAIRS.value, echeance)
             self._journal(copie.id, SYSTEME, "attente des relectures", {"echeance": etat.echeance},
-                          {"echeance": max(attente)})
+                          {"echeance": echeance})
             return True
         for r in en_cours:
             self._relectures.changer_statut_relecture(r.id, StatutRelecture.ANNULEE)
@@ -247,16 +257,23 @@ class TraiterEcheances:
         else:
             suivant = responsable if etat.escalade_a != responsable else ""
             avant = [etat.escalade_a]
+        lien = LIEN_CORRECTEUR.format(copie.id)
         if suivant:
             self._depot.escalader(copie.id, suivant, maintenant + timedelta(hours=delai))
             self._journal(copie.id, SYSTEME, "escalader", {"correcteurs": avant}, {"correcteurs": [suivant]})
+            self._notifier(suivant, f"Une copie vous est confiée (formateur en retard) : {lien}")
         elif reglages.publication_provisoire:
             self._provisoire(copie)
-        else:
+        else:  # plus d'échéance : prévenus une seule fois, la copie attend qu'un humain publie
             self._depot.changer_statut(copie.id, copie.statut, Etape.FORMATEUR.value, None)
             self._journal(copie.id, SYSTEME, "escalade épuisée", {"correcteurs": avant}, {"correcteurs": avant})
+            for destinataire in sorted((self._depot.titulaires(copie.id) | set(avant) | {responsable}) - {""}):
+                self._notifier(destinataire, f"Copie en attente de correction, sans autre recours : {lien}")
 
     def _provisoire(self, copie: Copie) -> None:
         self._depot.changer_statut(copie.id, copie.passer_a(Statut.PROVISOIRE).statut, Etape.FORMATEUR.value, None)
         self._journal(copie.id, SYSTEME, "publication provisoire", {"statut": copie.statut.value},
                       {"statut": Statut.PROVISOIRE.value})
+        lien = LIEN_RETOUR.format(copie.id)
+        self._notifier(copie.apprenant, f"Votre exercice {copie.exercice} a une note provisoire, en attente de "
+                                        f"validation par le formateur. Retour détaillé : {lien}")

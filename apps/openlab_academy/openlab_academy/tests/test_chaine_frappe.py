@@ -82,6 +82,22 @@ class TestDemarrage(Cas):
         self.assertEqual((ligne.statut, ligne.etape_courante), ("rendue", "auto_evaluation"))
         self.assertIsNotNone(ligne.echeance)  # l'échéance horaire la fera avancer
 
+    def test_surcharge_devenue_invalide_la_copie_est_creee(self):
+        reglages = frappe.get_single("Reglages Evaluation OpenLab")
+        reglages.publication_provisoire = 1
+        reglages.save(ignore_permissions=True)
+        frappe.get_doc({"doctype": "Surcharge Evaluation OpenLab", "exercice": self.livrable,
+                        "etapes": etapes_formateur(expiration="publier_provisoire")}).insert()
+        reglages = frappe.get_single("Reglages Evaluation OpenLab")
+        reglages.publication_provisoire = 0  # la surcharge enregistrée devient dangereuse
+        reglages.save(ignore_permissions=True)
+        with mock.patch.object(evaluation.frappe, "log_error") as consigne:
+            self.soumettre(self.livrable)
+        consigne.assert_not_called()
+        copie = self.copie_de()
+        self.assertEqual(self.ligne(copie).etape_courante, "controles")  # chaîne du type livrable
+        self.assertIn("chaîne invalide : chaîne du type appliquée", self.actions(copie))
+
     def test_tache_inconnue_refusee(self):
         with self.assertRaisesRegex(ValueError, "tâche inconnue"):
             evaluation.file("supprimer", "C1")
@@ -229,6 +245,8 @@ class TestPairsFrappe(Cas):
         relectures = self.relectures.relectures(self.livrable, self.cohorte)
         self.assertEqual({(r.copie, r.relecteur) for r in relectures}, {(self.a, B), (self.b, A)})
         self.assertEqual(self.ligne(self.a).statut, "en_relecture")
+        etat = self.depot.etat(self.a)
+        self.assertEqual(etat.butoir, etat.echeance + datetime.timedelta(hours=72))  # un rappel au plus
         b_relit_a = next(r for r in relectures if r.copie == self.a)
         self.assertEqual(self.relectures.relecture(b_relit_a.id), b_relit_a)
         self.assertIsNone(self.relectures.relecture("inexistante"))
@@ -432,3 +450,16 @@ class TestDepotChaineFrappe(Cas):
         (entree,) = frappe.get_all(JOURNAL, {"copie": copie, "action": "escalader"}, ["acteur", "avant", "apres"])
         self.assertEqual(entree.acteur, SYSTEME)
         self.assertIn("Administrator", entree.avant)
+        (sujet,) = frappe.get_all("Notification Log", {"for_user": B, "subject": ["like", "Une copie vous est%"]},
+                                  pluck="subject")
+        self.assertIn(f"/espace/correcteur/{copie}", sujet)
+
+    def test_suppleant_seul_de_la_cohorte_sans_toucher_la_chaine(self):
+        lot = self.lot("Administrator", A)
+        frappe.get_doc({"doctype": "Surcharge Evaluation OpenLab", "cohorte": lot, "suppleant": B}).insert()
+        self.soumettre(self.livrable)
+        copie = self.copie_de()
+        self.assertEqual(self.ligne(copie).etape_courante, "controles")  # chaîne du livrable inchangée
+        self.depot.changer_statut(copie, Statut.A_CORRIGER, "formateur", now_datetime() - datetime.timedelta(minutes=1))
+        evaluation.traiter_echeances()
+        self.assertEqual(self.ligne(copie).escalade_a, B)

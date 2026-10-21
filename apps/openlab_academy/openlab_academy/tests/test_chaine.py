@@ -48,6 +48,9 @@ class Cas(unittest.TestCase):
     def actions(self, acteur=SYSTEME):
         return [j[2] for j in self.journal if j[1] == acteur]
 
+    def rappels(self):
+        return [n for n in self.notes if n[1].startswith("Rappel")]
+
     def avancer_horloge(self, heures):
         self.t += timedelta(hours=heures)
         self.echeances.executer()
@@ -101,6 +104,7 @@ class TestFaireAvancer(Cas):
 
     def test_controles_puis_formateur(self):
         self.monter(type_=TypeExercice.MISE_EN_SITUATION, yaml=chaine(Etape.CONTROLES, Etape.JURY, Etape.FORMATEUR))
+        self.m.jures_ = {"jure@x.ci"}
         a = self.rendre("a@x.ci")
         self.avancer.executer(a)
         self.assertEqual(self.etape(a), ("jury", Statut.A_CORRIGER))
@@ -135,6 +139,15 @@ class TestFaireAvancer(Cas):
         self.assertEqual(self.etape(a), ("formateur", Statut.A_CORRIGER))
         self.assertIn("pairs sautés", self.actions())
         self.assertEqual(self.m.rel, {})
+
+    def test_capstone_sans_jure_va_droit_au_formateur(self):
+        self.monter(type_=TypeExercice.CAPSTONE)
+        a = self.rendre("a@x.ci")
+        self.avancer.executer(a, Etape.CONTROLES)
+        self.avancer.executer(a, Etape.IA)
+        self.assertEqual(self.etape(a), ("formateur", Statut.A_CORRIGER))
+        self.assertEqual(self.m.etat(a).echeance, self.t + timedelta(hours=72))
+        self.assertIn("jury sauté", self.actions())
 
     def test_sans_cohorte_pairs_sautes(self):
         self.monter(yaml=chaine(Etape.PAIRS, Etape.FORMATEUR))
@@ -218,15 +231,20 @@ class TestFaireAvancer(Cas):
 
     def test_suppleant_de_la_cohorte(self):
         copie = _copie_type(Memoire(), "COH1")
-        surcharges = (Surcharge(None, "EX1", LIVRABLE, suppleant="x@x.ci"), Surcharge("COH2", None, LIVRABLE, "y@x.ci"),
-                      Surcharge("COH1", None, LIVRABLE), Surcharge("COH1", None, LIVRABLE, "sup@x.ci"))
+        surcharges = (Surcharge(None, "EX1", LIVRABLE), Surcharge("COH2", None, LIVRABLE, "y@x.ci"),
+                      Surcharge("COH1", None, LIVRABLE), Surcharge("COH1", None, None, "sup@x.ci"))
         self.assertEqual(suppleant_de(copie, surcharges), "sup@x.ci")
         self.assertIsNone(suppleant_de(copie, surcharges[:3]))
+
+    def test_surcharge_suppleant_seul_garde_la_chaine_du_yaml(self):
+        yaml = chaine(Etape.CONTROLES, Etape.FORMATEUR)
+        self.monter(yaml=yaml, surcharges=(Surcharge("COH1", None, None, "sup@x.ci"),))
+        self.assertEqual(chaine_de(_copie_type(self.m, "COH1"), self.m, self.source), yaml)
 
 
 class TestTraiterEcheances(Cas):
     def test_pair_en_retard_rappele_puis_reattribue(self):
-        self.monter(yaml=replace(LIVRABLE, nb_pairs=1), taille=3)
+        self.monter(yaml=replace(LIVRABLE, nb_pairs=1, attente_max_heures=216), taille=3)
         a, b, c = (self.rendre(e) for e in ("a@x.ci", "b@x.ci", "c@x.ci"))
         for cid in (a, b, c):
             self.avancer.executer(cid, Etape.CONTROLES)
@@ -239,7 +257,7 @@ class TestTraiterEcheances(Cas):
         rappelee = self.m.rel[b_relit_a.id]
         self.assertEqual((rappelee.statut, rappelee.rappelee, rappelee.echeance),
                          (StatutRelecture.A_FAIRE, True, self.t + timedelta(hours=72)))
-        ((destinataire, message),) = self.notes
+        ((destinataire, message),) = self.rappels()
         self.assertEqual(destinataire, "b@x.ci")
         self.assertIn("Rappel", message)
         self.assertNotIn("a@x.ci", message)  # l'auteur n'est pas nommé
@@ -264,6 +282,47 @@ class TestTraiterEcheances(Cas):
         self.assertEqual(self.etape(a), ("formateur", Statut.A_CORRIGER))
         self.assertEqual(self.m.dispensees, [b, c])
 
+    def cohorte_absente(self, attente):
+        """Six apprenants, trois relecteurs chacun, personne ne relit ; délai des pairs de 72 h."""
+        self.monter(yaml=replace(LIVRABLE, attente_max_heures=attente), taille=6)
+        copies = [self.rendre(f"{e}@x.ci") for e in "abcdef"]
+        for cid in copies:
+            self.avancer.executer(cid, Etape.CONTROLES)
+        return copies
+
+    def test_personne_ne_relit_la_copie_avance_au_butoir(self):
+        copies = self.cohorte_absente(attente=144)
+        butoir = self.t + timedelta(hours=72 + 144)
+        self.assertEqual({self.m.etat(c).butoir for c in copies}, {butoir})
+        for _ in range(2):  # rappel, puis réattribution aux candidats restants
+            self.avancer_horloge(72)
+            self.assertEqual({self.etape(c) for c in copies}, {("pairs", Statut.EN_RELECTURE)})
+        self.avancer_horloge(72)  # au butoir : ni rappel ni réattribution, la copie avance
+        self.assertEqual(self.t, butoir)
+        self.assertEqual({self.etape(c) for c in copies}, {("formateur", Statut.A_CORRIGER)})
+        self.assertEqual(self.m.relectures_echues(self.t + timedelta(days=365)), [])
+        actions = [j[2] for j in self.journal if j[0] == copies[0] and j[1] == SYSTEME]
+        rappel, reattribution = actions.index("rappel de relecture"), actions.index("relecture réattribuée")
+        derniere_annulation = len(actions) - 1 - actions[::-1].index("relecture annulée")
+        self.assertLess(rappel, reattribution)
+        self.assertLess(reattribution, derniere_annulation)
+        self.assertTrue(all(r.echeance <= butoir for r in self.m.rel.values()))
+
+    def test_attente_nulle_la_copie_avance_a_la_premiere_echeance(self):
+        copies = self.cohorte_absente(attente=0)
+        self.avancer_horloge(72)
+        self.assertEqual({self.etape(c) for c in copies}, {("formateur", Statut.A_CORRIGER)})
+        self.assertNotIn("rappel de relecture", self.actions())
+        self.assertNotIn("relecture réattribuée", self.actions())
+        self.assertEqual(self.rappels(), [])
+
+    def test_sans_butoir_enregistre_aucune_prolongation(self):
+        copies = self.cohorte_absente(attente=144)
+        for cid in copies:  # copie entrée aux pairs avant l'enregistrement du butoir
+            self.m.etats[cid] = replace(self.m.etats[cid], butoir=None)
+        self.avancer_horloge(72)
+        self.assertEqual({self.etape(c) for c in copies}, {("formateur", Statut.A_CORRIGER)})
+
     def test_pair_en_retard_rappele_puis_dispense_dans_le_meme_passage_que_l_etape(self):
         # relectures et étape des pairs échoient ensemble : la copie attend les relectures rappelées
         for expiration in (Expiration.DISPENSER, Expiration.PASSER):
@@ -275,7 +334,7 @@ class TestTraiterEcheances(Cas):
                 for cid in (a, b):
                     self.avancer.executer(cid, Etape.CONTROLES)
                 self.avancer_horloge(72)
-                self.assertEqual(len(self.notes), 2)
+                self.assertEqual(len(self.rappels()), 2)
                 self.assertEqual({self.etape(a), self.etape(b)}, {("pairs", Statut.EN_RELECTURE)})
                 self.assertEqual({r.statut for r in self.m.rel.values()}, {StatutRelecture.A_FAIRE})
                 self.avancer_horloge(72)
@@ -306,7 +365,7 @@ class TestTraiterEcheances(Cas):
         self.m.relectures_echues = lambda maintenant: [r]  # sélection faite avant la relecture
         self.avancer_horloge(72)
         self.assertEqual(self.m.rel[r.id].statut, StatutRelecture.FAITE)
-        self.assertEqual(self.notes, [])
+        self.assertEqual(self.rappels(), [])
 
     def test_etape_plus_echue_au_moment_du_traitement_ignoree(self):
         self.monter(yaml=chaine(Etape.CONTROLES, Etape.FORMATEUR))
@@ -335,8 +394,11 @@ class TestTraiterEcheances(Cas):
         self.assertEqual(self.m.etat(a), Etat("formateur", self.t + timedelta(hours=1), "sup@x.ci"))
         self.assertEqual(self.journal[-1][1:], (SYSTEME, "escalader", {"correcteurs": ["form@x.ci"]},
                                                 {"correcteurs": ["sup@x.ci"]}))
+        self.assertEqual(self.notes, [("sup@x.ci", f"Une copie vous est confiée (formateur en retard) : "
+                                                   f"/espace/correcteur/{a}")])
         self.avancer_horloge(1)
         self.assertEqual(self.m.etat(a).escalade_a, "resp@x.ci")
+        self.assertEqual([n[0] for n in self.notes], ["sup@x.ci", "resp@x.ci"])
         self.assertEqual(self.journal[-1][3:], ({"correcteurs": ["sup@x.ci"]}, {"correcteurs": ["resp@x.ci"]}))
         self.avancer_horloge(1)  # escalade épuisée, publication provisoire désactivée
         self.assertEqual(self.m.etat(a), Etat("formateur", None, "resp@x.ci"))
@@ -344,6 +406,24 @@ class TestTraiterEcheances(Cas):
         self.assertEqual(self.actions()[-1], "escalade épuisée")
         self.avancer_horloge(100)
         self.assertEqual(self.actions()[-1], "escalade épuisée")  # plus rien à traiter
+
+    def test_escalade_epuisee_previent_une_fois(self):
+        self.monter(yaml=chaine(Etape.FORMATEUR), reglages=ReglagesEvaluation(responsable_pedagogique="resp@x.ci"))
+        a = self.rendre("a@x.ci")
+        self.avancer_horloge(1)
+        self.avancer_horloge(1)  # escalade épuisée
+        self.avancer_horloge(100)
+        prevenus = [n for n in self.notes if "sans autre recours" in n[1]]
+        self.assertEqual(sorted(n[0] for n in prevenus), ["form@x.ci", "resp@x.ci"])
+        self.assertTrue(all(f"/espace/correcteur/{a}" in n[1] for n in prevenus))
+        self.assertEqual(self.actions().count("escalade épuisée"), 1)
+
+    def test_suppleant_seul_recoit_l_escalade(self):
+        self.monter(yaml=chaine(Etape.FORMATEUR), surcharges=(Surcharge("COH1", None, None, "sup@x.ci"),))
+        a = self.rendre("a@x.ci")
+        self.avancer_horloge(1)
+        self.assertEqual(self.m.etat(a).escalade_a, "sup@x.ci")
+        self.assertEqual(self.notes[0][0], "sup@x.ci")
 
     def test_sans_suppleant_escalade_au_responsable(self):
         self.monter(yaml=chaine(Etape.FORMATEUR), reglages=ReglagesEvaluation(responsable_pedagogique="resp@x.ci"))
@@ -371,6 +451,9 @@ class TestTraiterEcheances(Cas):
         self.assertEqual(self.etape(a), ("formateur", Statut.PROVISOIRE))
         self.assertIsNone(self.m.etat(a).echeance)
         self.assertEqual(self.actions()[-1], "publication provisoire")
+        (note,) = [n for n in self.notes if n[0] == "a@x.ci"]
+        self.assertIn("note provisoire", note[1])
+        self.assertIn(f"/espace/retour/{a}", note[1])
 
     def test_toute_la_chaine_echue_sans_publication_provisoire(self):
         a = self.toute_la_chaine_echue(False)
@@ -386,6 +469,7 @@ class TestTraiterEcheances(Cas):
 
     def test_jure_absent_escalade_au_formateur(self):
         self.monter(type_=TypeExercice.CAPSTONE)
+        self.m.jures_ = {"jure@x.ci"}
         a = self.rendre("a@x.ci")
         self.avancer.executer(a, Etape.CONTROLES)
         self.avancer.executer(a, Etape.IA)

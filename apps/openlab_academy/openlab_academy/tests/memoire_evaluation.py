@@ -118,6 +118,9 @@ class Memoire:
                        if e.echeance is not None and e.echeance <= maintenant and self.copies[cid].statut in EN_COURS),
                       key=lambda cid: self.etats[cid].echeance)
 
+    def fixer_butoir(self, copie_id, butoir):
+        self.etats[copie_id] = replace(self.etats[copie_id], butoir=butoir)
+
     def escalader(self, copie_id, destinataire, echeance):
         self.etats[copie_id] = replace(self.etats[copie_id], escalade_a=destinataire, echeance=echeance)
 

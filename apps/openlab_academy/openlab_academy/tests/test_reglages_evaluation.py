@@ -168,6 +168,32 @@ class TestChainePour(unittest.TestCase):
         autorise = ReglagesEvaluation(publication_provisoire=True)
         self.assertIs(autorise.chaine_pour(TypeExercice.PROJET, "C1", "EX1", (), dangereuse), dangereuse)
 
+    def test_chaine_effective_retombe_sur_la_chaine_du_type(self):
+        dangereuse = Chaine(tuple(ConfigEtape(e, e == E.FORMATEUR, 1, Expiration.PUBLIER_PROVISOIRE) for e in Etape))
+        self.assertEqual(self.r.chaine_effective(TypeExercice.PROJET, "C1", "EX1", self.surcharges, self.yaml),
+                         (self.s_ex, False))
+        self.assertEqual(self.r.chaine_effective(TypeExercice.PROJET, "C1", "EX1", (Surcharge(None, "EX1", dangereuse),),
+                                                 None), (CHAINES_DEFAUT[TypeExercice.PROJET], True))
+        configuree = chaine_avec({E.FORMATEUR}, nb_pairs=9)
+        r = ReglagesEvaluation(chaines={TypeExercice.PROJET: configuree})
+        self.assertEqual(r.chaine_effective(TypeExercice.PROJET, "C1", "EX1", (), dangereuse), (configuree, True))
+
+    def test_surcharge_suppleant_seul_ne_remplace_aucune_chaine(self):
+        seul = Surcharge("C1", None, None, "sup@x.ci")
+        self.assertIs(self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX2", (seul,), self.yaml), self.yaml)
+        self.assertIs(self.r.chaine_pour(TypeExercice.CAPSTONE, "C1", "EX2", (seul,), None),
+                      CHAINES_DEFAUT[TypeExercice.CAPSTONE])
+        self.assertIs(self.r.chaine_pour(TypeExercice.PROJET, "C1", "EX1", (seul, *self.surcharges), None), self.s_ex)
+
+    def test_surcharge_sans_chaine_ni_suppleant_refusee(self):
+        with self.assertRaisesRegex(ReglagesInvalides, "chaîne ou un suppléant"):
+            Surcharge("C1", None, None)
+
+    def test_suppleant_d_une_surcharge_d_exercice_refuse(self):
+        for cohorte in (None, "C1"):
+            with self.subTest(cohorte=cohorte), self.assertRaisesRegex(ReglagesInvalides, "suppléant"):
+                Surcharge(cohorte, "EX1", self.yaml, "sup@x.ci")
+
 
 class TestChaineDict(unittest.TestCase):
     def test_aller_retour(self):
@@ -188,6 +214,15 @@ class TestChaineDict(unittest.TestCase):
                                 "note_masquee_avant_relectures": False, "note_sur": 100, "seuil_reussite": 50})
         self.assertEqual((c.nb_pairs, c.anonymat, c.note_masquee_avant_relectures, c.note_sur, c.seuil_reussite),
                          (2, False, False, 100, 50))
+
+    def test_attente_maximale_des_relectures(self):
+        c = CHAINES_DEFAUT[TypeExercice.LIVRABLE]
+        self.assertEqual(c.attente_max_heures, c.config(E.PAIRS).delai_heures)  # un rappel par défaut
+        lue = Chaine.depuis_dict({**c.vers_dict(), "attente_max_heures": 0})
+        self.assertEqual(lue.attente_max_heures, 0)
+        self.assertEqual(Chaine.depuis_dict(lue.vers_dict()), lue)
+        with self.assertRaisesRegex(ReglagesInvalides, "attente_max_heures"):
+            chaine_avec({E.FORMATEUR}, attente_max_heures=-1)
 
     def test_invalides(self):
         for donnees, message in [

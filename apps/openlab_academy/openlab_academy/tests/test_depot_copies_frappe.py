@@ -14,8 +14,7 @@ from openlab_academy.domain.copie import Proposition, Source, Statut
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.parcours import Annonce, Bloc
 from openlab_academy.domain.reglages import Reglages
-from openlab_academy.domain.reglages_evaluation import (
-    Chaine, ConfigEtape, Etape, Expiration, Surcharge, TypeExercice)
+from openlab_academy.domain.reglages_evaluation import TypeExercice
 from openlab_academy.entrypoints import evaluation
 from openlab_academy.infrastructure import depot_copies_frappe
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
@@ -327,11 +326,9 @@ class TestAtomicite(Base):
         (v1,) = self.copies()
         frappe.get_doc({"doctype": "Relecture Pair OpenLab", "copie": v1.name, "relecteur": B}).insert(
             ignore_permissions=True)
-        dangereuse = Chaine(tuple(ConfigEtape(e, e == Etape.FORMATEUR, 1, Expiration.PUBLIER_PROVISOIRE)
-                                  for e in Etape))
         s.answer = "https://github.com/aya/livrable-v2"
-        with mock.patch.object(evaluation.reglages_evaluation_frappe, "surcharges",
-                               return_value=(Surcharge(None, self.livrable, dangereuse),)), \
+        # l'ancienne version est déjà sortie de la chaîne quand la création de la nouvelle échoue
+        with mock.patch.object(DepotCopiesFrappe, "creer", side_effect=RuntimeError("panne")), \
                 mock.patch.object(evaluation.frappe, "log_error") as journal:
             s.save(ignore_permissions=True)
         journal.assert_called()

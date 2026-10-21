@@ -18,6 +18,7 @@
   "statut",
   "etape_courante",
   "echeance",
+  "butoir",
   "escalade_a",
   "relectures_dispensees",
   "note",
@@ -96,6 +97,13 @@
    "fieldname": "echeance",
    "fieldtype": "Datetime",
    "label": "Échéance de l'étape"
+  },
+  {
+   "fieldname": "butoir",
+   "fieldtype": "Datetime",
+   "label": "Butoir des relectures",
+   "read_only": 1,
+   "description": "Au-delà, la copie quitte l’étape des pairs avec les relectures obtenues."
   },
   {
    "fieldname": "escalade_a",
@@ -188,7 +196,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-20 20:00:00",
+ "modified": "2026-10-21 12:00:00",
  "sort_field": "modified",
  "sort_order": "DESC"
 }

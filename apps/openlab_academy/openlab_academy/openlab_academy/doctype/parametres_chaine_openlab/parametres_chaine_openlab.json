@@ -10,7 +10,8 @@
   "anonymat",
   "note_masquee_avant_relectures",
   "note_sur",
-  "seuil_reussite"
+  "seuil_reussite",
+  "attente_max_heures"
  ],
  "fields": [
   {
@@ -54,6 +55,13 @@
    "label": "Seuil de réussite",
    "default": "10",
    "in_list_view": 1
+  },
+  {
+   "fieldname": "attente_max_heures",
+   "fieldtype": "Int",
+   "label": "Attente maximale des relectures (heures)",
+   "default": "72",
+   "description": "Prolongation maximale de l’étape des pairs pour des relectures rappelées ou réattribuées ; 0 = aucune."
   }
  ],
  "permissions": [],
@@ -61,7 +69,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-20 00:00:00",
+ "modified": "2026-10-21 12:00:00",
  "sort_field": "modified",
  "sort_order": "DESC",
  "custom": 0,

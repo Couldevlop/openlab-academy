@@ -1,6 +1,6 @@
 import unittest
 from dataclasses import replace
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from openlab_academy.application.soumettre_copie import Contenu, Exercice, SoumettreCopie
 from openlab_academy.domain.copie import Copie, CopieVerrouillee, Etat, Proposition, Source, Statut
@@ -192,17 +192,23 @@ class TestSoumettreCopie(unittest.TestCase):
         self.assertEqual(self.depot.relectures_annulees, [])
         self.assertEqual(self.journal[0][:3], (v1, "a@x.ci", "rendu après publication ignoré"))
 
-    def test_chaine_invalide_n_ecrit_rien(self):
+    def test_chaine_devenue_invalide_la_copie_part_avec_la_chaine_du_type(self):
+        demarrees = []
         uc = self.cas()
+        uc._demarrer = demarrees.append
         v1 = uc.executer(soumission())
         dangereuse = Chaine(tuple(ConfigEtape(e, e == Etape.FORMATEUR, 1, Expiration.PUBLIER_PROVISOIRE)
                                   for e in Etape))
         uc._surcharges = lambda: (Surcharge(None, "EX1", dangereuse),)
-        with self.assertRaisesRegex(ValueError, "provisoire"):
-            uc.executer(soumission(answer="https://github.com/a/p2"))
-        self.assertEqual(len(self.depot.copies), 1)
-        self.assertEqual(self.depot.copie(v1).statut, Statut.RENDUE)
-        self.assertEqual(self.depot.relectures_annulees, [])
+        v2 = uc.executer(soumission(answer="https://github.com/a/p2"))
+        self.assertNotEqual(v2, v1)
+        self.assertEqual(demarrees, [v1, v2])
+        self.assertEqual(self.depot.copie(v2).version, 2)
+        premiere = CHAINES_DEFAUT[TypeExercice.LIVRABLE].config(Etape.AUTO_EVALUATION)
+        self.assertEqual(self.depot.statuts[-1], (v2, Statut.RENDUE, "auto_evaluation",
+                                                  MAINTENANT + timedelta(hours=premiere.delai_heures)))
+        self.assertIn((v2, "systeme", "chaîne invalide : chaîne du type appliquée"), [j[:3] for j in self.journal])
+        self.assertEqual(self.depot.relectures_annulees, [v1])
 
     def test_nouvelle_copie_demarree_une_seule_fois(self):
         demarrees = []

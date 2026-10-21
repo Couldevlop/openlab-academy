@@ -14,7 +14,8 @@
   "note_masquee_avant_relectures",
   "col_notes",
   "note_sur",
-  "seuil_reussite"
+  "seuil_reussite",
+  "attente_max_heures"
  ],
  "fields": [
   {
@@ -36,13 +37,15 @@
    "fieldtype": "Link",
    "label": "Suppléant du formateur",
    "options": "User",
-   "description": "Reçoit les copies quand le formateur dépasse son délai, avant le responsable pédagogique."
+   "description": "Reçoit les copies quand le formateur dépasse son délai, avant le responsable pédagogique. Réglé par cohorte : sans étapes, la surcharge ne porte que le suppléant et la chaîne de la cohorte reste celle de l’exercice ou du type.",
+   "depends_on": "eval:!doc.exercice"
   },
   {
    "fieldname": "etapes",
    "fieldtype": "Table",
    "label": "Étapes",
-   "options": "Etape Correction OpenLab"
+   "options": "Etape Correction OpenLab",
+   "description": "Laisser vide pour ne régler que le suppléant de la cohorte."
   },
   {
    "fieldname": "nb_pairs",
@@ -78,6 +81,13 @@
    "fieldtype": "Float",
    "label": "Seuil de réussite",
    "default": "10"
+  },
+  {
+   "fieldname": "attente_max_heures",
+   "fieldtype": "Int",
+   "label": "Attente maximale des relectures (heures)",
+   "default": "72",
+   "description": "Prolongation maximale de l’étape des pairs pour des relectures rappelées ou réattribuées ; 0 = aucune."
   }
  ],
  "permissions": [
@@ -97,7 +107,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-20 00:00:00",
- "modified": "2026-10-20 12:00:00",
+ "modified": "2026-10-21 12:00:00",
  "sort_field": "modified",
  "sort_order": "DESC",
  "custom": 0,

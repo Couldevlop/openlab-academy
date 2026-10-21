@@ -75,11 +75,13 @@ class Copie:
 
 @dataclass(frozen=True)
 class Etat:
-    """Où en est la copie dans sa chaîne : étape courante, échéance, destinataire d'une escalade."""
+    """Où en est la copie dans sa chaîne : étape courante, échéance, destinataire d'une escalade, butoir de
+    l'étape des pairs (au-delà, aucune relecture n'est plus attendue)."""
 
     etape: str
     echeance: datetime | None
     escalade_a: str = ""
+    butoir: datetime | None = None
 
 
 @dataclass(frozen=True)
