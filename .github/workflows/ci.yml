@@ -144,5 +144,7 @@ jobs:
           ../env/bin/pip install -q coverage
           ../env/bin/coverage run --branch --source=../apps/openlab_academy/openlab_academy \
             --omit='*/tests/*,*/hooks.py' -m frappe.utils.bench_helper frappe --site test_site \
-            run-tests --skip-before-tests --app openlab_academy
-          ../env/bin/coverage report -m --skip-covered --fail-under=99
+            run-tests --skip-before-tests --app openlab_academy && status=0 || status=$?
+          # rapport affiché même si un test échoue
+          ../env/bin/coverage report -m --skip-covered --fail-under=99 && cov=0 || cov=$?
+          exit $(( status || cov ))

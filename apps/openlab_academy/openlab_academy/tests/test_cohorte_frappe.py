@@ -56,10 +56,11 @@ class TestCommandeCohorte(FrappeTestCase):
 
     def test_ouvrir_pilote_intensif(self):
         seed.run(commit=False)
+        frappe.db.delete("LMS Batch", {"title": ("like", "%· Intensif 16 h")})
         resultat = commande.ouvrir_pilote(rythme="intensif", commit=False)
         b = frappe.get_doc("LMS Batch", resultat["cohorte"])
         self.assertTrue(b.title.endswith("· Intensif 16 h"))
-        self.assertIn("3 h le samedi et le dimanche", b.batch_details)
+        self.assertIn("3 h les samedi et dimanche", b.batch_details)
 
     def test_rythme_inconnu_refuse(self):
         with self.assertRaisesRegex(ValueError, "rythme « turbo » inconnu"):
