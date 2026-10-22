@@ -372,7 +372,8 @@ class TestReglagesSms(FrappeTestCase):
         r.save(ignore_permissions=True)
 
     def test_url_du_jeton_reservee_a_orange(self):
-        for url in ("https://evil.example.com/token", "http://api.orange.com/oauth/v3/token"):
+        for url in ("https://evil.example.com/token", "http://api.orange.com/oauth/v3/token",
+                    r"https://evil.com\.orange.com/t", "https://evil.com /.orange.com/t"):
             with self.subTest(url=url), self.assertRaisesRegex(frappe.ValidationError, "orange.com"):
                 self.regler(url)
         for url in ("", "https://api.orange.com/oauth/v3/token"):

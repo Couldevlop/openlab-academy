@@ -8,9 +8,10 @@ import base64
 import html
 import re
 from collections.abc import Callable
-from urllib.parse import urlsplit
 
 import requests
+from urllib3.exceptions import LocationParseError
+from urllib3.util import parse_url
 
 from openlab_academy.application.rappels import DestinataireInjoignable, Destinataire, EnvoiImpossible, Message
 
@@ -19,22 +20,26 @@ JETON_ORANGE = "https://api.orange.com/oauth/v3/token"
 SMS_ORANGE = "https://api.orange.com/smsmessaging/v1/outbound/tel%3A%2B{expediteur}/requests"
 WHATSAPP = "https://graph.facebook.com/v21.0/{phone_id}/messages"
 _CHIFFRES = re.compile(r"[0-9]{3,20}")
+_DOUTEUX = re.compile(r"[\\\s\x00-\x1f\x7f]")  # barre inverse, espaces, caractères de contrôle
+_ORANGE = re.compile(r"([a-z0-9-]+\.)*orange\.com")
 
 
 def url_jeton_valide(url: str) -> bool:
     """URL du jeton SMS : vide (adresse Orange par défaut) ou https sur `orange.com` ou un de ses sous-domaines,
-    sans identifiants ; le secret client n'est ainsi jamais envoyé ailleurs."""
+    sans identifiants ; le secret client n'est ainsi jamais envoyé ailleurs. L'hôte est lu par le même analyseur
+    que `requests` (urllib3) : une barre oblique inverse, un espace ou un caractère de contrôle, qu'un autre
+    analyseur lirait autrement, sont refusés d'emblée."""
     url = (url or "").strip()
     if not url:
         return True
-    try:
-        parties = urlsplit(url)
-        hote = parties.hostname or ""
-        parties.port  # noqa: B018 — un port illisible lève ValueError
-    except ValueError:
+    if _DOUTEUX.search(url):
         return False
-    return (parties.scheme == "https" and "@" not in parties.netloc
-            and (hote == "orange.com" or hote.endswith(".orange.com")))
+    try:
+        lu = parse_url(url)
+    except LocationParseError:
+        return False
+    return (lu.scheme == "https" and lu.auth is None and "@" not in (lu.netloc or "")
+            and _ORANGE.fullmatch((lu.host or "").lower()) is not None)
 
 
 def _une_ligne(texte: str) -> str:

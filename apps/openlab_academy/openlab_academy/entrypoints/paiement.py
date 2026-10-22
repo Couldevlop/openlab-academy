@@ -7,12 +7,12 @@ from urllib.parse import urlencode, urlsplit
 import frappe
 from frappe.email.doctype.email_account.email_account import EmailAccount
 from frappe.utils import getdate, nowdate, now_datetime
+from rq.timeouts import JobTimeoutException
 
 from openlab_academy.application.paiements import (
     AccorderDelai, ConfirmerPaiement, EnregistrerVirement, InitierPaiement, InscriptionTardive, OuvrirDossier,
     PaiementIndisponible, ReverifierPaiements, TarifAbsent)
 from openlab_academy.application.rappels import EnvoyerRappels
-from rq.timeouts import JobTimeoutException
 from openlab_academy.entrypoints.lms import ROLES_NON_BLOQUES
 from openlab_academy.infrastructure.canaux import CanalEmail, CanalSms, CanalWhatsApp
 from openlab_academy.infrastructure.cinetpay import PasserelleCinetPay

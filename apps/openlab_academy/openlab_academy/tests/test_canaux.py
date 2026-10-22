@@ -131,7 +131,10 @@ class TestCanalSms(unittest.TestCase):
     def test_url_de_jeton_hors_orange_refusee(self):
         for url in ("http://api.orange.com/oauth", "https://evil.example.com/token", "https://api.orange.com.evil.ci/t",
                     "https://user@evil.ci/x", "https://orange.com:evil@evil.ci/t", "ftp://api.orange.com/t",
-                    "https://[api.orange.com/t", "https://api.orange.com:port/t"):
+                    "https://[api.orange.com/t", "https://api.orange.com:port/t", r"https://evil.com\.orange.com/t",
+                    "https://evil.com /.orange.com/t", "https://evil.com\t.orange.com/t", "https://api.orange.com/t\x00",
+                    "https://api.orange.com/o auth",
+                    "https://evil.com%2F.orange.com/t", "https://evil_ci.orange.com/t"):
             with self.subTest(url=url), mock.patch(POST) as post, \
                     self.assertRaisesRegex(EnvoiImpossible, "URL du jeton invalide"):
                 sms(url_jeton=url).envoyer(AYA, MESSAGE)
@@ -140,7 +143,7 @@ class TestCanalSms(unittest.TestCase):
 
     def test_url_de_jeton_valide(self):
         for url in ("", "https://api.orange.com/oauth/v3/token", "https://api.sandbox.orange.com/oauth/v3/token",
-                    " https://orange.com/t "):
+                    " https://orange.com/t ", "https://API.Orange.COM:443/oauth"):
             self.assertTrue(url_jeton_valide(url), url)
 
     def test_erreurs_sans_secret(self):
