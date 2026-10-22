@@ -1,0 +1,8 @@
+Bonjour {{ texte_nom }},
+
+{{ texte }}
+
+Sans règlement à la date limite, l'accès à ce parcours est suspendu jusqu'au paiement ; vos autres parcours à jour restent ouverts. Déjà réglé ? Ignorez ce message. Une question : répondez simplement à cet e-mail.
+
+OpenLab Academy, Division Formation d'OpenLab Consulting
+https://www.openlabconsulting.com

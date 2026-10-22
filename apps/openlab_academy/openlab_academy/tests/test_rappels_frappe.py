@@ -2,12 +2,13 @@
 registre idempotent, échecs consignés sans secret, revérification des paiements CinetPay en attente."""
 import datetime
 import email
+import pathlib
 from unittest import mock
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.email.doctype.email_account.email_account import EmailAccount
-from frappe.utils import add_days, getdate, now_datetime, nowdate
+from frappe.utils import add_days, get_url, getdate, now_datetime, nowdate
 from rq.timeouts import JobTimeoutException
 
 from openlab_academy import hooks
@@ -260,15 +261,27 @@ class TestEnvoyerRappels(Base):
         self.assertEqual(self.rappels()["email"][2], "ignore")
         consigne.assert_not_called()
 
-    def test_titre_echappe_dans_l_e_mail(self):
+    def test_e_mail_aux_couleurs_titre_echappe_logo_integre(self):
         frappe.db.set_value("LMS Course", self.cours, "title", "Parcours <b>IA</b>")
         avant = set(self.courriels())
         self.executer()
         nouveau, = set(self.courriels()) - avant
         mime = email.message_from_string(frappe.db.get_value("Email Queue", nouveau, "message"))
-        corps, = [p.get_payload(decode=True).decode() for p in mime.walk() if p.get_content_type() == "text/html"]
-        self.assertIn("Parcours &lt;b&gt;IA&lt;/b&gt;. Payer", corps)
+        parties = {p.get_content_type(): p for p in mime.walk()}
+        corps = parties["text/html"].get_payload(decode=True).decode()
+        self.assertIn('<span style="color:#ec7623;">Parcours &lt;b&gt;IA&lt;/b&gt;</span>', corps)
+        self.assertIn("Rappel d'échéance · J-7", corps)
+        self.assertIn(f'href="{get_url()}/espace/paiement/{self.cours}"', corps)
         self.assertNotIn("<b>IA</b>", corps)
+        logo = parties["image/png"]
+        cid = logo["Content-ID"].strip("<>")
+        self.assertIn(f'src="cid:{cid}"', corps)
+        self.assertNotIn("embed=", corps)
+        self.assertEqual(logo.get_payload(decode=True), (pathlib.Path(paiement.__file__).parents[1] / "public"
+                                                          / "images" / "logo-email.png").read_bytes())
+        texte = parties["text/plain"].get_payload(decode=True).decode()
+        self.assertTrue(texte.startswith(f"Bonjour {frappe.db.get_value('User', ELEVE, 'full_name')},"), texte)
+        self.assertIn("pour le parcours Parcours <b>IA</b>. Payer : ", texte)  # texte brut, rien d'interprété
 
 
 class TestRegistre(Base):

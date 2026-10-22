@@ -1,9 +1,11 @@
 """Canaux de rappel (HTTP simulé) : corps exacts SMS Orange et WhatsApp, disponibilité, aucun jeton divulgué."""
 import base64
+import pathlib
 import traceback
 import unittest
 from unittest import mock
 
+import jinja2
 import requests
 
 from openlab_academy.application.rappels import DestinataireInjoignable, Destinataire, EnvoiImpossible, Message
@@ -57,31 +59,92 @@ def sans_secret(test, erreur):
     test.assertTrue(erreur.__suppress_context__ or erreur.__context__ is None)
 
 
+LIEN = "https://academy.ci/espace/paiement/parcours-ia"
+RAPPEL = Message("Rappel de paiement : Parcours IA", "Rappel OpenLab Academy : 50 000 FCFA ... Payer : " + LIEN,
+                 ("Aya Kouassi", "50 000", "10/11/2026"), "Parcours IA", LIEN, "J-7")
+GABARITS = pathlib.Path(__file__).parents[1] / "templates" / "emails"
+
+
+def rendre(nom, valeurs):
+    """Comme Frappe : Jinja SANS échappement automatique ; une variable manquante lève."""
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader(GABARITS), undefined=jinja2.StrictUndefined)
+    return env.get_template(nom).render(valeurs)
+
+
+def courriel(message=RAPPEL, destinataire=AYA):
+    envois = []
+    CanalEmail(lambda **kw: envois.append(kw), logo=lambda: b"PNG-LOGO").envoyer(destinataire, message)
+    envoi, = envois
+    return envoi
+
+
 class TestCanalEmail(unittest.TestCase):
-    def test_file_d_attente(self):
-        envois = []
-        canal = CanalEmail(lambda **kw: envois.append(kw))
+    def test_file_d_attente_gabarit_et_logo_integre(self):
+        canal = CanalEmail(lambda **kw: None)
         self.assertTrue(canal.disponible())
         self.assertEqual(canal.nom, "email")
-        canal.envoyer(AYA, MESSAGE)
-        self.assertEqual(envois, [{"recipients": ["aya@x.ci"], "subject": MESSAGE.sujet, "message": MESSAGE.texte,
-                                   "delayed": True}])
+        envoi = courriel()
+        self.assertEqual(envoi["recipients"], ["aya@x.ci"])
+        self.assertEqual(envoi["subject"], RAPPEL.sujet)
+        self.assertEqual(envoi["template"], "rappel_paiement")
+        self.assertTrue(envoi["delayed"])
+        self.assertEqual(envoi["inline_images"], [{"filename": "logo-email.png", "filecontent": b"PNG-LOGO"}])
+        self.assertEqual(envoi["args"], {"nom": "Aya Kouassi", "titre": "Parcours IA", "quand": "J-7",
+                                         "montant": "50 000", "date_limite": "10/11/2026", "lien": LIEN,
+                                         "texte_nom": "Aya Kouassi", "texte": RAPPEL.texte})
+
+    def test_logo_par_defaut_celui_de_l_application(self):
+        envois = []
+        CanalEmail(lambda **kw: envois.append(kw)).envoyer(AYA, RAPPEL)
+        logo = (pathlib.Path(__file__).parents[1] / "public" / "images" / "logo-email.png").read_bytes()
+        self.assertTrue(logo.startswith(b"\x89PNG"))
+        self.assertEqual(envois[0]["inline_images"][0]["filecontent"], logo)
 
     def test_disponible_selon_le_compte_d_envoi(self):
         self.assertFalse(CanalEmail(lambda **kw: None, compte_sortant=lambda: False).disponible())
         self.assertTrue(CanalEmail(lambda **kw: None, compte_sortant=lambda: True).disponible())
 
-    def test_html_echappe(self):
-        envois = []
-        texte = "Rappel : parcours <b>IA</b> & <script>x</script>. Payer : https://academy.ci/espace/paiement/p"
-        CanalEmail(lambda **kw: envois.append(kw)).envoyer(AYA, Message("Rappel <b>", texte, ()))
-        self.assertEqual(envois[0]["message"], "Rappel : parcours &lt;b&gt;IA&lt;/b&gt; &amp; &lt;script&gt;x&lt;/script&gt;. "
-                                               "Payer : https://academy.ci/espace/paiement/p")
-        self.assertNotIn("<", envois[0]["message"])
+    def test_gabarit_rendu_avec_chaque_variable(self):
+        html = rendre("rappel_paiement.html", courriel()["args"])
+        for attendu in ('<img embed="logo-email.png"', "Rappel d'échéance · J-7", "Bonjour <strong>Aya Kouassi</strong>",
+                        '<span style="color:#ec7623;">Parcours IA</span>', "50 000&nbsp;", "10/11/2026",
+                        f'<a href="{LIEN}"', "www.openlabconsulting.com"):
+            self.assertIn(attendu, html)
+        self.assertNotIn("{{", html)
+
+    def test_valeurs_echappees_avant_rendu(self):
+        hostile = Message("Rappel <b>", "Rappel : parcours <b>IA</b>", ('Aya <b>K</b> "o\'k"', "50 <b>", "<b>10"),
+                          'Parcours <b>IA</b> & <script>x</script> "q"', LIEN + '?a=1&b="><b>x', "J-<b>7")
+        envoi = courriel(hostile)
+        html = rendre("rappel_paiement.html", envoi["args"])
+        self.assertNotIn("<b>", html)
+        self.assertNotIn("<script>", html)
+        self.assertIn("Parcours &lt;b&gt;IA&lt;/b&gt; &amp; &lt;script&gt;x&lt;/script&gt; &quot;q&quot;", html)
+        self.assertIn("Bonjour <strong>Aya &lt;b&gt;K&lt;/b&gt; &quot;o&#x27;k&quot;</strong>", html)
+        self.assertIn(f'href="{LIEN}?a=1&amp;b=&quot;&gt;&lt;b&gt;x"', html)
+        for valeur in ("50 &lt;b&gt;", "&lt;b&gt;10", "J-&lt;b&gt;7"):
+            self.assertIn(valeur, html)
+        texte = rendre("rappel_paiement.txt", envoi["args"])  # texte brut : rien n'y est interprété
+        self.assertTrue(texte.startswith('Bonjour Aya <b>K</b> "o\'k",\n\nRappel : parcours <b>IA</b>\n'), texte)
+
+    def test_texte_alternatif_lisible(self):
+        texte = rendre("rappel_paiement.txt", courriel()["args"])
+        self.assertTrue(texte.startswith(f"Bonjour Aya Kouassi,\n\n{RAPPEL.texte}\n\n"), texte)
+        self.assertIn("www.openlabconsulting.com", texte)
+
+    def test_lien_http_s_seulement(self):
+        for lien in ("javascript:alert(1)", "data:text/html,x", "//academy.ci/p", "", "https:///p",
+                     "https://academy.ci/p q", "https://academy.ci/\x00p", "https://academy.ci/\\p",
+                     "ftp://academy.ci/p", "https://academy.ci:port/p"):
+            with self.subTest(lien=lien), self.assertRaises(EnvoiImpossible) as e:
+                courriel(Message("s", "t", ("Aya", "1", "10/11/2026"), "P", lien, "J-1"))
+            self.assertEqual(str(e.exception), "e-mail : lien de paiement invalide")
+        self.assertEqual(courriel(Message("s", "t", ("Aya", "1", "x"), "P", "http://lms.localhost:8000/p", "J-1"))
+                         ["args"]["lien"], "http://lms.localhost:8000/p")
 
     def test_sans_adresse(self):
         with self.assertRaises(DestinataireInjoignable):
-            CanalEmail(lambda **kw: None).envoyer(Destinataire("", "+2250700000000", "Aya"), MESSAGE)
+            CanalEmail(lambda **kw: None).envoyer(Destinataire("", "+2250700000000", "Aya"), RAPPEL)
 
 
 class TestCanalSms(unittest.TestCase):

@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 
 from openlab_academy.application.paiements import PaiementIndisponible, ReverifierPaiements
 from openlab_academy.application.rappels import (
-    DestinataireInjoignable, Destinataire, DossierARappeler, EnvoiImpossible, EnvoyerRappels, message_rappel)
+    DestinataireInjoignable, Destinataire, DossierARappeler, EnvoiImpossible, EnvoyerRappels, message_rappel, quand)
 from openlab_academy.domain.dossier_paiement import Dossier
 from openlab_academy.domain.echeancier import Echeance
 
@@ -92,6 +92,11 @@ class TestMessage(unittest.TestCase):
                                   "parcours Parcours IA. Payer : https://academy.ci/espace/paiement/parcours-ia")
         self.assertEqual(m.sujet, "Rappel de paiement : Parcours IA")
         self.assertEqual(m.parametres, ("Aya", "52 500", "10/11/2026"))
+        self.assertEqual((m.titre, m.lien, m.quand), ("Parcours IA", "https://academy.ci/espace/paiement/parcours-ia", ""))
+        self.assertEqual(message_rappel("P", 5, LIMITE, "u", "", jours=3).quand, "J-3")
+
+    def test_quand(self):
+        self.assertEqual([quand(j) for j in (7, 3, 1, 0)], ["J-7", "J-3", "J-1", "jour J"])
 
     def test_nom_absent_remplace(self):
         self.assertEqual(message_rappel("P", 5, LIMITE, "u", "").parametres[0], "apprenant")
@@ -109,6 +114,9 @@ class TestEnvoyerRappels(unittest.TestCase):
         dest, message = chaines[0].envois[0]
         self.assertEqual(dest, AYA)
         self.assertIn("50 000 FCFA à régler au plus tard le 10/11/2026 pour le parcours Parcours IA", message.texte)
+        self.assertEqual((message.titre, message.lien, message.quand),
+                         ("Parcours IA", "https://academy.ci/espace/paiement/parcours-ia", "J-7"))
+        self.assertEqual([m.quand for _, m in chaines[0].envois], ["J-7", "J-3", "J-1"])
 
     def test_nombre_envoye_et_jours_sans_rappel(self):
         depot = Depot(dossier_a_rappeler(paye=10000))
@@ -173,6 +181,7 @@ class TestEnvoyerRappels(unittest.TestCase):
         self.assertEqual(cas(depot, canaux(sms=sms), registre, date(2026, 11, 4))[0].executer(), 1)
         self.assertEqual(registre.lignes[("D1", LIMITE, 7, "sms")], "envoye")
         self.assertIn("50 000 FCFA", sms.envois[0][1].texte)
+        self.assertEqual(sms.envois[0][1].quand, "J-6")  # relancé : jours réellement restants
         self.assertEqual(cas(depot, canaux(sms=sms), registre, date(2026, 11, 5))[0].executer(), 0)
 
     def test_echec_non_relance_si_paye_echu_ou_remplace(self):

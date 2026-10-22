@@ -26,9 +26,13 @@ class Destinataire:
 
 @dataclass(frozen=True)
 class Message:
+    """`parametres` : nom, montant, date limite (WhatsApp, e-mail) ; `quand` : délai affiché, voir `quand()`."""
     sujet: str
     texte: str
     parametres: tuple[str, ...]
+    titre: str = ""
+    lien: str = ""
+    quand: str = ""
 
 
 class EnvoiImpossible(Exception):
@@ -77,11 +81,19 @@ def _montant(montant: int) -> str:
     return f"{montant:,}".replace(",", " ")
 
 
-def message_rappel(titre: str, montant: int, date_limite: date, lien: str, nom: str) -> Message:
+def quand(jours: int) -> str:
+    """Délai restant avant la date limite, à la façon des rappels : « J-7 », « J-3 », « J-1 », « jour J »."""
+    return f"J-{jours}" if jours > 0 else "jour J"
+
+
+def message_rappel(titre: str, montant: int, date_limite: date, lien: str, nom: str,
+                   jours: int | None = None) -> Message:
+    """`jours` : jours réellement restants (un rappel relancé le lendemain d'un échec annonce J-6, pas J-7)."""
     jour = date_limite.strftime("%d/%m/%Y")
     texte = (f"Rappel OpenLab Academy : {_montant(montant)} FCFA à régler au plus tard le {jour} pour le parcours "
              f"{titre}. Payer : {lien}")
-    return Message(f"Rappel de paiement : {titre}", texte, (nom or "apprenant", _montant(montant), jour))
+    return Message(f"Rappel de paiement : {titre}", texte, (nom or "apprenant", _montant(montant), jour), titre, lien,
+                   "" if jours is None else quand(jours))
 
 
 def _sans_alerte(titre: str, detail: str) -> None:
@@ -124,7 +136,7 @@ class EnvoyerRappels:
 
     def _traiter(self, nom: str, aujourd_hui: date) -> int:
         d, plan, etats = self._unite(lambda: self._planifier(nom, aujourd_hui))
-        return sum(self._envoyer(d, cle, montant, etats.get(cle)) for cle, montant in sorted(plan.items()))
+        return sum(self._envoyer(d, cle, montant, etats.get(cle), aujourd_hui) for cle, montant in sorted(plan.items()))
 
     def _planifier(self, nom: str, aujourd_hui: date):
         """(dossier, plan {(date limite, jours, canal): montant}, états consignés) ; plan vide si dossier absent."""
@@ -150,7 +162,8 @@ class EnvoyerRappels:
     def _consigner(self, d: DossierARappeler, cle: tuple[date, int, str], statut: str) -> None:
         self._unite(lambda: self._registre.consigner(d.nom, *cle, statut))
 
-    def _envoyer(self, d: DossierARappeler, cle: tuple[date, int, str], montant: int, etat: str | None) -> int:
+    def _envoyer(self, d: DossierARappeler, cle: tuple[date, int, str], montant: int, etat: str | None,
+                 aujourd_hui: date) -> int:
         date_limite, jours, nom_canal = cle
         if etat == ENVOYE:
             return 0
@@ -161,7 +174,8 @@ class EnvoyerRappels:
             return 0
         if not self._unite(lambda: self._registre.reserver(d.nom, date_limite, jours, nom_canal)):
             return 0
-        message = message_rappel(d.titre, montant, date_limite, d.lien, d.destinataire.nom)
+        message = message_rappel(d.titre, montant, date_limite, d.lien, d.destinataire.nom,
+                                 (date_limite - aujourd_hui).days)
 
         def envoyer():
             canal.envoyer(d.destinataire, message)

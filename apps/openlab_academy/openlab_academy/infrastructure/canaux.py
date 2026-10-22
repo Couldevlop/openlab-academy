@@ -6,6 +6,7 @@ ni chaînées), aucune redirection n'est suivie et chaque appel a un délai.
 """
 import base64
 import html
+import pathlib
 import re
 from collections.abc import Callable
 
@@ -22,6 +23,8 @@ WHATSAPP = "https://graph.facebook.com/v21.0/{phone_id}/messages"
 _CHIFFRES = re.compile(r"[0-9]{3,20}")
 _DOUTEUX = re.compile(r"[\\\s\x00-\x1f\x7f]")  # barre inverse, espaces, caractères de contrôle
 _ORANGE = re.compile(r"([a-z0-9-]+\.)*orange\.com")
+GABARIT_EMAIL = "rappel_paiement"  # templates/emails/rappel_paiement.html et .txt
+LOGO_EMAIL = pathlib.Path(__file__).resolve().parents[1] / "public" / "images" / "logo-email.png"
 
 
 def url_jeton_valide(url: str) -> bool:
@@ -61,12 +64,32 @@ def _poster(canal: str, url: str, **options) -> requests.Response:
         raise EnvoiImpossible(f"{canal} injoignable ({type(erreur).__name__})") from None
 
 
+def _lien_http(lien: str) -> bool:
+    """Adresse http(s) absolue, sans espace, barre inverse ni caractère de contrôle (construite par le serveur)."""
+    if not lien or _DOUTEUX.search(lien):
+        return False
+    try:
+        lu = parse_url(lien)
+    except LocationParseError:
+        return False
+    return lu.scheme in ("http", "https") and bool(lu.host)
+
+
+def _logo() -> bytes:
+    return LOGO_EMAIL.read_bytes()
+
+
 class CanalEmail:
+    """Gabarit `templates/emails/rappel_paiement` (HTML aux couleurs d'OpenLab Academy et texte brut), logo intégré
+    (image `cid:`). Le rendu Jinja de Frappe n'échappe rien : chaque valeur du HTML est échappée ici, avant le rendu ;
+    seules `texte_nom` et `texte` restent brutes, pour le gabarit texte."""
     nom = "email"
 
-    def __init__(self, sendmail: Callable[..., object], compte_sortant: Callable[[], bool] = lambda: True):
+    def __init__(self, sendmail: Callable[..., object], compte_sortant: Callable[[], bool] = lambda: True,
+                 logo: Callable[[], bytes] = _logo):
         self._sendmail = sendmail
         self._compte_sortant = compte_sortant
+        self._logo = logo
 
     def disponible(self) -> bool:
         """Faux sans compte d'envoi par défaut : rappel `ignore` au lieu d'un échec quotidien."""
@@ -75,8 +98,15 @@ class CanalEmail:
     def envoyer(self, destinataire: Destinataire, message: Message) -> None:
         if not destinataire.email:
             raise DestinataireInjoignable("aucune adresse e-mail")
-        self._sendmail(recipients=[destinataire.email], subject=message.sujet, message=html.escape(message.texte, quote=False),
-                       delayed=True)  # corps HTML : titre et nom ne peuvent rien injecter
+        if not _lien_http(message.lien):
+            raise EnvoiImpossible("e-mail : lien de paiement invalide")
+        nom, montant, date_limite = message.parametres
+        valeurs = {"nom": nom, "titre": message.titre, "quand": message.quand, "montant": montant,
+                   "date_limite": date_limite, "lien": message.lien}
+        args = {cle: html.escape(valeur, quote=True) for cle, valeur in valeurs.items()}
+        self._sendmail(recipients=[destinataire.email], subject=message.sujet, template=GABARIT_EMAIL,
+                       args={**args, "texte_nom": nom, "texte": message.texte},
+                       inline_images=[{"filename": LOGO_EMAIL.name, "filecontent": self._logo()}], delayed=True)
 
 
 class CanalSms:
