@@ -83,7 +83,8 @@ describe('Mon retour', () => {
         criteres: [critereRetour('pertinence', 1, { commentaire: piege, pairs: [piege] })],
       }),
     )
-    expect(w.find('img').exists()).toBe(false)
+    // seule image : le logo de l'en-tête
+    expect(w.findAll('img').map((i) => i.attributes('src'))).toEqual(['/assets/openlab_academy/images/logo-email.png'])
     expect(w.find('strong').exists()).toBe(false)
     expect(w.find('.general').text()).toBe(piege)
     expect(w.find('.detail').text()).toBe(piege)

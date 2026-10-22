@@ -351,13 +351,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', clavier))
   border-radius: 8px;
   border: 1px solid var(--es-entete-bord);
   background: transparent;
-  color: #fff;
+  color: var(--es-entete-texte);
 }
 kbd {
   margin-left: 6px;
   padding: 1px 6px;
   border-radius: 4px;
-  background: var(--ol-navy-soft);
+  background: var(--es-info);
   font-size: 12px;
 }
 .etat {
@@ -386,7 +386,7 @@ kbd {
   flex: 1 1 460px;
   max-width: 100%;
   padding: 24px 16px 40px;
-  background: #fff;
+  background: var(--es-surface);
   border-top: 1px solid var(--es-bord);
 }
 .surtitre {

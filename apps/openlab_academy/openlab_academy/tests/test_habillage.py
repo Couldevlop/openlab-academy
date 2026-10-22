@@ -106,11 +106,24 @@ class TestScriptDePaiement(unittest.TestCase):
 
 
 class TestFeuilleDeStyle(unittest.TestCase):
-    def test_charte_openlab(self):
+    def test_charte_openlab_academy(self):
         css = CSS.read_text(encoding="utf-8")
-        for jeton in ("--ol-orange: #ff5a00", "--ol-navy: #0b1b3d", "--ol-night: #0a0e1a",
-                      "--ol-ivory: #faf8f5", "Geist", "Bricolage Grotesque", "JetBrains Mono"):
+        for jeton in ("--ol-orange: #ec7623", "--ol-orange-dark: #c25a12", "--ol-orange-light: #f39a5b",
+                      "--ol-navy: #001e48", "--ol-navy-soft: #244498", "--ol-sky: #2890c8", "--ol-sun: #fcd80f",
+                      "--ol-ivory: #faf8f5", "--ol-mist: #eef1f6", "family=Montserrat", "JetBrains Mono"):
             self.assertIn(jeton, css)
+        for ancien in ("Geist", "Bricolage", "#ff5a00", "#0b1b3d"):
+            self.assertNotIn(ancien, css)
 
     def test_mode_sombre_prevu(self):
-        self.assertIn('[data-theme="dark"]', CSS.read_text(encoding="utf-8"))
+        css = CSS.read_text(encoding="utf-8")
+        sombre = css[css.index('[data-theme="dark"] {'):]
+        sombre = sombre[:sombre.index("}")]
+        for jeton in ("--surface-base: var(--ol-night)", "--surface-gray-7:", "--ol-lien-survol:", "--ol-focus:"):
+            self.assertIn(jeton, sombre)
+
+    def test_logos_presents(self):
+        images = CSS.parents[1] / "images"
+        for nom in ("logo-email.png", "logo-openlab-academy.png"):
+            self.assertTrue((images / nom).read_bytes()[1:4] == b"PNG", nom)
+        self.assertIn('href="data:image/png;base64,', (images / "logo.svg").read_text(encoding="utf-8"))

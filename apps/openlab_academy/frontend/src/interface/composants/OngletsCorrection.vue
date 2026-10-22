@@ -25,8 +25,11 @@ const route = useRoute()
   text-decoration: none;
 }
 .onglets a.router-link-active {
-  color: #fff;
+  color: var(--es-entete-texte);
+  font-weight: 600;
   text-decoration: underline;
+  text-decoration-color: var(--ol-orange);
+  text-decoration-thickness: 2px;
   text-underline-offset: 6px;
 }
 </style>

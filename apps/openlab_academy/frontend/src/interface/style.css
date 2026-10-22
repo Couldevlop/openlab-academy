@@ -1,19 +1,24 @@
-/* Écrans d'évaluation : jetons de la charte (public/css/openlab.css) et nuances propres aux écrans.
-   Navy pour les actions, orange réservé à la décision (niveau choisi) et au focus, fond ivoire. */
+/* Écrans d'évaluation : jetons de la charte OpenLab Academy (public/css/openlab.css, docs/charte-graphique.md) et
+   nuances propres aux écrans. Bleu nuit pour les actions, bouton principal en pilule orange (texte blanc gras
+   ≥ 16 px), orange réservé à la décision (niveau choisi), liens bleu royal, fond ivoire. Contraste AA. */
 :root {
   --es-encre: var(--ol-graphite, #1a1d24);
   --es-gris: #5a6072;
-  --es-bord: var(--ol-mist, #e8eaf0);
-  --es-bord-fort: #d5d9e3;
-  --es-info: #eef1f8;
+  --es-surface: #fff;
+  --es-sur-sombre: #fff;
+  --es-bord: var(--ol-mist, #eef1f6);
+  --es-bord-fort: #d5dbe7;
+  --es-info: var(--ol-mist, #eef1f6);
   --es-alerte-fond: #fff1e8;
   --es-alerte-texte: #8a3300;
   --es-erreur: #9f2a1b;
   --es-succes: #1e6b3a;
   --es-citation: #ffe3d1;
-  --es-entete-doux: #aeb7cc;
-  --es-entete-clair: #d6dbe6;
-  --es-entete-bord: #3a4a70;
+  /* en-tête blanc : actions bleu nuit, indications grises */
+  --es-entete-texte: var(--ol-navy, #001e48);
+  --es-entete-doux: #5a6072;
+  --es-entete-clair: #5a6072;
+  --es-entete-bord: #d5dbe7;
 }
 
 *,
@@ -35,7 +40,7 @@ a {
   color: var(--ol-navy);
 }
 a:hover {
-  color: var(--ol-orange-dark);
+  color: var(--ol-lien-survol, #244498);
 }
 button,
 textarea,
@@ -52,7 +57,7 @@ button:disabled {
   opacity: 0.55;
 }
 :focus-visible {
-  outline: 2px solid var(--ol-orange);
+  outline: 2px solid var(--ol-focus, #c25a12);
   outline-offset: 2px;
 }
 
@@ -60,6 +65,7 @@ h1,
 h2,
 h3 {
   font-family: var(--ol-font-display);
+  color: var(--ol-navy);
 }
 h3 {
   font-family: var(--ol-font-body);
@@ -84,7 +90,7 @@ h3 {
   border-radius: 10px;
   font-weight: 600;
   border: 1px solid var(--ol-navy);
-  background: #fff;
+  background: var(--es-surface);
   color: var(--ol-navy);
   display: inline-flex;
   align-items: center;
@@ -97,12 +103,17 @@ h3 {
 }
 .bouton-principal {
   border: none;
-  background: var(--ol-navy);
-  color: #fff;
+  border-radius: 999px;
+  padding: 0 24px;
+  font-size: 16px;
+  font-weight: 700;
+  background: var(--ol-orange);
+  color: var(--es-sur-sombre);
+  box-shadow: 0 6px 16px rgba(0, 30, 72, 0.12);
 }
 .bouton-principal:hover {
-  color: #fff;
-  background: var(--ol-navy-soft);
+  color: var(--es-sur-sombre);
+  background: var(--ol-orange-deep, #b35210);
 }
 
 /* niveaux d'une grille : le niveau choisi est navy cerclé d'orange (décision) */
@@ -116,14 +127,15 @@ h3 {
 .niveau[aria-pressed='true'] {
   border: 2px solid var(--ol-orange);
   background: var(--ol-navy);
-  color: #fff;
+  color: var(--es-sur-sombre);
 }
 
 /* cartes, bandeaux, messages */
 .carte {
-  background: #fff;
+  background: var(--es-surface);
   border: 1px solid var(--es-bord);
-  border-radius: 12px;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 30, 72, 0.05);
 }
 .bandeau {
   display: flex;
@@ -189,7 +201,7 @@ textarea {
   padding: 10px 12px;
   border: 1px solid var(--es-bord-fort);
   border-radius: 8px;
-  background: #fff;
+  background: var(--es-surface);
   resize: vertical;
 }
 textarea[aria-invalid='true'] {
