@@ -1,11 +1,14 @@
 """Tâche quotidienne des rappels sur le site : e-mail en file d'attente Frappe, SMS et WhatsApp (HTTP simulé),
 registre idempotent, échecs consignés sans secret, revérification des paiements CinetPay en attente."""
 import datetime
+import email
 from unittest import mock
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
+from frappe.email.doctype.email_account.email_account import EmailAccount
 from frappe.utils import add_days, getdate, now_datetime, nowdate
+from rq.timeouts import JobTimeoutException
 
 from openlab_academy import hooks
 from openlab_academy.entrypoints import paiement
@@ -29,12 +32,14 @@ def aujourd_hui() -> datetime.date:
 class Http:
     """`requests.post` simulé : Orange (jeton, SMS), WhatsApp, CinetPay (contrôle)."""
 
-    def __init__(self, sms=201, whatsapp=200, cinetpay="ACCEPTED"):
+    def __init__(self, sms=201, whatsapp=200, cinetpay="ACCEPTED", pendant=None):
         self.sms, self.whatsapp, self.cinetpay = sms, whatsapp, cinetpay
+        self.pendant = pendant or (lambda url: None)  # observe la base au moment de l'appel
         self.appels = []
 
     def __call__(self, url, **options):
         self.appels.append((url, options))
+        self.pendant(url)
         if "oauth" in url:
             return Reponse(json={"access_token": "acces-orange-555"})
         if "smsmessaging" in url:
@@ -106,7 +111,7 @@ class Base(FrappeTestCase):
 
     def executer(self, http=None):
         with mock.patch("requests.post", side_effect=http or Http()):
-            return paiement.envoyer_rappels()
+            return paiement._executer_rappels()
 
 
 class TestEnvoyerRappels(Base):
@@ -211,9 +216,59 @@ class TestEnvoyerRappels(Base):
         self.regler()
         self.assertEqual([c.disponible() for c in paiement.canaux()], [True, False, False])
 
-    def test_tache_planifiee_a_8_heures(self):
+    def test_tache_planifiee_a_8_heures_executee_dans_la_file_longue(self):
         self.assertEqual(hooks.scheduler_events["cron"]["0 8 * * *"],
                          ["openlab_academy.entrypoints.paiement.envoyer_rappels"])
+        with mock.patch.object(frappe, "enqueue") as file:
+            paiement.envoyer_rappels()
+        file.assert_called_once_with("openlab_academy.entrypoints.paiement._executer_rappels", queue="long",
+                                     timeout=3600, job_id="openlab_rappels", deduplicate=True)
+
+    def test_reservation_validee_avant_l_appel_statut_valide_apres(self):
+        self.tous_les_canaux()
+        vus = []
+
+        def pendant(url):
+            if "smsmessaging" in url:
+                vus.append((self.commit.call_count, self.rappels().get("sms", (0, 0, None))[2]))
+        avant = self.commit.call_count
+        self.executer(Http(pendant=pendant))
+        (commits, statut), = vus
+        self.assertEqual(statut, "echec")  # réservation déjà écrite...
+        self.assertGreater(commits, avant)  # ...et validée avant l'appel HTTP
+        self.assertGreater(self.commit.call_count, commits)  # statut final validé après
+        self.assertEqual(self.rappels()["sms"][2], "envoye")
+
+    def test_delai_de_la_tache_jamais_avale(self):
+        self.tous_les_canaux()
+        http = Http()
+
+        def poster(url, **options):
+            if "smsmessaging" in url:
+                raise JobTimeoutException("délai dépassé")
+            return http(url, **options)
+        with mock.patch("requests.post", side_effect=poster), self.assertRaises(JobTimeoutException):
+            paiement._executer_rappels()
+        with mock.patch.object(paiement, "passerelle", side_effect=JobTimeoutException()), \
+                self.assertRaises(JobTimeoutException):
+            paiement._executer_rappels()
+
+    def test_sans_compte_d_envoi_e_mail_ignore_sans_alerte(self):
+        with mock.patch.object(EmailAccount, "find_default_outgoing", return_value=None), \
+                mock.patch.object(frappe, "log_error") as consigne:
+            self.assertEqual(self.executer(), 0)
+        self.assertEqual(self.rappels()["email"][2], "ignore")
+        consigne.assert_not_called()
+
+    def test_titre_echappe_dans_l_e_mail(self):
+        frappe.db.set_value("LMS Course", self.cours, "title", "Parcours <b>IA</b>")
+        avant = set(self.courriels())
+        self.executer()
+        nouveau, = set(self.courriels()) - avant
+        mime = email.message_from_string(frappe.db.get_value("Email Queue", nouveau, "message"))
+        corps, = [p.get_payload(decode=True).decode() for p in mime.walk() if p.get_content_type() == "text/html"]
+        self.assertIn("Parcours &lt;b&gt;IA&lt;/b&gt;. Payer", corps)
+        self.assertNotIn("<b>IA</b>", corps)
 
 
 class TestRegistre(Base):
@@ -228,6 +283,22 @@ class TestRegistre(Base):
         self.assertTrue(r.reserver(self.dossier, limite, 7, "email"))
         self.assertEqual(r.etats(self.dossier)[(limite, 7, "email")], "echec")
         self.assertEqual(frappe.db.count(RAPPEL, {"dossier": self.dossier}), 2)
+
+    def test_consigner_en_meme_temps_qu_une_autre_tache(self):
+        r = RegistreRappelsFrappe()
+        r.consigner(self.dossier, self.limite, 3, "sms", "echec")
+        messages = len(frappe.local.message_log)
+        vrai, appels = frappe.db.get_value, []
+
+        def get_value(*a, **k):
+            if a and a[0] == RAPPEL and not appels:
+                appels.append(a)
+                return None  # la ligne n'existait pas encore quand on l'a cherchée
+            return vrai(*a, **k)
+        with mock.patch.object(frappe.db, "get_value", get_value):
+            r.consigner(self.dossier, self.limite, 3, "sms", "envoye")
+        self.assertEqual(len(frappe.local.message_log), messages)
+        self.assertEqual(r.etats(self.dossier), {(self.limite, 3, "sms"): "envoye"})
 
     def test_reservation_concurrente_refusee(self):
         r = RegistreRappelsFrappe()
@@ -262,20 +333,20 @@ class TestReverification(Base):
         self.assertEqual({a[1]["json"]["transaction_id"] for a in http.vers("/check")}, {"OLA-R1", "OLA-R2"})
         self.assertEqual(DepotDossiersFrappe().paye(self.dossier), 110000)
 
-    def test_un_paiement_en_erreur_n_arrete_pas_les_autres(self):
+    def test_passerelle_injoignable_arrete_le_passage_les_rappels_partent(self):
         import requests
         http = Http()
 
         def poster(url, **options):
-            if url.endswith("/check") and options["json"]["transaction_id"] == "OLA-R2":
+            if url.endswith("/check"):
                 raise requests.Timeout(CLE_CP)
             return http(url, **options)
-        with mock.patch.object(frappe, "log_error") as consigne, mock.patch("requests.post", side_effect=poster):
-            paiement.envoyer_rappels()
-        self.assertEqual(self.statuts()["OLA-R1"], "confirme")
-        self.assertEqual(self.statuts()["OLA-R2"], "en_attente")
+        with mock.patch.object(frappe, "log_error") as consigne, mock.patch("requests.post", side_effect=poster) as p:
+            self.assertEqual(paiement._executer_rappels(), 1)
+        self.assertEqual(len([c for c in p.call_args_list if c.args[0].endswith("/check")]), 1)
+        self.assertEqual(self.statuts(), {"OLA-R1": "en_attente", "OLA-R2": "en_attente", "OLA-VIEUX": "en_attente"})
         consigne.assert_called_once_with("Paiement en ligne non revérifié",
-                                         "transaction 'OLA-R2' : CinetPay injoignable (Timeout)")
+                                         "transaction 'OLA-R1' : CinetPay injoignable (Timeout) ; passage interrompu")
         self.assertNotIn(CLE_CP, str(consigne.call_args))
 
     def test_passerelle_non_configuree_aucun_controle(self):
@@ -289,3 +360,21 @@ class TestReverification(Base):
                 mock.patch.object(frappe, "log_error") as consigne:
             self.assertEqual(self.executer(), 1)
         consigne.assert_called_once_with("Paiements en ligne non revérifiés", "RuntimeError")
+
+
+class TestReglagesSms(FrappeTestCase):
+    def tearDown(self):
+        frappe.db.rollback()
+
+    def regler(self, url):
+        r = frappe.get_single(REGLAGES)
+        r.update({"jour_echeance": 10, "delais_rappel": "7,3,1", "inscription_tardive_mois": 2, "sms_url_jeton": url})
+        r.save(ignore_permissions=True)
+
+    def test_url_du_jeton_reservee_a_orange(self):
+        for url in ("https://evil.example.com/token", "http://api.orange.com/oauth/v3/token"):
+            with self.subTest(url=url), self.assertRaisesRegex(frappe.ValidationError, "orange.com"):
+                self.regler(url)
+        for url in ("", "https://api.orange.com/oauth/v3/token"):
+            self.regler(url)
+        self.assertEqual(frappe.db.get_single_value(REGLAGES, "sms_url_jeton"), "https://api.orange.com/oauth/v3/token")

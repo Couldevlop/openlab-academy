@@ -237,15 +237,62 @@ class TestEnvoyerRappels(unittest.TestCase):
         depot.dossiers["D0"] = None
         self.assertEqual(cas(depot, canaux(), Registre(), J0)[0].executer(), 3)
 
-    def test_chaque_dossier_dans_son_unite(self):
-        unites = []
+    def test_reservation_validee_avant_l_envoi_statut_valide_apres(self):
+        journal = []
+
+        class RegistreTrace(Registre):
+            def reserver(self, *cle):
+                journal.append(("reserver", cle[3]))
+                return super().reserver(*cle)
+
+            def consigner(self, *cle):
+                journal.append(("consigner", cle[3], cle[4]))
+                super().consigner(*cle)
+
+        class CanalTrace(Canal):
+            def envoyer(self, destinataire, message):
+                journal.append(("envoi", self.nom))
+                super().envoyer(destinataire, message)
 
         def unite(action):
-            unites.append(action)
+            journal.append("debut")
+            resultat = action()
+            journal.append("valide")
+            return resultat
+        chaines = [CanalTrace("email"), CanalTrace("sms", erreur=EnvoiImpossible("x"))]
+        cas(Depot(dossier_a_rappeler("D1", paye=10000)), chaines, RegistreTrace(), J0, unite=unite)[0].executer()
+        self.assertEqual(journal, [
+            "debut", "valide",  # planification du dossier
+            "debut", ("reserver", "email"), "valide", "debut", ("envoi", "email"), ("consigner", "email", "envoye"),
+            "valide",
+            "debut", ("reserver", "sms"), "valide", "debut", ("envoi", "sms"),  # échec : la réservation reste `echec`
+        ])
+
+    def test_echec_de_l_unite_d_envoi_annule_et_reste_en_echec(self):
+        def unite(action):
             return action()
-        cas(Depot(dossier_a_rappeler("D1", paye=10000), dossier_a_rappeler("D2", paye=10000)), canaux(), Registre(), J0,
-            unite=unite)[0].executer()
-        self.assertEqual(len(unites), 2)
+        registre = Registre()
+        registre_consigner = registre.consigner
+
+        def consigner(*cle):
+            if cle[4] == "envoye":
+                raise RuntimeError("base indisponible")
+            registre_consigner(*cle)
+        registre.consigner = consigner
+        envoye, alertes = cas(Depot(dossier_a_rappeler(paye=10000)), canaux(), registre, J0, unite=unite)
+        self.assertEqual(envoye.executer(), 0)
+        self.assertEqual(set(registre.lignes.values()), {"echec"})
+        self.assertEqual(alertes[0], ("Rappel de paiement non envoyé", "email, dossier D1 : RuntimeError"))
+
+    def test_erreur_fatale_jamais_avalee(self):
+        class Fatale(Exception):
+            pass
+        en_panne = Depot()
+        en_panne.dossiers["D1"] = Fatale()
+        for depot, chaines in ((Depot(dossier_a_rappeler(paye=10000)), canaux(sms=Canal("sms", erreur=Fatale()))),
+                               (en_panne, canaux())):
+            with self.subTest(), self.assertRaises(Fatale):
+                cas(depot, chaines, Registre(), J0, fatales=(Fatale,))[0].executer()
 
     def test_alerte_par_defaut_silencieuse(self):
         sms = Canal("sms", erreur=EnvoiImpossible("x"))
@@ -278,17 +325,30 @@ class TestReverifierPaiements(unittest.TestCase):
     MAINTENANT = datetime(2026, 11, 3, 8, 0)
 
     def test_paiements_recents_revérifies_chacun_independamment(self):
-        depot = DepotAttente(("R1", "R2", "R3", "R4"))
-        confirmer = Confirmer({"R2": PaiementIndisponible("CinetPay injoignable (Timeout)"),
-                               "R3": RuntimeError("apikey=secret")})
+        depot = DepotAttente(("R1", "R2", "R3"))
+        confirmer = Confirmer({"R2": RuntimeError("apikey=secret")})
         alertes = Alertes()
         n = ReverifierPaiements(depot, confirmer, lambda: self.MAINTENANT, alerte=alertes).executer()
-        self.assertEqual(n, 4)
-        self.assertEqual(confirmer.vus, ["R1", "R2", "R3", "R4"])
+        self.assertEqual(n, 3)
+        self.assertEqual(confirmer.vus, ["R1", "R2", "R3"])
         self.assertEqual(depot.demandes, [("cinetpay", self.MAINTENANT - timedelta(days=7))])
-        self.assertEqual(alertes, [
-            ("Paiement en ligne non revérifié", "transaction 'R2' : CinetPay injoignable (Timeout)"),
-            ("Paiement en ligne non revérifié", "transaction 'R3' : RuntimeError")])
+        self.assertEqual(alertes, [("Paiement en ligne non revérifié", "transaction 'R2' : RuntimeError")])
+
+    def test_passerelle_injoignable_arrete_le_passage(self):
+        confirmer = Confirmer({"R2": PaiementIndisponible("CinetPay injoignable (Timeout)")})
+        alertes = Alertes()
+        n = ReverifierPaiements(DepotAttente(("R1", "R2", "R3", "R4")), confirmer, lambda: self.MAINTENANT,
+                                alerte=alertes).executer()
+        self.assertEqual((n, confirmer.vus), (2, ["R1", "R2"]))
+        self.assertEqual(alertes, [("Paiement en ligne non revérifié",
+                                    "transaction 'R2' : CinetPay injoignable (Timeout) ; passage interrompu")])
+
+    def test_erreur_fatale_jamais_avalee(self):
+        class Fatale(Exception):
+            pass
+        with self.assertRaises(Fatale):
+            ReverifierPaiements(DepotAttente(("R1",)), Confirmer({"R1": Fatale()}), lambda: self.MAINTENANT,
+                                fatales=(Fatale,)).executer()
 
     def test_unite_et_alerte_par_defaut(self):
         unites = []

@@ -190,27 +190,37 @@ REVERIFICATION_JOURS = 7
 class ReverifierPaiements:
     """Tâche quotidienne : revérifie auprès de la passerelle les paiements en ligne encore en attente et créés il y a
     moins de 7 jours (notification perdue). Chaque paiement est indépendant : une erreur est consignée sans secret
-    et les suivants sont traités."""
+    et les suivants sont traités ; une passerelle injoignable arrête le passage (inutile d'insister). `fatales`
+    (ex. délai de la tâche dépassé) ne sont jamais avalées."""
 
     def __init__(self, depot: DepotDossiers, confirmer: ConfirmerPaiement, maintenant: Callable[[], datetime], *,
                  alerte: Callable[[str, str], None] = lambda titre, detail: None,
-                 unite: Callable[[Callable[[], None]], None] = lambda action: action()):
+                 unite: Callable[[Callable[[], None]], None] = lambda action: action(),
+                 fatales: tuple[type[BaseException], ...] = ()):
         self._depot = depot
         self._confirmer = confirmer
         self._maintenant = maintenant
         self._alerte = alerte
         self._unite = unite
+        self._fatales = tuple(fatales)
 
     def executer(self) -> int:
+        """Nombre de paiements contrôlés."""
         depuis = self._maintenant() - timedelta(days=REVERIFICATION_JOURS)
-        references = self._depot.paiements_en_attente_depuis(MOYEN_EN_LIGNE, depuis)
-        for reference in references:
+        controles = 0
+        for reference in self._depot.paiements_en_attente_depuis(MOYEN_EN_LIGNE, depuis):
+            controles += 1
             try:
                 self._unite(lambda reference=reference: self._confirmer.executer(reference))
+            except self._fatales:
+                raise
+            except PaiementIndisponible as e:
+                self._alerte("Paiement en ligne non revérifié",
+                             f"transaction {reference[:64]!r} : {e} ; passage interrompu")
+                break
             except Exception as e:
-                detail = str(e) if isinstance(e, PaiementIndisponible) else type(e).__name__
-                self._alerte("Paiement en ligne non revérifié", f"transaction {reference[:64]!r} : {detail}")
-        return len(references)
+                self._alerte("Paiement en ligne non revérifié", f"transaction {reference[:64]!r} : {type(e).__name__}")
+        return controles
 
 
 REFERENCE_MAX = 140

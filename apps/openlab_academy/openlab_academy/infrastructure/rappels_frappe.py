@@ -46,23 +46,26 @@ class RegistreRappelsFrappe:
             if ligne.statut != ECHEC:
                 frappe.db.set_value(RAPPEL, ligne.name, "statut", ECHEC)
             return True
+        return self._creer(dossier, date_limite, jours, canal, ECHEC)  # False : réservé au même instant ailleurs
+
+    def consigner(self, dossier: str, date_limite, jours: int, canal: str, statut: str) -> None:
+        cle = _cle(dossier, date_limite, jours, canal)
+        nom = frappe.db.get_value(RAPPEL, {"cle": cle})
+        if not nom:
+            if self._creer(dossier, date_limite, jours, canal, statut):
+                return
+            nom = frappe.db.get_value(RAPPEL, {"cle": cle})  # créée au même instant par une autre tâche
+        frappe.db.set_value(RAPPEL, nom, "statut", statut)
+
+    def _creer(self, dossier, date_limite, jours, canal, statut) -> bool:
+        """Crée la ligne ; False (sans trace ni message) si la clé existe déjà."""
         messages = len(frappe.local.message_log)
         frappe.db.savepoint(POINT)
         try:
-            self._creer(dossier, date_limite, jours, canal, ECHEC)
-        except frappe.UniqueValidationError:  # réservé au même instant par une autre tâche
+            frappe.get_doc({"doctype": RAPPEL, "dossier": dossier, "date_limite": date_limite, "jours_avant": jours,
+                            "canal": canal, "statut": statut}).insert(ignore_permissions=True)
+        except frappe.UniqueValidationError:
             frappe.db.rollback(save_point=POINT)
             del frappe.local.message_log[messages:]
             return False
         return True
-
-    def consigner(self, dossier: str, date_limite, jours: int, canal: str, statut: str) -> None:
-        nom = frappe.db.get_value(RAPPEL, {"cle": _cle(dossier, date_limite, jours, canal)})
-        if nom:
-            frappe.db.set_value(RAPPEL, nom, "statut", statut)
-        else:
-            self._creer(dossier, date_limite, jours, canal, statut)
-
-    def _creer(self, dossier, date_limite, jours, canal, statut) -> None:
-        frappe.get_doc({"doctype": RAPPEL, "dossier": dossier, "date_limite": date_limite, "jours_avant": jours,
-                        "canal": canal, "statut": statut}).insert(ignore_permissions=True)

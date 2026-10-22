@@ -5,12 +5,14 @@ import datetime
 from urllib.parse import urlencode, urlsplit
 
 import frappe
+from frappe.email.doctype.email_account.email_account import EmailAccount
 from frappe.utils import getdate, nowdate, now_datetime
 
 from openlab_academy.application.paiements import (
     AccorderDelai, ConfirmerPaiement, EnregistrerVirement, InitierPaiement, InscriptionTardive, OuvrirDossier,
     PaiementIndisponible, ReverifierPaiements, TarifAbsent)
 from openlab_academy.application.rappels import EnvoyerRappels
+from rq.timeouts import JobTimeoutException
 from openlab_academy.entrypoints.lms import ROLES_NON_BLOQUES
 from openlab_academy.infrastructure.canaux import CanalEmail, CanalSms, CanalWhatsApp
 from openlab_academy.infrastructure.cinetpay import PasserelleCinetPay
@@ -113,9 +115,13 @@ def _alerte(titre: str, detail: str) -> None:
     frappe.log_error(titre, detail)
 
 
+FATALES = (JobTimeoutException,)  # délai de la tâche dépassé : jamais avalé, RQ doit l'arrêter
+
+
 def _transaction(action):
-    """Un dossier (ou un paiement) par transaction, validée aussitôt : une erreur n'annule que ses écritures
-    (toute la transaction en cours si le point de sauvegarde est perdu, après un interblocage) puis remonte."""
+    """Une étape par transaction, validée aussitôt (planification d'un dossier, réservation d'un envoi, envoi et
+    statut, contrôle d'un paiement) : une erreur n'annule que ses écritures (toute la transaction en cours si le
+    point de sauvegarde est perdu, après un interblocage) puis remonte."""
     frappe.db.savepoint(POINT_RAPPEL)
     try:
         resultat = action()
@@ -135,7 +141,7 @@ def canaux() -> tuple:
 
     def secret(champ: str) -> str:
         return r.get_password(champ, raise_exception=False) or ""
-    return (CanalEmail(frappe.sendmail),
+    return (CanalEmail(frappe.sendmail, lambda: bool(EmailAccount.find_default_outgoing())),
             CanalSms(r.sms_url_jeton or "", r.sms_client_id or "", secret("sms_client_secret"), r.sms_expediteur or ""),
             CanalWhatsApp(r.whatsapp_phone_id or "", secret("whatsapp_jeton"), r.whatsapp_modele or ""))
 
@@ -147,15 +153,24 @@ def reverifier_paiements() -> int:
         return 0
     depot = DepotDossiersFrappe()
     return ReverifierPaiements(depot, ConfirmerPaiement(depot, p, journaliser), now_datetime, alerte=_alerte,
-                               unite=_transaction).executer()
+                               unite=_transaction, fatales=FATALES).executer()
 
 
-def envoyer_rappels() -> int:
-    """Tâche quotidienne (08:00, Abidjan = UTC) ; renvoie le nombre de rappels envoyés."""
+def envoyer_rappels() -> None:
+    """Échéancier (08:00, Abidjan = UTC) : la file par défaut coupe à 300 s ; le travail part dans la file longue,
+    une seule fois même si l'échéancier le redemande pendant qu'il tourne."""
+    frappe.enqueue(f"{__name__}._executer_rappels", queue="long", timeout=3600, job_id="openlab_rappels",
+                   deduplicate=True)
+
+
+def _executer_rappels() -> int:
+    """Revérifie les paiements en attente puis envoie les rappels dus ; renvoie le nombre de rappels envoyés."""
     try:
         reverifier_paiements()  # un paiement arrivé sans notification ne doit pas valoir de rappel
+    except FATALES:
+        raise
     except Exception as e:
         frappe.log_error("Paiements en ligne non revérifiés", type(e).__name__)
     return EnvoyerRappels(DepotRappelsFrappe(), canaux(), RegistreRappelsFrappe(), jour_courant,
                           delais=ReglagesPaiementFrappe().charger().delais_rappel, alerte=_alerte,
-                          unite=_transaction).executer()
+                          unite=_transaction, fatales=FATALES).executer()

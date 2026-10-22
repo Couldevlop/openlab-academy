@@ -8,7 +8,7 @@ import requests
 
 from openlab_academy.application.rappels import DestinataireInjoignable, Destinataire, EnvoiImpossible, Message
 from openlab_academy.infrastructure.canaux import (
-    JETON_ORANGE, CanalEmail, CanalSms, CanalWhatsApp)
+    JETON_ORANGE, CanalEmail, CanalSms, CanalWhatsApp, url_jeton_valide)
 from openlab_academy.tests.http_simule import Reponse
 
 POST = "requests.post"
@@ -67,6 +67,18 @@ class TestCanalEmail(unittest.TestCase):
         self.assertEqual(envois, [{"recipients": ["aya@x.ci"], "subject": MESSAGE.sujet, "message": MESSAGE.texte,
                                    "delayed": True}])
 
+    def test_disponible_selon_le_compte_d_envoi(self):
+        self.assertFalse(CanalEmail(lambda **kw: None, compte_sortant=lambda: False).disponible())
+        self.assertTrue(CanalEmail(lambda **kw: None, compte_sortant=lambda: True).disponible())
+
+    def test_html_echappe(self):
+        envois = []
+        texte = "Rappel : parcours <b>IA</b> & <script>x</script>. Payer : https://academy.ci/espace/paiement/p"
+        CanalEmail(lambda **kw: envois.append(kw)).envoyer(AYA, Message("Rappel <b>", texte, ()))
+        self.assertEqual(envois[0]["message"], "Rappel : parcours &lt;b&gt;IA&lt;/b&gt; &amp; &lt;script&gt;x&lt;/script&gt;. "
+                                               "Payer : https://academy.ci/espace/paiement/p")
+        self.assertNotIn("<", envois[0]["message"])
+
     def test_sans_adresse(self):
         with self.assertRaises(DestinataireInjoignable):
             CanalEmail(lambda **kw: None).envoyer(Destinataire("", "+2250700000000", "Aya"), MESSAGE)
@@ -116,10 +128,20 @@ class TestCanalSms(unittest.TestCase):
             sms(expediteur="225/../x").envoyer(AYA, MESSAGE)
         post.assert_not_called()
 
-    def test_url_de_jeton_non_https_refusee(self):
-        with mock.patch(POST) as post, self.assertRaisesRegex(EnvoiImpossible, "URL du jeton invalide"):
-            sms(url_jeton="http://api.orange.com/oauth").envoyer(AYA, MESSAGE)
-        post.assert_not_called()
+    def test_url_de_jeton_hors_orange_refusee(self):
+        for url in ("http://api.orange.com/oauth", "https://evil.example.com/token", "https://api.orange.com.evil.ci/t",
+                    "https://user@evil.ci/x", "https://orange.com:evil@evil.ci/t", "ftp://api.orange.com/t",
+                    "https://[api.orange.com/t", "https://api.orange.com:port/t"):
+            with self.subTest(url=url), mock.patch(POST) as post, \
+                    self.assertRaisesRegex(EnvoiImpossible, "URL du jeton invalide"):
+                sms(url_jeton=url).envoyer(AYA, MESSAGE)
+            post.assert_not_called()
+            self.assertFalse(url_jeton_valide(url), url)
+
+    def test_url_de_jeton_valide(self):
+        for url in ("", "https://api.orange.com/oauth/v3/token", "https://api.sandbox.orange.com/oauth/v3/token",
+                    " https://orange.com/t "):
+            self.assertTrue(url_jeton_valide(url), url)
 
     def test_erreurs_sans_secret(self):
         cas = [
@@ -171,6 +193,13 @@ class TestCanalWhatsApp(unittest.TestCase):
                                                 {"type": "text", "text": "50 000"},
                                                 {"type": "text", "text": "10/11/2026"}]}]}})
         self.assertEqual((options["timeout"], options["allow_redirects"]), (15, False))
+
+    def test_parametres_sur_une_ligne(self):
+        message = Message("s", "t", ("Aya\n\tKouassi    Bé ", "50 000", "10/11/2026"))
+        with mock.patch(POST, return_value=Reponse(200, json={})) as post:
+            whatsapp().envoyer(AYA, message)
+        parametres = post.call_args.kwargs["json"]["template"]["components"][0]["parameters"]
+        self.assertEqual(parametres[0], {"type": "text", "text": "Aya Kouassi Bé"})
 
     def test_sans_numero(self):
         with mock.patch(POST) as post, self.assertRaises(DestinataireInjoignable):

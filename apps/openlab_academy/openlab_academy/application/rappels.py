@@ -88,21 +88,26 @@ def _sans_alerte(titre: str, detail: str) -> None:
     pass
 
 
-def _direct(action: Callable[[], int]) -> int:
+def _direct(action):
     return action()
 
 
 class EnvoyerRappels:
+    """`unite` exécute une action dans sa propre transaction, validée aussitôt (annulée si elle lève) : la
+    planification d'un dossier, la réservation d'un envoi (validée AVANT l'appel au canal), puis l'envoi avec son
+    statut final. `fatales` (ex. délai de la tâche dépassé) ne sont jamais avalées."""
+
     def __init__(self, depot: DepotRappels, canaux, registre: Registre, aujourd_hui: Callable[[], date], *,
                  delais: tuple[int, ...] = (7, 3, 1), alerte: Callable[[str, str], None] = _sans_alerte,
-                 unite: Callable[[Callable[[], int]], int] = _direct):
+                 unite: Callable = _direct, fatales: tuple[type[BaseException], ...] = ()):
         self._depot = depot
         self._canaux = {c.nom: c for c in canaux}
         self._registre = registre
         self._aujourd_hui = aujourd_hui
         self._delais = tuple(delais)
         self._alerte = alerte
-        self._unite = unite  # une transaction par dossier
+        self._unite = unite
+        self._fatales = tuple(fatales)
 
     def executer(self) -> int:
         """Nombre de rappels envoyés."""
@@ -110,17 +115,24 @@ class EnvoyerRappels:
         envoyes = 0
         for nom in self._depot.noms():
             try:
-                envoyes += self._unite(lambda nom=nom: self._traiter(nom, aujourd_hui))
+                envoyes += self._traiter(nom, aujourd_hui)
+            except self._fatales:
+                raise
             except Exception as e:  # le dossier suivant est traité quand même
                 self._alerte("Rappels de paiement : dossier non traité", f"dossier {nom} : {type(e).__name__}")
         return envoyes
 
     def _traiter(self, nom: str, aujourd_hui: date) -> int:
+        d, plan, etats = self._unite(lambda: self._planifier(nom, aujourd_hui))
+        return sum(self._envoyer(d, cle, montant, etats.get(cle)) for cle, montant in sorted(plan.items()))
+
+    def _planifier(self, nom: str, aujourd_hui: date):
+        """(dossier, plan {(date limite, jours, canal): montant}, états consignés) ; plan vide si dossier absent."""
         d = self._depot.charger(nom)
         if d is None:
-            return 0
+            return None, {}, {}
         etats = self._registre.etats(nom)
-        plan = {}  # (date limite, jours, canal) -> montant
+        plan = {}
         for (date_limite, jours), montant in _cumul(rappels_dus(d.dossier, aujourd_hui, self._delais)).items():
             for canal in self._canaux:
                 plan[(date_limite, jours, canal)] = montant
@@ -133,7 +145,10 @@ class EnvoyerRappels:
             montant = sum(m for (dl, _), m in restant.items() if dl == date_limite)
             if montant:
                 plan[(date_limite, jours, canal)] = montant
-        return sum(self._envoyer(d, cle, montant, etats.get(cle)) for cle, montant in sorted(plan.items()))
+        return d, plan, etats
+
+    def _consigner(self, d: DossierARappeler, cle: tuple[date, int, str], statut: str) -> None:
+        self._unite(lambda: self._registre.consigner(d.nom, *cle, statut))
 
     def _envoyer(self, d: DossierARappeler, cle: tuple[date, int, str], montant: int, etat: str | None) -> int:
         date_limite, jours, nom_canal = cle
@@ -142,22 +157,26 @@ class EnvoyerRappels:
         canal = self._canaux[nom_canal]
         if not canal.disponible():
             if etat != IGNORE:
-                self._registre.consigner(d.nom, date_limite, jours, nom_canal, IGNORE)
+                self._consigner(d, cle, IGNORE)
             return 0
-        if not self._registre.reserver(d.nom, date_limite, jours, nom_canal):
+        if not self._unite(lambda: self._registre.reserver(d.nom, date_limite, jours, nom_canal)):
             return 0
         message = message_rappel(d.titre, montant, date_limite, d.lien, d.destinataire.nom)
-        try:
+
+        def envoyer():
             canal.envoyer(d.destinataire, message)
+            self._registre.consigner(d.nom, date_limite, jours, nom_canal, ENVOYE)
+        try:
+            self._unite(envoyer)
+        except self._fatales:
+            raise
         except DestinataireInjoignable:
-            self._registre.consigner(d.nom, date_limite, jours, nom_canal, IGNORE)
+            self._consigner(d, cle, IGNORE)
             return 0
-        except Exception as e:
-            self._registre.consigner(d.nom, date_limite, jours, nom_canal, ECHEC)
+        except Exception as e:  # la réservation validée reste `echec` : relançable
             detail = str(e) if isinstance(e, EnvoiImpossible) else type(e).__name__
             self._alerte("Rappel de paiement non envoyé", f"{nom_canal}, dossier {d.nom} : {detail}")
             return 0
-        self._registre.consigner(d.nom, date_limite, jours, nom_canal, ENVOYE)
         return 1
 
 
