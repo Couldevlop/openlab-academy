@@ -226,6 +226,28 @@ class TestRoleIntendant(FrappeTestCase):
         install.preparer_roles()
         self.assertEqual(frappe.db.get_value("Role", "Intendant OpenLab", "desk_access"), 1)
 
+    def test_l_intendant_choisit_le_parcours_d_un_tarif_sans_lire_les_parcours(self):
+        frappe.db.delete("Custom DocPerm", {"parent": "LMS Course", "role": "Intendant OpenLab"})
+        avant = frappe.db.count("DocPerm", {"parent": "LMS Course"})
+        install.preparer_roles()
+        install.preparer_roles()
+        (regle,) = frappe.get_all("Custom DocPerm", {"parent": "LMS Course", "role": "Intendant OpenLab"},
+                                  ["select", "read", "write"])
+        self.assertEqual((regle.select, regle.read, regle.write), (1, 0, 0))
+        # les droits standard restent en vigueur (recopiés avant la règle de l'intendant)
+        self.assertGreaterEqual(frappe.db.count("Custom DocPerm", {"parent": "LMS Course"}), avant + 1)
+        intendant = utilisateur("tarifs.intendant@example.ci")
+        frappe.get_doc("User", intendant).add_roles("Intendant OpenLab")
+        nom = cours("Parcours choisi par l'intendant")
+        frappe.set_user(intendant)
+        try:
+            self.assertTrue(frappe.has_permission("LMS Course", "select"))
+            self.assertFalse(frappe.has_permission("LMS Course", "read"))
+            from frappe.desk.search import search_link
+            self.assertIn(nom, [r["value"] for r in search_link("LMS Course", "choisi par l")])
+        finally:
+            frappe.set_user("Administrator")
+
 
 class TestPatchDispense(FrappeTestCase):
     def setUp(self):
