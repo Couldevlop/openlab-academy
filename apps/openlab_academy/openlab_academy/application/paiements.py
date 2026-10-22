@@ -5,7 +5,8 @@ from dataclasses import replace
 from datetime import date, datetime
 
 from openlab_academy.application.ports_paiement import (
-    DepotDossiers, Journal, NouveauDossier, Passerelle, Reglages, Tarifs)
+    DepotDossiers, Journal, NouveauDossier, Passerelle, ReferenceDejaEnregistree, Reglages, Tarifs)
+from openlab_academy.domain.dossier_paiement import statut
 from openlab_academy.domain.echeancier import Echeance, Mode, Tarif, echeancier, inscription_permise, replanifier
 
 LIBELLE_FRAIS = "Frais d'inscription"
@@ -181,3 +182,91 @@ class ConfirmerPaiement:
             return
         for reference in self._depot.paiements_en_attente(d.nom, MOYEN_EN_LIGNE, limite):
             self.executer(reference)
+
+
+REFERENCE_MAX = 140
+MOTIF_MAX = 500
+MOYEN_VIREMENT = "virement"
+
+
+class OperationRefusee(ValueError):
+    """Saisie refusée d'un virement ou d'un délai ; le message est destiné à l'agent."""
+
+
+def _motif(motif, obligatoire: bool) -> str:
+    if motif is None and not obligatoire:
+        motif = ""
+    if not isinstance(motif, str):
+        raise OperationRefusee("Le motif est invalide.")
+    motif = motif.strip()
+    if obligatoire and not motif:
+        raise OperationRefusee("Le motif est obligatoire.")
+    if len(motif) > MOTIF_MAX:
+        raise OperationRefusee(f"Le motif est trop long ({MOTIF_MAX} caractères au plus).")
+    return motif
+
+
+def _jour(valeur) -> bool:
+    return type(valeur) is date
+
+
+def _charger_actif(depot: DepotDossiers, nom: str):
+    d = depot.par_nom(nom)
+    if d is None:
+        raise DossierAbsent("Aucun dossier de paiement pour ce parcours.")
+    if d.dossier.dispense:
+        raise OperationRefusee("Ce dossier est dispensé de paiement : aucune opération possible.")
+    return d
+
+
+class EnregistrerVirement:
+    """Enregistre un virement reçu (confirmé d'office, auteur = l'agent) ; référence unique, journalisé."""
+
+    def __init__(self, depot: DepotDossiers, journal: Journal, aujourd_hui: Callable[[], date]):
+        self._depot = depot
+        self._journal = journal
+        self._aujourd_hui = aujourd_hui
+
+    def executer(self, acteur: str, dossier: str, montant: int, reference: str, date_paiement: date,
+                 motif: str = "") -> None:
+        if type(montant) is not int or montant <= 0:
+            raise OperationRefusee("Le montant doit être un nombre entier positif de francs CFA.")
+        if not isinstance(reference, str) or not 1 <= len(reference := reference.strip()) <= REFERENCE_MAX:
+            raise OperationRefusee(f"La référence du virement est obligatoire ({REFERENCE_MAX} caractères au plus).")
+        aujourd_hui = self._aujourd_hui()
+        if not _jour(date_paiement) or date_paiement > aujourd_hui:
+            raise OperationRefusee("La date du virement est invalide ou dans le futur.")
+        motif = _motif(motif, obligatoire=False)
+        d = _charger_actif(self._depot, dossier)
+        avant = {"paye": d.dossier.paye, "statut": statut(d.dossier, aujourd_hui).value}
+        try:
+            self._depot.enregistrer_virement(d.nom, montant, reference, date_paiement, acteur)
+        except ReferenceDejaEnregistree:
+            raise OperationRefusee("Cette référence de virement est déjà enregistrée.") from None
+        apres = self._depot.par_nom(d.nom).dossier
+        self._journal(d.nom, acteur, "virement_enregistre", avant,
+                      {"paye": apres.paye, "statut": statut(apres, aujourd_hui).value, "montant": montant,
+                       "reference": reference, "date_paiement": date_paiement.isoformat()}, motif)
+
+
+class AccorderDelai:
+    """Accorde un délai de paiement (et débloque ainsi l'apprenant jusqu'à cette date) ; motif obligatoire."""
+
+    def __init__(self, depot: DepotDossiers, journal: Journal, aujourd_hui: Callable[[], date]):
+        self._depot = depot
+        self._journal = journal
+        self._aujourd_hui = aujourd_hui
+
+    def executer(self, acteur: str, dossier: str, jusqu_au: date, motif: str) -> None:
+        aujourd_hui = self._aujourd_hui()
+        if not _jour(jusqu_au) or jusqu_au <= aujourd_hui:
+            raise OperationRefusee("Le délai doit se terminer après aujourd'hui.")
+        motif = _motif(motif, obligatoire=True)
+        d = _charger_actif(self._depot, dossier)
+        ancien = d.dossier.delai_jusqu_au
+        avant = {"delai_jusqu_au": ancien.isoformat() if ancien else None,
+                 "statut": statut(d.dossier, aujourd_hui).value}
+        self._depot.fixer_delai(d.nom, jusqu_au)
+        apres = self._depot.par_nom(d.nom).dossier
+        self._journal(d.nom, acteur, "delai_accorde", avant,
+                      {"delai_jusqu_au": jusqu_au.isoformat(), "statut": statut(apres, aujourd_hui).value}, motif)

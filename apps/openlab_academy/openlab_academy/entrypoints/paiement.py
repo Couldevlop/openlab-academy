@@ -4,10 +4,10 @@ import datetime
 from urllib.parse import urlencode, urlsplit
 
 import frappe
-from frappe.utils import getdate, now_datetime
+from frappe.utils import getdate, nowdate, now_datetime
 
 from openlab_academy.application.paiements import (
-    ConfirmerPaiement, InitierPaiement, InscriptionTardive, OuvrirDossier, PaiementIndisponible, TarifAbsent)
+    AccorderDelai, ConfirmerPaiement, EnregistrerVirement, InitierPaiement, InscriptionTardive, OuvrirDossier, PaiementIndisponible, TarifAbsent)
 from openlab_academy.entrypoints.lms import ROLES_NON_BLOQUES
 from openlab_academy.infrastructure.cinetpay import PasserelleCinetPay
 from openlab_academy.infrastructure.depot_dossiers_frappe import (
@@ -82,3 +82,19 @@ def confirmer_paiement(transaction: str, p: PasserelleCinetPay | None = None) ->
 
 def reconcilier_paiements(apprenant: str, cours: str) -> None:
     ConfirmerPaiement(DepotDossiersFrappe(), passerelle(), journaliser).reconcilier(apprenant, cours)
+
+
+# --- virements et délais (intendant, administrateur) -----------------------------------------------------
+def jour_courant() -> datetime.date:
+    """Date du jour du site (Abidjan = UTC) ; injectée dans les cas d'usage, jamais lue par eux."""
+    return getdate(nowdate())
+
+
+def enregistrer_virement(acteur: str, dossier: str, montant: int, reference: str, date_paiement: datetime.date,
+                         motif: str = "") -> None:
+    EnregistrerVirement(DepotDossiersFrappe(), journaliser, jour_courant).executer(
+        acteur, dossier, montant, reference, date_paiement, motif)
+
+
+def accorder_delai(acteur: str, dossier: str, jusqu_au: datetime.date, motif: str) -> None:
+    AccorderDelai(DepotDossiersFrappe(), journaliser, jour_courant).executer(acteur, dossier, jusqu_au, motif)

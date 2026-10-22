@@ -7,17 +7,29 @@ les refus sans aucun secret. En cas d'erreur, seule la requête en cours est ann
 lors de l'initiation, demeure. Le retour redirige vers l'écran de paiement d'un parcours existant ; pour l'apprenant
 connecté, il revérifie d'abord ses paiements en attente sur ce parcours (notification perdue), sans jamais bloquer
 la redirection.
+
+Virements et délais : réservés à l'Intendant et à l'administrateur (vérifié côté serveur avant toute lecture),
+en POST pour des agents connectés (Frappe exige alors le jeton CSRF) ; l'acteur journalisé est toujours l'utilisateur
+de la session, jamais un paramètre.
 """
+import re
+from collections.abc import Callable
+from datetime import date
+from functools import wraps
 from urllib.parse import quote
 
 import frappe
 from frappe.rate_limiter import rate_limit
+from frappe.utils import getdate
 
-from openlab_academy.application.paiements import PaiementIndisponible
+from openlab_academy.application.paiements import DossierAbsent, OperationRefusee, PaiementIndisponible
 from openlab_academy.entrypoints import paiement
 
 HEURE = 3600
 LIMITE_PAR_ADRESSE = 600  # requêtes par heure et par adresse IP, pour les points ouverts aux visiteurs
+LIMITE_AGENTS = 120  # saisies par heure et par adresse IP pour les points réservés aux agents
+ROLES_AGENTS = frozenset({"System Manager", "Intendant OpenLab"})
+_ENTIER = re.compile(r"[0-9]{1,12}")
 
 
 def _consigner(titre: str, transaction: str, motif: str) -> None:
@@ -66,3 +78,47 @@ def retour_cinetpay(cours: str | None = None) -> None:
             _reconcilier(frappe.session.user, cours)
     frappe.local.response["type"] = "redirect"
     frappe.local.response["location"] = cible
+
+
+# --- virements et délais ---------------------------------------------------------------------------------
+def _api(fn: Callable) -> Callable:
+    """Visiteur et rôles non habilités refusés (403) avant tout traitement ; saisie refusée -> erreur de validation."""
+    @wraps(fn)
+    def appel(*args, **kwargs):
+        if frappe.session.user == "Guest" or not ROLES_AGENTS & set(frappe.get_roles(frappe.session.user)):
+            frappe.throw("Accès réservé à l'intendant et à l'administrateur.", frappe.PermissionError)
+        try:
+            return fn(*args, **kwargs)
+        except (OperationRefusee, DossierAbsent) as e:
+            frappe.throw(str(e), frappe.ValidationError)
+    return appel
+
+
+def _entier(valeur):
+    """Entier tel quel, ou chaîne de chiffres d'une requête HTTP ; toute autre valeur reste refusée par le cas d'usage."""
+    if isinstance(valeur, str) and _ENTIER.fullmatch(valeur.strip()):
+        return int(valeur)
+    return valeur
+
+
+def _jour(valeur) -> date | None:
+    """Date ISO d'une requête ; None si absente ou illisible (refusée ensuite par le cas d'usage)."""
+    try:
+        return getdate(valeur) if isinstance(valeur, str) and valeur.strip() else None
+    except Exception:
+        return None
+
+
+@frappe.whitelist(methods=["POST"])
+@rate_limit(limit=LIMITE_AGENTS, seconds=HEURE)
+@_api
+def enregistrer_virement(dossier: str, montant, reference: str, date_paiement: str, motif: str = "") -> None:
+    paiement.enregistrer_virement(frappe.session.user, dossier, _entier(montant), reference,
+                                  _jour(date_paiement), motif)
+
+
+@frappe.whitelist(methods=["POST"])
+@rate_limit(limit=LIMITE_AGENTS, seconds=HEURE)
+@_api
+def accorder_delai(dossier: str, jusqu_au: str, motif: str) -> None:
+    paiement.accorder_delai(frappe.session.user, dossier, _jour(jusqu_au), motif)

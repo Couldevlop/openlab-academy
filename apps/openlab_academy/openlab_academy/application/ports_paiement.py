@@ -61,8 +61,13 @@ class PaiementEnregistre:
     statut: str
 
 
+class ReferenceDejaEnregistree(Exception):
+    """Un paiement porte déjà cette référence pour ce moyen."""
+
+
 class DepotDossiers(Protocol):
     def charger(self, apprenant: str, cours: str) -> DossierEnregistre | None: ...
+    def par_nom(self, nom: str) -> DossierEnregistre | None: ...
     def creer(self, d: NouveauDossier) -> str: ...
     def remplacer_echeances(self, nom: str, mode: Mode, echeances: tuple[Echeance, ...]) -> None: ...
     def fixer_telephone(self, nom: str, telephone: str) -> None: ...
@@ -74,6 +79,10 @@ class DepotDossiers(Protocol):
 
     def confirmer_paiement(self, moyen: str, reference: str, montant: int) -> bool:
         """Passe le paiement à `confirme` au montant donné, sous verrou ; False s'il l'était déjà (ou inconnu)."""
+
+    def enregistrer_virement(self, dossier: str, montant: int, reference: str, date_paiement: date,
+                             auteur: str) -> None:
+        """Paiement `virement` confirmé ; lève ReferenceDejaEnregistree si la référence existe déjà."""
 
     def marquer_echoue(self, moyen: str, reference: str) -> None: ...
 

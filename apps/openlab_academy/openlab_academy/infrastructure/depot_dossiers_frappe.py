@@ -1,14 +1,17 @@
 """Adaptateurs Frappe du paiement : dossiers et paiements, tarifs, réglages."""
+import datetime
+
 import frappe
 from frappe.utils import getdate, now_datetime
 
 from openlab_academy.application.ports_paiement import (
-    Client, DossierEnregistre, NouveauDossier, PaiementEnregistre, ReglagesPaiement)
+    Client, DossierEnregistre, NouveauDossier, PaiementEnregistre, ReferenceDejaEnregistree, ReglagesPaiement)
 from openlab_academy.domain.dossier_paiement import Dossier
 from openlab_academy.domain.echeancier import Echeance, Mode, Tarif
 
 DOSSIER = "Dossier Paiement OpenLab"
 PAIEMENT = "Paiement OpenLab"
+POINT = "enregistrer_virement"
 
 
 def _lignes(echeances) -> list[dict]:
@@ -17,8 +20,10 @@ def _lignes(echeances) -> list[dict]:
 
 class DepotDossiersFrappe:
     def charger(self, apprenant: str, cours: str) -> DossierEnregistre | None:
-        nom = frappe.db.get_value(DOSSIER, {"apprenant": apprenant, "cours": cours})
-        if not nom:
+        return self.par_nom(frappe.db.get_value(DOSSIER, {"apprenant": apprenant, "cours": cours}))
+
+    def par_nom(self, nom: str | None) -> DossierEnregistre | None:
+        if not nom or not frappe.db.exists(DOSSIER, nom):
             return None
         d = frappe.get_doc(DOSSIER, nom)
         lot = frappe.db.get_value("LMS Batch", d.cohorte, ["start_date", "end_date"], as_dict=True)
@@ -60,6 +65,21 @@ class DepotDossiersFrappe:
     def creer_paiement(self, dossier: str, montant: int, moyen: str, reference: str, statut: str) -> str:
         return frappe.get_doc({"doctype": PAIEMENT, "dossier": dossier, "montant": montant, "moyen": moyen,
                                "reference": reference, "statut": statut}).insert(ignore_permissions=True).name
+
+    def enregistrer_virement(self, dossier: str, montant: int, reference: str, date_paiement, auteur: str) -> None:
+        if frappe.db.exists(PAIEMENT, {"cle": f"virement|{reference}"}):
+            raise ReferenceDejaEnregistree(reference)
+        messages = len(frappe.local.message_log)
+        frappe.db.savepoint(POINT)
+        try:
+            frappe.get_doc({"doctype": PAIEMENT, "dossier": dossier, "montant": montant, "moyen": "virement",
+                            "reference": reference, "statut": "confirme", "auteur": auteur,
+                            "date_paiement": datetime.datetime.combine(date_paiement, datetime.time())}
+                           ).insert(ignore_permissions=True)
+        except frappe.UniqueValidationError:  # même référence saisie en même temps par un autre agent
+            frappe.db.rollback(save_point=POINT)
+            del frappe.local.message_log[messages:]
+            raise ReferenceDejaEnregistree(reference) from None
 
     def _verrouiller(self, moyen: str, reference: str):
         """Ligne du paiement verrouillée jusqu'à la fin de la transaction : deux notifications simultanées

@@ -4,10 +4,11 @@ from dataclasses import replace
 from datetime import date, datetime
 
 from openlab_academy.application.paiements import (
-    ChoisirMode, ConfirmerPaiement, DossierAbsent, InitierPaiement, InscriptionTardive, OuvrirDossier,
-    PaiementIndisponible, RienADu, TarifAbsent, TelephoneInvalide, valider_telephone)
+    AccorderDelai, ChoisirMode, ConfirmerPaiement, DossierAbsent, EnregistrerVirement, InitierPaiement,
+    InscriptionTardive, OperationRefusee, OuvrirDossier, PaiementIndisponible, RienADu, TarifAbsent, TelephoneInvalide,
+    valider_telephone)
 from openlab_academy.application.ports_paiement import (
-    Client, DossierEnregistre, PaiementEnregistre, ReglagesPaiement, Verification)
+    Client, DossierEnregistre, PaiementEnregistre, ReferenceDejaEnregistree, ReglagesPaiement, Verification)
 from openlab_academy.domain.dossier_paiement import Dossier, Statut, statut
 from openlab_academy.domain.echeancier import Echeance, Mode, Tarif, TarifInvalide
 
@@ -72,8 +73,24 @@ class Depot:
         if p.statut == "en_attente":
             self.paiements[(moyen, reference)] = replace(p, statut="echoue")
 
+    def par_nom(self, nom):
+        return next((d for d in self.dossiers.values() if d.nom == nom), None)
+
     def fixer_delai(self, nom, d):
-        pass
+        self.delais = getattr(self, "delais", []) + [(nom, d)]
+        for cle, e in self.dossiers.items():
+            if e.nom == nom:
+                self.dossiers[cle] = replace(e, dossier=replace(e.dossier, delai_jusqu_au=d))
+
+    def enregistrer_virement(self, dossier, montant, reference, date_paiement, auteur):
+        if ("virement", reference) in self.paiements:
+            raise ReferenceDejaEnregistree(reference)
+        self.paiements[("virement", reference)] = PaiementEnregistre(f"P{len(self.paiements) + 1}", dossier, montant,
+                                                                      "confirme")
+        for cle, e in self.dossiers.items():
+            if e.nom == dossier:
+                self.dossiers[cle] = replace(e, dossier=replace(e.dossier, paye=e.dossier.paye + montant))
+        self.virements = getattr(self, "virements", []) + [(dossier, montant, reference, date_paiement, auteur)]
 
 
 class Tarifs:
@@ -394,3 +411,123 @@ class TestTelephone(unittest.TestCase):
                        "+225070000000a", "+33 abc"):
             with self.subTest(numero=numero), self.assertRaises(TelephoneInvalide):
                 valider_telephone(numero)
+
+
+def en_retard(paye=0):
+    """Dossier dont les frais (10000) sont échus : bloqué tant que rien n'est payé."""
+    return depot_ouvert(paye)
+
+
+class TestEnregistrerVirement(unittest.TestCase):
+    def cas(self, depot, aujourd_hui=AUJOURDHUI):
+        self.journal = Journal()
+        return EnregistrerVirement(depot, self.journal, lambda: aujourd_hui)
+
+    def virer(self, depot=None, **champs):
+        depot = depot or en_retard()
+        args = {"acteur": "int@x.ci", "dossier": "D1", "montant": 10000, "reference": "VIR-1",
+                "date_paiement": date(2026, 10, 20), "motif": "Virement reçu"} | champs
+        self.cas(depot).executer(**args)
+        return depot
+
+    def test_virement_confirme_debloque_le_dossier_et_journalise_l_acteur(self):
+        depot = en_retard()
+        self.assertEqual(statut(depot.par_nom("D1").dossier, AUJOURDHUI), Statut.EN_RETARD)
+        self.virer(depot, reference="  VIR-1  ")
+        self.assertEqual(depot.virements, [("D1", 10000, "VIR-1", date(2026, 10, 20), "int@x.ci")])
+        self.assertEqual(statut(depot.par_nom("D1").dossier, AUJOURDHUI), Statut.SOLDE)
+        d, acteur, action, avant, apres, motif = self.journal.appels[0]
+        self.assertEqual((d, acteur, action, motif), ("D1", "int@x.ci", "virement_enregistre", "Virement reçu"))
+        self.assertEqual(avant, {"paye": 0, "statut": "en_retard"})
+        self.assertEqual((apres["paye"], apres["statut"], apres["montant"], apres["reference"]),
+                         (10000, "solde", 10000, "VIR-1"))
+
+    def test_motif_facultatif(self):
+        self.virer(motif="")
+        self.assertEqual(self.journal.appels[0][5], "")
+
+    def test_dossier_inconnu_ou_dispense_refuse(self):
+        with self.assertRaises(DossierAbsent):
+            self.virer(dossier="D9")
+        depot = en_retard()
+        depot.dossiers[("a@x.ci", "C")] = replace(depot.dossiers[("a@x.ci", "C")],
+                                                  dossier=Dossier((), 0, dispense=True))
+        with self.assertRaisesRegex(OperationRefusee, "dispensé"):
+            self.virer(depot)
+        self.assertFalse(hasattr(depot, "virements"))
+
+    def test_montant_entier_positif_seulement(self):
+        for montant in (0, -5, 10.0, 10000.5, "10000", True, None):
+            with self.subTest(montant=montant), self.assertRaisesRegex(OperationRefusee, "montant"):
+                self.virer(montant=montant)
+
+    def test_reference_obligatoire_et_bornee(self):
+        for ref in ("", "   ", None, 12, "x" * 141):
+            with self.subTest(ref=ref), self.assertRaisesRegex(OperationRefusee, "référence"):
+                self.virer(reference=ref)
+        self.virer(reference="x" * 140)
+
+    def test_reference_en_double_refusee_avec_message_clair(self):
+        depot = self.virer()
+        with self.assertRaisesRegex(OperationRefusee, "Cette référence de virement est déjà enregistrée."):
+            self.virer(depot, reference=" VIR-1")
+        self.assertEqual(len(depot.virements), 1)
+        self.assertEqual(len(self.journal.appels), 0)
+
+    def test_date_future_ou_invalide_refusee(self):
+        for jour in (date(2026, 10, 23), "2026-10-20", None, datetime(2026, 10, 20, 8)):
+            with self.subTest(jour=jour), self.assertRaisesRegex(OperationRefusee, "date"):
+                self.virer(date_paiement=jour)
+        self.virer(date_paiement=AUJOURDHUI)
+
+    def test_motif_trop_long_refuse(self):
+        with self.assertRaisesRegex(OperationRefusee, "motif"):
+            self.virer(motif="m" * 501)
+        with self.assertRaisesRegex(OperationRefusee, "motif"):
+            self.virer(motif=3)
+
+
+class TestAccorderDelai(unittest.TestCase):
+    def cas(self, depot):
+        self.journal = Journal()
+        return AccorderDelai(depot, self.journal, lambda: AUJOURDHUI)
+
+    def accorder(self, depot=None, **champs):
+        depot = depot or en_retard()
+        args = {"acteur": "adm@x.ci", "dossier": "D1", "jusqu_au": date(2026, 11, 5), "motif": "Salaire en retard"}
+        self.cas(depot).executer(**(args | champs))
+        return depot
+
+    def test_delai_debloque_et_journalise_avant_apres(self):
+        depot = self.accorder()
+        self.assertEqual(depot.delais, [("D1", date(2026, 11, 5))])
+        self.assertEqual(statut(depot.par_nom("D1").dossier, AUJOURDHUI), Statut.A_JOUR)
+        d, acteur, action, avant, apres, motif = self.journal.appels[0]
+        self.assertEqual((d, acteur, action, motif), ("D1", "adm@x.ci", "delai_accorde", "Salaire en retard"))
+        self.assertEqual(avant, {"delai_jusqu_au": None, "statut": "en_retard"})
+        self.assertEqual(apres, {"delai_jusqu_au": "2026-11-05", "statut": "a_jour"})
+
+    def test_ancien_delai_conserve_dans_le_journal(self):
+        depot = self.accorder()
+        self.accorder(depot, jusqu_au=date(2026, 11, 20))
+        self.assertEqual(self.journal.appels[0][3]["delai_jusqu_au"], "2026-11-05")
+
+    def test_delai_non_futur_refuse(self):
+        for jour in (AUJOURDHUI, date(2026, 10, 1), "2026-12-01", None, datetime(2026, 12, 1)):
+            with self.subTest(jour=jour), self.assertRaisesRegex(OperationRefusee, "délai"):
+                self.accorder(jusqu_au=jour)
+
+    def test_motif_obligatoire(self):
+        for motif in ("", "   ", None, "m" * 501):
+            with self.subTest(motif=motif), self.assertRaisesRegex(OperationRefusee, "motif"):
+                self.accorder(motif=motif)
+
+    def test_dossier_inconnu_ou_dispense_refuse(self):
+        with self.assertRaises(DossierAbsent):
+            self.accorder(dossier="D9")
+        depot = en_retard()
+        depot.dossiers[("a@x.ci", "C")] = replace(depot.dossiers[("a@x.ci", "C")],
+                                                  dossier=Dossier((), 0, dispense=True))
+        with self.assertRaisesRegex(OperationRefusee, "dispensé"):
+            self.accorder(depot)
+        self.assertFalse(hasattr(depot, "delais"))
