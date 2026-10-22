@@ -117,6 +117,7 @@ class TableauxTest(unittest.TestCase):
                 for delai in (None, date(2026, 11, 30)):
                     d = dossier(paye, delai_jusqu_au=delai)
                     with self.subTest(paye=paye, jour=jour, delai=delai):
+                        self.assertLessEqual(arriere(d, jour) + a_echoir(d, jour), reste_du(d))
                         if bloque(d, jour):
                             self.assertGreater(arriere(d, jour), 0)
                         if arriere(d, jour) > 0 and statut(d, jour) is not Statut.EN_RETARD:
@@ -125,10 +126,18 @@ class TableauxTest(unittest.TestCase):
 
     def test_a_echoir_parts_non_couvertes_dans_la_fenetre(self):
         self.assertEqual(a_echoir(dossier(15000), date(2026, 11, 1)), 25000)
-        self.assertEqual(a_echoir(dossier(0), INSCRIPTION), 40000)  # frais du jour (pas encore échus) + 10/11
+        self.assertEqual(a_echoir(dossier(0), INSCRIPTION), 30000)  # les frais du jour sont exigibles, pas à échoir
         self.assertEqual(a_echoir(dossier(0), date(2026, 11, 11)), 30000)
         self.assertEqual(a_echoir(dossier(15000), date(2026, 10, 1), jours=9), 0)
         self.assertEqual(a_echoir(dossier(0, dispense=True), INSCRIPTION), 0)
+
+    def test_inscription_du_jour_frais_comptes_une_seule_fois(self):
+        d = dossier(0)
+        self.assertEqual(arriere(d, INSCRIPTION), 10000)
+        self.assertEqual(a_echoir(d, INSCRIPTION), 30000)
+        self.assertEqual(arriere(d, INSCRIPTION) + a_echoir(d, INSCRIPTION), 40000)
+        self.assertEqual(a_echoir(dossier(4000), INSCRIPTION), 30000)  # frais partiellement payés : reste exigible
+        self.assertEqual(a_echoir(dossier(25000), INSCRIPTION), 15000)  # payé en avance imputé sur l'à-échoir
 
     def test_reste_du_nul_si_dispense(self):
         self.assertEqual(reste_du(dossier(15000)), 55000)

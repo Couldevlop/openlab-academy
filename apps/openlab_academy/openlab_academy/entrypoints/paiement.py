@@ -99,11 +99,13 @@ def paiement_en_ligne(cours: str) -> bool:
 
 
 def confirmer_paiement(transaction: str, p: PasserelleCinetPay | None = None) -> None:
-    ConfirmerPaiement(DepotDossiersFrappe(), p or passerelle(), journaliser).executer(transaction)
+    ConfirmerPaiement(DepotDossiersFrappe(), p or passerelle(), journaliser,
+                      PagesPaiementFrappe()).executer(transaction)
 
 
 def reconcilier_paiements(apprenant: str, cours: str) -> None:
-    ConfirmerPaiement(DepotDossiersFrappe(), passerelle(), journaliser).reconcilier(apprenant, cours)
+    ConfirmerPaiement(DepotDossiersFrappe(), passerelle(), journaliser,
+                      PagesPaiementFrappe()).reconcilier(apprenant, cours)
 
 
 # --- virements et délais (intendant, administrateur) -----------------------------------------------------
@@ -194,7 +196,8 @@ def reverifier_paiements() -> int:
     if not p.disponible():
         return 0
     depot = DepotDossiersFrappe()
-    return ReverifierPaiements(depot, ConfirmerPaiement(depot, p, journaliser), now_datetime, alerte=_alerte,
+    confirmer = ConfirmerPaiement(depot, p, journaliser, PagesPaiementFrappe())
+    return ReverifierPaiements(depot, confirmer, now_datetime, alerte=_alerte,
                                unite=_transaction, fatales=FATALES).executer()
 
 

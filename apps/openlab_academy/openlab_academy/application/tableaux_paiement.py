@@ -22,6 +22,7 @@ DERNIERES_ACTIONS = 5
 ENCOURS_JOURS = 30
 TEXTE_MAX = 140
 FORMULES = ("=", "+", "-", "@", "\t", "\r")
+PLEINE_CHASSE = ("＝", "＋", "－", "＠")  # variantes pleine chasse, converties en formules par certains tableurs
 LIBELLES_MODE = {Mode.UNE_FOIS: "Une fois", Mode.DEUX_TRANCHES: "Deux tranches", Mode.MENSUEL: "Mensuel"}
 LIBELLES_STATUT = {Statut.A_JOUR: "À jour", Statut.EN_RETARD: "En retard", Statut.SOLDE: "Soldé",
                    Statut.DISPENSE: "Dispensé"}
@@ -180,7 +181,7 @@ class Resume:
     def executer(self) -> dict:
         j = self._aujourd_hui()
         lignes = self._tableaux.dossiers(FiltresTableau())
-        mois = self._tableaux.encaisse(j.replace(day=1), j)
+        mois = self._tableaux.encaisse(j.replace(day=1), _fin_du_mois(j))  # même mesure que l'intendance
         precedent = (j.replace(day=1) - timedelta(days=1)).replace(day=1)
         reference = self._tableaux.encaisse(precedent, precedent.replace(day=min(j.day, _fin_du_mois(precedent).day)))
         du = sum(exigible(x.dossier, j) for x in lignes)
@@ -206,11 +207,13 @@ class Resume:
 
 
 def neutraliser(valeur):
-    """Cellule de tableur : un texte commençant par =, +, -, @, tabulation ou retour est préfixé d'une apostrophe
-    (injection de formule) ; None devient vide ; les nombres restent des nombres."""
+    """Cellule de tableur : un texte commençant (blancs de tête ignorés) par =, +, -, @, leurs variantes pleine chasse,
+    une tabulation ou un retour est préfixé d'une apostrophe (injection de formule) ; None devient vide ; les nombres
+    restent des nombres."""
     if valeur is None:
         return ""
-    if isinstance(valeur, str) and valeur.startswith(FORMULES):
+    if isinstance(valeur, str) and (valeur.startswith(FORMULES)
+                                    or valeur.lstrip().startswith(FORMULES + PLEINE_CHASSE)):
         return "'" + valeur
     return valeur
 

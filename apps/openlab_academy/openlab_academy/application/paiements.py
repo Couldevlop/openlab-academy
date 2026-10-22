@@ -110,8 +110,9 @@ class RienADu(Exception):
 
 
 # Un double clic (ou un retour sur la page) ne crée pas une seconde transaction : la page CinetPay d'un paiement en
-# attente du même dossier et du même montant, créé depuis moins de 30 minutes, est rendue telle que CinetPay l'a fournie.
-REUTILISATION = timedelta(minutes=30)
+# attente du même dossier et du même montant, créé depuis moins de 15 minutes, est rendue telle que CinetPay l'a fournie
+# (durée de vie réelle d'un lien CinetPay à mesurer en bac à sable). Un paiement constaté échoué oublie sa page.
+REUTILISATION = timedelta(minutes=15)
 
 
 def _multiple_de_5(montant: int) -> int:
@@ -177,10 +178,12 @@ class InitierPaiement:
 class ConfirmerPaiement:
     """Confirme un paiement en ligne après contrôle auprès de la passerelle, au montant vérifié ; idempotent."""
 
-    def __init__(self, depot: DepotDossiers, passerelle: Passerelle, journal: Journal):
+    def __init__(self, depot: DepotDossiers, passerelle: Passerelle, journal: Journal,
+                 pages: PagesPaiement | None = None):
         self._depot = depot
         self._passerelle = passerelle
         self._journal = journal
+        self._pages = pages
 
     def executer(self, transaction: str) -> None:
         p = self._depot.paiement(MOYEN_EN_LIGNE, transaction)
@@ -189,6 +192,8 @@ class ConfirmerPaiement:
         v = self._passerelle.verifier(transaction)
         if v.statut == "echoue":
             self._depot.marquer_echoue(MOYEN_EN_LIGNE, transaction)
+            if self._pages is not None:
+                self._pages.oublier(transaction)  # refusé ou annulé : ne plus jamais rendre ce lien
             return
         if v.statut != "confirme" or v.montant <= 0:
             return

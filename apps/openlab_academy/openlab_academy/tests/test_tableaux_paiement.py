@@ -203,7 +203,7 @@ class TestFiche(unittest.TestCase):
 
 class TestResume(unittest.TestCase):
     def test_resume(self):
-        t = Tableaux(encaisses={(date(2026, 11, 1), date(2026, 11, 15)): 20000,
+        t = Tableaux(encaisses={(date(2026, 11, 1), date(2026, 11, 30)): 20000,
                                 (date(2026, 10, 1), date(2026, 10, 15)): 16000})
         v = Resume(t, lambda: AUJOURDHUI).executer()
         self.assertEqual(t.filtres, [FiltresTableau()])
@@ -228,7 +228,8 @@ class TestResume(unittest.TestCase):
                                              (date(2026, 2, 1), date(2026, 2, 28), None)])
         t = Tableaux(lignes=())
         Resume(t, lambda: date(2026, 1, 20)).executer()
-        self.assertEqual(t.appels_encaisse[1], (date(2025, 12, 1), date(2025, 12, 20), None))
+        self.assertEqual(t.appels_encaisse, [(date(2026, 1, 1), date(2026, 1, 31), None),
+                                             (date(2025, 12, 1), date(2025, 12, 20), None)])
 
 
 class TestTableur(unittest.TestCase):
@@ -236,7 +237,11 @@ class TestTableur(unittest.TestCase):
         for v in ("=1+1", "+33", "-2", "@SUM(A1)", "\t=1", "\r=1"):
             with self.subTest(v=v):
                 self.assertEqual(neutraliser(v), "'" + v)
+        for v in ("  =1+1", "  @x", "＝1+1", "＋33", "－2", "＠SUM(A1)", " ＝1"):
+            with self.subTest(v=v):
+                self.assertEqual(neutraliser(v), "'" + v)
         self.assertEqual(neutraliser("Aya"), "Aya")
+        self.assertEqual(neutraliser("  Aya"), "  Aya")
         self.assertEqual(neutraliser(-5), -5)
         self.assertEqual(neutraliser(None), "")
 

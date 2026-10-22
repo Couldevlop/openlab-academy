@@ -96,14 +96,17 @@ def retour_cinetpay(cours: str | None = None) -> None:
 
 # --- virements et délais ---------------------------------------------------------------------------------
 def _api(fn: Callable) -> Callable:
-    """Visiteur et rôles non habilités refusés (403) avant tout traitement ; saisie refusée -> erreur de validation."""
+    """Visiteur et rôles non habilités refusés (403) avant tout traitement ; dossier inconnu -> 404 ; saisie refusée
+    -> erreur de validation."""
     @wraps(fn)
     def appel(*args, **kwargs):
         if frappe.session.user == "Guest" or not ROLES_AGENTS & set(frappe.get_roles(frappe.session.user)):
             frappe.throw("Accès réservé à l'intendant et à l'administrateur.", frappe.PermissionError)
         try:
             return fn(*args, **kwargs)
-        except (OperationRefusee, DossierAbsent, FiltreInvalide) as e:
+        except DossierAbsent as e:
+            frappe.throw(str(e), frappe.DoesNotExistError)
+        except (OperationRefusee, FiltreInvalide) as e:
             frappe.throw(str(e), frappe.ValidationError)
     return appel
 

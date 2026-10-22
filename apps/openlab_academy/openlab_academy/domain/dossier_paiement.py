@@ -91,11 +91,14 @@ def arriere(dossier: Dossier, aujourd_hui: date) -> int:
 
 
 def a_echoir(dossier: Dossier, aujourd_hui: date, jours: int = 30) -> int:
-    """Parts non couvertes des échéances non échues dont la date tombe d'ici `jours` jours (inclus)."""
+    """Montant qui deviendra exigible d'ici `jours` jours (inclus), hors exigible d'aujourd'hui : les frais du jour de
+    l'inscription comptent dans l'arriéré, jamais deux fois. Le payé couvre d'abord l'exigible, puis l'à-échoir ;
+    arriéré + à-échoir ne dépasse jamais le reste."""
     if dossier.dispense:
         return 0
     fin = aujourd_hui + timedelta(days=jours)
-    return sum(part for e, part in dossier._non_couvertes() if aujourd_hui <= e.date_limite <= fin)
+    jusqu_a_fin = sum(e.montant for e in dossier.echeances if e.date_limite <= fin)
+    return max(jusqu_a_fin - max(exigible(dossier, aujourd_hui), dossier.paye), 0)
 
 
 def reste_du(dossier: Dossier) -> int:

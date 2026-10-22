@@ -144,6 +144,9 @@ class PagesPaiementFrappe:
     def retenir(self, reference: str, url: str, secondes: int) -> None:
         frappe.cache.set_value(self._cle(reference), url, expires_in_sec=secondes)
 
+    def oublier(self, reference: str) -> None:
+        frappe.cache.delete_value(self._cle(reference))
+
 
 class TarifsFrappe:
     def charger(self, cours: str) -> Tarif | None:

@@ -12,7 +12,7 @@ from frappe.utils import add_days, add_to_date, getdate, now_datetime, nowdate
 
 from openlab_academy.domain.dossier_paiement import Statut, statut
 from openlab_academy.entrypoints import paiement, paiement_api
-from openlab_academy.infrastructure.depot_dossiers_frappe import DepotDossiersFrappe
+from openlab_academy.infrastructure.depot_dossiers_frappe import DepotDossiersFrappe, PagesPaiementFrappe
 from openlab_academy.infrastructure.tableaux_paiement_frappe import TableauxPaiementFrappe
 from openlab_academy.tests.http_simule import Reponse
 from openlab_academy.tests.test_paiement_cinetpay_frappe import BASE, CLE, SECRET, SITE, CinetPaySimule
@@ -372,17 +372,17 @@ class TestPayer(BaseLecture):
         self.assertNotIn("pirate", json.dumps(simule.appels[0][1]))
         self.assertEqual([(p.statut, p.montant) for p in self.paiements()], [("en_attente", 10000)])
 
-    def test_second_clic_dans_les_30_minutes_meme_transaction(self):
+    def test_second_clic_dans_les_15_minutes_meme_transaction(self):
         premier, _ = self.payer()
         second, simule = self.payer()
         self.assertEqual(second, premier)
         self.assertEqual(simule.appels, [])
         self.assertEqual(len(self.paiements()), 1)
 
-    def test_au_dela_de_30_minutes_nouvelle_transaction(self):
+    def test_au_dela_de_15_minutes_nouvelle_transaction(self):
         self.payer()
         (p,) = self.paiements()
-        frappe.db.set_value(PAIEMENT, p.name, "creation", add_to_date(now_datetime(), minutes=-31),
+        frappe.db.set_value(PAIEMENT, p.name, "creation", add_to_date(now_datetime(), minutes=-16),
                             update_modified=False)
         _, simule = self.payer()
         self.assertEqual(len(simule.appels), 1)
@@ -406,6 +406,30 @@ class TestPayer(BaseLecture):
                 consigne.assert_called_once()
                 self.assertTrue(consigne.call_args.kwargs["defer_insert"])  # survit à l'annulation de la requête
                 self.assertNotIn(CLE, str(consigne.call_args))
+
+    def reference(self):
+        return frappe.db.get_value(PAIEMENT, {"dossier": self.dossiers[ELEVE]}, "reference")
+
+    def test_refus_constate_au_retour_oublie_le_lien(self):
+        premier, _ = self.payer()
+        reference = self.reference()
+        self.assertEqual(PagesPaiementFrappe().lire(reference), premier["url"])
+        frappe.set_user(ELEVE)
+        with mock.patch("requests.post", side_effect=CinetPaySimule(statut="REFUSED")):
+            paiement_api.retour_cinetpay(self.cours)
+        frappe.set_user("Administrator")
+        self.assertIsNone(PagesPaiementFrappe().lire(reference))
+        self.assertEqual(frappe.db.get_value(PAIEMENT, {"reference": reference}, "statut"), "echoue")
+        _, simule = self.payer()
+        self.assertEqual(len(simule.appels), 1)  # nouveau lien, jamais l'ancien
+
+    def test_annulation_constatee_par_la_tache_quotidienne_oublie_le_lien(self):
+        self.payer()
+        reference = self.reference()
+        with mock.patch.object(frappe.local.db, "commit"),                 mock.patch("requests.post", side_effect=CinetPaySimule(statut="CANCELED")):
+            paiement.reverifier_paiements()
+        self.assertIsNone(PagesPaiementFrappe().lire(reference))
+        self.assertEqual(frappe.db.get_value(PAIEMENT, {"reference": reference}, "statut"), "echoue")
 
     def test_rien_a_payer(self):
         frappe.db.set_value(DOSSIER, self.dossiers[ELEVE], "dispense", 1)
@@ -487,8 +511,8 @@ class TestFiche(BaseLecture):
         self.assertEqual(v["journal"][1]["apres"]["paye"], 55000)
         self.assertNotIn(CLE, json.dumps(v, default=str))
 
-    def test_dossier_inconnu(self):
-        with self.assertRaisesRegex(frappe.ValidationError, "Aucun dossier"):
+    def test_dossier_inconnu_404(self):
+        with self.assertRaisesRegex(frappe.DoesNotExistError, "Aucun dossier"):
             appeler("fiche", self.intendant, dossier="inexistant")
 
 

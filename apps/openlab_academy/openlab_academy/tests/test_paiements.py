@@ -346,6 +346,9 @@ class Pages:
         self.urls[reference] = url
         self.retenues.append((reference, url, secondes))
 
+    def oublier(self, reference):
+        self.urls.pop(reference, None)
+
 
 class TestReutilisation(unittest.TestCase):
     """Un double clic sur « Payer » ne crée pas une seconde transaction : la page CinetPay d'un paiement en attente
@@ -354,23 +357,23 @@ class TestReutilisation(unittest.TestCase):
     def payer(self, depot, pages, passerelle, maintenant=MAINTENANT):
         return InitierPaiement(depot, passerelle, lambda: maintenant, liens, pages).executer("a@x.ci", "C")
 
-    def test_fenetre_de_30_minutes(self):
-        self.assertEqual(REUTILISATION, timedelta(minutes=30))
+    def test_fenetre_de_15_minutes(self):
+        self.assertEqual(REUTILISATION, timedelta(minutes=15))
 
     def test_second_clic_rend_la_meme_page_sans_nouvelle_transaction(self):
         depot, pages, passerelle = depot_ouvert(), Pages(), Passerelle()
         premiere = self.payer(depot, pages, passerelle)
-        seconde = self.payer(depot, pages, passerelle, MAINTENANT + timedelta(minutes=29))
+        seconde = self.payer(depot, pages, passerelle, MAINTENANT + timedelta(minutes=14))
         self.assertEqual(seconde, premiere)
         self.assertEqual(len(passerelle.initiations), 1)
         self.assertEqual(len(depot.paiements), 1)
-        self.assertEqual(pages.retenues, [(REFERENCE, premiere, 1800)])
+        self.assertEqual(pages.retenues, [(REFERENCE, premiere, 900)])
         self.assertEqual(depot.recherches[-1], ("D1", "cinetpay", 10000, MAINTENANT - timedelta(minutes=1)))
 
     def test_paiement_trop_ancien_nouvelle_transaction(self):
         depot, pages, passerelle = depot_ouvert(), Pages(), Passerelle()
         self.payer(depot, pages, passerelle)
-        depot.crees[REFERENCE] = MAINTENANT - timedelta(minutes=31)
+        depot.crees[REFERENCE] = MAINTENANT - timedelta(minutes=16)
         self.payer(depot, pages, passerelle, MAINTENANT + timedelta(seconds=1))
         self.assertEqual(len(passerelle.initiations), 2)
 
@@ -444,6 +447,20 @@ class TestConfirmerPaiement(unittest.TestCase):
         self.assertEqual(self.journal.appels[0][4]["montant"], 100000)
         d = self.depot.charger("a@x.ci", "C").dossier
         self.assertEqual(statut(replace(d, paye=self.depot.paye("D1")), AUJOURDHUI), Statut.EN_RETARD)
+
+    def test_refuse_oublie_la_page_retenue(self):
+        pages = Pages()
+        pages.retenir(REFERENCE, "https://checkout.cinetpay.com/x", 900)
+        ConfirmerPaiement(self.depot, Passerelle(verification=Verification("echoue", 0)), self.journal,
+                          pages).executer(REFERENCE)
+        self.assertIsNone(pages.lire(REFERENCE))
+
+    def test_en_attente_garde_la_page_retenue(self):
+        pages = Pages()
+        pages.retenir(REFERENCE, "https://checkout.cinetpay.com/x", 900)
+        ConfirmerPaiement(self.depot, Passerelle(verification=Verification("en_attente", 0)), self.journal,
+                          pages).executer(REFERENCE)
+        self.assertEqual(pages.lire(REFERENCE), "https://checkout.cinetpay.com/x")
 
     def test_refuse_marque_echoue_sans_journal(self):
         self.confirmer(Passerelle(verification=Verification("echoue", 0)))
