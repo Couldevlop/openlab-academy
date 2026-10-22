@@ -121,12 +121,26 @@ def ouvrir(depot, tarif=TARIF, aujourd_hui=AUJOURDHUI, reglages=ReglagesPaiement
 
 
 class TestOuvrirDossier(unittest.TestCase):
-    def test_cree_un_dossier_aux_prix_figes_avec_la_seule_echeance_des_frais(self):
+    def test_cree_un_dossier_aux_prix_figes_en_une_fois_par_defaut(self):
         depot = Depot()
         nom = ouvrir(depot).executer("a@x.ci", "C", "B1", DEBUT, FIN)
         d = depot.dernier
         self.assertEqual((nom, d.mode, d.tarif, d.inscription, d.cohorte), ("D1", Mode.UNE_FOIS, TARIF, AUJOURDHUI, "B1"))
-        self.assertEqual(d.echeances, (Echeance(AUJOURDHUI, 10000, "Frais d'inscription"),))
+        self.assertEqual(d.echeances, (Echeance(AUJOURDHUI, 10000, "Frais d'inscription"),
+                                       Echeance(date(2026, 11, 10), 90000, "Échéance")))
+
+    def test_frais_seuls_payes_le_parcours_reste_du(self):
+        """Sans choix de mode (ou en gardant « une fois »), payer les frais ne solde jamais le parcours."""
+        depot = Depot()
+        ouvrir(depot).executer("a@x.ci", "C", "B1", DEBUT, FIN)
+        dossier = Dossier(depot.dernier.echeances, 10000, frais_inscription=10000)
+        self.assertEqual((dossier.reste, statut(dossier, AUJOURDHUI)), (90000, Statut.A_JOUR))
+        self.assertTrue(bloque(dossier, date(2026, 11, 11)))
+
+    def test_jour_d_echeance_lu_dans_les_reglages(self):
+        depot = Depot()
+        ouvrir(depot, reglages=ReglagesPaiement(jour_echeance=5)).executer("a@x.ci", "C", "B1", DEBUT, FIN)
+        self.assertEqual(depot.dernier.echeances[1].date_limite, date(2026, 11, 5))
 
     def test_dossier_existant_renvoye_sans_changement(self):
         depot = Depot()
@@ -214,7 +228,8 @@ class TestChoisirMode(unittest.TestCase):
         echeances = self.cas(depot).executer("a@x.ci", "C", "mensuel", "+2250700000000")
         (dossier, acteur, action, avant, apres, motif), = self.journal.appels
         self.assertEqual((dossier, acteur, action, motif), ("D1", "a@x.ci", "mode", ""))
-        self.assertEqual(avant, {"mode": "une_fois", "echeances": [["2026-10-22", 10000, "Frais d'inscription"]]})
+        self.assertEqual(avant, {"mode": "une_fois", "echeances": [["2026-10-22", 10000, "Frais d'inscription"],
+                                                                   ["2026-11-10", 90000, "Échéance"]]})
         self.assertEqual(apres["mode"], "mensuel")
         self.assertEqual(len(apres["echeances"]), len(echeances))
 
@@ -344,7 +359,8 @@ class TestInitierPaiement(unittest.TestCase):
         self.assertEqual(passerelle.initiations[0][1], 8000)
 
     def test_frais_superieurs_au_calendrier(self):
-        depot = modifier(depot_ouvert(), paye=10000, frais_inscription=20000)
+        frais_seuls = (Echeance(AUJOURDHUI, 10000, "Frais d'inscription"),)
+        depot = modifier(depot_ouvert(), echeances=frais_seuls, paye=10000, frais_inscription=20000)
         passerelle = Passerelle()
         initier(depot, passerelle).executer("a@x.ci", "C")
         self.assertEqual(passerelle.initiations[0][1:3], (10000, "C - Frais d'inscription"))
@@ -373,7 +389,7 @@ class TestInitierPaiement(unittest.TestCase):
             initier(Depot()).executer("a@x.ci", "C")
 
     def test_rien_a_payer(self):
-        for depot in (modifier(depot_ouvert(), paye=10000), modifier(depot_ouvert(), dispense=True)):
+        for depot in (modifier(depot_ouvert(), paye=100000), modifier(depot_ouvert(), dispense=True)):
             with self.subTest(), self.assertRaises(RienADu):
                 initier(depot).executer("a@x.ci", "C")
             self.assertEqual(depot.paiements, {})
@@ -579,12 +595,12 @@ class TestEnregistrerVirement(unittest.TestCase):
         self.assertEqual(statut(depot.par_nom("D1").dossier, AUJOURDHUI), Statut.EN_RETARD)
         self.virer(depot, reference="  VIR-1  ")
         self.assertEqual(depot.virements, [("D1", 10000, "VIR-1", date(2026, 10, 20), "int@x.ci")])
-        self.assertEqual(statut(depot.par_nom("D1").dossier, AUJOURDHUI), Statut.SOLDE)
+        self.assertEqual(statut(depot.par_nom("D1").dossier, AUJOURDHUI), Statut.A_JOUR)
         d, acteur, action, avant, apres, motif = self.journal.appels[0]
         self.assertEqual((d, acteur, action, motif), ("D1", "int@x.ci", "virement_enregistre", "Virement reçu"))
         self.assertEqual(avant, {"paye": 0, "statut": "en_retard"})
         self.assertEqual((apres["paye"], apres["statut"], apres["montant"], apres["reference"]),
-                         (10000, "solde", 10000, "VIR-1"))
+                         (10000, "a_jour", 10000, "VIR-1"))
 
     def test_motif_obligatoire(self):
         for motif in ("", "   ", None):

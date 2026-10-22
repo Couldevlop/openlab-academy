@@ -160,7 +160,7 @@ class TestNotification(Base):
         self.assertEqual((frappe.parse_json(entree.avant), frappe.parse_json(entree.apres)),
                          ({"statut": "en_attente", "paye": 0, "montant": 10000},
                           {"statut": "confirme", "paye": 10000, "montant": 10000}))
-        self.assertEqual(self.statut(), Statut.SOLDE)
+        self.assertEqual(self.statut(), Statut.A_JOUR)  # frais réglés, le reste dû au prochain 10
         self.assertTrue(frappe.db.get_value(PAIEMENT, {"reference": self.transaction()}, "date_paiement"))
 
     def test_meme_notification_deux_fois_un_seul_paiement(self):

@@ -57,15 +57,16 @@ class OuvrirDossier:
         return tarif
 
     def executer(self, apprenant: str, cours: str, cohorte: str, debut: date, fin: date) -> str:
-        """Dossier provisoire en `une_fois` : prix figés, seule l'échéance des frais ; renvoie son nom."""
+        """Dossier en `une_fois` tant que l'apprenant n'a pas choisi : prix figés, échéancier complet (frais, puis le
+        reste au prochain jour d'échéance), jamais les frais seuls (ils solderaient le parcours) ; renvoie son nom."""
         existant = self._depot.charger(apprenant, cours)
         if existant:
             return existant.nom
         tarif = self.verifier(cours, debut)
         aujourd_hui = self._aujourd_hui()
-        return self._depot.creer(NouveauDossier(
-            apprenant, cours, cohorte, Mode.UNE_FOIS, tarif, aujourd_hui,
-            (Echeance(aujourd_hui, tarif.frais_inscription, LIBELLE_FRAIS),)))
+        echeances = echeancier(Mode.UNE_FOIS, tarif, aujourd_hui, debut, fin, self._reglages.charger().jour_echeance)
+        return self._depot.creer(NouveauDossier(apprenant, cours, cohorte, Mode.UNE_FOIS, tarif, aujourd_hui,
+                                                echeances))
 
 
 CHANGEMENT_EN_RETARD = "Réglez d'abord l'échéance en retard, ou contactez l'intendance."

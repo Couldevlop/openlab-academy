@@ -11,6 +11,7 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, add_to_date, getdate, now_datetime, nowdate
 
 from openlab_academy.domain.dossier_paiement import Statut, statut
+from openlab_academy.domain.echeancier import dixieme_suivant
 from openlab_academy.entrypoints import paiement, paiement_api
 from openlab_academy.infrastructure.depot_dossiers_frappe import DepotDossiersFrappe, PagesPaiementFrappe
 from openlab_academy.infrastructure.tableaux_paiement_frappe import TableauxPaiementFrappe
@@ -101,7 +102,7 @@ class TestVirement(Base):
         self.assertEqual((p.moyen, p.statut, p.montant, p.reference, p.auteur, p.cle),
                          ("virement", "confirme", 10000, "VIR-2026-001", self.intendant, "virement|VIR-2026-001"))
         self.assertEqual(getdate(p.date_paiement), aujourd_hui())
-        self.assertEqual(self.statut(), Statut.SOLDE)
+        self.assertEqual(self.statut(), Statut.A_JOUR)
         (ligne,) = self.journal("virement_enregistre")
         self.assertEqual((ligne.acteur, ligne.motif), (self.intendant, "Virement reçu"))
         self.assertEqual(json.loads(ligne.avant), {"paye": 0, "statut": "en_retard"})
@@ -299,11 +300,13 @@ class TestMonDossier(BaseLecture):
     def test_son_propre_dossier(self):
         v = appeler("mon_dossier", ELEVE, cours=self.cours)
         self.assertEqual((v["cours"], v["titre"], v["mode"], v["statut"], v["paye"], v["reste"]),
-                         (self.cours, "Parcours lecture paiement", "une_fois", "en_retard", 0, 10000))
+                         (self.cours, "Parcours lecture paiement", "une_fois", "en_retard", 0, 100000))
         self.assertEqual(v["tarif"], {"frais_inscription": 10000, "une_fois": 100000, "deux_tranches": 110000,
                                       "mensuel": 120000})
         self.assertEqual(v["echeances"], [{"date_limite": str(aujourd_hui()), "montant": 10000,
-                                           "libelle": "Frais d'inscription", "couverte": False}])
+                                           "libelle": "Frais d'inscription", "couverte": False},
+                                          {"date_limite": str(dixieme_suivant(aujourd_hui(), 10)), "montant": 90000,
+                                           "libelle": "Échéance", "couverte": False}])
         self.assertEqual(v["prochaine"], {"date_limite": str(aujourd_hui()), "montant": 10000})
         self.assertTrue(v["paiement_en_ligne"])
 
@@ -357,7 +360,7 @@ class TestChoisirMode(BaseLecture):
         appeler("choisir_mode", AUTRE, cours=self.cours, mode="mensuel", telephone=TELEPHONE,
                 apprenant=ELEVE, dossier=self.dossiers[ELEVE])
         apres = frappe.get_doc(DOSSIER, self.dossiers[ELEVE])
-        self.assertEqual((apres.mode, apres.telephone, len(apres.echeances)), ("une_fois", None, 1))
+        self.assertEqual((apres.mode, apres.telephone, len(apres.echeances)), ("une_fois", None, 2))
         self.assertEqual(frappe.db.get_value(DOSSIER, self.dossiers[AUTRE], ["mode", "telephone"]),
                          ("mensuel", TELEPHONE))
         with self.assertRaises(frappe.DoesNotExistError):

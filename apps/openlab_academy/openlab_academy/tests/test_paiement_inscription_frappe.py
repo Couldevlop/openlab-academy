@@ -7,7 +7,7 @@ from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy.application.paiements import ChoisirMode
 from openlab_academy.domain.cohorte import Cohorte
-from openlab_academy.domain.echeancier import Mode, Tarif
+from openlab_academy.domain.echeancier import Mode, Tarif, dixieme_suivant
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
 from openlab_academy.infrastructure.depot_dossiers_frappe import DepotDossiersFrappe, ReglagesPaiementFrappe, TarifsFrappe
@@ -53,7 +53,9 @@ class TestInscription(Base):
         self.assertEqual((d.frais_inscription, d.prix_une_fois, d.prix_deux_tranches, d.prix_mensuel),
                          (10000, 100000, 110000, 120000))
         self.assertEqual([(str(e.date_limite), e.montant, e.libelle) for e in d.echeances],
-                         [(str(AUJOURDHUI), 10000, "Frais d'inscription")])
+                         [(str(AUJOURDHUI), 10000, "Frais d'inscription"),
+                          (str(dixieme_suivant(AUJOURDHUI, ReglagesPaiementFrappe().charger().jour_echeance)), 90000,
+                           "Échéance")])
         self.assertEqual(str(d.date_inscription), str(AUJOURDHUI))
 
     def test_tarif_modifie_ensuite_sans_effet_sur_le_dossier(self):
