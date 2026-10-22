@@ -10,7 +10,9 @@ import {
   TELEPHONE_INVALIDE,
   calendrierMode,
   changement,
+  enSouffrance,
   formaterJour,
+  formaterTelephone,
   formaterXof,
   libelleMode,
   libelleStatut,
@@ -59,6 +61,12 @@ const boutonEnregistrer = ref<HTMLButtonElement | null>(null)
 const lignes = computed(() => (dossier.value ? lignesEcheancier(dossier.value, aujourdhui.value) : []))
 const part = computed(() => (dossier.value ? progression(dossier.value) : 0))
 const modifiable = computed(() => dossier.value?.statut === 'a_jour' || dossier.value?.statut === 'en_retard')
+// une échéance passée impayée : changer de mode l'effacerait, le serveur refuse (le téléphone reste modifiable)
+const modesVerrouilles = computed(() => !!dossier.value && enSouffrance(dossier.value, aujourdhui.value))
+const changeDeMode = computed(() => !!dossier.value && mode.value !== dossier.value.mode)
+const telephoneChange = computed(
+  () => !!dossier.value && (normaliserTelephone(telephone.value) ?? telephone.value) !== dossier.value.telephone,
+)
 const telephoneValide = computed(() => normaliserTelephone(telephone.value) !== null)
 const telephoneEnErreur = computed(() => telephoneTouche.value && !telephoneValide.value)
 const apresChangement = computed(() => (dossier.value ? changement(dossier.value, mode.value) : null))
@@ -69,7 +77,7 @@ const virementVisible = computed(
 function adopter(d: DossierPaiement) {
   dossier.value = d
   mode.value = d.mode
-  telephone.value = d.telephone
+  telephone.value = formaterTelephone(d.telephone)
   telephoneTouche.value = false
 }
 
@@ -90,12 +98,17 @@ async function charger() {
   }
 }
 
-async function demanderConfirmation() {
+/** Mode inchangé : téléphone seul, sans confirmation. Autre mode : confirmation d'abord. */
+async function enregistrer() {
   succes.value = ''
   erreurMode.value = ''
   telephoneTouche.value = true
   if (!telephoneValide.value) {
     champTelephone.value?.focus()
+    return
+  }
+  if (!changeDeMode.value) {
+    await envoyer('Téléphone enregistré.')
     return
   }
   confirmation.value = true
@@ -109,18 +122,27 @@ async function annuler() {
   boutonEnregistrer.value?.focus()
 }
 
-async function confirmer() {
+async function envoyer(message: string | ((d: DossierPaiement) => string)) {
   enregistrement.value = true
   erreurMode.value = ''
   try {
-    adopter(await cas.choisirMode.executer(cours.value, mode.value, telephone.value))
+    const d = await cas.choisirMode.executer(cours.value, mode.value, telephone.value)
+    adopter(d)
     confirmation.value = false
-    succes.value = 'Mode enregistré : votre échéancier est à jour.'
+    succes.value = typeof message === 'string' ? message : message(d)
   } catch (e) {
     erreurMode.value = messageErreur(e)
   } finally {
     enregistrement.value = false
   }
+}
+
+function confirmer() {
+  return envoyer((d) =>
+    d.statut === 'en_retard'
+      ? 'Mode enregistré. Une échéance reste à régler.'
+      : 'Mode enregistré : votre échéancier est à jour.',
+  )
 }
 
 async function payer() {
@@ -155,7 +177,7 @@ watch(cours, charger)
       </template>
 
       <template v-else-if="dossier">
-        <div v-if="dossier.bloque" class="suspendu" role="status">
+        <div v-if="dossier.bloque" class="suspendu" role="note">
           <svg class="icone" viewBox="0 0 24 24" aria-hidden="true">
             <rect x="5" y="10.5" width="14" height="10" rx="2.5" />
             <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
@@ -217,10 +239,7 @@ watch(cours, charger)
               :aria-valuenow="part"
               :aria-valuetext="`${formaterXof(dossier.paye)} réglés sur ${formaterXof(dossier.paye + dossier.reste)}`"
             >
-              <span
-                v-if="part > 0"
-                :style="{ width: `${part}%`, backgroundSize: `${part ? 10000 / part : 100}% 100%` }"
-              />
+              <span v-if="part > 0" :style="{ width: `${part}%`, backgroundSize: `${10000 / part}% 100%` }" />
             </div>
             <p>
               <strong>{{ formaterXof(dossier.paye) }}</strong> réglés sur
@@ -263,9 +282,30 @@ watch(cours, charger)
             <p class="discret aide-modes">
               Choisissez comment régler le parcours. Ce que vous avez déjà versé est conservé.
             </p>
-            <div class="choix" role="radiogroup" aria-labelledby="titre-modes">
-              <label v-for="m in MODES" :key="m" class="mode" :class="{ choisi: mode === m }">
-                <input v-model="mode" class="sr-only" type="radio" name="mode" :value="m" />
+            <p v-if="modesVerrouilles" id="modes-verrou" class="verrou">
+              Réglez d’abord l’échéance en retard, ou contactez l’intendance, pour changer de mode.
+            </p>
+            <div
+              class="choix"
+              role="radiogroup"
+              aria-labelledby="titre-modes"
+              :aria-disabled="modesVerrouilles ? 'true' : undefined"
+              :aria-describedby="modesVerrouilles ? 'modes-verrou' : undefined"
+            >
+              <label
+                v-for="m in MODES"
+                :key="m"
+                class="mode"
+                :class="{ choisi: mode === m, verrouille: modesVerrouilles }"
+              >
+                <input
+                  v-model="mode"
+                  class="sr-only"
+                  type="radio"
+                  name="mode"
+                  :value="m"
+                  :disabled="modesVerrouilles"
+                />
                 <span class="coche" aria-hidden="true">
                   <svg viewBox="0 0 24 24"><path d="M6.5 12.5l3.5 3.5 7.5-8" /></svg>
                 </span>
@@ -293,7 +333,7 @@ watch(cours, charger)
                 placeholder="07 00 00 00 00"
                 :aria-invalid="telephoneEnErreur ? 'true' : 'false'"
                 :aria-describedby="telephoneEnErreur ? 'aide-telephone erreur-telephone' : 'aide-telephone'"
-                @blur="telephoneTouche = telephone !== ''"
+                @blur="telephoneTouche = telephoneTouche || telephone !== ''"
               />
               <p id="aide-telephone" class="discret aide">
                 Pour vos rappels d’échéance par SMS et WhatsApp. 10 chiffres, +225 facultatif.
@@ -342,9 +382,10 @@ watch(cours, charger)
               ref="boutonEnregistrer"
               type="button"
               class="bouton enregistrer"
-              @click="demanderConfirmation"
+              :disabled="enregistrement || (!changeDeMode && !telephoneChange)"
+              @click="enregistrer"
             >
-              Enregistrer ce choix
+              {{ changeDeMode ? 'Enregistrer ce choix' : 'Enregistrer le téléphone' }}
             </button>
             <p v-if="erreurMode" class="bandeau bandeau-erreur" role="alert">{{ erreurMode }}</p>
             <p v-if="succes" class="succes" role="status">{{ succes }}</p>
@@ -718,7 +759,22 @@ watch(cours, charger)
   background: var(--es-surface);
   cursor: pointer;
 }
-.mode:hover {
+.verrou {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--es-alerte-fond);
+  color: var(--es-alerte-texte);
+  font-size: 14px;
+  font-weight: 600;
+}
+.mode.verrouille {
+  cursor: not-allowed;
+}
+.mode.verrouille:not(.choisi) {
+  background: var(--ol-ivory);
+}
+.mode:not(.verrouille):hover {
   border-color: var(--ol-navy-soft);
 }
 .mode.choisi {

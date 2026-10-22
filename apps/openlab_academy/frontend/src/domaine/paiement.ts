@@ -74,7 +74,7 @@ const LIBELLES_MODE: Record<Mode, string> = {
 }
 
 const CALENDRIERS: Record<Mode, string> = {
-  une_fois: 'Un seul versement, le mois suivant l’inscription',
+  une_fois: 'Un seul versement, à la prochaine échéance du mois',
   deux_tranches: 'Deux versements, l’un au début, l’autre au milieu du parcours',
   mensuel: 'Un versement par mois jusqu’à la fin du parcours',
 }
@@ -121,6 +121,11 @@ export function lignesEcheancier(d: DossierPaiement, aujourdhui: string): LigneE
   return d.echeances.map((e, i) => ({ ...e, etat: etatEcheance(e, aujourdhui), prochaine: i === premiere }))
 }
 
+/** Une échéance passée (strictement) reste impayée : le mode ne peut plus changer (le serveur refuserait). */
+export function enSouffrance(d: DossierPaiement, aujourdhui: string): boolean {
+  return d.echeances.some((e) => etatEcheance(e, aujourdhui) === 'en_retard')
+}
+
 /** Part réglée du parcours, en pourcentage entier (100 quand il ne reste rien). */
 export function progression(d: DossierPaiement): number {
   const total = d.paye + d.reste
@@ -157,4 +162,10 @@ export function urlPaiementSure(url: string): boolean {
   } catch {
     return false
   }
+}
+
+/** « +225 07 00 00 00 01 » pour un numéro ivoirien normalisé ; tout autre texte rendu tel quel. */
+export function formaterTelephone(numero: string): string {
+  const n = /^\+225(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(numero)
+  return n ? `+225 ${n.slice(1).join(' ')}` : numero
 }

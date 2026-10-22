@@ -4,8 +4,10 @@ import {
   MODES,
   calendrierMode,
   changement,
+  enSouffrance,
   etatEcheance,
   formaterJour,
+  formaterTelephone,
   formaterXof,
   jourIso,
   libelleMode,
@@ -39,7 +41,7 @@ describe('libellés', () => {
     ])
     expect(MODES.map(libelleMode)).toEqual(['En une fois', 'En deux tranches', 'Chaque mois'])
     expect(MODES.map(calendrierMode)).toEqual([
-      'Un seul versement, le mois suivant l’inscription',
+      'Un seul versement, à la prochaine échéance du mois',
       'Deux versements, l’un au début, l’autre au milieu du parcours',
       'Un versement par mois jusqu’à la fin du parcours',
     ])
@@ -81,6 +83,13 @@ describe('échéancier', () => {
     expect(lignesEcheancier(dossierPaiement({ echeances: [] }), '2026-11-02')).toEqual([])
   })
 
+  it('en souffrance : une échéance passée non réglée (pas celle du jour)', () => {
+    const d = dossierPaiement()
+    expect(enSouffrance(d, '2026-11-10')).toBe(false)
+    expect(enSouffrance(d, '2026-11-11')).toBe(true)
+    expect(enSouffrance(dossierPaiement({ echeances: [] }), '2027-12-01')).toBe(false)
+  })
+
   it('part réglée du parcours, en pourcentage entier', () => {
     expect(progression(dossierPaiement({ paye: 10000, reste: 100000 }))).toBe(9)
     expect(progression(dossierPaiement({ paye: 110000, reste: 0 }))).toBe(100)
@@ -104,6 +113,12 @@ describe('téléphone', () => {
     expect(normaliserTelephone('+225 07.00.00-00-01')).toBe('+2250700000001')
     expect(normaliserTelephone('00225 0700000001')).toBe('+2250700000001')
     expect(normaliserTelephone('  0501020304 ')).toBe('+2250501020304')
+  })
+
+  it('affiché par paires de chiffres', () => {
+    expect(formaterTelephone('+2250700000001')).toBe('+225 07 00 00 00 01')
+    expect(formaterTelephone('')).toBe('')
+    expect(formaterTelephone('+33612345678')).toBe('+33612345678')
   })
 
   it('tout autre format refusé', () => {

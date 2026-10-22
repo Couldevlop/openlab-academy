@@ -71,7 +71,7 @@ describe('Mes paiements', () => {
     const bandeau = texte(w, '.suspendu')
     expect(bandeau).toContain('L’accès à ce parcours est suspendu jusqu’au paiement')
     expect(bandeau).toContain('Vos autres parcours à jour restent ouverts.')
-    expect(w.find('.suspendu').attributes('role')).toBe('status')
+    expect(w.find('.suspendu').attributes('role')).toBe('note')
   })
 
   it('échéancier : chaque ligne datée, montant, état écrit, prochaine repérée', async () => {
@@ -136,6 +136,53 @@ describe('Mes paiements', () => {
     ])
     expect(w.find('.montant-prochain').text()).toBe(xof('55 000 FCFA'))
     expect(w.find('.succes').text()).toBe('Mode enregistré : votre échéancier est à jour.')
+  })
+
+  it('mode inchangé : seul le téléphone est enregistré, sans confirmation', async () => {
+    const { w, ports } = await afficher()
+    const bouton = w.find('.enregistrer')
+    expect(bouton.text()).toBe('Enregistrer le téléphone')
+    expect(bouton.attributes('disabled')).toBeDefined() // rien n'a changé
+    expect(w.find<HTMLInputElement>('input[type="tel"]').element.value).toBe('+225 07 00 00 00 01')
+    ports.paiement.choisirMode.mockResolvedValue(dossierPaiement({ telephone: '+2250501020304' }))
+    await w.find('input[type="tel"]').setValue('05 01 02 03 04')
+    await bouton.trigger('click')
+    await flushPromises()
+    expect(w.find('.confirmation').exists()).toBe(false)
+    expect(ports.paiement.choisirMode).toHaveBeenCalledWith('fondamentaux-data', 'deux_tranches', '+2250501020304')
+    expect(w.find('.succes').text()).toBe('Téléphone enregistré.')
+    expect(w.find<HTMLInputElement>('input[type="tel"]').element.value).toBe('+225 05 01 02 03 04')
+    expect(w.find('.enregistrer').attributes('disabled')).toBeDefined()
+  })
+
+  it('échéance passée impayée : modes verrouillés avec la raison, téléphone toujours modifiable', async () => {
+    const { w } = await afficher(dossierPaiement({ statut: 'en_retard', bloque: true }), '/paiement/fondamentaux-data')
+    // le 10/11 n'est pas encore passé le 02/11 : rien de verrouillé
+    expect(w.findAll('input[type="radio"]').every((r) => r.attributes('disabled') === undefined)).toBe(true)
+    const tard = fauxPorts()
+    tard.horloge = horlogeFixe(new Date('2026-11-12T09:00:00Z'))
+    tard.paiement.monDossier.mockResolvedValue(dossierPaiement({ statut: 'en_retard', bloque: true }))
+    const { w: w2 } = await monterEcran('/paiement/fondamentaux-data', tard)
+    const radios = w2.findAll('input[type="radio"]')
+    expect(radios.every((r) => r.attributes('disabled') !== undefined)).toBe(true)
+    const groupe = w2.find('[role="radiogroup"]')
+    expect(groupe.attributes('aria-disabled')).toBe('true')
+    expect(w2.find(`#${groupe.attributes('aria-describedby')!}`).text()).toBe(
+      'Réglez d’abord l’échéance en retard, ou contactez l’intendance, pour changer de mode.',
+    )
+    expect(w2.find('input[type="tel"]').attributes('disabled')).toBeUndefined()
+    expect(w2.find('.enregistrer').text()).toBe('Enregistrer le téléphone')
+  })
+
+  it('mode enregistré alors qu’une échéance reste due : le message le dit', async () => {
+    const { w, ports } = await afficher()
+    ports.paiement.choisirMode.mockResolvedValue(dossierPaiement({ mode: 'mensuel', statut: 'en_retard' }))
+    await w.find('input[value="mensuel"]').setValue(true)
+    expect(w.find('.enregistrer').text()).toBe('Enregistrer ce choix')
+    await w.find('.enregistrer').trigger('click')
+    await w.find('.confirmer').trigger('click')
+    await flushPromises()
+    expect(w.find('.succes').text()).toBe('Mode enregistré. Une échéance reste à régler.')
   })
 
   it('annuler la confirmation : rien n’est envoyé', async () => {
