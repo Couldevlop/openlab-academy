@@ -63,6 +63,10 @@ class Depot:
         self.paiements[(moyen, reference)] = replace(p, montant=montant, statut="confirme")
         return True
 
+    def paiements_en_attente(self, dossier, moyen, limite):
+        return tuple(r for (m, r), p in self.paiements.items()
+                     if m == moyen and p.dossier == dossier and p.statut == "en_attente")[:limite]
+
     def marquer_echoue(self, moyen, reference):
         p = self.paiements[(moyen, reference)]
         if p.statut == "en_attente":
@@ -361,6 +365,22 @@ class TestConfirmerPaiement(unittest.TestCase):
         passerelle = Passerelle()
         ConfirmerPaiement(self.depot, passerelle, self.journal).executer("OLA-inconnue")
         self.assertEqual((passerelle.verifications, self.journal.appels), ([], []))
+
+
+class TestReconcilier(unittest.TestCase):
+    def test_reverifie_les_paiements_en_attente_du_parcours_dans_la_limite(self):
+        depot, journal, passerelle = depot_ouvert(), Journal(), Passerelle()
+        for i in range(3):
+            depot.creer_paiement("D1", 10000, "cinetpay", f"R{i}", "en_attente")
+        depot.creer_paiement("D1", 10000, "cinetpay", "R9", "echoue")
+        depot.creer_paiement("D9", 10000, "cinetpay", "AUTRE", "en_attente")
+        ConfirmerPaiement(depot, passerelle, journal).reconcilier("a@x.ci", "C", limite=2)
+        self.assertEqual(passerelle.verifications, ["R0", "R1"])
+
+    def test_sans_dossier_rien(self):
+        passerelle = Passerelle()
+        ConfirmerPaiement(Depot(), passerelle, Journal()).reconcilier("a@x.ci", "C")
+        self.assertEqual(passerelle.verifications, [])
 
 
 class TestTelephone(unittest.TestCase):

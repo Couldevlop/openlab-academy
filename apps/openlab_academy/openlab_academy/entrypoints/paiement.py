@@ -78,3 +78,7 @@ def initier_paiement(apprenant: str, cours: str) -> str:
 
 def confirmer_paiement(transaction: str, p: PasserelleCinetPay | None = None) -> None:
     ConfirmerPaiement(DepotDossiersFrappe(), p or passerelle(), journaliser).executer(transaction)
+
+
+def reconcilier_paiements(apprenant: str, cours: str) -> None:
+    ConfirmerPaiement(DepotDossiersFrappe(), passerelle(), journaliser).reconcilier(apprenant, cours)

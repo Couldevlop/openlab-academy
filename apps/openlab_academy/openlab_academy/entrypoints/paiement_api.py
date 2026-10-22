@@ -3,7 +3,10 @@
 La notification est un appel serveur à serveur sans session (Guest) : Frappe ne lui demande pas de jeton CSRF, la
 preuve d'origine est l'en-tête `x-token` (HMAC de la clé secrète), puis le statut et le montant sont toujours relus
 auprès de CinetPay avant toute écriture. Elle répond 200 dans tous les cas (sinon CinetPay la rejoue) et consigne
-les refus sans aucun secret. Le retour ne valide rien : il redirige vers l'écran de paiement d'un parcours existant.
+les refus sans aucun secret. En cas d'erreur, seule la requête en cours est annulée : le paiement en attente, validé
+lors de l'initiation, demeure. Le retour redirige vers l'écran de paiement d'un parcours existant ; pour l'apprenant
+connecté, il revérifie d'abord ses paiements en attente sur ce parcours (notification perdue), sans jamais bloquer
+la redirection.
 """
 from urllib.parse import quote
 
@@ -19,6 +22,18 @@ LIMITE_PAR_ADRESSE = 600  # requêtes par heure et par adresse IP, pour les poin
 
 def _consigner(titre: str, transaction: str, motif: str) -> None:
     frappe.log_error(titre, f"{motif} (transaction {transaction[:64]!r})")
+
+
+def _reconcilier(utilisateur: str, cours: str) -> None:
+    """Contrôle des paiements en attente au retour ; toute erreur est consignée sans secret, jamais propagée."""
+    try:
+        paiement.reconcilier_paiements(utilisateur, cours)
+    except PaiementIndisponible as e:  # rien d'écrit pour le paiement en échec ; les confirmations faites restent
+        frappe.log_error("Retour CinetPay : contrôle impossible", f"{e} (parcours {cours[:64]!r})")
+    except Exception as e:
+        frappe.db.rollback()
+        frappe.log_error("Retour CinetPay : contrôle impossible", f"{type(e).__name__} (parcours {cours[:64]!r})")
+    frappe.local.flags.commit = True  # requête GET : Frappe ne valide sinon pas les écritures
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
@@ -47,5 +62,7 @@ def retour_cinetpay(cours: str | None = None) -> None:
     cible = "/espace"
     if isinstance(cours, str) and cours and frappe.db.exists("LMS Course", cours):
         cible = f"/espace/paiement/{quote(cours, safe='')}"
+        if frappe.session.user != "Guest":
+            _reconcilier(frappe.session.user, cours)
     frappe.local.response["type"] = "redirect"
     frappe.local.response["location"] = cible

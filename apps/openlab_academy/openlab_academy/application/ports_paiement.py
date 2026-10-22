@@ -77,6 +77,9 @@ class DepotDossiers(Protocol):
 
     def marquer_echoue(self, moyen: str, reference: str) -> None: ...
 
+    def paiements_en_attente(self, dossier: str, moyen: str, limite: int) -> tuple[str, ...]:
+        """Références des paiements en attente du dossier, les plus récents d'abord."""
+
 
 class Passerelle(Protocol):
     def disponible(self) -> bool: ...

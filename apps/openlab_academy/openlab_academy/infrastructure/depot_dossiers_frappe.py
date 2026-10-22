@@ -80,6 +80,10 @@ class DepotDossiersFrappe:
                                                "date_paiement": now_datetime()})
         return True
 
+    def paiements_en_attente(self, dossier: str, moyen: str, limite: int) -> tuple[str, ...]:
+        return tuple(frappe.get_all(PAIEMENT, {"dossier": dossier, "moyen": moyen, "statut": "en_attente"},
+                                    pluck="reference", order_by="creation desc", limit=limite))
+
     def marquer_echoue(self, moyen: str, reference: str) -> None:
         p = self._verrouiller(moyen, reference)
         if p and p.statut == "en_attente":

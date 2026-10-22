@@ -86,7 +86,8 @@ class Base(FrappeTestCase):
             with mock.patch("requests.post", side_effect=simule), \
                     mock.patch.object(paiement_api.frappe, "get_request_header",
                                       side_effect=lambda nom, *_: jeton_envoye if nom.lower() == "x-token" else None), \
-                    mock.patch.object(paiement_api.frappe, "log_error") as consigne:
+                    mock.patch.object(paiement_api.frappe, "log_error") as consigne,                     mock.patch.object(frappe.db, "rollback") as self.annulation:
+                # en production, l'annulation ne vise que la requête : les données du test doivent lui survivre
                 self.assertIsNone(paiement_api.notification_cinetpay())
         finally:
             frappe.local.form_dict = avant
@@ -226,7 +227,9 @@ class TestNotification(Base):
         import requests
         transaction = self.transaction()
         consigne = self.notifier(transaction, CinetPaySimule(erreur=requests.Timeout(f"lent {CLE}")))
-        self.assertEqual(frappe.db.get_value(PAIEMENT, {"reference": transaction}, "statut"), None)  # annulé
+        self.annulation.assert_called_once_with()
+        self.assertEqual(frappe.db.get_value(PAIEMENT, {"reference": transaction}, "statut"), "en_attente")
+        self.assertEqual(self.journal(), [])
         texte = str(consigne.call_args)
         self.assertIn("CinetPay injoignable (Timeout)", texte)
         self.assertNotIn(CLE, texte)
@@ -234,6 +237,7 @@ class TestNotification(Base):
     def test_erreur_imprevue_consignee_par_son_type(self):
         with mock.patch.object(paiement, "confirmer_paiement", side_effect=RuntimeError(f"x {SECRET}")):
             consigne = self.notifier(self.transaction(), CinetPaySimule())
+        self.annulation.assert_called_once_with()
         texte = str(consigne.call_args)
         self.assertIn("RuntimeError", texte)
         self.assertNotIn(SECRET, texte)
@@ -263,6 +267,11 @@ class TestDepotPaiements(Base):
 
 
 class TestRetourEtExposition(Base):
+    def tearDown(self):
+        frappe.set_user("Administrator")
+        frappe.local.flags.commit = False
+        super().tearDown()
+
     def retour(self, cours):
         frappe.local.response = frappe._dict()
         paiement_api.retour_cinetpay(cours)
@@ -283,3 +292,64 @@ class TestRetourEtExposition(Base):
         self.assertIn(retour, frappe.guest_methods)
         self.assertEqual(frappe.allowed_http_methods_for_whitelisted_func[notif], ["POST"])
         self.assertEqual(frappe.allowed_http_methods_for_whitelisted_func[retour], ["GET", "POST"])
+
+
+class TestReconciliationAuRetour(TestRetourEtExposition):
+    """Notification perdue : au retour de l'apprenant connecté, ses paiements en attente sont revérifiés."""
+
+    def setUp(self):
+        super().setUp()
+        self.initier()
+        self.reference = self.transaction()
+
+    def revenir(self, simule, utilisateur=ELEVE, cours=None):
+        frappe.set_user(utilisateur)
+        with mock.patch("requests.post", side_effect=simule),                 mock.patch.object(paiement_api.frappe, "log_error") as consigne:
+            cible = self.retour(cours or self.cours)
+        frappe.set_user("Administrator")
+        return cible, consigne
+
+    def statut_paiement(self):
+        return frappe.db.get_value(PAIEMENT, {"reference": self.reference}, ["montant", "statut"])
+
+    def test_paiement_regle_mais_non_notifie_confirme_au_retour(self):
+        simule = CinetPaySimule(montant="10000")
+        cible, _ = self.revenir(simule)
+        self.assertEqual(cible, f"/espace/paiement/{self.cours}")
+        self.assertEqual(self.statut_paiement(), (10000, "confirme"))
+        self.assertEqual([a[1]["transaction_id"] for a in simule.controles()], [self.reference])
+        self.assertEqual(len(self.journal()), 1)
+        self.assertTrue(frappe.local.flags.commit)  # requête GET : l'écriture doit être validée
+        self.revenir(simule)  # retour répété : idempotent, plus rien en attente
+        self.assertEqual((len(simule.controles()), len(self.journal())), (1, 1))
+
+    def test_controle_impossible_redirige_sans_rien_changer(self):
+        import requests
+        cible, consigne = self.revenir(CinetPaySimule(erreur=requests.Timeout(f"lent {CLE}")))
+        self.assertEqual(cible, f"/espace/paiement/{self.cours}")
+        self.assertEqual(self.statut_paiement(), (10000, "en_attente"))
+        texte = str(consigne.call_args)
+        self.assertIn("CinetPay injoignable (Timeout)", texte)
+        self.assertNotIn(CLE, texte)
+
+    def test_erreur_imprevue_redirige_et_consigne_par_son_type(self):
+        with mock.patch.object(paiement, "reconcilier_paiements", side_effect=RuntimeError(f"x {SECRET}")),                 mock.patch.object(frappe.db, "rollback") as annulation:
+            cible, consigne = self.revenir(CinetPaySimule())
+        self.assertEqual(cible, f"/espace/paiement/{self.cours}")
+        annulation.assert_called_once_with()
+        self.assertIn("RuntimeError", str(consigne.call_args))
+        self.assertNotIn(SECRET, str(consigne.call_args))
+
+    def test_visiteur_ne_declenche_aucun_controle(self):
+        simule = CinetPaySimule()
+        cible, _ = self.revenir(simule, utilisateur="Guest")
+        self.assertEqual((cible, simule.appels), (f"/espace/paiement/{self.cours}", []))
+        self.assertEqual(self.statut_paiement(), (10000, "en_attente"))
+
+    def test_parcours_inconnu_ou_d_autrui_aucun_controle(self):
+        autre = utilisateur("autre.reconciliation@example.ci")
+        simule = CinetPaySimule()
+        self.assertEqual(self.revenir(simule, cours="inexistant")[0], "/espace")
+        self.assertEqual(self.revenir(simule, utilisateur=autre)[0], f"/espace/paiement/{self.cours}")
+        self.assertEqual(simule.appels, [])
+        self.assertEqual(self.statut_paiement(), (10000, "en_attente"))

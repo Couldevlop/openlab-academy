@@ -96,6 +96,7 @@ def _resume(echeances) -> list[list]:
 
 
 MOYEN_EN_LIGNE = "cinetpay"
+RECONCILIATION_MAX = 5  # contrôles au plus par retour, même si des paiements abandonnés s'accumulent
 ACTEUR_PASSERELLE = "CinetPay"
 
 
@@ -171,3 +172,12 @@ class ConfirmerPaiement:
         self._journal(p.dossier, ACTEUR_PASSERELLE, "paiement_confirme",
                       {"statut": p.statut, "paye": apres - v.montant, "montant": p.montant},
                       {"statut": "confirme", "paye": apres, "montant": v.montant})
+
+    def reconcilier(self, apprenant: str, cours: str, limite: int = RECONCILIATION_MAX) -> None:
+        """Notification perdue : revérifie les paiements en ligne en attente de l'apprenant sur ce parcours.
+        Une passerelle injoignable interrompt (PaiementIndisponible) ; les confirmations déjà faites restent."""
+        d = self._depot.charger(apprenant, cours)
+        if d is None:
+            return
+        for reference in self._depot.paiements_en_attente(d.nom, MOYEN_EN_LIGNE, limite):
+            self.executer(reference)
