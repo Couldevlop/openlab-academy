@@ -8,7 +8,7 @@ from openlab_academy.domain.verrou import ExercicesVerrouilles
 from openlab_academy.infrastructure import reglages_source_frappe
 from openlab_academy.infrastructure.depot_ouvertures_frappe import DepotOuverturesFrappe
 
-ROLES_NON_BLOQUES = {"System Manager", "Moderator", "Course Creator", "Batch Evaluator"}
+ROLES_NON_BLOQUES = {"System Manager", "Moderator", "Course Creator", "Batch Evaluator", "Intendant OpenLab"}
 PREFIXE_CAS = "Mise en situation"
 
 

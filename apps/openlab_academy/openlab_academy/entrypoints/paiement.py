@@ -5,10 +5,9 @@ import frappe
 from frappe.utils import getdate
 
 from openlab_academy.application.paiements import InscriptionTardive, OuvrirDossier, TarifAbsent
+from openlab_academy.entrypoints.lms import ROLES_NON_BLOQUES
 from openlab_academy.infrastructure.depot_dossiers_frappe import (
     DepotDossiersFrappe, ReglagesPaiementFrappe, TarifsFrappe)
-
-ROLES_NON_BLOQUES = {"System Manager", "Moderator", "Course Creator", "Batch Evaluator", "Intendant OpenLab"}
 
 
 def aujourd_hui() -> datetime.date:

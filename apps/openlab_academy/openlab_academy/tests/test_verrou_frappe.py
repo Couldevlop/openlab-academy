@@ -80,6 +80,15 @@ class TestVerrouExercices(FrappeTestCase):
         with self.assertRaisesRegex(frappe.ValidationError, "ouvrez d'abord la leçon"):
             self.soumettre_quiz()
 
+    def test_intendant_jamais_verrouille(self):
+        email = "intendant.verrou@example.ci"
+        frappe.get_doc({"doctype": "User", "email": email, "first_name": "Ina", "send_welcome_email": 0,
+                        "roles": [{"role": "Intendant OpenLab"}]}).insert(ignore_permissions=True)
+        self.assertIn("Intendant OpenLab", lms.ROLES_NON_BLOQUES)
+        lms._verifier(email, self.lecon)  # leçon jamais ouverte : un apprenant serait refusé
+        with self.assertRaisesRegex(frappe.ValidationError, "ouvrez d'abord la leçon"):
+            lms._verifier(ELEVE, self.lecon)
+
     def test_quiz_accepte_apres_une_heure(self):
         self.ouvrir(il_y_a_minutes=61)
         frappe.set_user(ELEVE)
