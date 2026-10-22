@@ -1,6 +1,6 @@
 """Ports du paiement des parcours : dépôt des dossiers et paiements, tarifs, réglages, journal, passerelle."""
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from typing import Literal, Protocol
 
 from openlab_academy.domain.dossier_paiement import Dossier
@@ -11,6 +11,7 @@ from openlab_academy.domain.echeancier import Echeance, Mode, Tarif
 class ReglagesPaiement:
     jour_echeance: int = 10
     inscription_tardive_mois: int = 2
+    delais_rappel: tuple[int, ...] = (7, 3, 1)
 
 
 @dataclass(frozen=True)
@@ -89,6 +90,9 @@ class DepotDossiers(Protocol):
 
     def paiements_en_attente(self, dossier: str, moyen: str, limite: int) -> tuple[str, ...]:
         """Références des paiements en attente du dossier, les plus récents d'abord."""
+
+    def paiements_en_attente_depuis(self, moyen: str, depuis: datetime) -> tuple[str, ...]:
+        """Références des paiements en attente créés depuis cet instant, tous dossiers confondus."""
 
 
 class Passerelle(Protocol):

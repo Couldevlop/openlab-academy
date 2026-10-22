@@ -12,6 +12,7 @@ from openlab_academy.domain.echeancier import Echeance, Mode, Tarif
 DOSSIER = "Dossier Paiement OpenLab"
 PAIEMENT = "Paiement OpenLab"
 POINT = "enregistrer_virement"
+REVERIFICATION_MAX = 500  # paiements revérifiés au plus par passage de la tâche quotidienne
 
 
 def _lignes(echeances) -> list[dict]:
@@ -108,6 +109,10 @@ class DepotDossiersFrappe:
         return tuple(frappe.get_all(PAIEMENT, {"dossier": dossier, "moyen": moyen, "statut": "en_attente"},
                                     pluck="reference", order_by="creation desc", limit=limite))
 
+    def paiements_en_attente_depuis(self, moyen: str, depuis) -> tuple[str, ...]:
+        return tuple(frappe.get_all(PAIEMENT, {"moyen": moyen, "statut": "en_attente", "creation": (">=", depuis)},
+                                    pluck="reference", order_by="creation desc", limit=REVERIFICATION_MAX))
+
     def marquer_echoue(self, moyen: str, reference: str) -> None:
         p = self._verrouiller(moyen, reference)
         if p and p.statut == "en_attente":
@@ -125,4 +130,6 @@ class ReglagesPaiementFrappe:
     def charger(self) -> ReglagesPaiement:
         def valeur(champ, defaut):
             return int(frappe.db.get_single_value("Reglages Paiement OpenLab", champ) or defaut)
-        return ReglagesPaiement(valeur("jour_echeance", 10), valeur("inscription_tardive_mois", 2))
+        delais = frappe.db.get_single_value("Reglages Paiement OpenLab", "delais_rappel") or "7,3,1"
+        return ReglagesPaiement(valeur("jour_echeance", 10), valeur("inscription_tardive_mois", 2),
+                                tuple(int(m) for m in delais.split(",")))  # validés à l'enregistrement

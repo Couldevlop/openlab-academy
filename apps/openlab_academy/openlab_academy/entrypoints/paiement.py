@@ -1,5 +1,6 @@
-"""Points d'accroche de l'inscription (refus des inscriptions tardives ou sans tarif, ouverture du dossier) et
-assemblage du paiement en ligne CinetPay (réglages, liens de retour et de notification)."""
+"""Points d'accroche de l'inscription (refus des inscriptions tardives ou sans tarif, ouverture du dossier),
+assemblage du paiement en ligne CinetPay (réglages, liens de retour et de notification) et tâche quotidienne des
+rappels (revérification des paiements en attente, puis rappels J-7, J-3, J-1 sur trois canaux)."""
 import datetime
 from urllib.parse import urlencode, urlsplit
 
@@ -7,12 +8,16 @@ import frappe
 from frappe.utils import getdate, nowdate, now_datetime
 
 from openlab_academy.application.paiements import (
-    AccorderDelai, ConfirmerPaiement, EnregistrerVirement, InitierPaiement, InscriptionTardive, OuvrirDossier, PaiementIndisponible, TarifAbsent)
+    AccorderDelai, ConfirmerPaiement, EnregistrerVirement, InitierPaiement, InscriptionTardive, OuvrirDossier,
+    PaiementIndisponible, ReverifierPaiements, TarifAbsent)
+from openlab_academy.application.rappels import EnvoyerRappels
 from openlab_academy.entrypoints.lms import ROLES_NON_BLOQUES
+from openlab_academy.infrastructure.canaux import CanalEmail, CanalSms, CanalWhatsApp
 from openlab_academy.infrastructure.cinetpay import PasserelleCinetPay
 from openlab_academy.infrastructure.depot_dossiers_frappe import (
     DepotDossiersFrappe, ReglagesPaiementFrappe, TarifsFrappe)
 from openlab_academy.infrastructure.journal_paiement_frappe import journaliser
+from openlab_academy.infrastructure.rappels_frappe import DepotRappelsFrappe, RegistreRappelsFrappe
 
 REGLAGES = "Reglages Paiement OpenLab"
 API = "/api/method/openlab_academy.entrypoints.paiement_api"
@@ -98,3 +103,59 @@ def enregistrer_virement(acteur: str, dossier: str, montant: int, reference: str
 
 def accorder_delai(acteur: str, dossier: str, jusqu_au: datetime.date, motif: str) -> None:
     AccorderDelai(DepotDossiersFrappe(), journaliser, jour_courant).executer(acteur, dossier, jusqu_au, motif)
+
+
+# --- tâche quotidienne : revérification des paiements en attente, rappels ----------------------------------
+POINT_RAPPEL = "openlab_rappel"
+
+
+def _alerte(titre: str, detail: str) -> None:
+    frappe.log_error(titre, detail)
+
+
+def _transaction(action):
+    """Un dossier (ou un paiement) par transaction, validée aussitôt : une erreur n'annule que ses écritures
+    (toute la transaction en cours si le point de sauvegarde est perdu, après un interblocage) puis remonte."""
+    frappe.db.savepoint(POINT_RAPPEL)
+    try:
+        resultat = action()
+    except Exception:
+        try:
+            frappe.db.rollback(save_point=POINT_RAPPEL)
+        except Exception:
+            frappe.db.rollback()
+        raise
+    frappe.db.commit()
+    return resultat
+
+
+def canaux() -> tuple:
+    """E-mail, SMS, WhatsApp ; les secrets sont lus déchiffrés et ne quittent que l'adaptateur."""
+    r = frappe.get_single(REGLAGES)
+
+    def secret(champ: str) -> str:
+        return r.get_password(champ, raise_exception=False) or ""
+    return (CanalEmail(frappe.sendmail),
+            CanalSms(r.sms_url_jeton or "", r.sms_client_id or "", secret("sms_client_secret"), r.sms_expediteur or ""),
+            CanalWhatsApp(r.whatsapp_phone_id or "", secret("whatsapp_jeton"), r.whatsapp_modele or ""))
+
+
+def reverifier_paiements() -> int:
+    """Paiements CinetPay en attente depuis moins de 7 jours, revérifiés via /v2/payment/check (notification perdue)."""
+    p = passerelle()
+    if not p.disponible():
+        return 0
+    depot = DepotDossiersFrappe()
+    return ReverifierPaiements(depot, ConfirmerPaiement(depot, p, journaliser), now_datetime, alerte=_alerte,
+                               unite=_transaction).executer()
+
+
+def envoyer_rappels() -> int:
+    """Tâche quotidienne (08:00, Abidjan = UTC) ; renvoie le nombre de rappels envoyés."""
+    try:
+        reverifier_paiements()  # un paiement arrivé sans notification ne doit pas valoir de rappel
+    except Exception as e:
+        frappe.log_error("Paiements en ligne non revérifiés", type(e).__name__)
+    return EnvoyerRappels(DepotRappelsFrappe(), canaux(), RegistreRappelsFrappe(), jour_courant,
+                          delais=ReglagesPaiementFrappe().charger().delais_rappel, alerte=_alerte,
+                          unite=_transaction).executer()

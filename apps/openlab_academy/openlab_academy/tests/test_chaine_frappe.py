@@ -512,8 +512,8 @@ class TestPairsFrappe(Cas):
 
     def test_hooks_echeancier(self):
         self.assertEqual(hooks.scheduler_events["hourly"], ["openlab_academy.entrypoints.evaluation.traiter_echeances"])
-        self.assertEqual(hooks.scheduler_events["cron"],
-                         {"* * * * *": ["openlab_academy.entrypoints.evaluation.instantaner_rendus"]})
+        self.assertEqual(hooks.scheduler_events["cron"]["* * * * *"],
+                         ["openlab_academy.entrypoints.evaluation.instantaner_rendus"])
 
 
 class TestDepotChaineFrappe(Cas):

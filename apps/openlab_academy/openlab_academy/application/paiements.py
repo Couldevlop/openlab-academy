@@ -2,7 +2,7 @@
 import re
 from collections.abc import Callable
 from dataclasses import replace
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from openlab_academy.application.ports_paiement import (
     DepotDossiers, Journal, NouveauDossier, Passerelle, ReferenceDejaEnregistree, Reglages, Tarifs)
@@ -182,6 +182,35 @@ class ConfirmerPaiement:
             return
         for reference in self._depot.paiements_en_attente(d.nom, MOYEN_EN_LIGNE, limite):
             self.executer(reference)
+
+
+REVERIFICATION_JOURS = 7
+
+
+class ReverifierPaiements:
+    """Tâche quotidienne : revérifie auprès de la passerelle les paiements en ligne encore en attente et créés il y a
+    moins de 7 jours (notification perdue). Chaque paiement est indépendant : une erreur est consignée sans secret
+    et les suivants sont traités."""
+
+    def __init__(self, depot: DepotDossiers, confirmer: ConfirmerPaiement, maintenant: Callable[[], datetime], *,
+                 alerte: Callable[[str, str], None] = lambda titre, detail: None,
+                 unite: Callable[[Callable[[], None]], None] = lambda action: action()):
+        self._depot = depot
+        self._confirmer = confirmer
+        self._maintenant = maintenant
+        self._alerte = alerte
+        self._unite = unite
+
+    def executer(self) -> int:
+        depuis = self._maintenant() - timedelta(days=REVERIFICATION_JOURS)
+        references = self._depot.paiements_en_attente_depuis(MOYEN_EN_LIGNE, depuis)
+        for reference in references:
+            try:
+                self._unite(lambda reference=reference: self._confirmer.executer(reference))
+            except Exception as e:
+                detail = str(e) if isinstance(e, PaiementIndisponible) else type(e).__name__
+                self._alerte("Paiement en ligne non revérifié", f"transaction {reference[:64]!r} : {detail}")
+        return len(references)
 
 
 REFERENCE_MAX = 140

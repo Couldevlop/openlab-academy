@@ -48,8 +48,12 @@ doc_events = {
     },
 }
 
-# échéances de la chaîne de correction : rien ne bloque une copie ; instantanés des dépôts rendus à la minute
+# échéances de la chaîne de correction : rien ne bloque une copie ; instantanés des dépôts rendus à la minute ;
+# rappels de paiement chaque jour à 08:00 (Abidjan = UTC)
 scheduler_events = {
     "hourly": ["openlab_academy.entrypoints.evaluation.traiter_echeances"],
-    "cron": {"* * * * *": ["openlab_academy.entrypoints.evaluation.instantaner_rendus"]},
+    "cron": {
+        "* * * * *": ["openlab_academy.entrypoints.evaluation.instantaner_rendus"],
+        "0 8 * * *": ["openlab_academy.entrypoints.paiement.envoyer_rappels"],
+    },
 }
