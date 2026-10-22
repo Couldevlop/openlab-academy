@@ -22,6 +22,9 @@ class DepotDossiersFrappe:
     def charger(self, apprenant: str, cours: str) -> DossierEnregistre | None:
         return self.par_nom(frappe.db.get_value(DOSSIER, {"apprenant": apprenant, "cours": cours}))
 
+    def cours_de(self, apprenant: str) -> tuple[str, ...]:
+        return tuple(frappe.get_all(DOSSIER, {"apprenant": apprenant}, pluck="cours"))
+
     def par_nom(self, nom: str | None) -> DossierEnregistre | None:
         if not nom or not frappe.db.exists(DOSSIER, nom):
             return None

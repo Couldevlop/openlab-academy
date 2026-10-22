@@ -50,8 +50,8 @@ class TestVerrouExercices(FrappeTestCase):
                                             now_datetime() - datetime.timedelta(minutes=il_y_a_minutes))
 
     def test_hooks_declares(self):
-        self.assertEqual(hooks.override_whitelisted_methods,
-                         {"lms.lms.utils.get_lesson": "openlab_academy.entrypoints.lms.get_lesson"})
+        self.assertEqual(hooks.override_whitelisted_methods["lms.lms.utils.get_lesson"],
+                         "openlab_academy.entrypoints.lms.get_lesson")
         self.assertEqual(hooks.doc_events["LMS Quiz Submission"]["before_insert"],
                          "openlab_academy.entrypoints.lms.avant_soumission_quiz")
         self.assertEqual(hooks.doc_events["LMS Assignment Submission"]["before_insert"],

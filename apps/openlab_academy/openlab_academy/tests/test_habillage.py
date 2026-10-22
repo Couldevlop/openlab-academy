@@ -6,7 +6,7 @@ from werkzeug.wrappers import Request, Response
 
 from openlab_academy import hooks
 from openlab_academy.entrypoints import http
-from openlab_academy.infrastructure.habillage import FEUILLE, LIEN, injecter
+from openlab_academy.infrastructure.habillage import FEUILLE, LIEN, SCRIPT, SCRIPT_PAIEMENT, injecter
 
 PAGE = "<html><head><title>x</title></head><body></body></html>"
 CSS = pathlib.Path(__file__).parents[1] / "public" / "css" / "openlab.css"
@@ -19,11 +19,21 @@ def requete(chemin: str) -> Request:
 class TestInjection(unittest.TestCase):
     def test_lien_insere_avant_fin_de_head(self):
         html = injecter(PAGE)
-        self.assertIn(f"{LIEN}</head>", html)
+        self.assertIn(f"{LIEN}{SCRIPT}</head>", html)
         self.assertEqual(html.count(FEUILLE), 1)
 
     def test_idempotent(self):
         self.assertEqual(injecter(injecter(PAGE)), injecter(PAGE))
+
+    def test_script_de_paiement_injecte_une_seule_fois(self):
+        html = injecter(injecter(PAGE))
+        self.assertEqual(SCRIPT, f'<script src="{SCRIPT_PAIEMENT}" defer></script>')
+        self.assertEqual(html.count(SCRIPT_PAIEMENT), 1)
+        self.assertIn(f"{SCRIPT}</head>", html)
+
+    def test_script_ajoute_si_la_feuille_est_deja_la(self):
+        html = injecter(PAGE.replace("</head>", f"{LIEN}</head>"))
+        self.assertEqual((html.count(FEUILLE), html.count(SCRIPT_PAIEMENT)), (1, 1))
 
     def test_sans_head_inchange(self):
         self.assertEqual(injecter("<p>fragment</p>"), "<p>fragment</p>")
@@ -58,6 +68,10 @@ class TestHookAfterRequest(unittest.TestCase):
         http.after_request(r, requete("/lms/x"))
         self.assertNotIn(FEUILLE, r.get_data(as_text=True))
 
+    def test_sans_reponse_ignore(self):
+        """Redirection levée par before_request : Frappe appelle after_request sans réponse."""
+        self.assertIsNone(http.after_request(None, requete("/lms/courses/x")))
+
     def test_reponse_en_flux_ignoree(self):
         r = Response(iter([PAGE]), mimetype="text/html")
         r.direct_passthrough = True
@@ -77,9 +91,18 @@ class TestHookAfterRequest(unittest.TestCase):
 class TestHooksDeclares(unittest.TestCase):
     def test_hooks(self):
         self.assertEqual(hooks.after_request, ["openlab_academy.entrypoints.http.after_request"])
+        self.assertEqual(hooks.before_request, ["openlab_academy.entrypoints.http.before_request"])
         self.assertEqual(hooks.after_install, "openlab_academy.entrypoints.install.after_install")
         self.assertIn(FEUILLE, hooks.web_include_css)
         self.assertIn(FEUILLE, hooks.app_include_css)
+
+
+class TestScriptDePaiement(unittest.TestCase):
+    def test_present_et_sans_dependance(self):
+        js = (pathlib.Path(__file__).parents[1] / "public" / "js" / "paiement.js").read_text(encoding="utf-8")
+        for jeton in ("ParcoursBloque", "/espace/paiement/", "clone()", "location.assign"):
+            self.assertIn(jeton, js)
+        self.assertNotIn("import ", js)
 
 
 class TestFeuilleDeStyle(unittest.TestCase):

@@ -9,13 +9,29 @@ required_apps = ["lms"]
 after_install = "openlab_academy.entrypoints.install.after_install"
 after_migrate = ["openlab_academy.entrypoints.install.after_migrate"]
 after_request = ["openlab_academy.entrypoints.http.after_request"]
+# parcours en retard de paiement : pages redirigées vers le paiement (chargement complet d'une page)
+before_request = ["openlab_academy.entrypoints.http.before_request"]
 app_include_css = ["/assets/openlab_academy/css/openlab.css"]
 web_include_css = ["/assets/openlab_academy/css/openlab.css"]
 
 # écrans d'évaluation (relecture, correcteur, retour) : une page, routée côté navigateur
 website_route_rules = [{"from_route": "/espace/<path:app_path>", "to_route": "espace"}]
 
-override_whitelisted_methods = {"lms.lms.utils.get_lesson": "openlab_academy.entrypoints.lms.get_lesson"}
+# parcours en retard de paiement : leçons, quiz et réponses refusés par l'API (ParcoursBloque), documents et listes
+# retirés par les permissions ; nos hooks has_permission ne font que refuser (None sinon)
+override_whitelisted_methods = {
+    "lms.lms.utils.get_lesson": "openlab_academy.entrypoints.lms.get_lesson",
+    "lms.lms.utils.get_quiz_with_questions": "openlab_academy.entrypoints.lms.get_quiz_with_questions",
+    "lms.lms.doctype.lms_quiz.lms_quiz.check_answer": "openlab_academy.entrypoints.lms.check_answer",
+}
+has_permission = {d: "openlab_academy.entrypoints.lms.lecture_permise"
+                  for d in ("Course Lesson", "Course Chapter", "LMS Quiz", "LMS Assignment", "LMS Programming Exercise")}
+permission_query_conditions = {
+    "Course Lesson": "openlab_academy.entrypoints.lms.conditions_lecons",
+    "LMS Quiz": "openlab_academy.entrypoints.lms.conditions_quiz",
+    "LMS Assignment": "openlab_academy.entrypoints.lms.conditions_devoirs",
+    "LMS Programming Exercise": "openlab_academy.entrypoints.lms.conditions_exercices",
+}
 doc_events = {
     "LMS Batch Enrollment": {
         "before_insert": "openlab_academy.entrypoints.paiement.avant_inscription",
