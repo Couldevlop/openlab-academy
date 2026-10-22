@@ -1,12 +1,14 @@
-"""Adaptateurs Frappe du paiement : dossiers, tarifs, réglages."""
+"""Adaptateurs Frappe du paiement : dossiers et paiements, tarifs, réglages."""
 import frappe
-from frappe.utils import getdate
+from frappe.utils import getdate, now_datetime
 
-from openlab_academy.application.ports_paiement import DossierEnregistre, NouveauDossier, ReglagesPaiement
+from openlab_academy.application.ports_paiement import (
+    Client, DossierEnregistre, NouveauDossier, PaiementEnregistre, ReglagesPaiement)
 from openlab_academy.domain.dossier_paiement import Dossier
 from openlab_academy.domain.echeancier import Echeance, Mode, Tarif
 
 DOSSIER = "Dossier Paiement OpenLab"
+PAIEMENT = "Paiement OpenLab"
 
 
 def _lignes(echeances) -> list[dict]:
@@ -46,10 +48,42 @@ class DepotDossiersFrappe:
         frappe.db.set_value(DOSSIER, nom, "telephone", telephone)
 
     def paye(self, nom: str) -> int:
-        return sum(frappe.get_all("Paiement OpenLab", {"dossier": nom, "statut": "confirme"}, pluck="montant"))
+        return sum(frappe.get_all(PAIEMENT, {"dossier": nom, "statut": "confirme"}, pluck="montant"))
 
     def fixer_delai(self, nom: str, d) -> None:
         frappe.db.set_value(DOSSIER, nom, "delai_jusqu_au", d)
+
+    def client(self, apprenant: str) -> Client:
+        u = frappe.db.get_value("User", apprenant, ["first_name", "last_name", "email"], as_dict=True) or {}
+        return Client(nom=u.get("last_name") or "", prenom=u.get("first_name") or "", email=u.get("email") or "")
+
+    def creer_paiement(self, dossier: str, montant: int, moyen: str, reference: str, statut: str) -> str:
+        return frappe.get_doc({"doctype": PAIEMENT, "dossier": dossier, "montant": montant, "moyen": moyen,
+                               "reference": reference, "statut": statut}).insert(ignore_permissions=True).name
+
+    def _verrouiller(self, moyen: str, reference: str):
+        """Ligne du paiement verrouillée jusqu'à la fin de la transaction : deux notifications simultanées
+        de la même transaction se suivent au lieu de se croiser."""
+        return frappe.db.get_value(PAIEMENT, {"cle": f"{moyen}|{reference}"}, ["name", "statut"], as_dict=True,
+                                   for_update=True)
+
+    def paiement(self, moyen: str, reference: str) -> PaiementEnregistre | None:
+        p = frappe.db.get_value(PAIEMENT, {"cle": f"{moyen}|{reference}"}, ["name", "dossier", "montant", "statut"],
+                                as_dict=True)
+        return PaiementEnregistre(p.name, p.dossier, p.montant, p.statut) if p else None
+
+    def confirmer_paiement(self, moyen: str, reference: str, montant: int) -> bool:
+        p = self._verrouiller(moyen, reference)
+        if not p or p.statut == "confirme":
+            return False
+        frappe.db.set_value(PAIEMENT, p.name, {"statut": "confirme", "montant": montant,
+                                               "date_paiement": now_datetime()})
+        return True
+
+    def marquer_echoue(self, moyen: str, reference: str) -> None:
+        p = self._verrouiller(moyen, reference)
+        if p and p.statut == "en_attente":
+            frappe.db.set_value(PAIEMENT, p.name, "statut", "echoue")
 
 
 class TarifsFrappe:

@@ -1,7 +1,7 @@
-"""Ports du paiement des parcours : dépôt des dossiers, tarifs, réglages et journal."""
+"""Ports du paiement des parcours : dépôt des dossiers et paiements, tarifs, réglages, journal, passerelle."""
 from dataclasses import dataclass
 from datetime import date
-from typing import Protocol
+from typing import Literal, Protocol
 
 from openlab_academy.domain.dossier_paiement import Dossier
 from openlab_academy.domain.echeancier import Echeance, Mode, Tarif
@@ -38,6 +38,29 @@ class DossierEnregistre:
     inscription: date
 
 
+@dataclass(frozen=True)
+class Client:
+    """Coordonnées transmises à la passerelle : seulement celles connues."""
+    nom: str = ""
+    prenom: str = ""
+    email: str = ""
+    telephone: str = ""
+
+
+@dataclass(frozen=True)
+class Verification:
+    statut: Literal["confirme", "echoue", "en_attente"]
+    montant: int
+
+
+@dataclass(frozen=True)
+class PaiementEnregistre:
+    nom: str
+    dossier: str
+    montant: int
+    statut: str
+
+
 class DepotDossiers(Protocol):
     def charger(self, apprenant: str, cours: str) -> DossierEnregistre | None: ...
     def creer(self, d: NouveauDossier) -> str: ...
@@ -45,6 +68,24 @@ class DepotDossiers(Protocol):
     def fixer_telephone(self, nom: str, telephone: str) -> None: ...
     def paye(self, nom: str) -> int: ...
     def fixer_delai(self, nom: str, d: date) -> None: ...
+    def client(self, apprenant: str) -> Client: ...
+    def creer_paiement(self, dossier: str, montant: int, moyen: str, reference: str, statut: str) -> str: ...
+    def paiement(self, moyen: str, reference: str) -> PaiementEnregistre | None: ...
+
+    def confirmer_paiement(self, moyen: str, reference: str, montant: int) -> bool:
+        """Passe le paiement à `confirme` au montant donné, sous verrou ; False s'il l'était déjà (ou inconnu)."""
+
+    def marquer_echoue(self, moyen: str, reference: str) -> None: ...
+
+
+class Passerelle(Protocol):
+    def disponible(self) -> bool: ...
+
+    def initier(self, transaction: str, montant: int, description: str, client: Client, retour: str,
+                notification: str) -> str:
+        """URL de la page de paiement."""
+
+    def verifier(self, transaction: str) -> Verification: ...
 
 
 class Tarifs(Protocol):

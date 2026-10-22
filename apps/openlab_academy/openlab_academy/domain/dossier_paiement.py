@@ -48,6 +48,11 @@ class Dossier:
         parts = self._non_couvertes()
         return parts[0][0] if parts else None
 
+    def part_prochaine(self) -> int:
+        """Part non couverte de la prochaine échéance (0 si tout est couvert)."""
+        parts = self._non_couvertes()
+        return parts[0][1] if parts else 0
+
 
 def statut(dossier: Dossier, aujourd_hui: date) -> Statut:
     if dossier.dispense:

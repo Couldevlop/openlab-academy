@@ -1,9 +1,11 @@
-"""Cas d'usage : ouvrir le dossier de paiement à l'inscription, choisir ou changer de mode."""
+"""Cas d'usage : ouvrir le dossier de paiement à l'inscription, choisir ou changer de mode, payer en ligne."""
 import re
 from collections.abc import Callable
-from datetime import date
+from dataclasses import replace
+from datetime import date, datetime
 
-from openlab_academy.application.ports_paiement import DepotDossiers, Journal, NouveauDossier, Reglages, Tarifs
+from openlab_academy.application.ports_paiement import (
+    DepotDossiers, Journal, NouveauDossier, Passerelle, Reglages, Tarifs)
 from openlab_academy.domain.echeancier import Echeance, Mode, Tarif, echeancier, inscription_permise, replanifier
 
 LIBELLE_FRAIS = "Frais d'inscription"
@@ -91,3 +93,81 @@ class ChoisirMode:
 
 def _resume(echeances) -> list[list]:
     return [[e.date_limite.isoformat(), e.montant, e.libelle] for e in echeances]
+
+
+MOYEN_EN_LIGNE = "cinetpay"
+ACTEUR_PASSERELLE = "CinetPay"
+
+
+class PaiementIndisponible(Exception):
+    """Paiement en ligne non configuré, injoignable ou réponse inexploitable ; message sans secret."""
+
+
+class RienADu(Exception):
+    pass
+
+
+def _multiple_de_5(montant: int) -> int:
+    return -(-montant // 5) * 5
+
+
+class InitierPaiement:
+    """Ouvre un paiement en ligne de la part due de la prochaine échéance (au moins les frais restants)."""
+
+    def __init__(self, depot: DepotDossiers, passerelle: Passerelle, maintenant: Callable[[], datetime],
+                 liens: Callable[[str], tuple[str, str]]):
+        self._depot = depot
+        self._passerelle = passerelle
+        self._maintenant = maintenant
+        self._liens = liens  # cours -> (URL de retour, URL de notification)
+
+    def executer(self, apprenant: str, cours: str) -> str:
+        if not self._passerelle.disponible():
+            raise PaiementIndisponible("Le paiement en ligne n'est pas disponible pour le moment.")
+        d = self._depot.charger(apprenant, cours)
+        if d is None:
+            raise DossierAbsent("Aucun dossier de paiement pour ce parcours.")
+        dossier = d.dossier
+        part = max(dossier.part_prochaine(), dossier.frais_inscription - dossier.paye)
+        if dossier.dispense or part <= 0:
+            raise RienADu("Aucun montant n'est dû sur ce parcours.")
+        montant = _multiple_de_5(part)
+        echeance = dossier.prochaine(self._maintenant().date())
+        libelle = echeance.libelle if echeance else LIBELLE_FRAIS
+        retour, notification = self._liens(cours)
+        client = self._depot.client(apprenant)
+        if d.telephone:
+            client = replace(client, telephone=d.telephone)
+        reference = f"OLA-{d.nom}-{self._maintenant():%Y%m%d%H%M%S%f}"
+        self._depot.creer_paiement(d.nom, montant, MOYEN_EN_LIGNE, reference, "en_attente")
+        try:
+            return self._passerelle.initier(reference, montant, f"{cours} - {libelle}", client, retour, notification)
+        except PaiementIndisponible:
+            self._depot.marquer_echoue(MOYEN_EN_LIGNE, reference)
+            raise
+
+
+class ConfirmerPaiement:
+    """Confirme un paiement en ligne après contrôle auprès de la passerelle, au montant vérifié ; idempotent."""
+
+    def __init__(self, depot: DepotDossiers, passerelle: Passerelle, journal: Journal):
+        self._depot = depot
+        self._passerelle = passerelle
+        self._journal = journal
+
+    def executer(self, transaction: str) -> None:
+        p = self._depot.paiement(MOYEN_EN_LIGNE, transaction)
+        if p is None or p.statut == "confirme":
+            return
+        v = self._passerelle.verifier(transaction)
+        if v.statut == "echoue":
+            self._depot.marquer_echoue(MOYEN_EN_LIGNE, transaction)
+            return
+        if v.statut != "confirme" or v.montant <= 0:
+            return
+        if not self._depot.confirmer_paiement(MOYEN_EN_LIGNE, transaction, v.montant):
+            return  # une notification concurrente l'a confirmé
+        apres = self._depot.paye(p.dossier)
+        self._journal(p.dossier, ACTEUR_PASSERELLE, "paiement_confirme",
+                      {"statut": p.statut, "paye": apres - v.montant, "montant": p.montant},
+                      {"statut": "confirme", "paye": apres, "montant": v.montant})

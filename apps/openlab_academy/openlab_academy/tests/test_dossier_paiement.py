@@ -58,6 +58,11 @@ class StatutTest(unittest.TestCase):
         self.assertEqual(dossier(0).prochaine(INSCRIPTION), ECHEANCES[0])
         self.assertIsNone(dossier(70000).prochaine(INSCRIPTION))
 
+    def test_part_due_de_la_prochaine_echeance(self):
+        self.assertEqual(dossier(0).part_prochaine(), 10000)
+        self.assertEqual(dossier(15000).part_prochaine(), 25000)
+        self.assertEqual(dossier(70000).part_prochaine(), 0)
+
 
 class RappelsTest(unittest.TestCase):
     def test_rappels_7_3_1(self):
