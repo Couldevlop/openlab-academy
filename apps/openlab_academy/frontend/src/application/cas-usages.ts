@@ -1,14 +1,25 @@
 // Assemblage des cas d'usage sur leurs ports : c'est tout ce que les écrans connaissent de l'application.
 import { ConsulterFile, EnregistrerCorrection, OuvrirCopie, PublierNote, ValiderLot } from './correction'
+import {
+  AccorderDelai,
+  ConsulterDroits,
+  ConsulterIntendance,
+  ConsulterResume,
+  EnregistrerVirement,
+  LienExport,
+  OuvrirFiche,
+} from './intendance'
 import { ChargerDossier, ChoisirMode, Payer } from './paiement'
 import type {
   DepotBrouillons,
   DepotCorrection,
+  DepotIntendance,
   DepotPaiement,
   DepotRelecture,
   DepotRetour,
   Horloge,
   Navigateur,
+  Session,
 } from './ports'
 import { ConsulterRelectures, EnvoyerRelecture, GarderBrouillon, OuvrirRelecture } from './relecture'
 import { ConsulterRetour } from './retour'
@@ -18,6 +29,8 @@ export interface Ports {
   relecture: DepotRelecture
   retour: DepotRetour
   paiement: DepotPaiement
+  intendance: DepotIntendance
+  session: Session
   navigateur: Navigateur
   brouillons: DepotBrouillons
   horloge: Horloge
@@ -38,6 +51,13 @@ export function creerCasUsages(p: Ports) {
     chargerDossier: new ChargerDossier(p.paiement, p.horloge),
     choisirMode: new ChoisirMode(p.paiement),
     payer: new Payer(p.paiement, p.navigateur),
+    consulterIntendance: new ConsulterIntendance(p.intendance),
+    lienExport: new LienExport(p.intendance),
+    ouvrirFiche: new OuvrirFiche(p.intendance, p.horloge),
+    enregistrerVirement: new EnregistrerVirement(p.intendance, p.horloge),
+    accorderDelai: new AccorderDelai(p.intendance, p.horloge),
+    consulterResume: new ConsulterResume(p.intendance),
+    consulterDroits: new ConsulterDroits(p.session),
   }
 }
 

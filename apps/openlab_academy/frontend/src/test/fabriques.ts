@@ -2,6 +2,7 @@
 import type { ElementFile, FileCorrection, VueCopie } from '../domaine/correction'
 import type { Critere, Grille } from '../domaine/grille'
 import type { ResumeRelecture, VueRelecture } from '../domaine/relecture'
+import type { FicheIntendance, LigneIntendance, ResumeFinances, VueIntendance } from '../domaine/intendance'
 import type { DossierPaiement } from '../domaine/paiement'
 import type { CritereRetour, Retour } from '../domaine/retour'
 
@@ -152,5 +153,141 @@ export const dossierPaiement = (autres: Partial<DossierPaiement> = {}): DossierP
   paiement_en_ligne: true,
   bloque: false,
   instructions_virement: '',
+  ...autres,
+})
+
+/** Ligne conforme à `intendance` (application/tableaux_paiement._ligne + rappel_envoye) : à jour. */
+export const ligneIntendance = (autres: Partial<LigneIntendance> = {}): LigneIntendance => ({
+  dossier: 'DP-0001',
+  apprenant: 'awa.kone@example.ci',
+  nom: 'Awa Koné',
+  email: 'awa.kone@example.ci',
+  parcours: 'fondamentaux-data',
+  titre: 'Fondamentaux de la data science',
+  cohorte: 'data-2026-10',
+  mode: 'deux_tranches',
+  paye: 10000,
+  total: 110000,
+  reste: 100000,
+  prochaine: { date_limite: '2026-11-10', montant: 50000 },
+  statut: 'a_jour',
+  bloque: false,
+  rappel_envoye: false,
+  ...autres,
+})
+
+/** Vue conforme à `intendance` : indicateurs et deux lignes (à jour, bloqué). */
+export const vueIntendance = (autres: Partial<VueIntendance> = {}): VueIntendance => ({
+  indicateurs: {
+    encaisse_mois: 155000,
+    encours_30j: 90000,
+    en_retard: { montant: 55000, apprenants: 1 },
+    bloques: 1,
+  },
+  lignes: [
+    ligneIntendance(),
+    ligneIntendance({
+      dossier: 'DP-0002',
+      apprenant: 'yao.bamba@example.ci',
+      nom: 'Yao Bamba',
+      email: 'yao.bamba@example.ci',
+      parcours: 'python-avance',
+      titre: 'Python avancé',
+      cohorte: 'python-2026-09',
+      mode: 'mensuel',
+      paye: 0,
+      total: 120000,
+      reste: 120000,
+      prochaine: { date_limite: '2026-10-22', montant: 10000 },
+      statut: 'en_retard',
+      bloque: true,
+    }),
+  ],
+  tronque: false,
+  ...autres,
+})
+
+/** Fiche conforme à `fiche` : échéancier, paiements, rappels, journal. */
+export const ficheIntendance = (autres: Partial<FicheIntendance> = {}): FicheIntendance => ({
+  dossier: 'DP-0001',
+  apprenant: 'awa.kone@example.ci',
+  nom: 'Awa Koné',
+  email: 'awa.kone@example.ci',
+  parcours: 'fondamentaux-data',
+  titre: 'Fondamentaux de la data science',
+  cohorte: 'data-2026-10',
+  mode: 'deux_tranches',
+  paye: 10000,
+  total: 110000,
+  reste: 100000,
+  prochaine: { date_limite: '2026-11-10', montant: 50000 },
+  statut: 'a_jour',
+  bloque: false,
+  telephone: '+2250700000001',
+  tarif: { frais_inscription: 10000, une_fois: 100000, deux_tranches: 110000, mensuel: 120000 },
+  inscription: '2026-10-22',
+  echeances: [
+    { date_limite: '2026-10-22', montant: 10000, libelle: "Frais d'inscription", couverte: true },
+    { date_limite: '2026-11-10', montant: 50000, libelle: 'Échéance', couverte: false },
+    { date_limite: '2027-01-10', montant: 50000, libelle: 'Échéance', couverte: false },
+  ],
+  arriere: 0,
+  dispense: false,
+  delai_jusqu_au: null,
+  paiements: [
+    {
+      montant: 10000,
+      moyen: 'virement',
+      reference: 'VIR-2026-001',
+      statut: 'confirme',
+      date_paiement: '2026-10-22 00:00:00',
+      auteur: 'intendant@openlab.ci',
+      cree: '2026-10-22 09:12:00',
+    },
+  ],
+  rappels: [{ date_limite: '2026-11-10', jours_avant: 7, canal: 'sms', statut: 'envoye', cree: '2026-11-03 08:00:00' }],
+  journal: [
+    {
+      dossier: 'DP-0001',
+      acteur: 'intendant@openlab.ci',
+      action: 'virement_enregistre',
+      motif: 'Relevé du 22 octobre',
+      horodatage: '2026-10-22 09:12:00',
+      avant: { paye: 0 },
+      apres: { paye: 10000 },
+    },
+  ],
+  ...autres,
+})
+
+/** Résumé conforme à `resume`. */
+export const resumeFinances = (autres: Partial<ResumeFinances> = {}): ResumeFinances => ({
+  encaisse_mois: 155000,
+  evolution_pct: 12.5,
+  taux_recouvrement: 73.8,
+  retards: 3,
+  bloques: 2,
+  par_parcours: [
+    {
+      parcours: 'fondamentaux-data',
+      titre: 'Fondamentaux de la data science',
+      inscrits: 3,
+      encaisse: 155000,
+      reste: 145000,
+    },
+    { parcours: 'python-avance', titre: 'Python avancé', inscrits: 1, encaisse: 0, reste: 120000 },
+  ],
+  modes: { une_fois: 1, deux_tranches: 2, mensuel: 1 },
+  dernieres_actions: [
+    {
+      dossier: 'DP-0002',
+      acteur: 'intendant@openlab.ci',
+      action: 'delai_accorde',
+      motif: 'Accord avec la famille',
+      horodatage: '2026-11-02 10:00:00',
+      avant: {},
+      apres: {},
+    },
+  ],
   ...autres,
 })

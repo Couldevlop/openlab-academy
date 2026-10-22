@@ -4,11 +4,13 @@ import { creerCasUsages, type Ports } from '../application/cas-usages'
 import type {
   DepotBrouillons,
   DepotCorrection,
+  DepotIntendance,
   DepotPaiement,
   DepotRelecture,
   DepotRetour,
   Horloge,
   Navigateur,
+  Session,
 } from '../application/ports'
 import type { Brouillon } from '../domaine/relecture'
 
@@ -44,6 +46,22 @@ export function fauxDepotPaiement() {
   } satisfies DepotPaiement
 }
 
+export function fauxDepotIntendance() {
+  return {
+    intendance: vi.fn<DepotIntendance['intendance']>(),
+    fiche: vi.fn<DepotIntendance['fiche']>(),
+    enregistrerVirement: vi.fn<DepotIntendance['enregistrerVirement']>(async () => undefined),
+    accorderDelai: vi.fn<DepotIntendance['accorderDelai']>(async () => undefined),
+    lienExport: vi.fn<DepotIntendance['lienExport']>(() => '/export'),
+    resume: vi.fn<DepotIntendance['resume']>(),
+  } satisfies DepotIntendance
+}
+
+/** Session sans droit d'agent, sauf mention contraire. */
+export function fausseSession() {
+  return { droits: vi.fn<Session['droits']>(() => ({ intendance: false, finances: false })) } satisfies Session
+}
+
 /** Navigation retenue au lieu d'être suivie. */
 export function fauxNavigateur() {
   return { aller: vi.fn<Navigateur['aller']>() } satisfies Navigateur
@@ -74,6 +92,8 @@ export function fauxPorts() {
     relecture: fauxDepotRelecture(),
     retour: fauxDepotRetour(),
     paiement: fauxDepotPaiement(),
+    intendance: fauxDepotIntendance(),
+    session: fausseSession(),
     navigateur: fauxNavigateur(),
     brouillons: new FauxBrouillons(),
     horloge: horlogeFixe(),

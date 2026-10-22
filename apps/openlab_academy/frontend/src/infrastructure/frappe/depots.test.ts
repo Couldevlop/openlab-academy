@@ -3,14 +3,23 @@ import { ErreurDepot } from '../../application/erreurs'
 import {
   critereRetour,
   dossierPaiement,
+  ficheIntendance,
   fileCorrection,
+  resumeFinances,
+  vueIntendance,
   resumeRelecture,
   retour,
   vueCopie,
   vueRelecture,
 } from '../../test/fabriques'
 import { ClientFrappe, type RequeteFrappe } from './client'
-import { DepotCorrectionFrappe, DepotPaiementFrappe, DepotRelectureFrappe, DepotRetourFrappe } from './depots'
+import {
+  DepotCorrectionFrappe,
+  DepotIntendanceFrappe,
+  DepotPaiementFrappe,
+  DepotRelectureFrappe,
+  DepotRetourFrappe,
+} from './depots'
 
 const RACINE = 'openlab_academy.entrypoints.evaluation_api.'
 
@@ -166,5 +175,65 @@ describe('dépôt de paiement (Frappe)', () => {
     const { bloque: _b, ...sansBlocage } = dossierPaiement()
     await invalidePaiement(sansBlocage)
     await invalide(serveurPaiement({ url: 42 }).depot.payer('C1'))
+  })
+})
+
+describe('dépôt de l’intendance (Frappe)', () => {
+  const RACINE_PAIEMENT = 'openlab_academy.entrypoints.paiement_api.'
+
+  function serveurIntendance(reponse: unknown) {
+    const requete = vi.fn<RequeteFrappe>(async () => reponse)
+    const appels = () => requete.mock.calls.map(([o]) => [o.url.slice(RACINE_PAIEMENT.length), o.method, o.params])
+    return { depot: new DepotIntendanceFrappe(new ClientFrappe(requete, RACINE_PAIEMENT)), appels }
+  }
+
+  it('vue filtrée, fiche et résumé en GET, réponses validées', async () => {
+    const vue = vueIntendance()
+    const lecture = serveurIntendance(vue)
+    expect(await lecture.depot.intendance({ parcours: 'C1', statut: 'en_retard' })).toEqual(vue)
+    expect(lecture.appels()).toEqual([['intendance', 'GET', { parcours: 'C1', statut: 'en_retard' }]])
+    const f = ficheIntendance({ delai_jusqu_au: '2026-11-20', telephone: '' })
+    const fiche = serveurIntendance(f)
+    expect(await fiche.depot.fiche('DP-0001')).toEqual(f)
+    expect(fiche.appels()).toEqual([['fiche', 'GET', { dossier: 'DP-0001' }]])
+    const r = resumeFinances({ evolution_pct: null, taux_recouvrement: null })
+    const resume = serveurIntendance(r)
+    expect(await resume.depot.resume()).toEqual(r)
+    expect(resume.appels()).toEqual([['resume', 'GET', undefined]])
+  })
+
+  it('virement et délai en POST (jeton CSRF joint par la requête Frappe)', async () => {
+    const { depot, appels } = serveurIntendance(null)
+    await depot.enregistrerVirement('DP-1', {
+      montant: 50000,
+      reference: 'VIR-1',
+      date_paiement: '2026-11-02',
+      motif: 'Relevé',
+    })
+    await depot.accorderDelai('DP-1', '2026-11-20', 'Accord')
+    expect(appels()).toEqual([
+      [
+        'enregistrer_virement',
+        'POST',
+        { dossier: 'DP-1', montant: 50000, reference: 'VIR-1', date_paiement: '2026-11-02', motif: 'Relevé' },
+      ],
+      ['accorder_delai', 'POST', { dossier: 'DP-1', jusqu_au: '2026-11-20', motif: 'Accord' }],
+    ])
+  })
+
+  it('lien d’export : point de l’API avec les filtres encodés', () => {
+    const { depot } = serveurIntendance(null)
+    expect(depot.lienExport({})).toBe('/api/method/openlab_academy.entrypoints.paiement_api.export_intendance')
+    expect(depot.lienExport({ parcours: 'data & ia', au: '2026-10-31' })).toBe(
+      '/api/method/openlab_academy.entrypoints.paiement_api.export_intendance?parcours=data+%26+ia&au=2026-10-31',
+    )
+  })
+
+  it('réponse malformée : erreur typée', async () => {
+    await invalide(serveurIntendance({ ...vueIntendance(), tronque: 'non' }).depot.intendance({}))
+    const ligne = { ...vueIntendance().lignes[0], rappel_envoye: undefined }
+    await invalide(serveurIntendance({ ...vueIntendance(), lignes: [ligne] }).depot.intendance({}))
+    await invalide(serveurIntendance({ ...ficheIntendance(), journal: [{ acteur: 1 }] }).depot.fiche('D'))
+    await invalide(serveurIntendance({ ...resumeFinances(), modes: { une_fois: 1 } }).depot.resume())
   })
 })

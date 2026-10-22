@@ -3,6 +3,7 @@
 import * as z from 'zod/mini'
 import type { FileCorrection, ResultatLot, VueCopie } from '../../domaine/correction'
 import type { Grille } from '../../domaine/grille'
+import type { FicheIntendance, ResumeFinances, VueIntendance } from '../../domaine/intendance'
 import type { DossierPaiement } from '../../domaine/paiement'
 import type { ResumeRelecture, VueRelecture } from '../../domaine/relecture'
 import type { Retour } from '../../domaine/retour'
@@ -157,6 +158,96 @@ export const schemaDossierPaiement: z.ZodMiniType<DossierPaiement> = z.object({
   bloque: z.boolean(),
   instructions_virement: texte,
 })
+
+// paiement_api.intendance, fiche, resume (application/tableaux_paiement : _ligne, Intendance, Fiche, Resume)
+const mode = z.enum(['une_fois', 'deux_tranches', 'mensuel'])
+const statutPaiement = z.enum(['a_jour', 'en_retard', 'solde', 'dispense'])
+const prochaine = z.nullable(z.object({ date_limite: z.nullable(texte), montant }))
+const echeances = z.array(z.object({ date_limite: texte, montant, libelle: texte, couverte: z.boolean() }))
+const champsLigne = {
+  dossier: texte,
+  apprenant: texte,
+  nom: texte,
+  email: texte,
+  parcours: texte,
+  titre: texte,
+  cohorte: texte,
+  mode,
+  paye: montant,
+  total: montant,
+  reste: montant,
+  prochaine,
+  statut: statutPaiement,
+  bloque: z.boolean(),
+}
+const action = z.object({
+  dossier: texte,
+  acteur: texte,
+  action: texte,
+  motif: texte,
+  horodatage: date,
+  avant: z.unknown(),
+  apres: z.unknown(),
+})
+
+export const schemaVueIntendance: z.ZodMiniType<VueIntendance> = z.object({
+  indicateurs: z.object({
+    encaisse_mois: montant,
+    encours_30j: montant,
+    en_retard: z.object({ montant, apprenants: indice }),
+    bloques: indice,
+  }),
+  lignes: z.array(z.object({ ...champsLigne, rappel_envoye: z.boolean() })),
+  tronque: z.boolean(),
+})
+
+export const schemaFicheIntendance: z.ZodMiniType<FicheIntendance> = z.object({
+  ...champsLigne,
+  telephone: texte,
+  tarif: z.object({ frais_inscription: montant, une_fois: montant, deux_tranches: montant, mensuel: montant }),
+  inscription: texte,
+  echeances,
+  arriere: montant,
+  dispense: z.boolean(),
+  delai_jusqu_au: z.nullable(texte),
+  paiements: z.array(
+    z.object({
+      montant: z.number(),
+      moyen: z.enum(['cinetpay', 'virement']),
+      reference: texte,
+      statut: z.enum(['en_attente', 'confirme', 'echoue']),
+      date_paiement: date,
+      auteur: texte,
+      cree: date,
+    }),
+  ),
+  rappels: z.array(
+    z.object({
+      date_limite: date,
+      jours_avant: indice,
+      canal: z.enum(['email', 'sms', 'whatsapp']),
+      statut: z.enum(['envoye', 'echec', 'ignore']),
+      cree: date,
+    }),
+  ),
+  journal: z.array(action),
+})
+
+export const schemaResumeFinances: z.ZodMiniType<ResumeFinances> = z.object({
+  encaisse_mois: montant,
+  evolution_pct: z.nullable(z.number()),
+  taux_recouvrement: z.nullable(z.number()),
+  retards: indice,
+  bloques: indice,
+  par_parcours: z.array(
+    z.object({ parcours: texte, titre: texte, inscrits: indice, encaisse: montant, reste: montant }),
+  ),
+  modes: z.object({ une_fois: indice, deux_tranches: indice, mensuel: indice }),
+  dernieres_actions: z.array(action),
+})
+
+// virement et délai : rien en retour
+export const schemaSansRetour = z.unknown()
 
 // paiement_api.payer : adresse de la page CinetPay (vérifiée https par le cas d'usage avant d'y aller)
 export const schemaPaiement = z.object({ url: texte })

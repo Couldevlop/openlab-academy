@@ -2,6 +2,7 @@
 // Les adaptateurs (infrastructure) les implémentent ; un échec d'appel est une ErreurDepot.
 import type { ChargeCorrection, FileCorrection, ResultatLot, VueCopie } from '../domaine/correction'
 import type { Brouillon, ResumeRelecture, SaisieRelecture, VueRelecture } from '../domaine/relecture'
+import type { FicheIntendance, ResumeFinances, VueIntendance } from '../domaine/intendance'
 import type { DossierPaiement, Mode } from '../domaine/paiement'
 import type { Retour } from '../domaine/retour'
 
@@ -31,6 +32,36 @@ export interface DepotPaiement {
   choisirMode(cours: string, mode: Mode, telephone: string): Promise<DossierPaiement>
   /** Adresse de la page de paiement CinetPay. */
   payer(cours: string): Promise<string>
+}
+
+/** Virement saisi par un agent, relu par le cas d'usage. */
+export interface Virement {
+  montant: number
+  reference: string
+  /** AAAA-MM-JJ */
+  date_paiement: string
+  motif: string
+}
+
+/** API de l'intendance et de l'administration ; le serveur vérifie le rôle à chaque appel et journalise l'acteur. */
+export interface DepotIntendance {
+  intendance(filtres: Record<string, string>): Promise<VueIntendance>
+  fiche(dossier: string): Promise<FicheIntendance>
+  enregistrerVirement(dossier: string, virement: Virement): Promise<void>
+  accorderDelai(dossier: string, jusquau: string, motif: string): Promise<void>
+  /** Adresse du classeur Excel des lignes filtrées. */
+  lienExport(filtres: Record<string, string>): string
+  resume(): Promise<ResumeFinances>
+}
+
+/** Écrans ouverts à l'utilisateur ; ne sert qu'à afficher les liens, l'API refuse elle-même. */
+export interface Droits {
+  intendance: boolean
+  finances: boolean
+}
+
+export interface Session {
+  droits(): Droits
 }
 
 /** Quitte l'application pour une page externe (paiement). */

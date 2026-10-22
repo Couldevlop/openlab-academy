@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory, type RouteRecordRaw, type RouterHistory } from 'vue-router'
 import Accueil from './ecrans/Accueil.vue'
 import Correcteur from './ecrans/Correcteur.vue'
+import Finances from './ecrans/Finances.vue'
+import Intendance from './ecrans/Intendance.vue'
 import Lots from './ecrans/Lots.vue'
 import Paiement from './ecrans/Paiement.vue'
 import Relecture from './ecrans/Relecture.vue'
@@ -19,6 +21,8 @@ export const routes: RouteRecordRaw[] = [
   { path: '/lots', name: 'lots', component: Lots, meta: { titre: 'Lots' } },
   { path: '/retour/:copie', name: 'retour', component: Retour, meta: { titre: 'Mon retour' } },
   { path: '/paiement/:cours', name: 'paiement', component: Paiement, meta: { titre: 'Mes paiements' } },
+  { path: '/intendance', name: 'intendance', component: Intendance, meta: { titre: 'Intendance' } },
+  { path: '/finances', name: 'finances', component: Finances, meta: { titre: 'Finances' } },
   { path: '/:chemin(.*)*', redirect: '/' },
 ]
 

@@ -22,7 +22,9 @@ const RESEAU_GLOBAL = ['window', 'globalThis', 'self'].flatMap((object) =>
   })),
 )
 // cas d'usage : les écrans les reçoivent par provide/inject, ils n'en importent que les types
-const CAS_USAGES = ['cas-usages', 'correction', 'relecture', 'retour', 'paiement'].map((m) => `**/application/${m}`)
+const CAS_USAGES = ['cas-usages', 'correction', 'relecture', 'retour', 'paiement', 'intendance'].map(
+  (m) => `**/application/${m}`,
+)
 const NAVIGATEUR = [
   ...RESEAU,
   { name: 'window', message: 'Règle pure : aucun accès au navigateur.' },

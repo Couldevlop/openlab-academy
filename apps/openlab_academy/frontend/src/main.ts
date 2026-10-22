@@ -13,6 +13,7 @@ const cas = creerCasUsages(
     frappeRequest,
     () => window.localStorage,
     () => window.location,
+    () => (window as { espace_droits?: unknown }).espace_droits,
   ),
 )
 
