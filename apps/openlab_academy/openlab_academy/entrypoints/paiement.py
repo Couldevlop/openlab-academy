@@ -10,16 +10,20 @@ from frappe.utils import getdate, nowdate, now_datetime
 from rq.timeouts import JobTimeoutException
 
 from openlab_academy.application.paiements import (
-    AccorderDelai, ConfirmerPaiement, EnregistrerVirement, InitierPaiement, InscriptionTardive, OuvrirDossier,
-    PaiementIndisponible, ReverifierPaiements, TarifAbsent)
+    AccorderDelai, ChoisirMode, ConfirmerPaiement, DossierAbsent, EnregistrerVirement, InitierPaiement,
+    InscriptionTardive, OuvrirDossier, PaiementIndisponible, ReverifierPaiements, TarifAbsent)
+from openlab_academy.application.ports_paiement import FiltresTableau
 from openlab_academy.application.rappels import EnvoyerRappels
+from openlab_academy.application.tableaux_paiement import Fiche, Intendance, Resume, vue_apprenant
+from openlab_academy.domain.dossier_paiement import Statut
 from openlab_academy.entrypoints.lms import ROLES_NON_BLOQUES
 from openlab_academy.infrastructure.canaux import CanalEmail, CanalSms, CanalWhatsApp
 from openlab_academy.infrastructure.cinetpay import PasserelleCinetPay
 from openlab_academy.infrastructure.depot_dossiers_frappe import (
-    DepotDossiersFrappe, ReglagesPaiementFrappe, TarifsFrappe)
+    DepotDossiersFrappe, PagesPaiementFrappe, ReglagesPaiementFrappe, TarifsFrappe)
 from openlab_academy.infrastructure.journal_paiement_frappe import journaliser
 from openlab_academy.infrastructure.rappels_frappe import DepotRappelsFrappe, RegistreRappelsFrappe
+from openlab_academy.infrastructure.tableaux_paiement_frappe import TableauxPaiementFrappe
 
 REGLAGES = "Reglages Paiement OpenLab"
 API = "/api/method/openlab_academy.entrypoints.paiement_api"
@@ -79,8 +83,19 @@ def liens(cours: str) -> tuple[str, str]:
 
 
 def initier_paiement(apprenant: str, cours: str) -> str:
-    """URL de la page de paiement CinetPay de la part due de la prochaine échéance."""
-    return InitierPaiement(DepotDossiersFrappe(), passerelle(), now_datetime, liens).executer(apprenant, cours)
+    """URL de la page de paiement CinetPay de la part due de la prochaine échéance (celle d'un paiement en attente
+    récent au même montant si elle est encore retenue)."""
+    return InitierPaiement(DepotDossiersFrappe(), passerelle(), now_datetime, liens,
+                           PagesPaiementFrappe()).executer(apprenant, cours)
+
+
+def paiement_en_ligne(cours: str) -> bool:
+    """Vrai si CinetPay est configuré (clés et adresse publique valides)."""
+    try:
+        liens(cours)
+    except PaiementIndisponible:
+        return False
+    return passerelle().disponible()
 
 
 def confirmer_paiement(transaction: str, p: PasserelleCinetPay | None = None) -> None:
@@ -105,6 +120,33 @@ def enregistrer_virement(acteur: str, dossier: str, montant: int, reference: str
 
 def accorder_delai(acteur: str, dossier: str, jusqu_au: datetime.date, motif: str) -> None:
     AccorderDelai(DepotDossiersFrappe(), journaliser, jour_courant).executer(acteur, dossier, jusqu_au, motif)
+
+
+# --- lectures et choix de l'apprenant (toujours son propre dossier) ; tableaux de l'intendance -------------
+def mon_dossier(apprenant: str, cours: str) -> dict:
+    d = DepotDossiersFrappe().charger(apprenant, cours)
+    if d is None:
+        raise DossierAbsent("Aucun dossier de paiement pour ce parcours.")
+    titre = frappe.db.get_value("LMS Course", cours, "title") or cours
+    return vue_apprenant(d, titre, jour_courant(), paiement_en_ligne(cours))
+
+
+def choisir_mode(apprenant: str, cours: str, mode: str, telephone: str) -> None:
+    """Le jour d'échéance vient des réglages (10 par défaut)."""
+    ChoisirMode(DepotDossiersFrappe(), journaliser, jour_courant,
+                ReglagesPaiementFrappe().charger().jour_echeance).executer(apprenant, cours, mode, telephone)
+
+
+def intendance(filtres: FiltresTableau, statut: Statut | None) -> dict:
+    return Intendance(TableauxPaiementFrappe(), jour_courant).executer(filtres, statut)
+
+
+def fiche(dossier: str) -> dict:
+    return Fiche(DepotDossiersFrappe(), TableauxPaiementFrappe(), jour_courant).executer(dossier)
+
+
+def resume() -> dict:
+    return Resume(TableauxPaiementFrappe(), jour_courant).executer()
 
 
 # --- tâche quotidienne : revérification des paiements en attente, rappels ----------------------------------

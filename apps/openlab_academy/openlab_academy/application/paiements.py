@@ -5,8 +5,8 @@ from dataclasses import replace
 from datetime import date, datetime, timedelta
 
 from openlab_academy.application.ports_paiement import (
-    DepotDossiers, Journal, NouveauDossier, Passerelle, ReferenceDejaEnregistree, Reglages, Tarifs)
-from openlab_academy.domain.dossier_paiement import statut
+    DepotDossiers, Journal, NouveauDossier, PagesPaiement, Passerelle, ReferenceDejaEnregistree, Reglages, Tarifs)
+from openlab_academy.domain.dossier_paiement import Dossier, statut
 from openlab_academy.domain.echeancier import Echeance, Mode, Tarif, echeancier, inscription_permise, replanifier
 
 LIBELLE_FRAIS = "Frais d'inscription"
@@ -109,19 +109,40 @@ class RienADu(Exception):
     pass
 
 
+# Un double clic (ou un retour sur la page) ne crée pas une seconde transaction : la page CinetPay d'un paiement en
+# attente du même dossier et du même montant, créé depuis moins de 30 minutes, est rendue telle que CinetPay l'a fournie.
+REUTILISATION = timedelta(minutes=30)
+
+
 def _multiple_de_5(montant: int) -> int:
     return -(-montant // 5) * 5
+
+
+def montant_a_payer(dossier: Dossier) -> int:
+    """Part due de la prochaine échéance (au moins les frais restants), au multiple de 5 supérieur ; 0 si rien."""
+    if dossier.dispense:
+        return 0
+    part = max(dossier.part_prochaine(), dossier.frais_inscription - dossier.paye)
+    return _multiple_de_5(part) if part > 0 else 0
 
 
 class InitierPaiement:
     """Ouvre un paiement en ligne de la part due de la prochaine échéance (au moins les frais restants)."""
 
     def __init__(self, depot: DepotDossiers, passerelle: Passerelle, maintenant: Callable[[], datetime],
-                 liens: Callable[[str], tuple[str, str]]):
+                 liens: Callable[[str], tuple[str, str]], pages: PagesPaiement | None = None):
         self._depot = depot
         self._passerelle = passerelle
         self._maintenant = maintenant
         self._liens = liens  # cours -> (URL de retour, URL de notification)
+        self._pages = pages  # sans mémoire des pages : une transaction à chaque appel
+
+    def _page_recente(self, dossier: str, montant: int) -> str | None:
+        if self._pages is None:
+            return None
+        reference = self._depot.paiement_en_attente_recent(dossier, MOYEN_EN_LIGNE, montant,
+                                                           self._maintenant() - REUTILISATION)
+        return self._pages.lire(reference) if reference else None
 
     def executer(self, apprenant: str, cours: str) -> str:
         if not self._passerelle.disponible():
@@ -130,10 +151,11 @@ class InitierPaiement:
         if d is None:
             raise DossierAbsent("Aucun dossier de paiement pour ce parcours.")
         dossier = d.dossier
-        part = max(dossier.part_prochaine(), dossier.frais_inscription - dossier.paye)
-        if dossier.dispense or part <= 0:
+        montant = montant_a_payer(dossier)
+        if montant <= 0:
             raise RienADu("Aucun montant n'est dû sur ce parcours.")
-        montant = _multiple_de_5(part)
+        if url := self._page_recente(d.nom, montant):
+            return url
         echeance = dossier.prochaine(self._maintenant().date())
         libelle = echeance.libelle if echeance else LIBELLE_FRAIS
         retour, notification = self._liens(cours)
@@ -143,10 +165,13 @@ class InitierPaiement:
         reference = f"OLA-{d.nom}-{self._maintenant():%Y%m%d%H%M%S%f}"
         self._depot.creer_paiement(d.nom, montant, MOYEN_EN_LIGNE, reference, "en_attente")
         try:
-            return self._passerelle.initier(reference, montant, f"{cours} - {libelle}", client, retour, notification)
+            url = self._passerelle.initier(reference, montant, f"{cours} - {libelle}", client, retour, notification)
         except PaiementIndisponible:
             self._depot.marquer_echoue(MOYEN_EN_LIGNE, reference)
             raise
+        if self._pages is not None:
+            self._pages.retenir(reference, url, int(REUTILISATION.total_seconds()))
+        return url
 
 
 class ConfirmerPaiement:

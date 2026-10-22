@@ -1,12 +1,12 @@
 """Cas d'usage du paiement : ouverture du dossier à l'inscription, choix et changement de mode (faux ports)."""
 import unittest
 from dataclasses import replace
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from openlab_academy.application.paiements import (
     AccorderDelai, ChoisirMode, ConfirmerPaiement, DossierAbsent, EnregistrerVirement, InitierPaiement,
-    InscriptionTardive, OperationRefusee, OuvrirDossier, PaiementIndisponible, RienADu, TarifAbsent, TelephoneInvalide,
-    valider_telephone)
+    InscriptionTardive, OperationRefusee, OuvrirDossier, PaiementIndisponible, REUTILISATION, RienADu, TarifAbsent,
+    TelephoneInvalide, montant_a_payer, valider_telephone)
 from openlab_academy.application.ports_paiement import (
     Client, DossierEnregistre, PaiementEnregistre, ReferenceDejaEnregistree, ReglagesPaiement, Verification)
 from openlab_academy.domain.dossier_paiement import Dossier, Statut, statut
@@ -50,6 +50,7 @@ class Depot:
         return Client(nom="Kouassi", prenom="Aya", email=apprenant)
 
     def creer_paiement(self, dossier, montant, moyen, reference, statut):
+        self.crees = getattr(self, "crees", {})
         nom = f"P{len(self.paiements) + 1}"
         self.paiements[(moyen, reference)] = PaiementEnregistre(nom, dossier, montant, statut)
         return nom
@@ -63,6 +64,12 @@ class Depot:
             return False
         self.paiements[(moyen, reference)] = replace(p, montant=montant, statut="confirme")
         return True
+
+    def paiement_en_attente_recent(self, dossier, moyen, montant, depuis):
+        self.recherches = getattr(self, "recherches", []) + [(dossier, moyen, montant, depuis)]
+        return next((r for (m, r), p in reversed(self.paiements.items())
+                     if m == moyen and p.dossier == dossier and p.montant == montant and p.statut == "en_attente"
+                     and self.crees.get(r, MAINTENANT) >= depuis), None)
 
     def paiements_en_attente(self, dossier, moyen, limite):
         return tuple(r for (m, r), p in self.paiements.items()
@@ -324,6 +331,80 @@ class TestInitierPaiement(unittest.TestCase):
             with self.subTest(), self.assertRaises(RienADu):
                 initier(depot).executer("a@x.ci", "C")
             self.assertEqual(depot.paiements, {})
+
+
+class Pages:
+    """Mémoire des pages de paiement : référence -> URL."""
+
+    def __init__(self):
+        self.urls, self.retenues = {}, []
+
+    def lire(self, reference):
+        return self.urls.get(reference)
+
+    def retenir(self, reference, url, secondes):
+        self.urls[reference] = url
+        self.retenues.append((reference, url, secondes))
+
+
+class TestReutilisation(unittest.TestCase):
+    """Un double clic sur « Payer » ne crée pas une seconde transaction : la page CinetPay d'un paiement en attente
+    récent (même dossier, même montant, moins de 30 minutes) est rendue telle que CinetPay l'a fournie."""
+
+    def payer(self, depot, pages, passerelle, maintenant=MAINTENANT):
+        return InitierPaiement(depot, passerelle, lambda: maintenant, liens, pages).executer("a@x.ci", "C")
+
+    def test_fenetre_de_30_minutes(self):
+        self.assertEqual(REUTILISATION, timedelta(minutes=30))
+
+    def test_second_clic_rend_la_meme_page_sans_nouvelle_transaction(self):
+        depot, pages, passerelle = depot_ouvert(), Pages(), Passerelle()
+        premiere = self.payer(depot, pages, passerelle)
+        seconde = self.payer(depot, pages, passerelle, MAINTENANT + timedelta(minutes=29))
+        self.assertEqual(seconde, premiere)
+        self.assertEqual(len(passerelle.initiations), 1)
+        self.assertEqual(len(depot.paiements), 1)
+        self.assertEqual(pages.retenues, [(REFERENCE, premiere, 1800)])
+        self.assertEqual(depot.recherches[-1], ("D1", "cinetpay", 10000, MAINTENANT - timedelta(minutes=1)))
+
+    def test_paiement_trop_ancien_nouvelle_transaction(self):
+        depot, pages, passerelle = depot_ouvert(), Pages(), Passerelle()
+        self.payer(depot, pages, passerelle)
+        depot.crees[REFERENCE] = MAINTENANT - timedelta(minutes=31)
+        self.payer(depot, pages, passerelle, MAINTENANT + timedelta(seconds=1))
+        self.assertEqual(len(passerelle.initiations), 2)
+
+    def test_montant_different_ou_paiement_non_en_attente_nouvelle_transaction(self):
+        depot, pages, passerelle = depot_ouvert(), Pages(), Passerelle()
+        self.payer(depot, pages, passerelle)
+        depot.marquer_echoue("cinetpay", REFERENCE)
+        self.payer(depot, pages, passerelle, MAINTENANT + timedelta(seconds=1))
+        modifier(depot, paye=5000)
+        self.payer(depot, pages, passerelle, MAINTENANT + timedelta(seconds=2))
+        self.assertEqual([i[1] for i in passerelle.initiations], [10000, 10000, 5000])
+
+    def test_page_oubliee_nouvelle_transaction(self):
+        depot, pages, passerelle = depot_ouvert(), Pages(), Passerelle()
+        self.payer(depot, pages, passerelle)
+        pages.urls.clear()
+        self.payer(depot, pages, passerelle, MAINTENANT + timedelta(seconds=1))
+        self.assertEqual(len(passerelle.initiations), 2)
+
+    def test_echec_rien_retenu(self):
+        depot, pages = depot_ouvert(), Pages()
+        with self.assertRaises(PaiementIndisponible):
+            self.payer(depot, pages, Passerelle(erreur=PaiementIndisponible("CinetPay injoignable")))
+        self.assertEqual(pages.retenues, [])
+
+
+class TestMontantAPayer(unittest.TestCase):
+    def test_part_prochaine_au_moins_les_frais_restants_multiple_de_5(self):
+        echeances = (Echeance(AUJOURDHUI, 10000, "Frais"), Echeance(date(2026, 11, 10), 50000, "Tranche 1"))
+        self.assertEqual(montant_a_payer(Dossier(echeances, 10003, frais_inscription=10000)), 50000)
+        self.assertEqual(montant_a_payer(Dossier(echeances, 0, frais_inscription=10000)), 10000)
+        self.assertEqual(montant_a_payer(Dossier(echeances[:1], 10000, frais_inscription=20000)), 10000)
+        self.assertEqual(montant_a_payer(Dossier(echeances, 60000, frais_inscription=10000)), 0)
+        self.assertEqual(montant_a_payer(Dossier(echeances, 0, dispense=True, frais_inscription=10000)), 0)
 
 
 class TestConfirmerPaiement(unittest.TestCase):

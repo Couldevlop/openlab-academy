@@ -15,6 +15,13 @@ POINT = "enregistrer_virement"
 REVERIFICATION_MAX = 500  # paiements revérifiés au plus par passage de la tâche quotidienne
 
 
+def vers_dossier(echeances, paye: int, delai_jusqu_au, dispense, frais_inscription: int) -> Dossier:
+    """Dossier du domaine à partir des lignes d'échéance et des champs enregistrés (une seule traduction)."""
+    return Dossier(tuple(Echeance(getdate(e.date_limite), e.montant, e.libelle or "") for e in echeances), paye,
+                   getdate(delai_jusqu_au) if delai_jusqu_au else None, bool(dispense),
+                   frais_inscription=frais_inscription)
+
+
 def _lignes(echeances) -> list[dict]:
     return [{"date_limite": e.date_limite, "montant": e.montant, "libelle": e.libelle} for e in echeances]
 
@@ -33,9 +40,7 @@ class DepotDossiersFrappe:
         lot = frappe.db.get_value("LMS Batch", d.cohorte, ["start_date", "end_date"], as_dict=True)
         inscription = getdate(d.date_inscription or d.creation)  # repli si la cohorte a été supprimée
         tarif = Tarif(d.frais_inscription, d.prix_une_fois, d.prix_deux_tranches, d.prix_mensuel)
-        echeances = tuple(Echeance(getdate(e.date_limite), e.montant, e.libelle or "") for e in d.echeances)
-        dossier = Dossier(echeances, self.paye(nom), getdate(d.delai_jusqu_au) if d.delai_jusqu_au else None,
-                          bool(d.dispense), frais_inscription=d.frais_inscription)
+        dossier = vers_dossier(d.echeances, self.paye(nom), d.delai_jusqu_au, d.dispense, d.frais_inscription)
         return DossierEnregistre(nom, d.apprenant, d.cours, Mode(d.mode or Mode.UNE_FOIS), d.telephone or "", tarif,
                                  getdate(lot.start_date) if lot else inscription,
                                  getdate(lot.end_date) if lot else inscription, dossier, inscription)
@@ -105,6 +110,11 @@ class DepotDossiersFrappe:
                                                "date_paiement": now_datetime()})
         return True
 
+    def paiement_en_attente_recent(self, dossier: str, moyen: str, montant: int, depuis) -> str | None:
+        return frappe.db.get_value(PAIEMENT, {"dossier": dossier, "moyen": moyen, "montant": montant,
+                                              "statut": "en_attente", "creation": (">=", depuis)},
+                                   "reference", order_by="creation desc")
+
     def paiements_en_attente(self, dossier: str, moyen: str, limite: int) -> tuple[str, ...]:
         return tuple(frappe.get_all(PAIEMENT, {"dossier": dossier, "moyen": moyen, "statut": "en_attente"},
                                     pluck="reference", order_by="creation desc", limit=limite))
@@ -117,6 +127,22 @@ class DepotDossiersFrappe:
         p = self._verrouiller(moyen, reference)
         if p and p.statut == "en_attente":
             frappe.db.set_value(PAIEMENT, p.name, "statut", "echoue")
+
+
+class PagesPaiementFrappe:
+    """Pages de paiement CinetPay retenues dans le cache du site, par référence de transaction (jamais une URL
+    venue du client)."""
+
+    @staticmethod
+    def _cle(reference: str) -> str:
+        return f"openlab_academy:page_paiement:{reference}"
+
+    def lire(self, reference: str) -> str | None:
+        url = frappe.cache.get_value(self._cle(reference))
+        return url if isinstance(url, str) else None
+
+    def retenir(self, reference: str, url: str, secondes: int) -> None:
+        frappe.cache.set_value(self._cle(reference), url, expires_in_sec=secondes)
 
 
 class TarifsFrappe:

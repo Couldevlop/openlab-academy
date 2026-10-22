@@ -88,6 +88,9 @@ class DepotDossiers(Protocol):
 
     def marquer_echoue(self, moyen: str, reference: str) -> None: ...
 
+    def paiement_en_attente_recent(self, dossier: str, moyen: str, montant: int, depuis: datetime) -> str | None:
+        """Référence du plus récent paiement en attente du dossier à ce montant, créé depuis cet instant."""
+
     def paiements_en_attente(self, dossier: str, moyen: str, limite: int) -> tuple[str, ...]:
         """Références des paiements en attente du dossier, les plus récents d'abord."""
 
@@ -103,6 +106,53 @@ class Passerelle(Protocol):
         """URL de la page de paiement."""
 
     def verifier(self, transaction: str) -> Verification: ...
+
+
+class PagesPaiement(Protocol):
+    """Pages de paiement rendues par la passerelle, retenues brièvement par référence de transaction."""
+
+    def lire(self, reference: str) -> str | None: ...
+    def retenir(self, reference: str, url: str, secondes: int) -> None: ...
+
+
+@dataclass(frozen=True)
+class FiltresTableau:
+    """Filtres des tableaux de l'intendance (déjà validés) ; la période porte sur la date d'inscription."""
+    parcours: str | None = None
+    cohorte: str | None = None
+    mode: Mode | None = None
+    du: date | None = None
+    au: date | None = None
+
+
+@dataclass(frozen=True)
+class LigneDossier:
+    nom: str
+    apprenant: str
+    nom_complet: str
+    email: str
+    cours: str
+    titre: str
+    cohorte: str
+    mode: Mode
+    inscription: date
+    dossier: Dossier
+
+
+class Tableaux(Protocol):
+    """Lectures agrégées pour l'intendance et le résumé."""
+
+    def dossiers(self, filtres: FiltresTableau) -> tuple[LigneDossier, ...]: ...
+    def ligne(self, nom: str) -> LigneDossier | None: ...
+
+    def encaisse(self, du: date, au: date, dossiers: tuple[str, ...] | None = None) -> int:
+        """Paiements confirmés datés de `du` à `au` inclus ; seulement ces dossiers s'ils sont donnés."""
+
+    def paiements(self, dossier: str) -> tuple[dict, ...]: ...
+    def rappels(self, dossier: str) -> tuple[dict, ...]: ...
+
+    def journal(self, dossier: str | None, limite: int) -> tuple[dict, ...]:
+        """Lignes du journal, les plus récentes d'abord ; tous dossiers confondus si `dossier` est None."""
 
 
 class Tarifs(Protocol):

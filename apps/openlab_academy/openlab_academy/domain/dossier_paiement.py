@@ -1,7 +1,7 @@
 """Domaine : statut d'un dossier de paiement (retard, délai, dispense) et rappels dus.
 Le blocage n'est pas stocké : il se calcule à partir des échéances, du payé et du délai ; aucune dépendance Frappe."""
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from enum import StrEnum
 
 from openlab_academy.domain.echeancier import Echeance
@@ -44,6 +44,14 @@ class Dossier:
                 parts.append((e, e.montant - couvert))
         return tuple(parts)
 
+    def couverture(self) -> tuple[tuple[Echeance, bool], ...]:
+        """Échéances dans l'ordre des dates, chacune avec vrai si le payé la couvre entièrement."""
+        restant, lignes = self.paye, []
+        for e in sorted(self.echeances, key=lambda e: e.date_limite):
+            lignes.append((e, restant >= e.montant))
+            restant -= min(restant, e.montant)
+        return tuple(lignes)
+
     def prochaine(self, aujourd_hui: date) -> Echeance | None:
         parts = self._non_couvertes()
         return parts[0][0] if parts else None
@@ -67,6 +75,32 @@ def statut(dossier: Dossier, aujourd_hui: date) -> Statut:
 
 def bloque(dossier: Dossier, aujourd_hui: date) -> bool:
     return statut(dossier, aujourd_hui) == Statut.EN_RETARD
+
+
+def exigible(dossier: Dossier, aujourd_hui: date) -> int:
+    """Montant exigible à ce jour : les frais d'inscription et les échéances échues, plafonné au total."""
+    if dossier.dispense:
+        return 0
+    return min(max(dossier.du_echu(aujourd_hui), dossier.frais_inscription), dossier.total)
+
+
+def arriere(dossier: Dossier, aujourd_hui: date) -> int:
+    """Exigible non payé. Un délai ne l'efface pas (il lève seulement le blocage) : tout dossier bloqué a un
+    arriéré, et un arriéré sans blocage suppose un délai en cours."""
+    return max(exigible(dossier, aujourd_hui) - dossier.paye, 0)
+
+
+def a_echoir(dossier: Dossier, aujourd_hui: date, jours: int = 30) -> int:
+    """Parts non couvertes des échéances non échues dont la date tombe d'ici `jours` jours (inclus)."""
+    if dossier.dispense:
+        return 0
+    fin = aujourd_hui + timedelta(days=jours)
+    return sum(part for e, part in dossier._non_couvertes() if aujourd_hui <= e.date_limite <= fin)
+
+
+def reste_du(dossier: Dossier) -> int:
+    """Reste à payer ; rien pour un dossier dispensé."""
+    return 0 if dossier.dispense else dossier.reste
 
 
 @dataclass(frozen=True)
