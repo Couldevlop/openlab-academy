@@ -274,7 +274,7 @@ class OperationRefusee(ValueError):
 
 
 def _motif(motif, obligatoire: bool) -> str:
-    if motif is None and not obligatoire:
+    if motif is None:
         motif = ""
     if not isinstance(motif, str):
         raise OperationRefusee("Le motif est invalide.")
@@ -300,7 +300,8 @@ def _charger_actif(depot: DepotDossiers, nom: str):
 
 
 class EnregistrerVirement:
-    """Enregistre un virement reçu (confirmé d'office, auteur = l'agent) ; référence unique, journalisé."""
+    """Enregistre un virement reçu (confirmé d'office, auteur = l'agent) ; référence unique, motif obligatoire,
+    journalisé."""
 
     def __init__(self, depot: DepotDossiers, journal: Journal, aujourd_hui: Callable[[], date]):
         self._depot = depot
@@ -316,7 +317,7 @@ class EnregistrerVirement:
         aujourd_hui = self._aujourd_hui()
         if not _jour(date_paiement) or date_paiement > aujourd_hui:
             raise OperationRefusee("La date du virement est invalide ou dans le futur.")
-        motif = _motif(motif, obligatoire=False)
+        motif = _motif(motif, obligatoire=True)
         d = _charger_actif(self._depot, dossier)
         avant = {"paye": d.dossier.paye, "statut": statut(d.dossier, aujourd_hui).value}
         try:

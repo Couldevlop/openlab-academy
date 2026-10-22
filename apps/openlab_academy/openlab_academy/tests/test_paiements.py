@@ -586,9 +586,14 @@ class TestEnregistrerVirement(unittest.TestCase):
         self.assertEqual((apres["paye"], apres["statut"], apres["montant"], apres["reference"]),
                          (10000, "solde", 10000, "VIR-1"))
 
-    def test_motif_facultatif(self):
-        self.virer(motif="")
-        self.assertEqual(self.journal.appels[0][5], "")
+    def test_motif_obligatoire(self):
+        for motif in ("", "   ", None):
+            depot = en_retard()
+            with self.subTest(motif=motif), self.assertRaisesRegex(OperationRefusee, "Le motif est obligatoire."):
+                self.virer(depot, motif=motif)
+            self.assertFalse(hasattr(depot, "virements"))
+        self.virer(motif="  Relevé  ")
+        self.assertEqual(self.journal.appels[0][5], "Relevé")
 
     def test_dossier_inconnu_ou_dispense_refuse(self):
         with self.assertRaises(DossierAbsent):

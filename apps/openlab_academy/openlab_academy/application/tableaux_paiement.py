@@ -28,6 +28,9 @@ LIBELLES_STATUT = {Statut.A_JOUR: "À jour", Statut.EN_RETARD: "En retard", Stat
                    Statut.DISPENSE: "Dispensé"}
 
 
+BLOQUE = "bloque"  # filtre de statut calculé : arriéré sans délai (domaine `bloque`), en plus des statuts du domaine
+
+
 class FiltreInvalide(ValueError):
     """Filtre refusé ; le message est destiné à l'agent."""
 
@@ -60,14 +63,30 @@ def _date(valeur, nom: str) -> date | None:
         raise FiltreInvalide(f"Filtre « {nom} » : date attendue au format AAAA-MM-JJ.") from None
 
 
+def _statut(valeur) -> Statut | str | None:
+    if _texte(valeur, "statut") == BLOQUE:
+        return BLOQUE
+    return _choix(valeur, "statut", Statut)
+
+
+def retenu(d: Dossier, aujourd_hui: date, filtre: Statut | str | None) -> bool:
+    """Le dossier passe-t-il le filtre de statut (statut du domaine, ou « bloque ») ?"""
+    if filtre is None:
+        return True
+    if filtre == BLOQUE:
+        return bloque(d, aujourd_hui)
+    return statut(d, aujourd_hui) is filtre
+
+
 def lire_filtres(parcours=None, cohorte=None, mode=None, statut=None, du=None,
-                 au=None) -> tuple[FiltresTableau, Statut | None]:
-    """Filtres d'une requête : énumérations connues, dates ISO, période dans l'ordre ; vide = absent."""
+                 au=None) -> tuple[FiltresTableau, Statut | str | None]:
+    """Filtres d'une requête : énumérations connues (statut du domaine ou « bloque »), dates ISO, période dans
+    l'ordre ; vide = absent."""
     f = FiltresTableau(_texte(parcours, "parcours"), _texte(cohorte, "cohorte"), _choix(mode, "mode", Mode),
                        _date(du, "du"), _date(au, "au"))
     if f.du and f.au and f.du > f.au:
         raise FiltreInvalide("La période est invalide : « du » doit précéder « au ».")
-    return f, _choix(statut, "statut", Statut)
+    return f, _statut(statut)
 
 
 def _iso(d: date | None) -> str | None:
@@ -106,7 +125,8 @@ def vue_apprenant(d: DossierEnregistre, titre: str, aujourd_hui: date, en_ligne:
 
 def _ligne(x: LigneDossier, aujourd_hui: date) -> dict:
     return {"dossier": x.nom, "apprenant": x.apprenant, "nom": x.nom_complet, "email": x.email, "parcours": x.cours,
-            "titre": x.titre, "cohorte": x.cohorte, "mode": x.mode.value, "paye": x.dossier.paye,
+            "titre": x.titre, "cohorte": x.cohorte, "cohorte_titre": x.cohorte_titre or x.cohorte,
+            "mode": x.mode.value, "paye": x.dossier.paye,
             "total": x.dossier.total, "reste": reste_du(x.dossier), "prochaine": _prochaine(x.dossier, aujourd_hui),
             "statut": statut(x.dossier, aujourd_hui).value, "bloque": bloque(x.dossier, aujourd_hui)}
 
@@ -133,11 +153,10 @@ class Intendance:
         self._tableaux = tableaux
         self._aujourd_hui = aujourd_hui
 
-    def executer(self, filtres: FiltresTableau, statut_filtre: Statut | None = None,
+    def executer(self, filtres: FiltresTableau, statut_filtre: Statut | str | None = None,
                  limite: int = LIGNES_MAX) -> dict:
         j = self._aujourd_hui()
-        lignes = [x for x in self._tableaux.dossiers(filtres)
-                  if statut_filtre is None or statut(x.dossier, j) is statut_filtre]
+        lignes = [x for x in self._tableaux.dossiers(filtres) if retenu(x.dossier, j, statut_filtre)]
         restreint = filtres != FiltresTableau() or statut_filtre is not None
         noms = tuple(x.nom for x in lignes) if restreint else None
         encaisse = self._tableaux.encaisse(j.replace(day=1), _fin_du_mois(j), noms) if lignes else 0
@@ -240,7 +259,7 @@ def tableur(lignes: Iterable[dict]) -> list[list]:
     for x in lignes:
         p = x["prochaine"] or {}
         rangees.append([neutraliser(v) for v in (
-            x["dossier"], x["apprenant"], x["nom"], x["email"], x["titre"], x["cohorte"],
+            x["dossier"], x["apprenant"], x["nom"], x["email"], x["titre"], x["cohorte_titre"],
             LIBELLES_MODE[Mode(x["mode"])], x["paye"], x["total"], x["reste"], p.get("date_limite"),
             p.get("montant"), LIBELLES_STATUT[Statut(x["statut"])], "oui" if x["bloque"] else "non")])
     return rangees

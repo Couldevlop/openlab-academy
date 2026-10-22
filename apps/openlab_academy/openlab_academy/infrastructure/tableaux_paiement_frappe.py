@@ -66,8 +66,10 @@ class TableauxPaiementFrappe:
         personnes = {u.name: u for u in frappe.get_all(
             "User", filters={"name": ["in", sorted({r.apprenant for r in rangees})]},
             fields=["name", "full_name", "email"])}
-        titres = _par_cle(frappe.get_all("LMS Course", filters={"name": ["in", sorted({r.cours for r in rangees})]},
-                                         fields=["name", "title"]), "name", "title")
+        titres = self._titres({r.cours for r in rangees})
+        cohortes = _par_cle(frappe.get_all("LMS Batch", filters={"name": ["in", sorted({r.cohorte for r in rangees
+                                                                                      if r.cohorte})]},
+                                           fields=["name", "title"]), "name", "title")
         lignes = []
         for r in rangees:
             u = personnes.get(r.apprenant) or frappe._dict()
@@ -76,8 +78,13 @@ class TableauxPaiementFrappe:
                 titres.get(r.cours) or r.cours, r.cohorte or "", Mode(r.mode or Mode.UNE_FOIS),
                 getdate(r.date_inscription or r.creation),
                 vers_dossier(echeances.get(r.name, ()), int(payes.get(r.name) or 0), r.delai_jusqu_au, r.dispense,
-                             r.frais_inscription)))
+                             r.frais_inscription), cohortes.get(r.cohorte) or r.cohorte or ""))
         return tuple(lignes)
+
+    @staticmethod
+    def _titres(cours: set) -> dict:
+        return _par_cle(frappe.get_all("LMS Course", filters={"name": ["in", sorted(cours)]}, fields=["name", "title"]),
+                        "name", "title")
 
     def encaisse(self, du: datetime.date, au: datetime.date, dossiers: tuple[str, ...] | None = None) -> int:
         if dossiers is not None and not dossiers:
@@ -114,9 +121,23 @@ class TableauxPaiementFrappe:
                          .where((r.statut == "envoye") & r.dossier.isin(list(dossiers))).run(as_dict=True))
 
     def journal(self, dossier: str | None, limite: int) -> tuple[dict, ...]:
-        return tuple({"dossier": x.dossier, "acteur": x.acteur, "action": x.action, "motif": x.motif or "",
-                      "horodatage": _texte(x.horodatage), "avant": _json(x.avant), "apres": _json(x.apres)}
-                     for x in frappe.get_all(JOURNAL, filters={"dossier": dossier} if dossier else {},
-                                             fields=["dossier", "acteur", "action", "motif", "horodatage", "avant",
-                                                     "apres"],
-                                             order_by="horodatage desc, creation desc", limit=limite))
+        lignes = frappe.get_all(JOURNAL, filters={"dossier": dossier} if dossier else {},
+                                fields=["dossier", "acteur", "action", "motif", "horodatage", "avant", "apres"],
+                                order_by="horodatage desc, creation desc", limit=limite)
+        if not lignes:
+            return ()
+        # apprenant et parcours de chaque dossier, nommés (un appel par table)
+        dossiers = {d.name: d for d in frappe.get_all(
+            DOSSIER, filters={"name": ["in", sorted({x.dossier for x in lignes})]}, fields=["name", "apprenant", "cours"])}
+        noms = _par_cle(frappe.get_all("User", filters={"name": ["in", sorted({d.apprenant for d in dossiers.values()})]},
+                                       fields=["name", "full_name"]), "name", "full_name")
+        titres = self._titres({d.cours for d in dossiers.values()})
+        resultat = []
+        for x in lignes:
+            d = dossiers.get(x.dossier) or frappe._dict()
+            resultat.append({"dossier": x.dossier, "apprenant": d.apprenant or "",
+                             "nom": noms.get(d.apprenant) or d.apprenant or "", "parcours": d.cours or "",
+                             "titre": titres.get(d.cours) or d.cours or "", "acteur": x.acteur, "action": x.action,
+                             "motif": x.motif or "", "horodatage": _texte(x.horodatage), "avant": _json(x.avant),
+                             "apres": _json(x.apres)})
+        return tuple(resultat)

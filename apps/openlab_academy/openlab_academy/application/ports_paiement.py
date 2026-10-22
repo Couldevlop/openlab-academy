@@ -138,6 +138,7 @@ class LigneDossier:
     mode: Mode
     inscription: date
     dossier: Dossier
+    cohorte_titre: str = ""
 
 
 class Tableaux(Protocol):
@@ -156,7 +157,8 @@ class Tableaux(Protocol):
         """Couples (dossier, échéance AAAA-MM-JJ) ayant reçu au moins un rappel envoyé, parmi ces dossiers."""
 
     def journal(self, dossier: str | None, limite: int) -> tuple[dict, ...]:
-        """Lignes du journal, les plus récentes d'abord ; tous dossiers confondus si `dossier` est None."""
+        """Lignes du journal, les plus récentes d'abord ; tous dossiers confondus si `dossier` est None. Chaque ligne
+        nomme aussi l'apprenant et le parcours du dossier."""
 
 
 class Tarifs(Protocol):

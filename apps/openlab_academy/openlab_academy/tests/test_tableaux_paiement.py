@@ -6,7 +6,7 @@ from datetime import date
 from openlab_academy.application.paiements import DossierAbsent
 from openlab_academy.application.ports_paiement import DossierEnregistre, FiltresTableau, LigneDossier
 from openlab_academy.application.tableaux_paiement import (
-    LIGNES_MAX, Fiche, FiltreInvalide, Intendance, Resume, lire_filtres, neutraliser, tableur, vue_apprenant)
+    BLOQUE, LIGNES_MAX, Fiche, FiltreInvalide, Intendance, Resume, lire_filtres, neutraliser, tableur, vue_apprenant)
 from openlab_academy.domain.dossier_paiement import Dossier, Statut
 from openlab_academy.domain.echeancier import Echeance, Mode, Tarif
 
@@ -18,7 +18,8 @@ ECHEANCES = (Echeance(date(2026, 10, 15), 10000, "Frais d'inscription"),
 
 def ligne(nom, apprenant, paye, cours="C1", mode=Mode.DEUX_TRANCHES, **dossier):
     return LigneDossier(nom, apprenant, f"Nom {apprenant}", f"{apprenant}@x.ci", cours, f"Titre {cours}", "B1", mode,
-                        date(2026, 10, 15), Dossier(ECHEANCES, paye, frais_inscription=10000, **dossier))
+                        date(2026, 10, 15), Dossier(ECHEANCES, paye, frais_inscription=10000, **dossier),
+                        "Promo 1")
 
 
 A_JOUR = ligne("D-A", "a", 55000)
@@ -66,12 +67,15 @@ class TestFiltres(unittest.TestCase):
         self.assertEqual(f, FiltresTableau("C1", "B1", Mode.MENSUEL, date(2026, 10, 1), date(2026, 10, 31)))
         self.assertIs(s, Statut.EN_RETARD)
 
+    def test_statut_bloque_accepte(self):
+        self.assertEqual(lire_filtres(statut=" bloque "), (FiltresTableau(), BLOQUE))
+
     def test_absents_ou_vides(self):
         self.assertEqual(lire_filtres(), (FiltresTableau(), None))
         self.assertEqual(lire_filtres("", " ", "", "", "", ""), (FiltresTableau(), None))
 
     def test_valeurs_refusees(self):
-        cas = [{"mode": "gratuit"}, {"statut": "bloque"}, {"du": "2026-13-01"}, {"au": "15/11/2026"},
+        cas = [{"mode": "gratuit"}, {"statut": "BLOQUE"}, {"statut": "rappel_envoye"}, {"du": "2026-13-01"}, {"au": "15/11/2026"},
                {"du": "2026-11-02", "au": "2026-11-01"}, {"parcours": "x" * 141}, {"cohorte": ["B1"]},
                {"du": 20261101}, {"mode": "MENSUEL"}, {"du": "2026-11-01T00:00"}]
         for c in cas:
@@ -129,7 +133,7 @@ class TestIntendance(unittest.TestCase):
         self.assertFalse(v["tronque"])
         self.assertEqual(v["lignes"][1], {
             "dossier": "D-B", "apprenant": "b", "nom": "Nom b", "email": "b@x.ci", "parcours": "C2",
-            "titre": "Titre C2", "cohorte": "B1", "mode": "mensuel", "paye": 0, "total": 100000, "reste": 100000,
+            "titre": "Titre C2", "cohorte": "B1", "cohorte_titre": "Promo 1", "mode": "mensuel", "paye": 0, "total": 100000, "reste": 100000,
             "prochaine": {"date_limite": "2026-10-15", "montant": 10000}, "statut": "en_retard", "bloque": True,
             "rappel_envoye": False})
         self.assertEqual([(x["statut"], x["bloque"]) for x in v["lignes"]],
@@ -142,6 +146,15 @@ class TestIntendance(unittest.TestCase):
         self.assertEqual([x["dossier"] for x in v["lignes"]], ["D-B"])
         self.assertEqual(t.appels_encaisse[-1][2], ("D-B",))
         self.assertEqual(v["indicateurs"]["encours_30j"], 45000)
+
+    def test_filtre_bloque_selon_le_domaine(self):
+        """Bloqué : arriéré sans délai ; un retard sous délai n'est pas bloqué."""
+        lignes = (A_JOUR, EN_RETARD, ligne("D-D", "d", 0, delai_jusqu_au=date(2026, 11, 30)))
+        t = Tableaux(lignes)
+        v = Intendance(t, lambda: AUJOURDHUI).executer(FiltresTableau(), BLOQUE)
+        self.assertEqual([x["dossier"] for x in v["lignes"]], ["D-B"])
+        self.assertEqual(v["indicateurs"]["bloques"], 1)
+        self.assertEqual(t.appels_encaisse[-1][2], ("D-B",))
 
     def test_filtres_transmis_et_encaisse_restreint(self):
         t = Tableaux()
@@ -272,7 +285,7 @@ class TestTableur(unittest.TestCase):
         t = tableur(lignes)
         self.assertEqual(t[0], ["Dossier", "Apprenant", "Nom", "E-mail", "Parcours", "Cohorte", "Mode", "Payé",
                                 "Total", "Reste", "Prochaine échéance", "Montant prochaine", "Statut", "Bloqué"])
-        self.assertEqual(t[1], ["D-A", "a", "'=HYPERLINK(\"http://x\")", "a@x.ci", "Titre C1", "B1",
+        self.assertEqual(t[1], ["D-A", "a", "'=HYPERLINK(\"http://x\")", "a@x.ci", "Titre C1", "Promo 1",
                                 "Deux tranches", 55000, 100000, 45000, "2026-12-10", 45000, "À jour", "non"])
         self.assertEqual(t[3][10:14], ["", "", "Soldé", "non"])
         self.assertEqual(t[2][13], "oui")

@@ -138,6 +138,16 @@ class TestVirement(Base):
         self.assertEqual(frappe.get_all(PAIEMENT, {"dossier": self.dossier}, pluck="montant"), [10000])
         self.assertEqual(len(self.journal("virement_enregistre")), 1)
 
+    def test_motif_obligatoire_et_rien_n_est_ecrit(self):
+        for motif in ("", "   "):
+            with self.subTest(motif=motif), self.assertRaisesRegex(frappe.ValidationError, "Le motif est obligatoire."):
+                self.virer(motif=motif)
+        args = {"dossier": self.dossier, "montant": 10000, "reference": "VIR-SANS-MOTIF", "date_paiement": nowdate()}
+        with self.assertRaisesRegex(frappe.ValidationError, "Le motif est obligatoire."):
+            paiement_api.enregistrer_virement(**args)
+        self.assertEqual(frappe.get_all(PAIEMENT, {"dossier": self.dossier}), [])
+        self.assertEqual(self.journal("virement_enregistre"), [])
+
     def test_saisies_invalides_refusees(self):
         cas = {"montant": [0, -5, 12.5, "abc", "1e3", "-5", True, None], "reference": ["", "  ", "x" * 141],
                "date_paiement": [add_days(nowdate(), 1), "pas-une-date", ""]}
@@ -522,10 +532,31 @@ class TestIntendance(BaseLecture):
         self.assertEqual(self.vue(statut="a_jour")["indicateurs"]["encaisse_mois"], 55000)
 
     def test_filtres_invalides_refuses(self):
-        for f in ({"mode": "gratuit"}, {"statut": "bloque"}, {"du": "22/10/2026"}, {"au": "2026-02-30"},
+        for f in ({"mode": "gratuit"}, {"statut": "rappel_envoye"}, {"du": "22/10/2026"}, {"au": "2026-02-30"},
                   {"du": "2026-10-02", "au": "2026-10-01"}, {"mode": "mensuel' OR 1=1 -- "}):
             with self.subTest(f=f), self.assertRaises(frappe.ValidationError):
                 self.vue(**f)
+
+    def test_filtre_bloque_partage_par_la_vue_et_l_export(self):
+        self.jeu_de_trois()
+        v = self.vue(statut="bloque")
+        self.assertEqual([(x["apprenant"], x["bloque"]) for x in v["lignes"]], [(AUTRE, True)])
+        self.assertEqual(v["indicateurs"]["bloques"], 1)
+        frappe.local.response = frappe._dict()
+        appeler("export_intendance", self.intendant, parcours=self.cours, statut="bloque")
+        rangees = list(openpyxl.load_workbook(io.BytesIO(frappe.local.response["filecontent"])).active
+                       .iter_rows(values_only=True))
+        self.assertEqual([r[1] for r in rangees[1:]], [AUTRE])
+        paiement.accorder_delai(self.intendant, self.dossiers[AUTRE], add_days(aujourd_hui(), 3), "Geste")
+        self.assertEqual(self.vue(statut="bloque")["lignes"], [])
+
+    def test_titre_de_la_cohorte_rendu_avec_son_identifiant(self):
+        self.jeu_de_trois()
+        titre = frappe.db.get_value("LMS Batch", self.cohorte, "title")
+        self.assertTrue(titre)
+        ligne = self.vue()["lignes"][0]
+        self.assertEqual((ligne["cohorte"], ligne["cohorte_titre"]), (self.cohorte, titre))
+        self.assertEqual(appeler("fiche", self.intendant, dossier=ligne["dossier"])["cohorte_titre"], titre)
 
     def test_rappel_envoye_pour_la_prochaine_echeance(self):
         self.jeu_de_trois()
@@ -610,8 +641,12 @@ class TestResume(BaseLecture):
                 self.assertGreaterEqual(v["bloques"], 1)
                 self.assertTrue(all(v["modes"][m] >= 1 for m in ("une_fois", "deux_tranches", "mensuel")))
                 self.assertLessEqual(len(v["dernieres_actions"]), 5)
-                self.assertEqual((v["dernieres_actions"][0]["acteur"], v["dernieres_actions"][0]["action"]),
-                                 (self.intendant, "virement_enregistre"))
+                derniere = v["dernieres_actions"][0]
+                self.assertEqual((derniere["acteur"], derniere["action"]), (self.intendant, "virement_enregistre"))
+                # apprenant et parcours nommés, pas seulement l'identifiant du dossier
+                self.assertEqual((derniere["apprenant"], derniere["parcours"], derniere["titre"]),
+                                 (TROISIEME, self.cours, "Parcours lecture paiement"))
+                self.assertEqual(derniere["nom"], frappe.db.get_value("User", TROISIEME, "full_name"))
 
 
 class TestAdaptateurTableaux(BaseLecture):
@@ -623,6 +658,8 @@ class TestAdaptateurTableaux(BaseLecture):
                        ).insert(ignore_permissions=True)
         (ligne,) = t.journal(self.dossiers[ELEVE], 5)
         self.assertEqual((ligne["avant"], ligne["apres"]), ("pas du json", {}))
+        self.assertEqual((ligne["apprenant"], ligne["titre"]), (ELEVE, "Parcours lecture paiement"))
+        self.assertEqual(t.journal("dossier-sans-journal", 5), ())
 
 
 class TestJourCourant(FrappeTestCase):
