@@ -1,12 +1,15 @@
-// Dépôts sur l'API d'évaluation de Frappe : un point d'API par opération, réponse validée par son schéma.
-import type { DepotCorrection, DepotRelecture, DepotRetour } from '../../application/ports'
+// Dépôts sur les API de Frappe (évaluation, paiement) : un point d'API par opération, réponse validée par son schéma.
+import type { DepotCorrection, DepotPaiement, DepotRelecture, DepotRetour } from '../../application/ports'
 import type { ChargeCorrection } from '../../domaine/correction'
+import type { Mode } from '../../domaine/paiement'
 import type { SaisieRelecture } from '../../domaine/relecture'
 import type { ClientFrappe } from './client'
 import {
   sansResultat,
+  schemaDossierPaiement,
   schemaFile,
   schemaMesRelectures,
+  schemaPaiement,
   schemaPublication,
   schemaRelecture,
   schemaResultatLot,
@@ -60,5 +63,22 @@ export class DepotRetourFrappe implements DepotRetour {
 
   monRetour(copie: string) {
     return this.client.lire('mon_retour', { copie }, schemaRetour)
+  }
+}
+
+/** API de paiement : le dossier est toujours celui de l'utilisateur de la session pour le parcours demandé. */
+export class DepotPaiementFrappe implements DepotPaiement {
+  constructor(private readonly client: ClientFrappe) {}
+
+  monDossier(cours: string) {
+    return this.client.lire('mon_dossier', { cours }, schemaDossierPaiement)
+  }
+
+  choisirMode(cours: string, mode: Mode, telephone: string) {
+    return this.client.ecrire('choisir_mode', { cours, mode, telephone }, schemaDossierPaiement)
+  }
+
+  async payer(cours: string) {
+    return (await this.client.ecrire('payer', { cours }, schemaPaiement)).url
   }
 }

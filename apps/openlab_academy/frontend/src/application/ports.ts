@@ -2,6 +2,7 @@
 // Les adaptateurs (infrastructure) les implémentent ; un échec d'appel est une ErreurDepot.
 import type { ChargeCorrection, FileCorrection, ResultatLot, VueCopie } from '../domaine/correction'
 import type { Brouillon, ResumeRelecture, SaisieRelecture, VueRelecture } from '../domaine/relecture'
+import type { DossierPaiement, Mode } from '../domaine/paiement'
 import type { Retour } from '../domaine/retour'
 
 export interface DepotCorrection {
@@ -21,6 +22,20 @@ export interface DepotRelecture {
 
 export interface DepotRetour {
   monRetour(copie: string): Promise<Retour>
+}
+
+/** Dossier de paiement de l'apprenant connecté : le serveur le retrouve par la session, jamais par un identifiant. */
+export interface DepotPaiement {
+  monDossier(cours: string): Promise<DossierPaiement>
+  /** Rend le dossier replanifié dans le nouveau mode. */
+  choisirMode(cours: string, mode: Mode, telephone: string): Promise<DossierPaiement>
+  /** Adresse de la page de paiement CinetPay. */
+  payer(cours: string): Promise<string>
+}
+
+/** Quitte l'application pour une page externe (paiement). */
+export interface Navigateur {
+  aller(url: string): void
 }
 
 /** Brouillons de relecture gardés sur l'appareil ; un stockage indisponible ne fait jamais échouer l'écran. */

@@ -2,6 +2,7 @@
 import type { ElementFile, FileCorrection, VueCopie } from '../domaine/correction'
 import type { Critere, Grille } from '../domaine/grille'
 import type { ResumeRelecture, VueRelecture } from '../domaine/relecture'
+import type { DossierPaiement } from '../domaine/paiement'
 import type { CritereRetour, Retour } from '../domaine/retour'
 
 export const LIBELLES = ['Insuffisant', 'À consolider', 'Satisfaisant', 'Excellent']
@@ -129,5 +130,27 @@ export const retour = (autres: Partial<Retour> = {}): Retour => ({
   criteres: [],
   commentaire_general: '',
   message: '',
+  ...autres,
+})
+
+/** Dossier conforme à `mon_dossier` (entrypoints/paiement_api.py) : deux tranches, frais réglés, à jour. */
+export const dossierPaiement = (autres: Partial<DossierPaiement> = {}): DossierPaiement => ({
+  cours: 'fondamentaux-data',
+  titre: 'Fondamentaux de la data science',
+  mode: 'deux_tranches',
+  telephone: '+2250700000001',
+  tarif: { frais_inscription: 10000, une_fois: 100000, deux_tranches: 110000, mensuel: 120000 },
+  echeances: [
+    { date_limite: '2026-10-22', montant: 10000, libelle: "Frais d'inscription", couverte: true },
+    { date_limite: '2026-11-10', montant: 50000, libelle: 'Échéance', couverte: false },
+    { date_limite: '2027-01-10', montant: 50000, libelle: 'Échéance', couverte: false },
+  ],
+  paye: 10000,
+  reste: 100000,
+  statut: 'a_jour',
+  prochaine: { date_limite: '2026-11-10', montant: 50000 },
+  paiement_en_ligne: true,
+  bloque: false,
+  instructions_virement: '',
   ...autres,
 })

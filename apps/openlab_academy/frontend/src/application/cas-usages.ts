@@ -1,6 +1,15 @@
 // Assemblage des cas d'usage sur leurs ports : c'est tout ce que les écrans connaissent de l'application.
 import { ConsulterFile, EnregistrerCorrection, OuvrirCopie, PublierNote, ValiderLot } from './correction'
-import type { DepotBrouillons, DepotCorrection, DepotRelecture, DepotRetour, Horloge } from './ports'
+import { ChargerDossier, ChoisirMode, Payer } from './paiement'
+import type {
+  DepotBrouillons,
+  DepotCorrection,
+  DepotPaiement,
+  DepotRelecture,
+  DepotRetour,
+  Horloge,
+  Navigateur,
+} from './ports'
 import { ConsulterRelectures, EnvoyerRelecture, GarderBrouillon, OuvrirRelecture } from './relecture'
 import { ConsulterRetour } from './retour'
 
@@ -8,6 +17,8 @@ export interface Ports {
   correction: DepotCorrection
   relecture: DepotRelecture
   retour: DepotRetour
+  paiement: DepotPaiement
+  navigateur: Navigateur
   brouillons: DepotBrouillons
   horloge: Horloge
 }
@@ -24,6 +35,9 @@ export function creerCasUsages(p: Ports) {
     garderBrouillon: new GarderBrouillon(p.brouillons, p.horloge),
     envoyerRelecture: new EnvoyerRelecture(p.relecture, p.brouillons),
     consulterRetour: new ConsulterRetour(p.retour),
+    chargerDossier: new ChargerDossier(p.paiement, p.horloge),
+    choisirMode: new ChoisirMode(p.paiement),
+    payer: new Payer(p.paiement, p.navigateur),
   }
 }
 

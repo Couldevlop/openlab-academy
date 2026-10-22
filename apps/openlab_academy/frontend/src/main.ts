@@ -8,6 +8,12 @@ import { CLE_CAS_USAGES } from './interface/injection'
 import { creerRouteur } from './interface/routeur'
 import './interface/style.css'
 
-const cas = creerCasUsages(creerPorts(frappeRequest, () => window.localStorage))
+const cas = creerCasUsages(
+  creerPorts(
+    frappeRequest,
+    () => window.localStorage,
+    () => window.location,
+  ),
+)
 
 createApp(App).provide(CLE_CAS_USAGES, cas).use(creerRouteur()).mount('#espace')

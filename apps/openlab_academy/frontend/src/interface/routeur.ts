@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw, type RouterHistory
 import Accueil from './ecrans/Accueil.vue'
 import Correcteur from './ecrans/Correcteur.vue'
 import Lots from './ecrans/Lots.vue'
+import Paiement from './ecrans/Paiement.vue'
 import Relecture from './ecrans/Relecture.vue'
 import Retour from './ecrans/Retour.vue'
 
@@ -17,6 +18,7 @@ export const routes: RouteRecordRaw[] = [
   { path: '/correcteur/:copie?', name: 'correcteur', component: Correcteur, meta: { titre: 'Correcteur' } },
   { path: '/lots', name: 'lots', component: Lots, meta: { titre: 'Lots' } },
   { path: '/retour/:copie', name: 'retour', component: Retour, meta: { titre: 'Mon retour' } },
+  { path: '/paiement/:cours', name: 'paiement', component: Paiement, meta: { titre: 'Mes paiements' } },
   { path: '/:chemin(.*)*', redirect: '/' },
 ]
 

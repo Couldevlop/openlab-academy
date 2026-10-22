@@ -1,8 +1,16 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ErreurDepot } from '../../application/erreurs'
-import { fileCorrection, resumeRelecture, retour, critereRetour, vueCopie, vueRelecture } from '../../test/fabriques'
+import {
+  critereRetour,
+  dossierPaiement,
+  fileCorrection,
+  resumeRelecture,
+  retour,
+  vueCopie,
+  vueRelecture,
+} from '../../test/fabriques'
 import { ClientFrappe, type RequeteFrappe } from './client'
-import { DepotCorrectionFrappe, DepotRelectureFrappe, DepotRetourFrappe } from './depots'
+import { DepotCorrectionFrappe, DepotPaiementFrappe, DepotRelectureFrappe, DepotRetourFrappe } from './depots'
 
 const RACINE = 'openlab_academy.entrypoints.evaluation_api.'
 
@@ -119,5 +127,44 @@ describe('dépôt de retour (Frappe)', () => {
       .catch((e: unknown) => e)
     expect(erreur).toBeInstanceOf(ErreurDepot)
     expect((erreur as ErreurDepot).details).toEqual([expect.stringMatching(/^mon_retour\.note : /)])
+  })
+})
+
+describe('dépôt de paiement (Frappe)', () => {
+  const RACINE_PAIEMENT = 'openlab_academy.entrypoints.paiement_api.'
+
+  function serveurPaiement(reponse: unknown) {
+    const requete = vi.fn<RequeteFrappe>(async () => reponse)
+    const appels = () => requete.mock.calls.map(([o]) => [o.url.slice(RACINE_PAIEMENT.length), o.method, o.params])
+    return { depot: new DepotPaiementFrappe(new ClientFrappe(requete, RACINE_PAIEMENT)), appels }
+  }
+
+  it('mon dossier (GET), choix du mode (POST) et paiement (POST) sur l’API de paiement', async () => {
+    const d = dossierPaiement({ prochaine: { date_limite: null, montant: 10000 } })
+    const lecture = serveurPaiement(d)
+    expect(await lecture.depot.monDossier('C1')).toEqual(d)
+    expect(await lecture.depot.choisirMode('C1', 'mensuel', '+2250700000002')).toEqual(d)
+    expect(lecture.appels()).toEqual([
+      ['mon_dossier', 'GET', { cours: 'C1' }],
+      ['choisir_mode', 'POST', { cours: 'C1', mode: 'mensuel', telephone: '+2250700000002' }],
+    ])
+    const paiement = serveurPaiement({ url: 'https://checkout.cinetpay.com/payment/abc' })
+    expect(await paiement.depot.payer('C1')).toBe('https://checkout.cinetpay.com/payment/abc')
+    expect(paiement.appels()).toEqual([['payer', 'POST', { cours: 'C1' }]])
+  })
+
+  it('dossier soldé ou dispensé : aucune prochaine échéance', async () => {
+    const d = dossierPaiement({ statut: 'solde', prochaine: null, reste: 0 })
+    expect(await serveurPaiement(d).depot.monDossier('C1')).toEqual(d)
+  })
+
+  it('réponse malformée : erreur typée', async () => {
+    const invalidePaiement = (r: unknown) => invalide(serveurPaiement(r).depot.monDossier('C1'))
+    await invalidePaiement({ ...dossierPaiement(), mode: 'trimestriel' })
+    await invalidePaiement({ ...dossierPaiement(), statut: 'bloque' })
+    await invalidePaiement({ ...dossierPaiement(), paye: '0' })
+    const { bloque: _b, ...sansBlocage } = dossierPaiement()
+    await invalidePaiement(sansBlocage)
+    await invalide(serveurPaiement({ url: 42 }).depot.payer('C1'))
   })
 })

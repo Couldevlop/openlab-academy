@@ -3,6 +3,7 @@
 import * as z from 'zod/mini'
 import type { FileCorrection, ResultatLot, VueCopie } from '../../domaine/correction'
 import type { Grille } from '../../domaine/grille'
+import type { DossierPaiement } from '../../domaine/paiement'
 import type { ResumeRelecture, VueRelecture } from '../../domaine/relecture'
 import type { Retour } from '../../domaine/retour'
 
@@ -138,3 +139,24 @@ export const schemaRetour: z.ZodMiniType<Retour> = z.object({
   commentaire_general: texte,
   message: texte,
 })
+
+// paiement_api.mon_dossier et choisir_mode (application/tableaux_paiement.vue_apprenant)
+const montant = z.int()
+export const schemaDossierPaiement: z.ZodMiniType<DossierPaiement> = z.object({
+  cours: texte,
+  titre: texte,
+  mode: z.enum(['une_fois', 'deux_tranches', 'mensuel']),
+  telephone: texte,
+  tarif: z.object({ frais_inscription: montant, une_fois: montant, deux_tranches: montant, mensuel: montant }),
+  echeances: z.array(z.object({ date_limite: texte, montant, libelle: texte, couverte: z.boolean() })),
+  paye: montant,
+  reste: montant,
+  statut: z.enum(['a_jour', 'en_retard', 'solde', 'dispense']),
+  prochaine: z.nullable(z.object({ date_limite: z.nullable(texte), montant })),
+  paiement_en_ligne: z.boolean(),
+  bloque: z.boolean(),
+  instructions_virement: texte,
+})
+
+// paiement_api.payer : adresse de la page CinetPay (vérifiée https par le cas d'usage avant d'y aller)
+export const schemaPaiement = z.object({ url: texte })
