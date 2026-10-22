@@ -273,13 +273,14 @@ class OperationRefusee(ValueError):
     """Saisie refusée (virement, délai, changement de mode) ; le message est destiné à son auteur."""
 
 
-def _motif(motif, obligatoire: bool) -> str:
+def _motif(motif) -> str:
+    """Motif obligatoire d'une saisie d'agent (virement, délai), sans blancs autour et borné."""
     if motif is None:
         motif = ""
     if not isinstance(motif, str):
         raise OperationRefusee("Le motif est invalide.")
     motif = motif.strip()
-    if obligatoire and not motif:
+    if not motif:
         raise OperationRefusee("Le motif est obligatoire.")
     if len(motif) > MOTIF_MAX:
         raise OperationRefusee(f"Le motif est trop long ({MOTIF_MAX} caractères au plus).")
@@ -317,7 +318,7 @@ class EnregistrerVirement:
         aujourd_hui = self._aujourd_hui()
         if not _jour(date_paiement) or date_paiement > aujourd_hui:
             raise OperationRefusee("La date du virement est invalide ou dans le futur.")
-        motif = _motif(motif, obligatoire=True)
+        motif = _motif(motif)
         d = _charger_actif(self._depot, dossier)
         avant = {"paye": d.dossier.paye, "statut": statut(d.dossier, aujourd_hui).value}
         try:
@@ -342,7 +343,7 @@ class AccorderDelai:
         aujourd_hui = self._aujourd_hui()
         if not _jour(jusqu_au) or jusqu_au <= aujourd_hui:
             raise OperationRefusee("Le délai doit se terminer après aujourd'hui.")
-        motif = _motif(motif, obligatoire=True)
+        motif = _motif(motif)
         d = _charger_actif(self._depot, dossier)
         ancien = d.dossier.delai_jusqu_au
         avant = {"delai_jusqu_au": ancien.isoformat() if ancien else None,

@@ -8,7 +8,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy.application.paiements import PaiementIndisponible
-from openlab_academy.domain.dossier_paiement import Statut, statut
+from openlab_academy.domain.dossier_paiement import Statut, bloque, statut
 from openlab_academy.domain.echeancier import Echeance, Mode
 from openlab_academy.entrypoints import paiement, paiement_api
 from openlab_academy.infrastructure.cinetpay import CHAMPS_JETON
@@ -208,6 +208,17 @@ class TestNotification(Base):
         self.assertEqual([p.statut for p in self.paiements()], ["echoue"])
         self.assertEqual(self.journal(), [])
 
+    def test_refus_confirme_par_cinetpay_aucun_acces_et_reponse_normale(self):
+        """/check répond REFUSED : paiement échoué, rien de journalisé ni consigné, parcours toujours bloqué ; le point
+        rend None (HTTP 200) sans annulation ni erreur, CinetPay ne rejoue donc pas."""
+        consigne = self.notifier(self.transaction(), CinetPaySimule(statut="REFUSED", montant="10000"))
+        self.assertEqual(self.paiements(), [frappe._dict(montant=10000, statut="echoue", moyen="cinetpay")])
+        self.assertEqual(self.journal(), [])
+        consigne.assert_not_called()
+        self.annulation.assert_not_called()
+        d = DepotDossiersFrappe().charger(ELEVE, self.cours).dossier
+        self.assertEqual((d.paye, bloque(d, AUJOURDHUI)), (0, True))
+
     def test_statut_non_confirme_ne_change_rien(self):
         self.notifier(self.transaction(), CinetPaySimule(statut="WAITING_CUSTOMER_PAYMENT"))
         self.assertEqual([p.statut for p in self.paiements()], ["en_attente"])
@@ -292,6 +303,32 @@ class TestRetourEtExposition(Base):
         self.assertIn(retour, frappe.guest_methods)
         self.assertEqual(frappe.allowed_http_methods_for_whitelisted_func[notif], ["POST"])
         self.assertEqual(frappe.allowed_http_methods_for_whitelisted_func[retour], ["GET", "POST"])
+
+
+class TestNotificationSansJetonCsrf(FrappeTestCase):
+    """CinetPay appelle sans cookie ni jeton CSRF : Frappe v15 n'exige ce jeton que d'une session qui en détient un
+    (la session Guest n'en a pas) ; une session connectée sans jeton reste refusée."""
+
+    def controler(self, donnees_session):
+        from frappe.auth import HTTPRequest
+        # frappe.local n'a pas de __dict__ : mock.patch.object y supprimerait l'attribut au lieu de le rétablir
+        avant = {nom: getattr(frappe.local, nom, None) for nom in ("request", "session")}
+        frappe.local.request = mock.Mock(method="POST")
+        frappe.local.session = frappe._dict(user="Guest", sid="Guest", data=frappe._dict(donnees_session))
+        try:
+            with mock.patch.object(frappe, "get_request_header", return_value=None):
+                HTTPRequest.validate_csrf_token(object.__new__(HTTPRequest))
+        finally:
+            for nom, valeur in avant.items():
+                setattr(frappe.local, nom, valeur)
+
+    def test_post_visiteur_sans_jeton_accepte(self):
+        self.controler({})
+
+    def test_post_d_une_session_a_jeton_sans_jeton_refuse(self):
+        self.addCleanup(frappe.flags.pop, "disable_traceback", None)
+        with self.assertRaises(frappe.CSRFTokenError):
+            self.controler({"csrf_token": "jeton-de-session"})
 
 
 class TestReconciliationAuRetour(TestRetourEtExposition):
