@@ -84,6 +84,12 @@ def exigible(dossier: Dossier, aujourd_hui: date) -> int:
     return min(max(dossier.du_echu(aujourd_hui), dossier.frais_inscription), dossier.total)
 
 
+def en_souffrance(dossier: Dossier, aujourd_hui: date) -> bool:
+    """Vrai si une échéance dont la date est passée (strictement) n'est pas couverte. Les frais du jour de
+    l'inscription, déjà exigibles, n'y sont pas encore ; un délai ne change rien, une dispense si."""
+    return not dossier.dispense and dossier.paye < dossier.du_echu(aujourd_hui)
+
+
 def arriere(dossier: Dossier, aujourd_hui: date) -> int:
     """Exigible non payé. Un délai ne l'efface pas (il lève seulement le blocage) : tout dossier bloqué a un
     arriéré, et un arriéré sans blocage suppose un délai en cours."""

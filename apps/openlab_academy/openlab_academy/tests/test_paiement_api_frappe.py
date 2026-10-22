@@ -353,6 +353,40 @@ class TestChoisirMode(BaseLecture):
         with self.assertRaises(frappe.DoesNotExistError):
             appeler("choisir_mode", INTRUS, cours=self.cours, mode="mensuel", telephone=TELEPHONE)
 
+    def en_retard(self):
+        """Deux tranches, frais payés, tranche échue il y a 5 jours impayée : bloqué."""
+        j = aujourd_hui()
+        d = frappe.get_doc(DOSSIER, self.dossiers[ELEVE])
+        d.mode = "deux_tranches"
+        d.telephone = "+2250700000099"
+        d.set("echeances", [{"date_limite": add_days(j, -30), "montant": 10000, "libelle": "Frais d'inscription"},
+                            {"date_limite": add_days(j, -5), "montant": 50000, "libelle": "Échéance"},
+                            {"date_limite": add_days(j, 40), "montant": 50000, "libelle": "Échéance"}])
+        d.save(ignore_permissions=True)
+        self.virement(ELEVE, 10000, "VIR-RETARD-1")
+        return self.etat()
+
+    def etat(self):
+        d = frappe.get_doc(DOSSIER, self.dossiers[ELEVE])
+        return d.mode, [(str(e.date_limite), e.montant, e.libelle) for e in d.echeances]
+
+    def test_meme_mode_ne_change_que_le_telephone_et_le_blocage_demeure(self):
+        mode, echeances = self.en_retard()
+        self.assertTrue(appeler("mon_dossier", ELEVE, cours=self.cours)["bloque"])
+        v = appeler("choisir_mode", ELEVE, cours=self.cours, mode="deux_tranches", telephone="+225 05 01 02 03 04")
+        self.assertEqual(self.etat(), (mode, echeances))
+        self.assertEqual(frappe.db.get_value(DOSSIER, self.dossiers[ELEVE], "telephone"), "+2250501020304")
+        self.assertEqual((v["statut"], v["bloque"], v["telephone"]), ("en_retard", True, "+2250501020304"))
+        self.assertFalse(frappe.get_all(JOURNAL, {"dossier": self.dossiers[ELEVE], "action": "mode"}))
+
+    def test_changement_de_mode_en_retard_refuse_rien_ne_change(self):
+        avant = self.en_retard()
+        with self.assertRaisesRegex(frappe.ValidationError, "Réglez d'abord l'échéance en retard, ou contactez"):
+            appeler("choisir_mode", ELEVE, cours=self.cours, mode="mensuel", telephone=TELEPHONE)
+        self.assertEqual(self.etat(), avant)
+        self.assertEqual(frappe.db.get_value(DOSSIER, self.dossiers[ELEVE], "telephone"), "+2250700000099")
+        self.assertTrue(appeler("mon_dossier", ELEVE, cours=self.cours)["bloque"])
+
     def test_saisies_refusees(self):
         for mode, tel in (("gratuit", TELEPHONE), ("mensuel", "0700"), ("mensuel", None), (None, TELEPHONE)):
             with self.subTest(mode=mode, tel=tel),                     self.assertRaises((frappe.ValidationError, frappe.FrappeTypeError)):

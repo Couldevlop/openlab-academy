@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta
 
 from openlab_academy.application.ports_paiement import (
     DepotDossiers, Journal, NouveauDossier, PagesPaiement, Passerelle, ReferenceDejaEnregistree, Reglages, Tarifs)
-from openlab_academy.domain.dossier_paiement import Dossier, statut
+from openlab_academy.domain.dossier_paiement import Dossier, en_souffrance, statut
 from openlab_academy.domain.echeancier import Echeance, Mode, Tarif, echeancier, inscription_permise, replanifier
 
 LIBELLE_FRAIS = "Frais d'inscription"
@@ -68,7 +68,13 @@ class OuvrirDossier:
             (Echeance(aujourd_hui, tarif.frais_inscription, LIBELLE_FRAIS),)))
 
 
+CHANGEMENT_EN_RETARD = "Réglez d'abord l'échéance en retard, ou contactez l'intendance."
+
+
 class ChoisirMode:
+    """Même mode : téléphone seul, échéancier intact. Autre mode : refusé tant qu'une échéance passée reste impayée
+    (le replanifier lèverait le blocage) ; sinon échéancier refait (replanifié si un paiement existe)."""
+
     def __init__(self, depot: DepotDossiers, journal: Journal, aujourd_hui: Callable[[], date], jour: int = 10):
         self._depot = depot
         self._journal = journal
@@ -81,6 +87,11 @@ class ChoisirMode:
         d = self._depot.charger(apprenant, cours)
         if d is None:
             raise DossierAbsent("Aucun dossier de paiement pour ce parcours.")
+        if nouveau is d.mode:  # téléphone seul : l'échéancier, et donc tout retard, reste tel quel
+            self._depot.fixer_telephone(d.nom, numero)
+            return d.dossier.echeances
+        if en_souffrance(d.dossier, self._aujourd_hui()):  # replanifier effacerait l'échéance passée impayée
+            raise OperationRefusee(CHANGEMENT_EN_RETARD)
         if d.dossier.paye:
             echeances = replanifier(nouveau, d.tarif, d.dossier.paye, self._aujourd_hui(), d.debut, d.fin, self._jour)
         else:
@@ -259,7 +270,7 @@ MOYEN_VIREMENT = "virement"
 
 
 class OperationRefusee(ValueError):
-    """Saisie refusée d'un virement ou d'un délai ; le message est destiné à l'agent."""
+    """Saisie refusée (virement, délai, changement de mode) ; le message est destiné à son auteur."""
 
 
 def _motif(motif, obligatoire: bool) -> str:

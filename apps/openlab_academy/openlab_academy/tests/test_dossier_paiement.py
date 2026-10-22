@@ -2,7 +2,7 @@ import unittest
 from datetime import date
 
 from openlab_academy.domain.dossier_paiement import (
-    Dossier, RappelDu, Statut, a_echoir, arriere, bloque, exigible, rappels_dus, reste_du, statut)
+    Dossier, RappelDu, Statut, a_echoir, arriere, bloque, en_souffrance, exigible, rappels_dus, reste_du, statut)
 from openlab_academy.domain.echeancier import Echeance
 
 INSCRIPTION = date(2026, 10, 15)
@@ -110,6 +110,17 @@ class TableauxTest(unittest.TestCase):
         self.assertEqual(arriere(dossier(0, dispense=True), date(2027, 1, 1)), 0)
         # le délai ne fait pas disparaître l'arriéré : il lève seulement le blocage
         self.assertEqual(arriere(dossier(0, delai_jusqu_au=date(2026, 12, 1)), date(2026, 11, 11)), 40000)
+
+    def test_en_souffrance_echeance_passee_non_couverte(self):
+        # frais du jour : dus (Ruling 1) mais pas encore passés
+        self.assertFalse(en_souffrance(dossier(0), INSCRIPTION))
+        self.assertTrue(en_souffrance(dossier(0), date(2026, 10, 16)))
+        self.assertFalse(en_souffrance(dossier(10000), date(2026, 11, 10)))  # due le 10 au plus tard
+        self.assertTrue(en_souffrance(dossier(39995), date(2026, 11, 11)))
+        self.assertFalse(en_souffrance(dossier(40000), date(2026, 11, 11)))
+        # un délai lève le blocage, pas la souffrance ; une dispense, si
+        self.assertTrue(en_souffrance(dossier(10000, delai_jusqu_au=date(2026, 12, 1)), date(2026, 11, 11)))
+        self.assertFalse(en_souffrance(dossier(0, dispense=True), date(2027, 1, 1)))
 
     def test_arriere_coherent_avec_le_statut(self):
         for paye in (0, 5000, 10000, 25000, 40000, 55000, 70000, 80000):

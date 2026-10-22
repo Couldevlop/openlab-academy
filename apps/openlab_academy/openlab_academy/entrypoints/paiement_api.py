@@ -10,6 +10,8 @@ la redirection.
 
 Apprenant (`mon_dossier` en GET, `choisir_mode` et `payer` en POST) : connexion requise ; le dossier est toujours
 celui de l'utilisateur de la session pour le parcours demandé, jamais un utilisateur ou un dossier venu du client.
+`choisir_mode` dans le même mode n'enregistre que le téléphone ; un autre mode est refusé tant qu'une échéance passée
+reste impayée.
 `payer` ne rend que l'URL de paiement fournie par CinetPay.
 
 Intendance, fiche, export et résumé (GET) : réservés à l'Intendant et à l'administrateur, comme les virements ;
@@ -153,7 +155,7 @@ def _apprenant(fn: Callable) -> Callable:
             return fn(*args, **kwargs)
         except DossierAbsent as e:
             frappe.throw(str(e), frappe.DoesNotExistError)
-        except (TelephoneInvalide, RienADu) as e:
+        except (TelephoneInvalide, RienADu, OperationRefusee) as e:
             frappe.throw(str(e), frappe.ValidationError)
         except PaiementIndisponible as e:
             # insertion différée : l'erreur renvoyée annule les écritures de la requête, pas cette trace

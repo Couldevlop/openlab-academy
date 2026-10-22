@@ -9,7 +9,7 @@ from openlab_academy.application.paiements import (
     TelephoneInvalide, montant_a_payer, valider_telephone)
 from openlab_academy.application.ports_paiement import (
     Client, DossierEnregistre, PaiementEnregistre, ReferenceDejaEnregistree, ReglagesPaiement, Verification)
-from openlab_academy.domain.dossier_paiement import Dossier, Statut, statut
+from openlab_academy.domain.dossier_paiement import Dossier, Statut, bloque, statut
 from openlab_academy.domain.echeancier import Echeance, Mode, Tarif, TarifInvalide
 
 TARIF = Tarif(10000, 100000, 110000, 120000)
@@ -179,10 +179,20 @@ def depot_ouvert(paye=0, mode=Mode.UNE_FOIS):
     return depot
 
 
+def depot_en_retard():
+    """Deux tranches, frais payés ; la tranche du 10/11 reste impayée (bloquée à partir du 11/11)."""
+    depot = depot_ouvert(paye=10000, mode=Mode.DEUX_TRANCHES)
+    d = depot.dossiers[("a@x.ci", "C")]
+    echeances = (Echeance(AUJOURDHUI, 10000, "Frais d'inscription"), Echeance(date(2026, 11, 10), 50000, "Échéance"),
+                 Echeance(date(2026, 12, 10), 50000, "Échéance"))
+    depot.dossiers[("a@x.ci", "C")] = replace(d, dossier=replace(d.dossier, echeances=echeances))
+    return depot
+
+
 class TestChoisirMode(unittest.TestCase):
-    def cas(self, depot, jour=10):
+    def cas(self, depot, jour=10, aujourd_hui=AUJOURDHUI):
         self.journal = Journal()
-        return ChoisirMode(depot, self.journal, lambda: date(2026, 11, 20), jour)
+        return ChoisirMode(depot, self.journal, lambda: aujourd_hui, jour)
 
     def test_rien_de_paye_conserve_la_ligne_des_frais_datee_a_l_inscription(self):
         depot = depot_ouvert()
@@ -195,8 +205,8 @@ class TestChoisirMode(unittest.TestCase):
     def test_apres_un_paiement_le_calendrier_est_replanifie(self):
         depot = depot_ouvert(paye=10000)
         echeances = self.cas(depot).executer("a@x.ci", "C", "deux_tranches", "+2250700000000")
-        self.assertEqual(echeances[0], Echeance(date(2026, 11, 20), 10000, "Déjà versé"))
-        self.assertEqual(echeances[1].date_limite, date(2026, 12, 10))
+        self.assertEqual(echeances[0], Echeance(AUJOURDHUI, 10000, "Déjà versé"))
+        self.assertEqual(echeances[1].date_limite, date(2026, 11, 10))
         self.assertEqual(sum(e.montant for e in echeances), 110000)
 
     def test_journal_acteur_et_avant_apres(self):
@@ -217,6 +227,42 @@ class TestChoisirMode(unittest.TestCase):
         with self.assertRaisesRegex(TelephoneInvalide, "Numéro de téléphone invalide"):
             self.cas(depot).executer("a@x.ci", "C", "mensuel", "0700000000")
         self.assertEqual((depot.remplacements, self.journal.appels), ([], []))
+
+    def test_meme_mode_ne_change_que_le_telephone(self):
+        depot = depot_ouvert(paye=10000)
+        avant = depot.dossiers[("a@x.ci", "C")].dossier.echeances
+        echeances = self.cas(depot).executer("a@x.ci", "C", "une_fois", "+225 05 01 02 03 04")
+        self.assertEqual(echeances, avant)
+        self.assertEqual(depot.remplacements, [])
+        self.assertEqual(depot.telephones, [("D1", "+2250501020304")])
+        self.assertEqual(self.journal.appels, [])
+
+    def test_meme_mode_en_retard_reste_bloque(self):
+        """Échéance du 10/11 impayée le 20/11 : réenregistrer le même mode ne l'efface pas."""
+        depot = depot_en_retard()
+        d = depot.dossiers[("a@x.ci", "C")]
+        self.assertTrue(bloque(d.dossier, date(2026, 11, 20)))
+        echeances = self.cas(depot, aujourd_hui=date(2026, 11, 20)).executer("a@x.ci", "C", "deux_tranches",
+                                                                            "+2250700000000")
+        self.assertEqual(echeances, d.dossier.echeances)
+        self.assertEqual(depot.remplacements, [])
+        self.assertTrue(bloque(replace(d.dossier, echeances=echeances), date(2026, 11, 20)))
+
+    def test_changement_de_mode_refuse_tant_qu_une_echeance_passee_est_impayee(self):
+        for depot in (depot_en_retard(), depot_ouvert()):  # tranche du 10/11, ou frais du 22/10, impayés le 20/11
+            with self.subTest(mode=depot.dossiers[("a@x.ci", "C")].mode):
+                avant = depot.dossiers[("a@x.ci", "C")]
+                with self.assertRaisesRegex(OperationRefusee, "^Réglez d'abord l'échéance en retard, ou contactez "
+                                                              "l'intendance.$"):
+                    self.cas(depot, aujourd_hui=date(2026, 11, 20)).executer("a@x.ci", "C", "mensuel",
+                                                                            "+2250700000000")
+                self.assertEqual((depot.remplacements, depot.telephones, self.journal.appels), ([], [], []))
+                self.assertEqual(depot.dossiers[("a@x.ci", "C")], avant)
+
+    def test_frais_du_jour_n_empechent_pas_de_choisir_son_mode(self):
+        depot = depot_ouvert()
+        echeances = self.cas(depot, aujourd_hui=AUJOURDHUI).executer("a@x.ci", "C", "mensuel", "+2250700000000")
+        self.assertEqual(depot.remplacements, [("D1", Mode.MENSUEL, echeances)])
 
     def test_mode_inconnu_refuse(self):
         with self.assertRaises(ValueError):
