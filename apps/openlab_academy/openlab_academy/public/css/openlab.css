@@ -1,13 +1,14 @@
 /* Charte OpenLab Academy (docs/charte-graphique.md) : couleurs relevées sur le logo, Montserrat.
    Bleu nuit pour les actions principales et les titres, orange réservé aux accents, bleu royal pour les liens.
-   Contraste AA : aucun texte orange courant (#C25A12 sur blanc = 4,4:1) ; texte blanc gras sur orange ≥ 16 px. */
+   Contraste AA : aucun texte orange courant (#C25A12 sur blanc = 4,4:1) ; texte blanc seulement sur #B35210. */
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap");
 
 :root {
   --ol-orange: #ec7623;
   --ol-orange-light: #f39a5b;
   --ol-orange-dark: #c25a12;
-  --ol-orange-deep: #b35210; /* fond de bouton sous texte blanc (5,1:1) */
+  --ol-orange-deep: #b35210; /* fond de bouton sous texte blanc (5,1:1) : jamais de texte blanc sur #ec7623 */
+  --ol-orange-deeper: #9f490e; /* survol */
   --ol-navy: #001e48;
   --ol-navy-soft: #244498; /* bleu royal */
   --ol-sky: #2890c8;
@@ -42,7 +43,7 @@
 [data-theme="dark"] {
   --surface-base: var(--ol-night);
   --surface-gray-7: var(--ol-orange-deep);
-  --surface-gray-8: #9f490e;
+  --surface-gray-8: var(--ol-orange-deeper);
   --ol-lien-survol: var(--ol-orange-light);
   --ol-focus: var(--ol-orange-light);
 }

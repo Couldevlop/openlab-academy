@@ -1,6 +1,6 @@
 /* Écrans d'évaluation : jetons de la charte OpenLab Academy (public/css/openlab.css, docs/charte-graphique.md) et
-   nuances propres aux écrans. Bleu nuit pour les actions, bouton principal en pilule orange (texte blanc gras
-   ≥ 16 px), orange réservé à la décision (niveau choisi), liens bleu royal, fond ivoire. Contraste AA. */
+   nuances propres aux écrans. Bleu nuit pour les actions, bouton principal en pilule orange foncé #B35210
+   (texte blanc 5,1:1 ; jamais de texte blanc sur #EC7623), orange réservé à la décision (niveau choisi), liens bleu royal, fond ivoire. Contraste AA. */
 :root {
   --es-encre: var(--ol-graphite, #1a1d24);
   --es-gris: #5a6072;
@@ -107,13 +107,13 @@ h3 {
   padding: 0 24px;
   font-size: 16px;
   font-weight: 700;
-  background: var(--ol-orange);
+  background: var(--ol-orange-deep, #b35210);
   color: var(--es-sur-sombre);
   box-shadow: 0 6px 16px rgba(0, 30, 72, 0.12);
 }
 .bouton-principal:hover {
   color: var(--es-sur-sombre);
-  background: var(--ol-orange-deep, #b35210);
+  background: var(--ol-orange-deeper, #9f490e);
 }
 
 /* niveaux d'une grille : le niveau choisi est navy cerclé d'orange (décision) */

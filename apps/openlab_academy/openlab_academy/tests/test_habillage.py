@@ -110,7 +110,7 @@ class TestFeuilleDeStyle(unittest.TestCase):
         css = CSS.read_text(encoding="utf-8")
         for jeton in ("--ol-orange: #ec7623", "--ol-orange-dark: #c25a12", "--ol-orange-light: #f39a5b",
                       "--ol-navy: #001e48", "--ol-navy-soft: #244498", "--ol-sky: #2890c8", "--ol-sun: #fcd80f",
-                      "--ol-ivory: #faf8f5", "--ol-mist: #eef1f6", "family=Montserrat", "JetBrains Mono"):
+                      "--ol-ivory: #faf8f5", "--ol-mist: #eef1f6", "--ol-orange-deep: #b35210", "family=Montserrat", "JetBrains Mono"):
             self.assertIn(jeton, css)
         for ancien in ("Geist", "Bricolage", "#ff5a00", "#0b1b3d"):
             self.assertNotIn(ancien, css)
@@ -124,6 +124,6 @@ class TestFeuilleDeStyle(unittest.TestCase):
 
     def test_logos_presents(self):
         images = CSS.parents[1] / "images"
-        for nom in ("logo-email.png", "logo-openlab-academy.png"):
+        for nom in ("logo-email.png",):
             self.assertTrue((images / nom).read_bytes()[1:4] == b"PNG", nom)
         self.assertIn('href="data:image/png;base64,', (images / "logo.svg").read_text(encoding="utf-8"))

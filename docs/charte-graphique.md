@@ -1,6 +1,6 @@
 # OpenLab Academy — charte graphique
 
-Source : `docs/logo.jfif` (logo officiel). OpenLab Academy est la division Formation d'OpenLab Consulting
+Source : logo officiel fourni par OpenLab. OpenLab Academy est la division Formation d'OpenLab Consulting
 (www.openlabconsulting.com).
 
 ## Logo
@@ -31,8 +31,9 @@ Source : `docs/logo.jfif` (logo officiel). OpenLab Academy est la division Forma
 | Neutre | Gris ardoise | `#6B7590` | texte secondaire |
 
 Proportions conseillées : 60 % neutres, 25 % bleu nuit, 10 % orange, 5 % bleus et jaune.
-Contraste : orange `#EC7623` sur blanc = 2,9:1, réservé aux gros textes et boutons (texte blanc gras ≥ 16 px) ;
-pour un texte orange courant, utiliser `#C25A12`.
+Contraste (WCAG AA) : orange `#EC7623` sur blanc = 2,9:1, réservé aux accents, filets, bordures et au texte sur
+bleu nuit. Un texte blanc ne se pose jamais sur `#EC7623` mais sur l'orange foncé `#B35210` (5,1:1 ; survol
+`#9F490E`). Pour un texte orange sur blanc, utiliser `#C25A12` (4,4:1 : gros texte seulement, ≥ 18,66 px gras).
 
 ## Typographie
 

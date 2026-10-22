@@ -83,6 +83,7 @@ def _montant(montant: int) -> str:
 
 def quand(jours: int) -> str:
     """Délai restant avant la date limite, à la façon des rappels : « J-7 », « J-3 », « J-1 », « jour J »."""
+    # 0 jour : rappel relancé le jour même de la date limite (jamais après : une échéance passée n'est pas relancée)
     return f"J-{jours}" if jours > 0 else "jour J"
 
 

@@ -108,7 +108,9 @@ class TestCanalEmail(unittest.TestCase):
         html = rendre("rappel_paiement.html", courriel()["args"])
         for attendu in ('<img embed="logo-email.png"', "Rappel d'échéance · J-7", "Bonjour <strong>Aya Kouassi</strong>",
                         '<span style="color:#ec7623;">Parcours IA</span>', "50 000&nbsp;", "10/11/2026",
-                        f'<a href="{LIEN}"', "www.openlabconsulting.com"):
+                        f'<a href="{LIEN}"', "www.openlabconsulting.com",
+                        # contrastes AA : bouton #b35210 sous texte blanc, date #c25a12, notes #5a6072
+                        'bgcolor="#b35210"', "color:#c25a12;", "color:#5a6072;"):
             self.assertIn(attendu, html)
         self.assertNotIn("{{", html)
 
