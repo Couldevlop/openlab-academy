@@ -24,6 +24,7 @@ from openlab_academy.infrastructure.reglages_evaluation_frappe import REGLAGES, 
 from openlab_academy.tests.test_depot_copies_frappe import A, B, Base
 from openlab_academy.tests.http_simule import SHA, Reponse, github
 from openlab_academy.tests.test_reglages_evaluation_frappe import etapes_formateur
+from openlab_academy.tests.test_paiement_donnees_frappe import inscrire_sans_paiement
 
 COPIE = "Copie OpenLab"
 JOURNAL = "Journal Note OpenLab"
@@ -42,8 +43,7 @@ class Cas(Base):
         lot = DepotCohortesFrappe(formateur).creer(Cohorte.pilote(self.p, datetime.date(2026, 11, 2),
                                                                   Reglages().rythme("standard"), Reglages()))
         for membre in membres:
-            frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": lot, "member": membre}).insert(
-                ignore_permissions=True)
+            inscrire_sans_paiement(lot, membre)
         return lot
 
     def copie_de(self, membre=A, devoir=None):

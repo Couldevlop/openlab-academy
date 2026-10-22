@@ -11,6 +11,7 @@
   "cle",
   "mode",
   "telephone",
+  "date_inscription",
   "dispense",
   "delai_jusqu_au",
   "frais_inscription",
@@ -61,6 +62,12 @@
    "fieldname": "telephone",
    "fieldtype": "Data",
    "label": "Téléphone (format E.164)"
+  },
+  {
+   "fieldname": "date_inscription",
+   "fieldtype": "Date",
+   "label": "Date d'inscription",
+   "read_only": 1
   },
   {
    "fieldname": "dispense",

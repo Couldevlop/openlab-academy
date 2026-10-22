@@ -1,5 +1,6 @@
 """Données du paiement : tarifs, réglages, dossiers, paiements, journal, rappels, rôle Intendant, patch de dispense."""
 import datetime
+from unittest import mock
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -29,6 +30,18 @@ def tarif(c, **autres):
               "prix_deux_tranches": 110000, "prix_mensuel": 120000}
     champs.update(autres)
     return frappe.get_doc(champs)
+
+
+def inscrire_sans_paiement(lot, membre):
+    """Inscription d'un autre test : tarif du parcours posé si absent, date figée au début de la cohorte."""
+    from openlab_academy.entrypoints import paiement
+    c = frappe.db.get_value("Batch Course", {"parent": lot}, "course", order_by="idx")
+    if not frappe.db.exists("Tarif Parcours OpenLab", c):
+        tarif(c).insert(ignore_permissions=True)
+    debut = frappe.utils.getdate(frappe.db.get_value("LMS Batch", lot, "start_date"))
+    with mock.patch.object(paiement, "aujourd_hui", return_value=debut):
+        return frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": lot, "member": membre}).insert(
+            ignore_permissions=True)
 
 
 def dossier(c, **autres):
@@ -229,8 +242,11 @@ class TestPatchDispense(FrappeTestCase):
         frappe.db.rollback()
 
     def inscrire(self, cohorte):
-        return frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": cohorte, "member": self.eleve}
-                              ).insert(ignore_permissions=True)
+        """Inscription antérieure au paiement : les points d'accroche de l'inscription sont neutralisés."""
+        from openlab_academy.entrypoints import paiement
+        with mock.patch.object(paiement, "avant_inscription"), mock.patch.object(paiement, "apres_inscription"):
+            return frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": cohorte, "member": self.eleve}
+                                  ).insert(ignore_permissions=True)
 
     def dossiers(self):
         return frappe.get_all("Dossier Paiement OpenLab", {"apprenant": self.eleve},

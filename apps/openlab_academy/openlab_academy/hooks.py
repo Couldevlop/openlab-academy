@@ -17,6 +17,10 @@ website_route_rules = [{"from_route": "/espace/<path:app_path>", "to_route": "es
 
 override_whitelisted_methods = {"lms.lms.utils.get_lesson": "openlab_academy.entrypoints.lms.get_lesson"}
 doc_events = {
+    "LMS Batch Enrollment": {
+        "before_insert": "openlab_academy.entrypoints.paiement.avant_inscription",
+        "after_insert": "openlab_academy.entrypoints.paiement.apres_inscription",
+    },
     "LMS Quiz Submission": {"before_insert": "openlab_academy.entrypoints.lms.avant_soumission_quiz"},
     "LMS Assignment Submission": {
         "before_insert": "openlab_academy.entrypoints.lms.avant_soumission_devoir",
