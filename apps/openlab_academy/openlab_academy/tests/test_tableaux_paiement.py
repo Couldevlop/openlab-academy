@@ -90,7 +90,14 @@ class TestVueApprenant(unittest.TestCase):
                 {"date_limite": "2026-11-10", "montant": 45000, "libelle": "Échéance", "couverte": False},
                 {"date_limite": "2026-12-10", "montant": 45000, "libelle": "Échéance", "couverte": False}],
             "paye": 0, "reste": 100000, "statut": "en_retard",
-            "prochaine": {"date_limite": "2026-10-15", "montant": 10000}, "paiement_en_ligne": True})
+            "prochaine": {"date_limite": "2026-10-15", "montant": 10000}, "paiement_en_ligne": True,
+            "bloque": True, "instructions_virement": ""})
+
+    def test_instructions_de_virement_rendues_et_blocage_selon_le_domaine(self):
+        v = vue_apprenant(self.enregistre(55000), "T", AUJOURDHUI, False, "Banque X\nIBAN CI00 0000")
+        self.assertEqual((v["instructions_virement"], v["bloque"]), ("Banque X\nIBAN CI00 0000", False))
+        v = vue_apprenant(self.enregistre(0, delai_jusqu_au=date(2026, 11, 30)), "T", AUJOURDHUI, False, None)
+        self.assertEqual((v["statut"], v["bloque"], v["instructions_virement"]), ("a_jour", False, ""))
 
     def test_partiellement_paye_puis_solde_puis_dispense(self):
         v = vue_apprenant(self.enregistre(10003), "T", AUJOURDHUI, False)

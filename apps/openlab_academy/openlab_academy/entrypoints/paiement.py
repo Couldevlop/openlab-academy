@@ -130,7 +130,8 @@ def mon_dossier(apprenant: str, cours: str) -> dict:
     if d is None:
         raise DossierAbsent("Aucun dossier de paiement pour ce parcours.")
     titre = frappe.db.get_value("LMS Course", cours, "title") or cours
-    return vue_apprenant(d, titre, jour_courant(), paiement_en_ligne(cours))
+    instructions = frappe.db.get_single_value("Reglages Paiement OpenLab", "instructions_virement")
+    return vue_apprenant(d, titre, jour_courant(), paiement_en_ligne(cours), instructions)
 
 
 def choisir_mode(apprenant: str, cours: str, mode: str, telephone: str) -> None:

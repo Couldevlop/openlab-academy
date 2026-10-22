@@ -22,7 +22,9 @@
   "section_echeances",
   "jour_echeance",
   "delais_rappel",
-  "inscription_tardive_mois"
+  "inscription_tardive_mois",
+  "section_virement",
+  "instructions_virement"
  ],
  "fields": [
   {
@@ -118,6 +120,17 @@
    "label": "Inscription refusée après (mois depuis le début)",
    "default": "2",
    "non_negative": 1
+  },
+  {
+   "fieldname": "section_virement",
+   "fieldtype": "Section Break",
+   "label": "Virement"
+  },
+  {
+   "fieldname": "instructions_virement",
+   "fieldtype": "Small Text",
+   "label": "Instructions de virement (montrées aux apprenants)",
+   "description": "Texte public affiché tel quel sur l'écran de paiement : banque, titulaire, IBAN, motif à indiquer."
   }
  ],
  "permissions": [
@@ -137,7 +150,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-22 00:00:00",
- "modified": "2026-10-22 00:00:00",
+ "modified": "2026-10-22 12:00:00",
  "sort_field": "modified",
  "sort_order": "DESC",
  "custom": 0,

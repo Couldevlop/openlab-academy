@@ -297,6 +297,14 @@ class TestMonDossier(BaseLecture):
         self.assertEqual(v["prochaine"], {"date_limite": str(aujourd_hui()), "montant": 10000})
         self.assertTrue(v["paiement_en_ligne"])
 
+    def test_instructions_de_virement_des_reglages_et_blocage(self):
+        regler(instructions_virement="")
+        self.assertEqual(appeler("mon_dossier", ELEVE, cours=self.cours)["instructions_virement"], "")
+        regler(instructions_virement="Banque Atlantique, IBAN CI93 0000 0000\nMotif : votre e-mail")
+        v = appeler("mon_dossier", ELEVE, cours=self.cours)
+        self.assertEqual(v["instructions_virement"], "Banque Atlantique, IBAN CI93 0000 0000\nMotif : votre e-mail")
+        self.assertTrue(v["bloque"])  # frais d'inscription du jour impayés
+
     def test_aucun_secret_ni_coordonnee_d_un_autre(self):
         frappe.db.set_value(DOSSIER, self.dossiers[AUTRE], "telephone", "+2250799999999")
         texte = json.dumps(appeler("mon_dossier", ELEVE, cours=self.cours), default=str)

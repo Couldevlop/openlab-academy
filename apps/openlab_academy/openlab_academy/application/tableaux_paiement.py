@@ -93,12 +93,15 @@ def _prochaine(d: Dossier, aujourd_hui: date) -> dict | None:
     return {"date_limite": _iso(e.date_limite if e else None), "montant": montant}
 
 
-def vue_apprenant(d: DossierEnregistre, titre: str, aujourd_hui: date, en_ligne: bool) -> dict:
-    """Dossier de l'apprenant connecté (le sien seulement : le point d'entrée le charge par la session)."""
+def vue_apprenant(d: DossierEnregistre, titre: str, aujourd_hui: date, en_ligne: bool,
+                  instructions_virement: str | None = "") -> dict:
+    """Dossier de l'apprenant connecté (le sien seulement : le point d'entrée le charge par la session), avec son
+    blocage et les instructions de virement publiques des réglages (texte brut)."""
     return {"cours": d.cours, "titre": titre, "mode": d.mode.value, "telephone": d.telephone,
             "tarif": _tarif(d.tarif), "echeances": _echeances(d.dossier), "paye": d.dossier.paye,
             "reste": reste_du(d.dossier), "statut": statut(d.dossier, aujourd_hui).value,
-            "prochaine": _prochaine(d.dossier, aujourd_hui), "paiement_en_ligne": en_ligne}
+            "prochaine": _prochaine(d.dossier, aujourd_hui), "paiement_en_ligne": en_ligne,
+            "bloque": bloque(d.dossier, aujourd_hui), "instructions_virement": instructions_virement or ""}
 
 
 def _ligne(x: LigneDossier, aujourd_hui: date) -> dict:
