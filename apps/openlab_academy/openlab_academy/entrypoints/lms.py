@@ -4,20 +4,25 @@ import datetime
 
 import frappe
 from frappe.utils import getdate, now_datetime, nowdate
+from lms.lms import api as lms_api
 from lms.lms import utils as lms_utils
+from lms.lms.doctype.course_lesson import course_lesson
 from lms.lms.doctype.lms_quiz import lms_quiz
 
 from openlab_academy.application.acces_exercices import EnregistrerOuverture, VerifierAccesExercices
 from openlab_academy.application.acces_parcours import cours_bloques, parcours_bloque, redirection_paiement
 from openlab_academy.domain.verrou import ExercicesVerrouilles
+from openlab_academy.infrastructure import contenus_parcours_frappe as contenus
 from openlab_academy.infrastructure import reglages_source_frappe
-from openlab_academy.infrastructure.depot_dossiers_frappe import DepotDossiersFrappe
+from openlab_academy.infrastructure.depot_dossiers_frappe import DOSSIER, DepotDossiersFrappe
 from openlab_academy.infrastructure.depot_ouvertures_frappe import DepotOuverturesFrappe
 
 ROLES_NON_BLOQUES = {"System Manager", "Moderator", "Course Creator", "Batch Evaluator", "Intendant OpenLab"}
 PREFIXE_CAS = "Mise en situation"
 LECTURE = {"read", "select", "print"}
 EVALUATIONS = ("LMS Quiz", "LMS Assignment", "LMS Programming Exercise")
+CACHE = "openlab_blocages"
+TITRE_ERREUR = "Blocage par parcours : calcul impossible"
 
 
 class ParcoursBloque(frappe.ValidationError):
@@ -28,9 +33,23 @@ class ParcoursBloque(frappe.ValidationError):
         super().__init__("Paiement requis")
 
 
-# --- blocage par parcours : calculé à chaque requête depuis le dossier, jamais stocké ---------------------
+# --- blocage par parcours : calculé depuis le dossier (une fois par requête), jamais stocké -----------------
+# Fail-safe : une erreur de calcul est journalisée et ne bloque pas (le paiement ne doit pas fermer un parcours
+# par accident) ; les règles d'accès du LMS continuent de s'appliquer.
 def aujourd_hui() -> datetime.date:
     return getdate(nowdate())
+
+
+def _cache() -> dict:
+    cache = getattr(frappe.local, CACHE, None)
+    if cache is None:
+        cache = {}
+        setattr(frappe.local, CACHE, cache)
+    return cache
+
+
+def vider_cache() -> None:
+    setattr(frappe.local, CACHE, {})
 
 
 def _exempte(utilisateur: str) -> bool:
@@ -41,45 +60,61 @@ def _concerne(utilisateur: str | None) -> bool:
     return bool(utilisateur) and utilisateur != "Guest" and not _exempte(utilisateur)
 
 
+def _journaliser(utilisateur: str, cours: str) -> None:
+    """Seulement le nom du dossier et le parcours : jamais l'adresse de l'apprenant ni le détail du dossier."""
+    try:
+        dossier = frappe.db.get_value(DOSSIER, {"apprenant": utilisateur, "cours": cours}) or "inconnu"
+    except Exception:
+        dossier = "inconnu"
+    frappe.log_error(title=TITRE_ERREUR, message=f"dossier {dossier}, parcours {cours}")
+
+
 def bloque_pour(utilisateur: str, cours: str | None) -> bool:
-    return bool(cours) and _concerne(utilisateur) and parcours_bloque(
-        DepotDossiersFrappe(), utilisateur, cours, aujourd_hui())
+    if not cours or not _concerne(utilisateur):
+        return False
+    cle = (utilisateur, cours, aujourd_hui())
+    cache = _cache()
+    if cle not in cache:
+        try:
+            cache[cle] = parcours_bloque(DepotDossiersFrappe(), utilisateur, cours, cle[2])
+        except Exception:
+            _journaliser(utilisateur, cours)
+            return False
+    return cache[cle]
 
 
-def _refuser_si_bloque(cours: str) -> None:
-    if bloque_pour(frappe.session.user, cours):
+def _refuser_si_bloque(cours: str | None, utilisateur: str | None = None) -> None:
+    if bloque_pour(utilisateur or frappe.session.user, cours):
         e = ParcoursBloque(cours)
         frappe.local.response["redirection"] = e.redirection
         raise e
 
 
-def cours_de_l_evaluation(doctype: str, nom: str) -> set[str]:
-    """Parcours qui portent l'évaluation : son champ `course`, la leçon d'un quiz, les leçons qui la placent."""
-    lecons = set(frappe.get_all("LMS Lesson Assessment", {"assessment_type": doctype, "assessment_name": nom},
-                                pluck="parent"))
-    champs = [c for c in ("course", "lesson") if frappe.get_meta(doctype).has_field(c)]
-    valeurs = frappe.db.get_value(doctype, nom, champs, as_dict=True) if champs else None
-    cours = {valeurs.get("course")} if valeurs else set()
-    if valeurs and valeurs.get("lesson"):
-        lecons.add(valeurs.lesson)
-    if lecons:
-        cours |= set(frappe.get_all("Course Lesson", {"name": ["in", list(lecons)]}, pluck="course"))
-    return {c for c in cours if c}
+def _cours_bloquants(utilisateur: str, doctype: str, nom: str) -> list[str]:
+    """Parcours bloqués qui portent l'évaluation, si TOUS ses parcours le sont (sinon aucun) : une évaluation
+    partagée reste ouverte tant qu'un de ses parcours l'est."""
+    try:
+        cours = contenus.cours_de_l_evaluation(doctype, nom)
+    except Exception:
+        frappe.log_error(title=TITRE_ERREUR, message=f"évaluation {doctype} {nom}")
+        return []
+    bloques = sorted(c for c in cours if bloque_pour(utilisateur, c))
+    return bloques if cours and len(bloques) == len(cours) else []
 
 
-def _evaluation_bloquee(utilisateur: str, doctype: str, nom: str) -> bool:
-    """Bloquée dès qu'un parcours qui la porte est bloqué (une évaluation partagée suit le plus strict)."""
-    return any(bloque_pour(utilisateur, c) for c in cours_de_l_evaluation(doctype, nom))
+def _refuser_evaluation_bloquee(utilisateur: str, doctype: str, nom: str) -> None:
+    if _concerne(utilisateur) and (bloques := _cours_bloquants(utilisateur, doctype, nom)):
+        _refuser_si_bloque(bloques[0], utilisateur)
 
 
 def lecture_permise(doc, ptype="read", user=None, debug=False):
     """Hook has_permission (leçons, chapitres, évaluations) : refuse la lecture d'un parcours bloqué, sinon sans
-    avis (None) pour laisser décider les règles du LMS — un True accorderait l'accès à leur place."""
+    avis (None). Jamais True : Frappe retient le premier avis non nul, un True court-circuiterait les refus du LMS."""
     utilisateur = user or frappe.session.user
     if ptype not in LECTURE or not _concerne(utilisateur):
         return None
     if doc.doctype in EVALUATIONS:
-        refuse = _evaluation_bloquee(utilisateur, doc.doctype, doc.name)
+        refuse = bool(_cours_bloquants(utilisateur, doc.doctype, doc.name))
     else:
         refuse = bloque_pour(utilisateur, doc.get("course"))
     return False if refuse else None
@@ -88,46 +123,29 @@ def lecture_permise(doc, ptype="read", user=None, debug=False):
 def _cours_bloques(utilisateur: str | None) -> tuple[str, ...]:
     if not _concerne(utilisateur):
         return ()
-    return cours_bloques(DepotDossiersFrappe(), utilisateur, aujourd_hui())
-
-
-def _liste(cours: tuple[str, ...]) -> str:
-    return ", ".join(frappe.db.escape(c) for c in cours)
+    try:
+        return cours_bloques(DepotDossiersFrappe(), utilisateur, aujourd_hui())
+    except Exception:
+        frappe.log_error(title=TITRE_ERREUR, message="liste des parcours bloqués")
+        return ()
 
 
 def conditions_lecons(user=None, doctype=None) -> str:
     """Listes de leçons (corps compris) : celles des parcours bloqués en sont retirées."""
-    cours = _cours_bloques(user or frappe.session.user)
-    return f"ifnull(`tabCourse Lesson`.course, '') not in ({_liste(cours)})" if cours else ""
-
-
-def _conditions_evaluations(doctype: str, user, champ_cours: bool, champ_lecon: bool) -> str:
-    cours = _cours_bloques(user or frappe.session.user)
-    if not cours:
-        return ""
-    liste = _liste(cours)
-    conditions = [
-        f"`tab{doctype}`.name not in (select la.assessment_name from `tabLMS Lesson Assessment` la"
-        f" inner join `tabCourse Lesson` cl on cl.name = la.parent"
-        f" where la.assessment_type = {frappe.db.escape(doctype)} and cl.course in ({liste}))"]
-    if champ_cours:
-        conditions.append(f"ifnull(`tab{doctype}`.course, '') not in ({liste})")
-    if champ_lecon:
-        conditions.append(f"ifnull(`tab{doctype}`.lesson, '') not in"
-                          f" (select cl.name from `tabCourse Lesson` cl where cl.course in ({liste}))")
-    return " and ".join(conditions)
+    return contenus.condition_lecons(_cours_bloques(user or frappe.session.user))
 
 
 def conditions_quiz(user=None, doctype=None) -> str:
-    return _conditions_evaluations("LMS Quiz", user, champ_cours=True, champ_lecon=True)
+    return contenus.condition_evaluations("LMS Quiz", _cours_bloques(user or frappe.session.user), True, True)
 
 
 def conditions_devoirs(user=None, doctype=None) -> str:
-    return _conditions_evaluations("LMS Assignment", user, champ_cours=True, champ_lecon=False)
+    return contenus.condition_evaluations("LMS Assignment", _cours_bloques(user or frappe.session.user), True, False)
 
 
 def conditions_exercices(user=None, doctype=None) -> str:
-    return _conditions_evaluations("LMS Programming Exercise", user, champ_cours=False, champ_lecon=False)
+    return contenus.condition_evaluations("LMS Programming Exercise", _cours_bloques(user or frappe.session.user),
+                                          False, False)
 
 
 # --- surcharges des méthodes whitelistées du LMS ----------------------------------------------------------
@@ -143,29 +161,35 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
     return details
 
 
-def _refuser_evaluation_bloquee(doctype: str, nom: str) -> None:
-    utilisateur = frappe.session.user
-    if not _concerne(utilisateur):
-        return
-    for cours in sorted(cours_de_l_evaluation(doctype, nom)):
-        _refuser_si_bloque(cours)
-
-
 @frappe.whitelist()
 def get_quiz_with_questions(quiz: str) -> dict:
     """Surcharge : questions d'un quiz d'un parcours bloqué jamais servies."""
-    _refuser_evaluation_bloquee("LMS Quiz", quiz)
+    _refuser_evaluation_bloquee(frappe.session.user, "LMS Quiz", quiz)
     return lms_utils.get_quiz_with_questions(quiz)
 
 
 @frappe.whitelist()
 def check_answer(quiz: str, question: str, question_type: str, answers: str):
     """Surcharge : bonnes réponses d'un quiz d'un parcours bloqué jamais révélées."""
-    _refuser_evaluation_bloquee("LMS Quiz", quiz)
+    _refuser_evaluation_bloquee(frappe.session.user, "LMS Quiz", quiz)
     return lms_quiz.check_answer(quiz, question, question_type, answers)
 
 
-# --- verrou des exercices -------------------------------------------------------------------------------
+@frappe.whitelist()
+def mark_lesson_progress(course: str, chapter_number: int, lesson_number: int):
+    """Surcharge : pas de progression enregistrée sur un parcours bloqué."""
+    _refuser_si_bloque(course)
+    return lms_api.mark_lesson_progress(course, chapter_number, lesson_number)
+
+
+@frappe.whitelist()
+def save_progress(lesson: str, course: str | None = None, scorm_details: dict = None):
+    """Surcharge : idem pour l'enregistrement direct (SCORM) ; le parcours retenu est celui de la leçon."""
+    _refuser_si_bloque(contenus.cours_de_la_lecon(lesson))
+    return course_lesson.save_progress(lesson, course, scorm_details)
+
+
+# --- soumissions : parcours bloqué, puis verrou des exercices ----------------------------------------------
 def _verifier(apprenant: str, lecon: str | None) -> None:
     if not lecon or ROLES_NON_BLOQUES & set(frappe.get_roles(apprenant)):
         return
@@ -177,10 +201,12 @@ def _verifier(apprenant: str, lecon: str | None) -> None:
 
 
 def avant_soumission_quiz(doc, method=None) -> None:
+    _refuser_evaluation_bloquee(doc.member, "LMS Quiz", doc.quiz)
     _verifier(doc.member, frappe.db.get_value("LMS Quiz", doc.quiz, "lesson"))
 
 
 def avant_soumission_devoir(doc, method=None) -> None:
+    _refuser_evaluation_bloquee(doc.member, "LMS Assignment", doc.assignment)
     if not (frappe.db.get_value("LMS Assignment", doc.assignment, "title") or "").startswith(PREFIXE_CAS):
         return
     lecon = frappe.db.get_value("LMS Lesson Assessment", {"assessment_name": doc.assignment}, "parent")

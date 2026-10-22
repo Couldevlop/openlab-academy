@@ -18,11 +18,14 @@ web_include_css = ["/assets/openlab_academy/css/openlab.css"]
 website_route_rules = [{"from_route": "/espace/<path:app_path>", "to_route": "espace"}]
 
 # parcours en retard de paiement : leçons, quiz et réponses refusés par l'API (ParcoursBloque), documents et listes
-# retirés par les permissions ; nos hooks has_permission ne font que refuser (None sinon)
+# retirés par les permissions, progression refusée. Nos hooks has_permission ne font que refuser (None sinon) :
+# Frappe retient le premier avis non nul, un True court-circuiterait les refus du LMS.
 override_whitelisted_methods = {
     "lms.lms.utils.get_lesson": "openlab_academy.entrypoints.lms.get_lesson",
     "lms.lms.utils.get_quiz_with_questions": "openlab_academy.entrypoints.lms.get_quiz_with_questions",
     "lms.lms.doctype.lms_quiz.lms_quiz.check_answer": "openlab_academy.entrypoints.lms.check_answer",
+    "lms.lms.api.mark_lesson_progress": "openlab_academy.entrypoints.lms.mark_lesson_progress",
+    "lms.lms.doctype.course_lesson.course_lesson.save_progress": "openlab_academy.entrypoints.lms.save_progress",
 }
 has_permission = {d: "openlab_academy.entrypoints.lms.lecture_permise"
                   for d in ("Course Lesson", "Course Chapter", "LMS Quiz", "LMS Assignment", "LMS Programming Exercise")}

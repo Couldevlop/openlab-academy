@@ -54,6 +54,8 @@ class Base(FrappeTestCase):
     """A : inscrit, frais impayés (bloqué) ; B : inscrit, dispensé (ouvert)."""
 
     def setUp(self):
+        self.requete_initiale = getattr(frappe.local, "request", None)
+        lms.vider_cache()
         depot = DepotFrappe(commit=False, reglages=Reglages())
         self.a = depot.creer(parcours(title="Parcours bloqué test", questions_par_quiz=5,
                                       blocs=(Bloc("B1", (module(),)),)))
@@ -77,7 +79,13 @@ class Base(FrappeTestCase):
     def tearDown(self):
         frappe.set_user("Administrator")
         frappe.local.response.pop("redirection", None)
+        frappe.local.request = self.requete_initiale
+        lms.vider_cache()
         frappe.db.rollback()
+
+    def placer(self, doctype, nom, lecon):
+        frappe.get_doc({"doctype": "LMS Lesson Assessment", "parent": lecon, "parenttype": "Course Lesson",
+                        "parentfield": "assessments", "assessment_type": doctype, "assessment_name": nom}).db_insert()
 
 
 class TestLecon(Base):
@@ -111,7 +119,7 @@ class TestLecon(Base):
 
     def test_delai_accorde_debloque(self):
         nom = frappe.db.get_value(DOSSIER, {"apprenant": ELEVE, "cours": self.a})
-        DepotDossiersFrappe().fixer_delai(nom, datetime.date.today() + datetime.timedelta(days=3))
+        DepotDossiersFrappe().fixer_delai(nom, lms.aujourd_hui() + datetime.timedelta(days=3))
         frappe.set_user(ELEVE)
         self.assertEqual(lms.get_lesson(self.a, 1, 1)["name"], self.lecon_a)
 
@@ -132,6 +140,47 @@ class TestLecon(Base):
         frappe.set_user(CORRECTEUR)
         self.assertEqual(lms.get_lesson(self.a, 1, 1)["name"], self.lecon_a)
 
+    def test_depot_en_erreur_jamais_bloquant(self):
+        """Fail-safe : une erreur de calcul est journalisée (dossier et parcours seulement) et ne bloque pas."""
+        frappe.set_user(ELEVE)
+        with mock.patch.object(lms, "parcours_bloque", side_effect=RuntimeError("panne")), \
+                mock.patch.object(frappe, "log_error") as journal:
+            self.assertFalse(lms.bloque_pour(ELEVE, self.a))
+            self.assertEqual(lms.get_lesson(self.a, 1, 1)["name"], self.lecon_a)
+        nom = frappe.db.get_value(DOSSIER, {"apprenant": ELEVE, "cours": self.a})
+        message = journal.call_args.kwargs["message"]
+        self.assertIn(nom, message)
+        self.assertIn(self.a, message)
+        self.assertNotIn(ELEVE, message + journal.call_args.kwargs["title"])
+
+    def test_liste_en_erreur_sans_filtre(self):
+        with mock.patch.object(lms, "cours_bloques", side_effect=RuntimeError("panne")), \
+                mock.patch.object(frappe, "log_error") as journal:
+            self.assertEqual(lms.conditions_lecons(ELEVE), "")
+        self.assertNotIn(ELEVE, journal.call_args.kwargs["message"])
+
+    def test_cohorte_supprimee_toleree(self):
+        frappe.db.set_value(DOSSIER, {"apprenant": ELEVE, "cours": self.a}, "cohorte", "cohorte-disparue")
+        self.assertTrue(lms.bloque_pour(ELEVE, self.a))
+
+    def test_resultat_mis_en_cache_pour_la_requete(self):
+        with mock.patch.object(lms, "parcours_bloque", return_value=True) as calcul:
+            self.assertTrue(lms.bloque_pour(ELEVE, self.a))
+            self.assertTrue(lms.bloque_pour(ELEVE, self.a))
+        calcul.assert_called_once()
+        self.assertEqual(lms._cache(), {(ELEVE, self.a, lms.aujourd_hui()): True})
+
+    def test_cache_cree_a_la_premiere_requete(self):
+        delattr(frappe.local, lms.CACHE)
+        self.assertEqual(lms._cache(), {})
+        self.assertIs(lms._cache(), lms._cache())
+
+    def test_journal_sans_dossier_lisible(self):
+        with mock.patch.object(frappe.db, "get_value", side_effect=RuntimeError("panne")), \
+                mock.patch.object(frappe, "log_error") as journal:
+            lms._journaliser(ELEVE, self.a)
+        self.assertEqual(journal.call_args.kwargs["message"], f"dossier inconnu, parcours {self.a}")
+
     def test_invite_jamais_bloque(self):
         frappe.set_user("Guest")
         lms.get_lesson(self.a, 1, 1)  # aucune exception : l'aperçu public reste régi par le LMS
@@ -142,10 +191,12 @@ class TestReponseJson(Base):
         """Le navigateur reçoit exc_type == "ParcoursBloque" et l'URL de paiement (frappe.utils.response)."""
         frappe.set_user(ELEVE)
         frappe.local.request = requete("/api/method/lms.lms.utils.get_lesson", entetes={"Accept": "application/json"})
-        try:
-            lms.get_lesson(self.a, 1, 1)
-        except lms.ParcoursBloque:
-            reponse = frappe.utils.response.report_error(lms.ParcoursBloque.http_status_code)
+        with self.assertRaises(lms.ParcoursBloque):
+            try:
+                lms.get_lesson(self.a, 1, 1)
+            except lms.ParcoursBloque:  # report_error lit l'exception en cours (sys.exc_info)
+                reponse = frappe.utils.response.report_error(lms.ParcoursBloque.http_status_code)
+                raise
         corps = json.loads(reponse.get_data(as_text=True))
         self.assertEqual(corps["exc_type"], "ParcoursBloque")
         self.assertEqual(corps["redirection"], f"/espace/paiement/{self.a}")
@@ -201,23 +252,32 @@ class TestEvaluations(Base):
                                    "language": "Python", "problem_statement": "Secret",
                                    "test_cases": [{"expected_output": "1"}]}).insert(
             ignore_permissions=True)
-        frappe.get_doc({"doctype": "LMS Lesson Assessment", "parent": self.lecon_a, "parenttype": "Course Lesson",
-                        "parentfield": "assessments", "assessment_type": "LMS Programming Exercise",
-                        "assessment_name": exercice.name}).db_insert()
-        self.assertEqual(lms.cours_de_l_evaluation("LMS Programming Exercise", exercice.name), {self.a})
+        self.placer("LMS Programming Exercise", exercice.name, self.lecon_a)
+        self.assertEqual(lms.contenus.cours_de_l_evaluation("LMS Programming Exercise", exercice.name), {self.a})
         frappe.set_user(ELEVE)
         self.assertFalse(lms.lecture_permise(exercice, "read", ELEVE))
         self.assertNotIn(exercice.name, frappe.get_list("LMS Programming Exercise", pluck="name"))
+
+    def test_quiz_partage_avec_un_parcours_ouvert_servi(self):
+        self.placer("LMS Quiz", self.quiz_a, self.lecon_b)
+        frappe.set_user(ELEVE)
+        self.assertEqual(lms.get_quiz_with_questions(self.quiz_a)["quiz"]["name"], self.quiz_a)
+        self.assertIsNone(lms.lecture_permise(frappe.get_doc("LMS Quiz", self.quiz_a), "read", ELEVE))
+
+    def test_calcul_des_evaluations_en_erreur_jamais_bloquant(self):
+        with mock.patch.object(lms.contenus, "cours_de_l_evaluation", side_effect=RuntimeError("panne")), \
+                mock.patch.object(frappe, "log_error"):
+            self.assertIsNone(lms.lecture_permise(frappe.get_doc("LMS Quiz", self.quiz_a), "read", ELEVE))
 
     def test_evaluation_hors_parcours_jamais_bloquee(self):
         exercice = frappe.get_doc({"doctype": "LMS Programming Exercise", "title": "Exo libre", "language": "Python",
                                    "problem_statement": "Libre", "test_cases": [{"expected_output": "1"}]}).insert(
             ignore_permissions=True)
-        self.assertEqual(lms.cours_de_l_evaluation("LMS Programming Exercise", exercice.name), set())
+        self.assertEqual(lms.contenus.cours_de_l_evaluation("LMS Programming Exercise", exercice.name), set())
         self.assertIsNone(lms.lecture_permise(exercice, "read", ELEVE))
 
     def test_exemptes_servis_sans_calcul(self):
-        with mock.patch.object(lms, "cours_de_l_evaluation") as calcul:
+        with mock.patch.object(lms.contenus, "cours_de_l_evaluation") as calcul:
             self.assertEqual(lms.get_quiz_with_questions(self.quiz_a)["quiz"]["name"], self.quiz_a)
         calcul.assert_not_called()
 
@@ -227,6 +287,55 @@ class TestEvaluations(Base):
         self.assertIsNone(lms.lecture_permise(doc, "read", "Administrator"))
         self.assertIsNone(lms.lecture_permise(doc, "read", "Guest"))
         self.assertIsNone(lms.lecture_permise(frappe.get_doc("Course Lesson", self.lecon_b), "read", ELEVE))
+
+
+class TestEnvois(Base):
+    """Ce qu'un apprenant bloqué envoie pour le parcours bloqué est refusé aussi."""
+
+    def soumettre_quiz(self, quiz, cours):
+        return frappe.get_doc({"doctype": "LMS Quiz Submission", "quiz": quiz, "member": ELEVE, "course": cours,
+                               "score": 5, "score_out_of": 5, "percentage": 100,
+                               "passing_percentage": 100}).insert(ignore_permissions=True)
+
+    def test_soumission_de_quiz_refusee(self):
+        frappe.set_user(ELEVE)
+        with self.assertRaises(lms.ParcoursBloque):
+            self.soumettre_quiz(self.quiz_a, self.a)
+
+    def test_soumission_de_devoir_refusee(self):
+        frappe.set_user(ELEVE)
+        for devoir in frappe.get_all("LMS Assignment", {"course": self.a}, pluck="name"):
+            with self.subTest(devoir=devoir), self.assertRaises(lms.ParcoursBloque):
+                frappe.get_doc({"doctype": "LMS Assignment Submission", "assignment": devoir, "member": ELEVE,
+                                "answer": "https://github.com/aya/livrable"}).insert(ignore_permissions=True)
+
+    def test_soumission_du_parcours_ouvert_suit_le_verrou_habituel(self):
+        frappe.set_user(ELEVE)
+        with self.assertRaisesRegex(frappe.ValidationError, "ouvrez d'abord la leçon"):
+            self.soumettre_quiz(self.quiz_b, self.b)
+
+    def test_progression_refusee(self):
+        frappe.set_user(ELEVE)
+        with mock.patch.object(lms.lms_api, "mark_lesson_progress") as marque, self.assertRaises(lms.ParcoursBloque):
+            lms.mark_lesson_progress(self.a, 1, 1)
+        marque.assert_not_called()
+        with mock.patch.object(lms.course_lesson, "save_progress") as sauve, self.assertRaises(lms.ParcoursBloque):
+            lms.save_progress(self.lecon_a, self.b)  # le parcours retenu est celui de la leçon
+        sauve.assert_not_called()
+
+    def test_progression_du_parcours_ouvert_transmise(self):
+        frappe.set_user(ELEVE)
+        with mock.patch.object(lms.lms_api, "mark_lesson_progress", return_value=None) as marque:
+            lms.mark_lesson_progress(self.b, 1, 1)
+        marque.assert_called_once_with(self.b, 1, 1)
+        with mock.patch.object(lms.course_lesson, "save_progress", return_value=7) as sauve:
+            self.assertEqual(lms.save_progress(self.lecon_b, None, {"is_complete": 1}), 7)
+        sauve.assert_called_once_with(self.lecon_b, None, {"is_complete": 1})
+
+    def test_soumission_en_erreur_jamais_bloquante(self):
+        with mock.patch.object(lms, "parcours_bloque", side_effect=RuntimeError("panne")), \
+                mock.patch.object(frappe, "log_error"):
+            lms._refuser_evaluation_bloquee(ELEVE, "LMS Assignment", self.devoir_a)
 
 
 class TestListes(Base):
@@ -305,6 +414,8 @@ class TestHooks(FrappeTestCase):
             "lms.lms.utils.get_lesson": "openlab_academy.entrypoints.lms.get_lesson",
             "lms.lms.utils.get_quiz_with_questions": "openlab_academy.entrypoints.lms.get_quiz_with_questions",
             "lms.lms.doctype.lms_quiz.lms_quiz.check_answer": "openlab_academy.entrypoints.lms.check_answer",
+            "lms.lms.api.mark_lesson_progress": "openlab_academy.entrypoints.lms.mark_lesson_progress",
+            "lms.lms.doctype.course_lesson.course_lesson.save_progress": "openlab_academy.entrypoints.lms.save_progress",
         })
         for doctype in ("Course Lesson", "Course Chapter", "LMS Quiz", "LMS Assignment", "LMS Programming Exercise"):
             self.assertEqual(hooks.has_permission[doctype], "openlab_academy.entrypoints.lms.lecture_permise")

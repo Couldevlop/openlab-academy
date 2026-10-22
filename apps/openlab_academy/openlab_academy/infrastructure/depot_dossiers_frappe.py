@@ -30,13 +30,14 @@ class DepotDossiersFrappe:
             return None
         d = frappe.get_doc(DOSSIER, nom)
         lot = frappe.db.get_value("LMS Batch", d.cohorte, ["start_date", "end_date"], as_dict=True)
+        inscription = getdate(d.date_inscription or d.creation)  # repli si la cohorte a été supprimée
         tarif = Tarif(d.frais_inscription, d.prix_une_fois, d.prix_deux_tranches, d.prix_mensuel)
         echeances = tuple(Echeance(getdate(e.date_limite), e.montant, e.libelle or "") for e in d.echeances)
         dossier = Dossier(echeances, self.paye(nom), getdate(d.delai_jusqu_au) if d.delai_jusqu_au else None,
                           bool(d.dispense), frais_inscription=d.frais_inscription)
         return DossierEnregistre(nom, d.apprenant, d.cours, Mode(d.mode or Mode.UNE_FOIS), d.telephone or "", tarif,
-                                 getdate(lot.start_date), getdate(lot.end_date), dossier,
-                                 getdate(d.date_inscription or d.creation))
+                                 getdate(lot.start_date) if lot else inscription,
+                                 getdate(lot.end_date) if lot else inscription, dossier, inscription)
 
     def creer(self, d: NouveauDossier) -> str:
         return frappe.get_doc({

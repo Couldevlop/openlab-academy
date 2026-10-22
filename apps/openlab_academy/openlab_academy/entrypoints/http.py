@@ -6,6 +6,7 @@ import frappe
 from werkzeug.exceptions import abort
 from werkzeug.utils import redirect
 
+from openlab_academy.application.acces_parcours import redirection_paiement
 from openlab_academy.entrypoints import lms
 from openlab_academy.infrastructure.habillage import injecter
 
@@ -41,4 +42,4 @@ def before_request() -> None:
     Frappe renvoie telle quelle une HTTPException levée ici (frappe.Redirect n'y est pas géré)."""
     cours = _parcours_demande(frappe.local.request)
     if cours and lms.bloque_pour(frappe.session.user, cours):
-        abort(redirect(lms.redirection_paiement(cours), 302))
+        abort(redirect(redirection_paiement(cours), 302))
