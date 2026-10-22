@@ -165,6 +165,7 @@ export const ligneIntendance = (autres: Partial<LigneIntendance> = {}): LigneInt
   parcours: 'fondamentaux-data',
   titre: 'Fondamentaux de la data science',
   cohorte: 'data-2026-10',
+  cohorte_titre: 'Data, octobre 2026',
   mode: 'deux_tranches',
   paye: 10000,
   total: 110000,
@@ -194,6 +195,7 @@ export const vueIntendance = (autres: Partial<VueIntendance> = {}): VueIntendanc
       parcours: 'python-avance',
       titre: 'Python avancé',
       cohorte: 'python-2026-09',
+      cohorte_titre: 'Python, septembre 2026',
       mode: 'mensuel',
       paye: 0,
       total: 120000,
@@ -216,6 +218,7 @@ export const ficheIntendance = (autres: Partial<FicheIntendance> = {}): FicheInt
   parcours: 'fondamentaux-data',
   titre: 'Fondamentaux de la data science',
   cohorte: 'data-2026-10',
+  cohorte_titre: 'Data, octobre 2026',
   mode: 'deux_tranches',
   paye: 10000,
   total: 110000,
@@ -249,6 +252,10 @@ export const ficheIntendance = (autres: Partial<FicheIntendance> = {}): FicheInt
   journal: [
     {
       dossier: 'DP-0001',
+      apprenant: 'awa.kone@example.ci',
+      nom: 'Awa Koné',
+      parcours: 'fondamentaux-data',
+      titre: 'Fondamentaux de la data science',
       acteur: 'intendant@openlab.ci',
       action: 'virement_enregistre',
       motif: 'Relevé du 22 octobre',
@@ -281,6 +288,10 @@ export const resumeFinances = (autres: Partial<ResumeFinances> = {}): ResumeFina
   dernieres_actions: [
     {
       dossier: 'DP-0002',
+      apprenant: 'yao.bamba@example.ci',
+      nom: 'Yao Bamba',
+      parcours: 'python-avance',
+      titre: 'Python avancé',
       acteur: 'intendant@openlab.ci',
       action: 'delai_accorde',
       motif: 'Accord avec la famille',

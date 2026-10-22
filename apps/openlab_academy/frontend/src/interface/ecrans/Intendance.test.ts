@@ -90,6 +90,12 @@ describe('Intendance', () => {
       du: '2026-10-01',
       au: '2026-10-31',
     })
+    expect(w.findAll('select[name="statut"] option').map((o) => o.text())).toContain('Bloqué')
+    expect(w.findAll('select[name="cohorte"] option').map((o) => o.text())).toEqual([
+      'Toutes les cohortes',
+      'Data, octobre 2026',
+      'Python, septembre 2026',
+    ])
     expect(w.find('a.export').attributes('href')).toBe(
       '/export?parcours=python-avance&mode=mensuel&statut=en_retard&du=2026-10-01&au=2026-10-31',
     )
@@ -102,6 +108,16 @@ describe('Intendance', () => {
     await w.find('button.effacer').trigger('click')
     await flushPromises()
     expect(ports.intendance.intendance).toHaveBeenLastCalledWith({})
+  })
+
+  it('statut « Bloqué » filtré par le serveur ; cohorte affichée par son titre', async () => {
+    const { w, ports } = await afficher()
+    expect(w.find('tbody tr').text()).toContain('Data, octobre 2026')
+    expect(w.find('tbody tr').text()).not.toContain('data-2026-10')
+    await w.find('select[name="statut"]').setValue('bloque')
+    await w.find('form.filtres').trigger('submit')
+    await flushPromises()
+    expect(ports.intendance.intendance).toHaveBeenLastCalledWith({ statut: 'bloque' })
   })
 
   it('filtre refusé par le serveur : message en texte', async () => {
@@ -184,6 +200,9 @@ describe('Fiche d’un dossier', () => {
     expect(entree.find('.acteur').text()).toBe('intendant@openlab.ci')
     expect(entree.find('.action').text()).toBe('Virement enregistré')
     expect(entree.find('time').text()).toBe('22 oct. 2026, 09:12')
+    expect(entree.find('time').attributes('datetime')).toBe('2026-10-22T09:12:00Z')
+    expect(w.find('.identite').text()).toContain('Data, octobre 2026')
+    expect(w.find('.identite').text()).not.toContain('data-2026-10')
     expect(entree.find('.motif').text()).toBe('Relevé du 22 octobre')
   })
 
@@ -225,6 +244,54 @@ describe('Fiche d’un dossier', () => {
     expect(w.find('input[name="jusquau"]').attributes('min')).toBe('2026-11-03')
     await w.findAll('form.delai button').at(-1)!.trigger('click')
     expect(w.find('form.delai').exists()).toBe(false)
+  })
+
+  it('Maj+Tab depuis le titre (focus à l’ouverture) reste dans le panneau', async () => {
+    const { w } = await afficher()
+    await ouvrirFiche(w)
+    const dialogue = w.find('[role="dialog"]')
+    expect(document.activeElement).toBe(dialogue.find('h2').element)
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+    const boutons = dialogue.findAll('button')
+    expect(document.activeElement).toBe(boutons[boutons.length - 1]!.element)
+    ;(dialogue.find('h2').element as HTMLElement).focus()
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))
+    expect(document.activeElement).toBe(dialogue.find('button.fermer').element)
+  })
+
+  it('après un virement enregistré : focus sur le message, Tab piégé et Échap ferme encore', async () => {
+    const { w } = await afficher()
+    await ouvrirFiche(w)
+    await w.find('button.vers-virement').trigger('click')
+    const form = w.find('form.virement')
+    await form.find('input[name="montant"]').setValue('50000')
+    await form.find('input[name="reference"]').setValue('VIR-2026-003')
+    await form.find('input[name="motif"]').setValue('Relevé')
+    await form.trigger('submit')
+    await flushPromises()
+    const succes = w.find('.succes')
+    expect(document.activeElement).toBe(succes.element)
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))
+    expect(w.find('[role="dialog"]').element.contains(document.activeElement)).toBe(true)
+    document.body.focus()
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await flushPromises()
+    expect(w.find('[role="dialog"]').exists()).toBe(false)
+    expect(document.activeElement).toBe(w.findAll('.ouvrir')[0]!.element)
+  })
+
+  it('fermeture : la ligne ayant disparu de la liste, le focus va au titre de la liste', async () => {
+    const { w, ports } = await afficher()
+    await ouvrirFiche(w)
+    ports.intendance.intendance.mockResolvedValue(vueIntendance({ lignes: [] }))
+    await w.find('button.vers-delai').trigger('click')
+    await w.find('input[name="jusquau"]').setValue('2026-11-20')
+    await w.find('textarea[name="motif"]').setValue('Accord')
+    await w.find('form.delai').trigger('submit')
+    await flushPromises()
+    await w.find('button.fermer').trigger('click')
+    await flushPromises()
+    expect(document.activeElement).toBe(w.find('#titre-liste').element)
   })
 
   it('virement : montant vide et référence manquante refusés, sans appel', async () => {

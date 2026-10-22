@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { ficheIntendance, ligneIntendance } from '../test/fabriques'
 import {
   echeanceADecaler,
   etatLigne,
   formaterHorodatage,
+  isoHorodatage,
   libelleAction,
   libelleEtat,
   montantSaisi,
@@ -44,6 +45,7 @@ describe('état d’une ligne (statut du serveur, blocage, rappel)', () => {
 describe('filtres', () => {
   it('seules les valeurs saisies partent, sans blancs', () => {
     expect(parametresFiltres(FILTRES_VIDES)).toEqual({})
+    expect(parametresFiltres({ ...FILTRES_VIDES, statut: 'bloque' })).toEqual({ statut: 'bloque' })
     expect(
       parametresFiltres({
         ...FILTRES_VIDES,
@@ -173,5 +175,27 @@ describe('journal', () => {
     expect(formaterHorodatage('2026-11-03 21:12:00.123456')).toBe('3 nov. 2026, 21:12')
     expect(formaterHorodatage(null)).toBe('')
     expect(formaterHorodatage('n’importe quoi')).toBe('')
+  })
+
+  describe('heure du serveur (Abidjan, UTC), quel que soit le fuseau du navigateur', () => {
+    const fuseau = process.env.TZ
+    afterEach(() => {
+      process.env.TZ = fuseau
+    })
+
+    it('New York, Tokyo : même heure affichée, attribut datetime ISO en UTC', () => {
+      for (const tz of ['America/New_York', 'Asia/Tokyo']) {
+        process.env.TZ = tz
+        expect(formaterHorodatage('2026-11-03 21:12:00.123456')).toBe('3 nov. 2026, 21:12')
+        expect(isoHorodatage('2026-11-03 21:12:00.123456')).toBe('2026-11-03T21:12:00Z')
+      }
+      expect(isoHorodatage(null)).toBeUndefined()
+      expect(isoHorodatage('n’importe quoi')).toBeUndefined()
+    })
+
+    it('Paris : une heure dans le trou du passage à l’heure d’été n’est pas décalée', () => {
+      process.env.TZ = 'Europe/Paris'
+      expect(formaterHorodatage('2026-03-29 02:30:00')).toBe('29 mars 2026, 02:30')
+    })
   })
 })

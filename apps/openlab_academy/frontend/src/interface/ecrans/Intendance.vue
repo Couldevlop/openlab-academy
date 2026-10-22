@@ -6,6 +6,7 @@ import { messageErreur } from '../../application/erreurs'
 import {
   FILTRES_VIDES,
   etatLigne,
+  libelleEtat,
   trier,
   type CleTri,
   type Filtres,
@@ -28,7 +29,14 @@ import NavAgents from '../composants/NavAgents.vue'
 import PuceStatut from '../composants/PuceStatut.vue'
 import { utiliserCasUsages } from '../injection'
 
-const STATUTS: StatutPaiement[] = ['a_jour', 'en_retard', 'solde', 'dispense']
+// statuts du domaine, plus « Bloqué » (arriéré sans délai) : tous filtrés par le serveur, vue et export
+const STATUTS: { valeur: Filtres['statut']; libelle: string }[] = [
+  ...(['a_jour', 'en_retard', 'solde', 'dispense'] as StatutPaiement[]).map((s) => ({
+    valeur: s,
+    libelle: libelleStatut(s),
+  })),
+  { valeur: 'bloque', libelle: libelleEtat('bloque') },
+]
 const COLONNES: { cle: CleTri; libelle: string }[] = [
   { cle: 'nom', libelle: 'Apprenant' },
   { cle: 'parcours', libelle: 'Parcours' },
@@ -54,9 +62,10 @@ const chargement = ref(false)
 const erreur = ref('')
 const tri = ref<{ cle: CleTri; sens: Sens } | null>(null)
 const parcoursVus = reactive(new Map<string, string>())
-const cohortesVues = reactive(new Set<string>())
+const cohortesVues = reactive(new Map<string, string>())
 const selection = ref<string | null>(null)
 let declencheur: HTMLElement | null = null
+const titreListe = ref<HTMLElement | null>(null)
 
 const lignes = computed(() => {
   const l = vue.value?.lignes ?? []
@@ -68,7 +77,11 @@ const optionsParcours = computed(() =>
     .sort((a, b) => a[1].localeCompare(b[1], 'fr'))
     .map(([valeur, titre]) => ({ valeur, titre })),
 )
-const optionsCohortes = computed(() => [...cohortesVues].sort((a, b) => a.localeCompare(b, 'fr')))
+const optionsCohortes = computed(() =>
+  [...cohortesVues.entries()]
+    .sort((a, b) => a[1].localeCompare(b[1], 'fr'))
+    .map(([valeur, titre]) => ({ valeur, titre })),
+)
 const triMobile = computed({
   get: () => (tri.value ? `${tri.value.cle}:${tri.value.sens}` : ''),
   set: (v: string) => {
@@ -80,7 +93,7 @@ const triMobile = computed({
 function retenirOptions(l: LigneIntendance[]) {
   for (const x of l) {
     parcoursVus.set(x.parcours, x.titre)
-    if (x.cohorte) cohortesVues.add(x.cohorte)
+    if (x.cohorte) cohortesVues.set(x.cohorte, x.cohorte_titre || x.cohorte)
   }
 }
 
@@ -124,7 +137,9 @@ function ouvrir(dossier: string, evenement: Event) {
 async function fermer() {
   selection.value = null
   await nextTick()
-  declencheur?.focus()
+  // la ligne a pu quitter la liste (filtre de statut) : le focus revient alors au titre de la liste
+  if (declencheur?.isConnected) declencheur.focus()
+  else titreListe.value?.focus()
 }
 
 function part(l: LigneIntendance) {
@@ -172,7 +187,7 @@ onMounted(() => {
             <label for="f-cohorte">Cohorte</label>
             <select id="f-cohorte" v-model="filtres.cohorte" name="cohorte">
               <option value="">Toutes les cohortes</option>
-              <option v-for="c in optionsCohortes" :key="c" :value="c">{{ c }}</option>
+              <option v-for="c in optionsCohortes" :key="c.valeur" :value="c.valeur">{{ c.titre }}</option>
             </select>
           </div>
           <div class="champ">
@@ -186,7 +201,7 @@ onMounted(() => {
             <label for="f-statut">Statut</label>
             <select id="f-statut" v-model="filtres.statut" name="statut">
               <option value="">Tous les statuts</option>
-              <option v-for="s in STATUTS" :key="s" :value="s">{{ libelleStatut(s) }}</option>
+              <option v-for="s in STATUTS" :key="s.valeur" :value="s.valeur">{{ s.libelle }}</option>
             </select>
           </div>
           <fieldset class="periode">
@@ -231,7 +246,7 @@ onMounted(() => {
 
           <section class="liste" aria-labelledby="titre-liste">
             <div class="liste-tete">
-              <h2 id="titre-liste">
+              <h2 id="titre-liste" ref="titreListe" tabindex="-1">
                 Apprenants <span class="compte">({{ vue.lignes.length }})</span>
               </h2>
               <div class="tri-mobile">
@@ -275,7 +290,8 @@ onMounted(() => {
                   <td data-label="Parcours">
                     <span class="titre">{{ l.titre }}</span>
                     <span class="sous"
-                      >{{ libelleMode(l.mode) }}<template v-if="l.cohorte"> · {{ l.cohorte }}</template></span
+                      >{{ libelleMode(l.mode)
+                      }}<template v-if="l.cohorte_titre"> · {{ l.cohorte_titre }}</template></span
                     >
                   </td>
                   <td data-label="Payé / total">
@@ -495,6 +511,8 @@ input[type='date'] {
   height: 1px;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
+  /* en cartes, le tri passe par la liste déroulante : les boutons d'en-tête ne prennent pas le focus */
+  visibility: hidden;
 }
 .tableau tbody {
   display: flex;
@@ -556,6 +574,7 @@ input[type='date'] {
     overflow: visible;
     clip: auto;
     display: table-header-group;
+    visibility: visible;
   }
   .tableau tbody {
     display: table-row-group;

@@ -2,12 +2,13 @@
 // Fiche d'un dossier pour l'intendance : panneau latéral sur grand écran, feuille plein écran sur mobile. Identité,
 // chiffres, échéancier, paiements, rappels par canal, journal (qui, quoi, quand, pourquoi) ; « Enregistrer un
 // virement » et « Accorder un délai », motif obligatoire. Tout texte venu du serveur est rendu comme du texte.
-import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { messageErreur } from '../../application/erreurs'
 import {
   echeanceADecaler,
   etatLigne,
   formaterHorodatage,
+  isoHorodatage,
   libelleAction,
   validerDelai,
   validerVirement,
@@ -58,6 +59,8 @@ const erreursDelai = ref<Erreurs<SaisieDelai>>({})
 
 const panneau = ref<HTMLElement | null>(null)
 const titre = ref<HTMLElement | null>(null)
+const messageSucces = ref<HTMLElement | null>(null)
+let debordement = ''
 
 const concernee = computed(() => (fiche.value ? echeanceADecaler(fiche.value) : null))
 const delaiPossible = computed(() => !!fiche.value && !fiche.value.dispense && concernee.value !== null)
@@ -83,24 +86,46 @@ async function charger() {
   }
 }
 
+// clavier écouté sur le document : Échap et Tab restent pris en charge même si le focus a quitté le panneau
+function surTouche(evenement: KeyboardEvent) {
+  if (evenement.key === 'Escape') {
+    evenement.preventDefault()
+    fermer()
+  } else if (evenement.key === 'Tab') garderLeFocus(evenement)
+}
+
 onMounted(async () => {
+  document.addEventListener('keydown', surTouche)
+  // la page derrière le voile ne défile plus tant que la fiche est ouverte
+  debordement = document.documentElement.style.overflow
+  document.documentElement.style.overflow = 'hidden'
   titre.value?.focus()
   await charger()
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', surTouche)
+  document.documentElement.style.overflow = debordement
 })
 
 function fermer() {
   emit('fermer')
 }
 
-/** Le focus reste dans le panneau tant qu'il est ouvert. */
+/** Le focus reste dans le panneau tant qu'il est ouvert ; hors de la liste (titre, message, page), il y revient. */
 function garderLeFocus(evenement: KeyboardEvent) {
-  const focusables = panneau.value?.querySelectorAll<HTMLElement>(
-    'button:not([disabled]), a[href], input, select, textarea, [tabindex="0"]',
-  )
-  if (!focusables?.length) return
+  const focusables = [
+    ...(panneau.value?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), a[href], input, select, textarea, [tabindex="0"]',
+    ) ?? []),
+  ]
+  if (!focusables.length) return
   const premier = focusables[0]!
   const dernier = focusables[focusables.length - 1]!
-  if (evenement.shiftKey && document.activeElement === premier) {
+  if (!focusables.includes(document.activeElement as HTMLElement)) {
+    evenement.preventDefault()
+    ;(evenement.shiftKey ? dernier : premier).focus()
+  } else if (evenement.shiftKey && document.activeElement === premier) {
     evenement.preventDefault()
     dernier.focus()
   } else if (!evenement.shiftKey && document.activeElement === dernier) {
@@ -140,6 +165,9 @@ async function apresSucces(message: string) {
   succes.value = message
   emit('modifie')
   await charger()
+  await nextTick()
+  // le bouton qui avait le focus a disparu avec le formulaire : le message annonce le résultat et garde le focus
+  messageSucces.value?.focus()
 }
 
 async function enregistrerVirement() {
@@ -181,15 +209,7 @@ const decrit = (prefixe: string, champ: string, erreurs: Partial<Record<string, 
 
 <template>
   <div class="voile" @click.self="fermer">
-    <aside
-      ref="panneau"
-      class="fiche"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="fiche-titre"
-      @keydown.esc.stop="fermer"
-      @keydown.tab="garderLeFocus"
-    >
+    <aside ref="panneau" class="fiche" role="dialog" aria-modal="true" aria-labelledby="fiche-titre">
       <header class="tete">
         <div class="tete-texte">
           <p class="surtitre">Fiche de paiement</p>
@@ -219,7 +239,7 @@ const decrit = (prefixe: string, champ: string, erreurs: Partial<Record<string, 
               <div>
                 <dt>Parcours</dt>
                 <dd>
-                  {{ fiche.titre }}<span v-if="fiche.cohorte" class="discret"> · {{ fiche.cohorte }}</span>
+                  {{ fiche.titre }}<span v-if="fiche.cohorte_titre" class="discret"> · {{ fiche.cohorte_titre }}</span>
                 </dd>
               </div>
               <div>
@@ -253,7 +273,7 @@ const decrit = (prefixe: string, champ: string, erreurs: Partial<Record<string, 
             Délai accordé jusqu’au {{ formaterJour(fiche.delai_jusqu_au) }}.
           </p>
 
-          <p v-if="succes" class="succes" role="status">{{ succes }}</p>
+          <p v-if="succes" ref="messageSucces" class="succes" role="status" tabindex="-1">{{ succes }}</p>
 
           <div v-if="!formulaire" class="actions">
             <button type="button" class="bouton bouton-principal vers-virement" @click="ouvrir('virement')">
@@ -346,7 +366,8 @@ const decrit = (prefixe: string, champ: string, erreurs: Partial<Record<string, 
             <h3>Accorder un délai</h3>
             <p v-if="concernee" class="concernee">
               Échéance concernée : <strong>{{ formaterXof(concernee.montant) }}</strong> due le
-              {{ formaterJour(concernee.date_limite) }}. L’accès au parcours reste ouvert jusqu’à la nouvelle date.
+              {{ formaterJour(concernee.date_limite) }}. L’accès au parcours reste ouvert jusqu’à la nouvelle date, qui
+              couvre aussi les échéances tombant avant elle.
             </p>
             <div class="champ">
               <label for="delai-jusquau">Nouvelle date limite</label>
@@ -438,7 +459,7 @@ const decrit = (prefixe: string, champ: string, erreurs: Partial<Record<string, 
               <li v-for="(j, i) in fiche.journal" :key="i">
                 <span class="ligne-un">
                   <strong class="action">{{ libelleAction(j.action) }}</strong>
-                  <time :datetime="j.horodatage ?? undefined">{{ formaterHorodatage(j.horodatage) }}</time>
+                  <time :datetime="isoHorodatage(j.horodatage)">{{ formaterHorodatage(j.horodatage) }}</time>
                 </span>
                 <span class="par"
                   >par <span class="acteur">{{ j.acteur }}</span></span

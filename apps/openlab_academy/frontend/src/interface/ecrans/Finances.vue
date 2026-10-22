@@ -4,7 +4,7 @@
 // l'enregistrement d'un virement (écran Intendance).
 import { computed, onMounted, ref } from 'vue'
 import { messageErreur } from '../../application/erreurs'
-import { formaterHorodatage, libelleAction, type ResumeFinances } from '../../domaine/intendance'
+import { formaterHorodatage, isoHorodatage, libelleAction, type ResumeFinances } from '../../domaine/intendance'
 import { MODES, formaterXof, libelleMode } from '../../domaine/paiement'
 import EnTete from '../composants/EnTete.vue'
 import Indicateur from '../composants/Indicateur.vue'
@@ -155,7 +155,7 @@ onMounted(() => {
               <h2 id="titre-acces">Accès rapides</h2>
               <a class="bouton prix" :href="PRIX">Prix des parcours</a>
               <RouterLink class="bouton bouton-principal virement" :to="{ name: 'intendance' }">
-                Enregistrer un virement
+                Ouvrir l’Intendance
               </RouterLink>
               <p class="discret petit">Le virement s’enregistre depuis la fiche de l’apprenant, dans l’Intendance.</p>
             </section>
@@ -168,10 +168,11 @@ onMounted(() => {
             <li v-for="(a, i) in resume.dernieres_actions" :key="i">
               <span class="ligne-un">
                 <strong class="action">{{ libelleAction(a.action) }}</strong>
-                <time :datetime="a.horodatage ?? undefined">{{ formaterHorodatage(a.horodatage) }}</time>
+                <time :datetime="isoHorodatage(a.horodatage)">{{ formaterHorodatage(a.horodatage) }}</time>
               </span>
+              <span class="concerne">{{ a.nom }} · {{ a.titre }}</span>
               <span class="par"
-                >par <span class="acteur">{{ a.acteur }}</span> · dossier {{ a.dossier }}</span
+                >par <span class="acteur">{{ a.acteur }}</span></span
               >
               <p v-if="a.motif" class="motif">{{ a.motif }}</p>
             </li>
@@ -402,6 +403,10 @@ time,
 .par {
   font-size: 13px;
   color: var(--es-gris);
+}
+.concerne {
+  font-weight: 600;
+  color: var(--ol-navy);
 }
 .acteur {
   font-weight: 600;

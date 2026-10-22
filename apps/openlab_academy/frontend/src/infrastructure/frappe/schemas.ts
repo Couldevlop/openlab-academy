@@ -172,6 +172,7 @@ const champsLigne = {
   parcours: texte,
   titre: texte,
   cohorte: texte,
+  cohorte_titre: texte,
   mode,
   paye: montant,
   total: montant,
@@ -182,6 +183,10 @@ const champsLigne = {
 }
 const action = z.object({
   dossier: texte,
+  apprenant: texte,
+  nom: texte,
+  parcours: texte,
+  titre: texte,
   acteur: texte,
   action: texte,
   motif: texte,

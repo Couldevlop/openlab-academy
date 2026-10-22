@@ -65,12 +65,18 @@ describe('Finances', () => {
     expect(action.find('.acteur').text()).toBe('intendant@openlab.ci')
     expect(action.find('.action').text()).toBe('Délai accordé')
     expect(action.find('.motif').text()).toBe('Accord avec la famille')
+    // apprenant et parcours nommés, jamais l'identifiant technique du dossier
+    expect(net(action.find('.concerne'))).toBe('Yao Bamba · Python avancé')
+    expect(action.text()).not.toContain('DP-0002')
+    expect(action.find('time').attributes('datetime')).toBe('2026-11-02T10:00:00Z')
   })
 
   it('accès aux prix et à l’enregistrement d’un virement', async () => {
     const { w } = await afficher()
     expect(w.find('a.prix').attributes('href')).toBe('/app/tarif-parcours-openlab')
     expect(w.find('a.virement').attributes('href')).toBe('/intendance')
+    expect(w.find('a.virement').text()).toBe('Ouvrir l’Intendance')
+    expect(w.find('.acces .petit').text()).toContain('depuis la fiche de l’apprenant')
   })
 
   it('sans base : évolution et taux non calculés, aucun inscrit', async () => {

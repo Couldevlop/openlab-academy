@@ -10,6 +10,8 @@ export interface LigneIntendance {
   parcours: string
   titre: string
   cohorte: string
+  /** Titre de la cohorte (à défaut, son identifiant). */
+  cohorte_titre: string
   mode: Mode
   paye: number
   total: number
@@ -56,6 +58,11 @@ export interface RappelEnvoye {
 
 export interface ActionJournal {
   dossier: string
+  /** Apprenant et parcours du dossier, nommés. */
+  apprenant: string
+  nom: string
+  parcours: string
+  titre: string
   acteur: string
   action: string
   motif: string
@@ -102,7 +109,8 @@ export interface Filtres {
   parcours: string
   cohorte: string
   mode: Mode | ''
-  statut: StatutPaiement | ''
+  /** Statut du domaine, ou « bloque » (arriéré sans délai), filtré par le serveur. */
+  statut: StatutPaiement | 'bloque' | ''
   /** Période d'inscription, AAAA-MM-JJ. */
   du: string
   au: string
@@ -241,7 +249,11 @@ export function libelleAction(action: string): string {
   return ACTIONS[action] ?? action
 }
 
+// heures naïves du serveur, au fuseau du site (Abidjan = UTC) : lues en UTC et affichées à Abidjan, quel que soit le
+// fuseau du navigateur
+const FUSEAU = 'Africa/Abidjan'
 const horodatage = new Intl.DateTimeFormat('fr-FR', {
+  timeZone: FUSEAU,
   day: 'numeric',
   month: 'short',
   year: 'numeric',
@@ -249,9 +261,20 @@ const horodatage = new Intl.DateTimeFormat('fr-FR', {
   minute: '2-digit',
 })
 
+function lireHorodatage(valeur: string | null): Date | null {
+  if (!valeur) return null
+  const d = new Date(`${valeur.slice(0, 19).replace(' ', 'T')}Z`)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
 /** « 3 nov. 2026, 21:12 » pour un horodatage de Frappe ; vide s'il est absent ou illisible. */
 export function formaterHorodatage(valeur: string | null): string {
-  if (!valeur) return ''
-  const d = new Date(valeur.slice(0, 19).replace(' ', 'T'))
-  return Number.isNaN(d.getTime()) ? '' : horodatage.format(d)
+  const d = lireHorodatage(valeur)
+  return d ? horodatage.format(d) : ''
+}
+
+/** Valeur d'un attribut `datetime` : « 2026-11-03T21:12:00Z » ; absente si l'horodatage est illisible. */
+export function isoHorodatage(valeur: string | null): string | undefined {
+  const d = lireHorodatage(valeur)
+  return d ? `${d.toISOString().slice(0, 19)}Z` : undefined
 }
