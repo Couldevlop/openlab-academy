@@ -111,6 +111,12 @@ def _ligne(x: LigneDossier, aujourd_hui: date) -> dict:
             "statut": statut(x.dossier, aujourd_hui).value, "bloque": bloque(x.dossier, aujourd_hui)}
 
 
+def _rappel_envoye(x: LigneDossier, aujourd_hui: date, envoyes: frozenset[tuple[str, str]]) -> bool:
+    """Un rappel est parti pour l'échéance que le dossier attend ensuite."""
+    p = _prochaine(x.dossier, aujourd_hui)
+    return bool(p and p["date_limite"] and (x.nom, p["date_limite"]) in envoyes)
+
+
 def _apprenants(lignes: Iterable[LigneDossier], condition: Callable[[Dossier], bool]) -> int:
     return len({x.apprenant for x in lignes if condition(x.dossier)})
 
@@ -120,7 +126,8 @@ def _fin_du_mois(d: date) -> date:
 
 
 class Intendance:
-    """Vue complète de l'intendant : indicateurs sur les dossiers filtrés, puis leurs lignes."""
+    """Vue complète de l'intendant : indicateurs sur les dossiers filtrés, puis leurs lignes (avec, pour chacune,
+    l'envoi d'un rappel pour sa prochaine échéance)."""
 
     def __init__(self, tableaux: Tableaux, aujourd_hui: Callable[[], date]):
         self._tableaux = tableaux
@@ -134,6 +141,8 @@ class Intendance:
         restreint = filtres != FiltresTableau() or statut_filtre is not None
         noms = tuple(x.nom for x in lignes) if restreint else None
         encaisse = self._tableaux.encaisse(j.replace(day=1), _fin_du_mois(j), noms) if lignes else 0
+        visibles = lignes[:limite]
+        envoyes = self._tableaux.rappels_envoyes(tuple(x.nom for x in visibles)) if visibles else frozenset()
         return {
             "indicateurs": {
                 "encaisse_mois": encaisse,
@@ -142,7 +151,7 @@ class Intendance:
                               "apprenants": _apprenants(lignes, lambda d: arriere(d, j) > 0)},
                 "bloques": _apprenants(lignes, lambda d: bloque(d, j)),
             },
-            "lignes": [_ligne(x, j) for x in lignes[:limite]],
+            "lignes": [_ligne(x, j) | {"rappel_envoye": _rappel_envoye(x, j, envoyes)} for x in visibles],
             "tronque": len(lignes) > limite,
         }
 

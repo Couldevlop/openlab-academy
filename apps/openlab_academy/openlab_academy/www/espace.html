@@ -8,7 +8,8 @@
 <link rel="icon" href="/assets/openlab_academy/images/logo.svg">
 <link rel="stylesheet" href="/assets/openlab_academy/css/openlab.css">
 <link rel="stylesheet" href="/assets/openlab_academy/espace/espace.css?v={{ version }}">
-<script>window.csrf_token = {{ csrf_token | tojson }};</script>
+<script>window.csrf_token = {{ csrf_token | tojson }};
+window.espace_droits = {{ droits | tojson }};</script>
 <script type="module" src="/assets/openlab_academy/espace/espace.js?v={{ version }}"></script>
 </head>
 <body>

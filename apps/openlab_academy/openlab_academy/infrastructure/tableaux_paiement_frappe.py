@@ -105,6 +105,14 @@ class TableauxPaiementFrappe:
                                              fields=["date_limite", "jours_avant", "canal", "statut", "creation"],
                                              order_by="creation desc"))
 
+    def rappels_envoyes(self, dossiers: tuple[str, ...]) -> frozenset[tuple[str, str]]:
+        if not dossiers:
+            return frozenset()
+        r = frappe.qb.DocType(RAPPEL)
+        return frozenset((x.dossier, str(x.date_limite)) for x in
+                         frappe.qb.from_(r).select(r.dossier, r.date_limite).distinct()
+                         .where((r.statut == "envoye") & r.dossier.isin(list(dossiers))).run(as_dict=True))
+
     def journal(self, dossier: str | None, limite: int) -> tuple[dict, ...]:
         return tuple({"dossier": x.dossier, "acteur": x.acteur, "action": x.action, "motif": x.motif or "",
                       "horodatage": _texte(x.horodatage), "avant": _json(x.avant), "apres": _json(x.apres)}

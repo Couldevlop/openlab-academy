@@ -27,10 +27,11 @@ SOLDE = ligne("D-C", "c", 100000, mode=Mode.UNE_FOIS)
 
 
 class Tableaux:
-    def __init__(self, lignes=(A_JOUR, EN_RETARD, SOLDE), encaisses=None):
+    def __init__(self, lignes=(A_JOUR, EN_RETARD, SOLDE), encaisses=None, envoyes=frozenset()):
         self.lignes = lignes
         self.encaisses = encaisses or {}
-        self.filtres, self.appels_encaisse, self.journaux = [], [], []
+        self.envoyes = envoyes
+        self.filtres, self.appels_encaisse, self.journaux, self.appels_rappels = [], [], [], []
 
     def dossiers(self, filtres):
         self.filtres.append(filtres)
@@ -48,6 +49,10 @@ class Tableaux:
 
     def rappels(self, dossier):
         return ({"date_limite": "2026-12-10", "jours_avant": 7, "canal": "sms", "statut": "envoye"},)
+
+    def rappels_envoyes(self, dossiers):
+        self.appels_rappels.append(dossiers)
+        return self.envoyes
 
     def journal(self, dossier, limite):
         self.journaux.append((dossier, limite))
@@ -125,7 +130,8 @@ class TestIntendance(unittest.TestCase):
         self.assertEqual(v["lignes"][1], {
             "dossier": "D-B", "apprenant": "b", "nom": "Nom b", "email": "b@x.ci", "parcours": "C2",
             "titre": "Titre C2", "cohorte": "B1", "mode": "mensuel", "paye": 0, "total": 100000, "reste": 100000,
-            "prochaine": {"date_limite": "2026-10-15", "montant": 10000}, "statut": "en_retard", "bloque": True})
+            "prochaine": {"date_limite": "2026-10-15", "montant": 10000}, "statut": "en_retard", "bloque": True,
+            "rappel_envoye": False})
         self.assertEqual([(x["statut"], x["bloque"]) for x in v["lignes"]],
                          [("a_jour", False), ("en_retard", True), ("solde", False)])
         self.assertNotIn("telephone", v["lignes"][0])
@@ -145,11 +151,19 @@ class TestIntendance(unittest.TestCase):
         self.assertEqual([x["dossier"] for x in v["lignes"]], ["D-A", "D-C"])
         self.assertEqual(t.appels_encaisse[-1][2], ("D-A", "D-C"))
 
+    def test_rappel_envoye_pour_la_prochaine_echeance_seulement(self):
+        """Un rappel envoyé pour l'échéance que la ligne attend ensuite ; un rappel d'une autre échéance ne compte pas."""
+        t = Tableaux(envoyes=frozenset({("D-A", "2026-12-10"), ("D-B", "2026-12-10"), ("D-C", "2026-12-10")}))
+        v = Intendance(t, lambda: AUJOURDHUI).executer(FiltresTableau())
+        self.assertEqual([(x["dossier"], x["rappel_envoye"]) for x in v["lignes"]],
+                         [("D-A", True), ("D-B", False), ("D-C", False)])
+        self.assertEqual(t.appels_rappels, [("D-A", "D-B", "D-C")])
+
     def test_aucun_dossier(self):
         t = Tableaux(lignes=())
         v = Intendance(t, lambda: AUJOURDHUI).executer(FiltresTableau(cohorte="B9"))
         self.assertEqual(v["indicateurs"]["encaisse_mois"], 0)
-        self.assertEqual(t.appels_encaisse, [])
+        self.assertEqual((t.appels_encaisse, t.appels_rappels), ([], []))
 
     def test_delai_arriere_compte_mais_pas_bloque_et_apprenants_distincts(self):
         lignes = (EN_RETARD, ligne("D-B2", "b", 0, cours="C1"),

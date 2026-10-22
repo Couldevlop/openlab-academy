@@ -527,6 +527,21 @@ class TestIntendance(BaseLecture):
             with self.subTest(f=f), self.assertRaises(frappe.ValidationError):
                 self.vue(**f)
 
+    def test_rappel_envoye_pour_la_prochaine_echeance(self):
+        self.jeu_de_trois()
+        prochaine = add_days(aujourd_hui(), 10)
+        for email, statut_rappel in ((ELEVE, "envoye"), (AUTRE, "envoye"), (TROISIEME, "echec")):
+            frappe.get_doc({"doctype": "Rappel Paiement OpenLab", "dossier": self.dossiers[email],
+                            "date_limite": prochaine, "jours_avant": 7, "canal": "email",
+                            "statut": statut_rappel}).insert(ignore_permissions=True)
+        frappe.get_doc({"doctype": "Rappel Paiement OpenLab", "dossier": self.dossiers[ELEVE],
+                        "date_limite": prochaine, "jours_avant": 7, "canal": "sms",
+                        "statut": "envoye"}).insert(ignore_permissions=True)
+        lignes = {x["apprenant"]: x["rappel_envoye"] for x in self.vue()["lignes"]}
+        # AUTRE attend encore ses frais (échéance passée) : le rappel de l'échéance suivante ne compte pas
+        self.assertEqual(lignes, {ELEVE: True, AUTRE: False, TROISIEME: False})
+        self.assertEqual(TableauxPaiementFrappe().rappels_envoyes(()), frozenset())
+
     def test_valeur_de_filtre_jamais_interpretee_en_sql(self):
         self.jeu_de_trois()
         self.assertEqual(self.vue(parcours=f"{self.cours}' OR '1'='1")["lignes"], [])

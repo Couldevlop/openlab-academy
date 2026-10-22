@@ -152,6 +152,9 @@ class Tableaux(Protocol):
     def paiements(self, dossier: str) -> tuple[dict, ...]: ...
     def rappels(self, dossier: str) -> tuple[dict, ...]: ...
 
+    def rappels_envoyes(self, dossiers: tuple[str, ...]) -> frozenset[tuple[str, str]]:
+        """Couples (dossier, échéance AAAA-MM-JJ) ayant reçu au moins un rappel envoyé, parmi ces dossiers."""
+
     def journal(self, dossier: str | None, limite: int) -> tuple[dict, ...]:
         """Lignes du journal, les plus récentes d'abord ; tous dossiers confondus si `dossier` est None."""
 
