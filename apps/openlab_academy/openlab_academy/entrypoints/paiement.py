@@ -13,7 +13,7 @@ from rq.timeouts import JobTimeoutException
 from openlab_academy.application.paiements import (
     AccorderDelai, ChoisirMode, ConfirmerPaiement, DossierAbsent, EnregistrerVirement, InitierPaiement,
     InscriptionTardive, OuvrirDossier, PaiementIndisponible, ReverifierPaiements, TarifAbsent)
-from openlab_academy.application.parcours_gratuits import DispenserParcoursGratuit, vue_parcours_gratuit
+from openlab_academy.application.parcours_gratuits import DispenseReservee, DispenserParcoursGratuit, etat_gratuit
 from openlab_academy.application.ports_paiement import FiltresTableau
 from openlab_academy.application.rappels import EnvoyerRappels
 from openlab_academy.application.tableaux_paiement import Fiche, Intendance, Resume, vue_apprenant
@@ -22,7 +22,8 @@ from openlab_academy.entrypoints.lms import ROLES_NON_BLOQUES
 from openlab_academy.infrastructure.canaux import CanalEmail, CanalSms, CanalWhatsApp
 from openlab_academy.infrastructure.cinetpay import PasserelleCinetPay
 from openlab_academy.infrastructure.depot_dossiers_frappe import (
-    DepotDossiersFrappe, PagesPaiementFrappe, ParcoursGratuitsFrappe, ReglagesPaiementFrappe, TarifsFrappe)
+    DepotDossiersFrappe, InscriptionsFrappe, PagesPaiementFrappe, ParcoursGratuitsFrappe, ReglagesPaiementFrappe,
+    TarifsFrappe)
 from openlab_academy.infrastructure.journal_paiement_frappe import journaliser
 from openlab_academy.infrastructure.rappels_frappe import DepotRappelsFrappe, RegistreRappelsFrappe
 from openlab_academy.infrastructure.tableaux_paiement_frappe import TableauxPaiementFrappe
@@ -67,14 +68,28 @@ def apres_inscription(doc, method=None) -> None:
         _ouvrir().executer(doc.member, lot[0], doc.batch, lot[1], lot[2])
 
 
+ADMINISTRATEUR = "System Manager"
+
+
 def parcours_enregistre(doc, method=None) -> None:
-    """Parcours enregistré : s'il est gratuit, ses dossiers encore actifs sont dispensés (journal, auteur = la
-    session) et l'auteur en est informé."""
-    n = DispenserParcoursGratuit(DepotDossiersFrappe(), journaliser, ParcoursGratuitsFrappe(),
-                                 jour_courant).executer(frappe.session.user, doc.name)
-    if n:
-        frappe.msgprint(f"Parcours devenu gratuit : {n} dossier(s) de paiement dispensé(s), visibles dans "
-                        "l'historique de l'intendance.", alert=True)
+    """Parcours enregistré : s'il est gratuit, ses dossiers qui ont encore quelque chose à payer sont dispensés
+    (journal, auteur = la session), par l'administrateur seulement (sinon l'enregistrement entier est refusé), et
+    l'auteur en est informé."""
+    utilisateur = frappe.session.user
+    try:
+        bilan = DispenserParcoursGratuit(DepotDossiersFrappe(), journaliser, ParcoursGratuitsFrappe(), TarifsFrappe(),
+                                         jour_courant).executer(utilisateur, doc.name,
+                                                                ADMINISTRATEUR in frappe.get_roles(utilisateur))
+    except DispenseReservee as e:
+        frappe.throw(str(e), frappe.PermissionError)
+    messages = []
+    if bilan.dispenses:
+        messages.append(f"Parcours devenu gratuit : {bilan.dispenses} dossier(s) de paiement dispensé(s), visibles "
+                        "dans l'historique de l'intendance.")
+    if bilan.tarif_ignore:
+        messages.append("Le tarif de ce parcours est conservé mais ne s'applique plus tant qu'il est gratuit.")
+    if messages:
+        frappe.msgprint(" ".join(messages), alert=True)
 
 
 # --- paiement en ligne -----------------------------------------------------------------------------------
@@ -138,14 +153,19 @@ def accorder_delai(acteur: str, dossier: str, jusqu_au: datetime.date, motif: st
 
 
 # --- lectures et choix de l'apprenant (toujours son propre dossier) ; tableaux de l'intendance -------------
+def _titre(cours: str) -> str:
+    return frappe.db.get_value("LMS Course", cours, "title") or cours
+
+
 def mon_dossier(apprenant: str, cours: str) -> dict:
-    """Parcours gratuit : un état calme, même si un dossier (dispensé) existe d'avant la gratuité."""
-    if ParcoursGratuitsFrappe().gratuit(cours):
-        return vue_parcours_gratuit(cours, frappe.db.get_value("LMS Course", cours, "title") or cours)
+    """Parcours gratuit suivi par l'apprenant : un état calme, même si un dossier (dispensé) existe d'avant la
+    gratuité. Sinon son dossier, ou DossierAbsent."""
+    if gratuit := etat_gratuit(ParcoursGratuitsFrappe(), InscriptionsFrappe(), apprenant, cours, lambda: _titre(cours)):
+        return gratuit
     d = DepotDossiersFrappe().charger(apprenant, cours)
     if d is None:
         raise DossierAbsent("Aucun dossier de paiement pour ce parcours.")
-    titre = frappe.db.get_value("LMS Course", cours, "title") or cours
+    titre = _titre(cours)
     instructions = frappe.db.get_single_value("Reglages Paiement OpenLab", "instructions_virement")
     return vue_apprenant(d, titre, jour_courant(), paiement_en_ligne(cours), instructions)
 

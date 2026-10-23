@@ -4,7 +4,8 @@ from dataclasses import replace
 from datetime import date
 
 from openlab_academy.application.parcours_gratuits import (
-    MOTIF_GRATUIT, DispenserParcoursGratuit, TarifSurParcoursGratuit, refuser_tarif_si_gratuit, vue_parcours_gratuit)
+    MOTIF_GRATUIT, Bilan, DispenseReservee, DispenserParcoursGratuit, TarifSurParcoursGratuit, etat_gratuit,
+    refuser_tarif_si_gratuit, vue_parcours_gratuit)
 from openlab_academy.application.paiements import (
     ChoisirMode, InscriptionTardive, OperationRefusee, OuvrirDossier, TarifAbsent)
 from openlab_academy.application.ports_paiement import ReglagesPaiement
@@ -72,10 +73,26 @@ class TestTarif(unittest.TestCase):
         refuser_tarif_si_gratuit(Gratuits("MOOC"), "C")
 
 
+class Inscriptions:
+    def __init__(self, *couples):
+        self.couples = set(couples)
+
+    def inscrit(self, apprenant, cours):
+        return (apprenant, cours) in self.couples
+
+
 class TestVue(unittest.TestCase):
     def test_etat_calme_de_l_apprenant(self):
         self.assertEqual(vue_parcours_gratuit("MOOC", "Initiation à l'IA"),
                          {"cours": "MOOC", "titre": "Initiation à l'IA", "gratuit": True})
+
+    def test_etat_gratuit_pour_un_inscrit_seulement(self):
+        titre = lambda: "Initiation à l'IA"  # noqa: E731
+        inscriptions = Inscriptions(("a@x.ci", "MOOC"), ("a@x.ci", "C"))
+        self.assertEqual(etat_gratuit(Gratuits("MOOC"), inscriptions, "a@x.ci", "MOOC", titre),
+                         {"cours": "MOOC", "titre": "Initiation à l'IA", "gratuit": True})
+        self.assertIsNone(etat_gratuit(Gratuits("MOOC"), inscriptions, "b@x.ci", "MOOC", titre))
+        self.assertIsNone(etat_gratuit(Gratuits("MOOC"), inscriptions, "a@x.ci", "C", titre))
 
 
 class DepotDispense(Depot):
@@ -99,14 +116,15 @@ def depot_avec_dossiers():
 
 
 class TestPassageAuGratuit(unittest.TestCase):
-    def cas(self, depot, *gratuits, journal=None):
-        return DispenserParcoursGratuit(depot, journal or Journal(), Gratuits(*gratuits), lambda: date(2026, 11, 20))
+    def cas(self, depot, *gratuits, journal=None, tarif=None):
+        return DispenserParcoursGratuit(depot, journal or Journal(), Gratuits(*gratuits), Tarifs(tarif),
+                                        lambda: date(2026, 11, 20))
 
     def test_dossiers_dispenses_et_journalises(self):
         depot, journal = depot_avec_dossiers(), Journal()
         avant_b = depot.dossiers[("b@x.ci", "C")]
         depot.dossiers[("b@x.ci", "C")] = replace(avant_b, dossier=replace(avant_b.dossier, paye=10000))
-        self.assertEqual(self.cas(depot, "C", journal=journal).executer("intendant@x.ci", "C"), 2)
+        self.assertEqual(self.cas(depot, "C", journal=journal).executer("intendant@x.ci", "C"), Bilan(2, False))
         self.assertEqual(depot.dispenses, ["D1", "D2"])
         self.assertEqual(journal.appels, [
             ("D1", "intendant@x.ci", "dispense_parcours_gratuit", {"statut": "en_retard", "paye": 0},
@@ -127,13 +145,42 @@ class TestPassageAuGratuit(unittest.TestCase):
         depot, journal = depot_avec_dossiers(), Journal()
         cas = self.cas(depot, "C", journal=journal)
         cas.executer("admin@x.ci", "C")
-        self.assertEqual(cas.executer("admin@x.ci", "C"), 0)
+        self.assertEqual(cas.executer("admin@x.ci", "C"), Bilan(0, False))
         self.assertEqual(len(journal.appels), 2)
 
     def test_parcours_payant_intact(self):
         depot, journal = depot_avec_dossiers(), Journal()
-        self.assertEqual(self.cas(depot, journal=journal).executer("admin@x.ci", "C"), 0)
+        self.assertEqual(self.cas(depot, journal=journal, tarif=TARIF).executer("admin@x.ci", "C"), Bilan(0, False))
         self.assertEqual((getattr(depot, "dispenses", []), journal.appels), ([], []))
+
+    def test_dossier_solde_jamais_dispense(self):
+        """Un dossier soldé n'a plus de dette : il reste « Soldé », sans ligne de journal."""
+        depot, journal = depot_avec_dossiers(), Journal()
+        a = depot.dossiers[("a@x.ci", "C")]
+        depot.dossiers[("a@x.ci", "C")] = replace(a, dossier=replace(a.dossier, paye=100000))
+        self.assertEqual(self.cas(depot, "C", journal=journal).executer("admin@x.ci", "C"), Bilan(1, False))
+        self.assertEqual(depot.dispenses, ["D2"])
+        self.assertEqual([x[0] for x in journal.appels], ["D2"])
+        self.assertFalse(depot.dossiers[("a@x.ci", "C")].dossier.dispense)
+
+    def test_tarif_existant_signale_ignore(self):
+        self.assertEqual(self.cas(depot_avec_dossiers(), "C", tarif=TARIF).executer("admin@x.ci", "C"),
+                         Bilan(2, True))
+        self.assertEqual(self.cas(DepotDispense(), "MOOC", tarif=TARIF).executer("admin@x.ci", "MOOC"),
+                         Bilan(0, True))
+
+    def test_dispense_reservee_a_l_administrateur(self):
+        depot, journal = depot_avec_dossiers(), Journal()
+        with self.assertRaisesRegex(DispenseReservee, "administrateur"):
+            self.cas(depot, "C", journal=journal).executer("createur@x.ci", "C", administrateur=False)
+        self.assertEqual((getattr(depot, "dispenses", []), journal.appels), ([], []))
+
+    def test_non_administrateur_sans_dossier_a_dispenser_accepte(self):
+        """Un créateur qui enregistre un parcours déjà gratuit, sans dossier actif, n'est pas gêné."""
+        depot = depot_avec_dossiers()
+        self.cas(depot, "C").executer("admin@x.ci", "C")
+        self.assertEqual(self.cas(depot, "C").executer("createur@x.ci", "C", administrateur=False), Bilan(0, False))
+        self.assertEqual(self.cas(depot).executer("createur@x.ci", "C", administrateur=False), Bilan(0, False))
 
     def test_dossier_dispense_aucun_changement_de_mode(self):
         depot, journal = depot_avec_dossiers(), Journal()

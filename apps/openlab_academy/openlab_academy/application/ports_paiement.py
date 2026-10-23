@@ -170,6 +170,11 @@ class ParcoursGratuits(Protocol):
         """Vrai si le parcours est marqué « Parcours gratuit (MOOC) » : aucun paiement."""
 
 
+class Inscriptions(Protocol):
+    def inscrit(self, apprenant: str, cours: str) -> bool:
+        """Vrai si l'apprenant est inscrit au parcours (cohorte ou parcours en autonomie)."""
+
+
 class DossiersADispenser(Protocol):
     """Dossiers d'un parcours devenu gratuit."""
 

@@ -38,6 +38,13 @@ class Base(FrappeTestCase):
 
 
 class TestCase(Base):
+    def tearDown(self):
+        """Les champs personnalisés passent par du DDL, qui valide la transaction : la case et ses droits sont
+        remis en place pour les tests suivants."""
+        super().tearDown()
+        install.preparer_parcours_gratuits()
+        frappe.db.commit()
+
     def test_case_du_formulaire_des_parcours_et_idempotence(self):
         frappe.db.delete("Custom Field", {"dt": "LMS Course", "fieldname": "parcours_gratuit"})
         install.preparer_parcours_gratuits()
@@ -45,8 +52,37 @@ class TestCase(Base):
         (champ,) = frappe.get_all("Custom Field", {"dt": "LMS Course", "fieldname": "parcours_gratuit"},
                                   ["fieldtype", "label", "description", "insert_after", "permlevel"])
         self.assertEqual((champ.fieldtype, champ.label, champ.insert_after, champ.permlevel),
-                         ("Check", "Parcours gratuit (MOOC)", "pricing_section", 0))
+                         ("Check", "Parcours gratuit (MOOC)", "pricing_section", 1))
         self.assertEqual(champ.description, "Aucun paiement : ni tarif, ni échéancier, ni rappel, ni blocage.")
+        regles = frappe.get_all("Custom DocPerm", {"parent": "LMS Course", "permlevel": 1}, ["role", "read", "write"])
+        self.assertEqual([(r.role, r.read, r.write) for r in regles], [("System Manager", 1, 1)])
+
+    def test_site_existant_case_passee_au_niveau_administrateur(self):
+        nom = frappe.db.get_value("Custom Field", {"dt": "LMS Course", "fieldname": "parcours_gratuit"})
+        frappe.db.set_value("Custom Field", nom, {"permlevel": 0, "label": "Ancien libellé"})
+        frappe.db.delete("Custom DocPerm", {"parent": "LMS Course", "permlevel": 1})
+        install.preparer_parcours_gratuits()
+        self.assertEqual(frappe.db.get_value("Custom Field", nom, ["permlevel", "label"]),
+                         (1, "Parcours gratuit (MOOC)"))
+        self.assertTrue(frappe.db.exists("Custom DocPerm", {"parent": "LMS Course", "role": "System Manager",
+                                                            "permlevel": 1, "write": 1}))
+
+    def test_createur_et_moderateur_ne_peuvent_pas_cocher_la_case(self):
+        c = cours("Parcours du créateur")
+        for role in ("Course Creator", "Moderator"):
+            email = agent(f"{role.split()[0].lower()}.mooc@example.ci", role)
+            proprio = frappe.get_doc("LMS Course", c)  # le créateur n'écrit que ses parcours : il en est formateur
+            proprio.append("instructors", {"instructor": email})
+            proprio.save(ignore_permissions=True)
+            frappe.set_user(email)
+            try:
+                with self.subTest(role=role):
+                    doc = frappe.get_doc("LMS Course", c)
+                    doc.parcours_gratuit = 1
+                    doc.save()
+                    self.assertEqual(frappe.db.get_value("LMS Course", c, "parcours_gratuit"), 0)
+            finally:
+                frappe.set_user("Administrator")
 
     def test_lecture_du_statut(self):
         c = cours("MOOC lecture du statut")
@@ -88,6 +124,15 @@ class TestInscription(Base):
         inscrire(cohorte(self.cours))
         self.assertEqual(appeler("mon_dossier", ELEVE, cours=self.cours),
                          {"cours": self.cours, "titre": "MOOC inscription libre", "gratuit": True})
+
+    def test_mes_paiements_d_un_mooc_non_suivi_comme_un_parcours_inconnu(self):
+        with self.assertRaises(frappe.DoesNotExistError):
+            appeler("mon_dossier", ELEVE, cours=self.cours)
+
+    def test_inscription_en_autonomie_vaut_inscription(self):
+        frappe.get_doc({"doctype": "LMS Enrollment", "course": self.cours, "member": ELEVE}).insert(
+            ignore_permissions=True)
+        self.assertTrue(appeler("mon_dossier", ELEVE, cours=self.cours)["gratuit"])
 
     def test_absent_de_l_intendance(self):
         inscrire(cohorte(self.cours))
@@ -138,14 +183,47 @@ class TestPassage(Base):
         self.assertEqual(frappe.db.count(JOURNAL, {"dossier": ("in", self.noms)}), 2)
 
     def test_auteur_journalise_est_la_session(self):
+        admin = agent("admin.mooc@example.ci", "System Manager")
         frappe.db.set_value("LMS Course", self.cours, "parcours_gratuit", 1)
-        frappe.set_user(self.intendant)
+        frappe.set_user(admin)
         try:
             paiement.parcours_enregistre(frappe._dict(name=self.cours))
         finally:
             frappe.set_user("Administrator")
-        self.assertEqual(set(frappe.get_all(JOURNAL, {"dossier": ("in", self.noms)}, pluck="acteur")),
-                         {self.intendant})
+        self.assertEqual(set(frappe.get_all(JOURNAL, {"dossier": ("in", self.noms)}, pluck="acteur")), {admin})
+
+    def test_dispense_refusee_hors_administrateur(self):
+        """Défense en profondeur : même si la case arrive cochée (API, éditeur du LMS, code), un enregistrement par
+        un autre que l'administrateur ne dispense rien et échoue."""
+        frappe.db.set_value("LMS Course", self.cours, "parcours_gratuit", 1)
+        for utilisateur_ in (self.intendant, agent("createur.dispense@example.ci", "Course Creator")):
+            frappe.set_user(utilisateur_)
+            try:
+                with self.subTest(utilisateur=utilisateur_), self.assertRaisesRegex(
+                        frappe.PermissionError, "Seul l'administrateur"):
+                    paiement.parcours_enregistre(frappe._dict(name=self.cours))
+            finally:
+                frappe.set_user("Administrator")
+        self.assertEqual([frappe.db.get_value(DOSSIER, n, "dispense") for n in self.noms], [0, 0])
+        self.assertEqual(frappe.db.count(JOURNAL, {"dossier": ("in", self.noms)}), 0)
+
+    def test_dossier_solde_reste_solde(self):
+        frappe.get_doc({"doctype": "Paiement OpenLab", "dossier": self.noms[0], "montant": 100000,
+                        "moyen": "virement", "reference": "VIR-MOOC-SOLDE", "statut": "confirme"}
+                       ).insert(ignore_permissions=True)
+        rendre(self.cours)
+        self.assertEqual([frappe.db.get_value(DOSSIER, n, "dispense") for n in self.noms], [0, 1])
+        self.assertEqual(frappe.get_all(JOURNAL, {"dossier": ("in", self.noms)}, pluck="dossier"), [self.noms[1]])
+        lignes = paiement.intendance(FiltresTableau(parcours=self.cours), None)["lignes"]
+        self.assertEqual({x["dossier"]: x["statut"] for x in lignes}, {self.noms[0]: "solde", self.noms[1]: "dispense"})
+
+    def test_auteur_prevenu_dispense_et_tarif_ignore(self):
+        frappe.local.message_log = []
+        rendre(self.cours)
+        messages = " ".join(json.loads(m).get("message", "") if isinstance(m, str) else m.get("message", "")
+                            for m in frappe.local.message_log)
+        self.assertIn("2 dossier(s) de paiement dispensé(s)", messages)
+        self.assertIn("Le tarif de ce parcours est conservé mais ne s'applique plus", messages)
 
     def test_enregistrement_d_un_parcours_payant_sans_effet(self):
         doc = frappe.get_doc("LMS Course", self.cours)

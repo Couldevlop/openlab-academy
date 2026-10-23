@@ -169,6 +169,15 @@ class ParcoursGratuitsFrappe:
         return bool(frappe.db.get_value("LMS Course", cours, CHAMP_GRATUIT))
 
 
+class InscriptionsFrappe:
+    def inscrit(self, apprenant: str, cours: str) -> bool:
+        """Inscription à une cohorte du parcours, ou au parcours lui-même (autonomie)."""
+        if frappe.db.exists("LMS Enrollment", {"member": apprenant, "course": cours}):
+            return True
+        lots = frappe.get_all("Batch Course", {"course": cours}, pluck="parent")
+        return bool(lots) and bool(frappe.db.exists("LMS Batch Enrollment", {"member": apprenant, "batch": ["in", lots]}))
+
+
 class ReglagesPaiementFrappe:
     def charger(self) -> ReglagesPaiement:
         def valeur(champ, defaut):

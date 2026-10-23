@@ -33,16 +33,35 @@ def _choix_des_parcours() -> None:
     frappe.clear_cache(doctype=PARCOURS)
 
 
-def preparer_parcours_gratuits() -> None:
-    """Case « Parcours gratuit (MOOC) » du formulaire des parcours, en tête de la section des prix ; posée par
-    l'administrateur ou le créateur du parcours (droit d'écriture sur le parcours), jamais par l'intendant."""
-    from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+ADMINISTRATEUR = "System Manager"
+NIVEAU_GRATUIT = 1  # niveau de droits de la case : l'administrateur seul la lit et l'écrit
 
-    create_custom_field(PARCOURS, {
-        "fieldname": CHAMP_GRATUIT, "fieldtype": "Check", "label": "Parcours gratuit (MOOC)", "default": "0",
-        "insert_after": "pricing_section",
-        "description": "Aucun paiement : ni tarif, ni échéancier, ni rappel, ni blocage.",
-    })
+
+def preparer_parcours_gratuits() -> None:
+    """Case « Parcours gratuit (MOOC) » du formulaire des parcours, en tête de la section des prix, réservée à
+    l'administrateur (niveau 1) : ni le créateur du parcours, ni le modérateur, ni l'intendant ne la modifient.
+    Propriétés remises à jour sur un site où la case existe déjà."""
+    from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+    from frappe.permissions import setup_custom_perms
+
+    proprietes = {"fieldtype": "Check", "label": "Parcours gratuit (MOOC)", "default": "0",
+                  "insert_after": "pricing_section", "permlevel": NIVEAU_GRATUIT,
+                  "description": "Aucun paiement : ni tarif, ni échéancier, ni rappel, ni blocage."}
+    existant = frappe.db.get_value("Custom Field", {"dt": PARCOURS, "fieldname": CHAMP_GRATUIT})
+    if existant:
+        champ = frappe.get_doc("Custom Field", existant)
+        if any(str(champ.get(k)) != str(v) for k, v in proprietes.items()):
+            champ.update(proprietes)
+            champ.save(ignore_permissions=True)
+    else:
+        create_custom_field(PARCOURS, {"fieldname": CHAMP_GRATUIT, **proprietes})
+    if not frappe.db.exists("Custom DocPerm", {"parent": PARCOURS, "role": ADMINISTRATEUR,
+                                               "permlevel": NIVEAU_GRATUIT}):
+        setup_custom_perms(PARCOURS)
+        frappe.get_doc({"doctype": "Custom DocPerm", "parent": PARCOURS, "parenttype": "DocType",
+                        "parentfield": "permissions", "role": ADMINISTRATEUR, "permlevel": NIVEAU_GRATUIT,
+                        "read": 1, "write": 1}).insert(ignore_permissions=True)
+    frappe.clear_cache(doctype=PARCOURS)
 
 
 def after_install(commit: bool = True) -> None:
