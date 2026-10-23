@@ -1,4 +1,5 @@
-"""Points d'accroche de l'inscription (refus des inscriptions tardives ou sans tarif, ouverture du dossier),
+"""Points d'accroche de l'inscription (refus des inscriptions tardives ou sans tarif, ouverture du dossier ; rien
+pour un parcours gratuit) et de l'enregistrement d'un parcours (dispense des dossiers d'un parcours devenu gratuit),
 assemblage du paiement en ligne CinetPay (réglages, liens de retour et de notification) et tâche quotidienne des
 rappels (revérification des paiements en attente, puis rappels J-7, J-3, J-1 sur trois canaux)."""
 import datetime
@@ -12,6 +13,7 @@ from rq.timeouts import JobTimeoutException
 from openlab_academy.application.paiements import (
     AccorderDelai, ChoisirMode, ConfirmerPaiement, DossierAbsent, EnregistrerVirement, InitierPaiement,
     InscriptionTardive, OuvrirDossier, PaiementIndisponible, ReverifierPaiements, TarifAbsent)
+from openlab_academy.application.parcours_gratuits import DispenserParcoursGratuit, vue_parcours_gratuit
 from openlab_academy.application.ports_paiement import FiltresTableau
 from openlab_academy.application.rappels import EnvoyerRappels
 from openlab_academy.application.tableaux_paiement import Fiche, Intendance, Resume, vue_apprenant
@@ -20,7 +22,7 @@ from openlab_academy.entrypoints.lms import ROLES_NON_BLOQUES
 from openlab_academy.infrastructure.canaux import CanalEmail, CanalSms, CanalWhatsApp
 from openlab_academy.infrastructure.cinetpay import PasserelleCinetPay
 from openlab_academy.infrastructure.depot_dossiers_frappe import (
-    DepotDossiersFrappe, PagesPaiementFrappe, ReglagesPaiementFrappe, TarifsFrappe)
+    DepotDossiersFrappe, PagesPaiementFrappe, ParcoursGratuitsFrappe, ReglagesPaiementFrappe, TarifsFrappe)
 from openlab_academy.infrastructure.journal_paiement_frappe import journaliser
 from openlab_academy.infrastructure.rappels_frappe import DepotRappelsFrappe, RegistreRappelsFrappe
 from openlab_academy.infrastructure.tableaux_paiement_frappe import TableauxPaiementFrappe
@@ -34,7 +36,8 @@ def aujourd_hui() -> datetime.date:
 
 
 def _ouvrir() -> OuvrirDossier:
-    return OuvrirDossier(DepotDossiersFrappe(), TarifsFrappe(), ReglagesPaiementFrappe(), aujourd_hui)
+    return OuvrirDossier(DepotDossiersFrappe(), TarifsFrappe(), ReglagesPaiementFrappe(), aujourd_hui,
+                         ParcoursGratuitsFrappe())
 
 
 def _cohorte(doc):
@@ -62,6 +65,16 @@ def apres_inscription(doc, method=None) -> None:
     lot = _cohorte(doc)
     if lot is not None:
         _ouvrir().executer(doc.member, lot[0], doc.batch, lot[1], lot[2])
+
+
+def parcours_enregistre(doc, method=None) -> None:
+    """Parcours enregistré : s'il est gratuit, ses dossiers encore actifs sont dispensés (journal, auteur = la
+    session) et l'auteur en est informé."""
+    n = DispenserParcoursGratuit(DepotDossiersFrappe(), journaliser, ParcoursGratuitsFrappe(),
+                                 jour_courant).executer(frappe.session.user, doc.name)
+    if n:
+        frappe.msgprint(f"Parcours devenu gratuit : {n} dossier(s) de paiement dispensé(s), visibles dans "
+                        "l'historique de l'intendance.", alert=True)
 
 
 # --- paiement en ligne -----------------------------------------------------------------------------------
@@ -126,6 +139,9 @@ def accorder_delai(acteur: str, dossier: str, jusqu_au: datetime.date, motif: st
 
 # --- lectures et choix de l'apprenant (toujours son propre dossier) ; tableaux de l'intendance -------------
 def mon_dossier(apprenant: str, cours: str) -> dict:
+    """Parcours gratuit : un état calme, même si un dossier (dispensé) existe d'avant la gratuité."""
+    if ParcoursGratuitsFrappe().gratuit(cours):
+        return vue_parcours_gratuit(cours, frappe.db.get_value("LMS Course", cours, "title") or cours)
     d = DepotDossiersFrappe().charger(apprenant, cours)
     if d is None:
         raise DossierAbsent("Aucun dossier de paiement pour ce parcours.")

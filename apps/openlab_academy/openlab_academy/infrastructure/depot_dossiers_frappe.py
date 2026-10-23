@@ -1,4 +1,4 @@
-"""Adaptateurs Frappe du paiement : dossiers et paiements, tarifs, réglages."""
+"""Adaptateurs Frappe du paiement : dossiers et paiements, tarifs, parcours gratuits, réglages."""
 import datetime
 
 import frappe
@@ -67,6 +67,12 @@ class DepotDossiersFrappe:
 
     def fixer_delai(self, nom: str, d) -> None:
         frappe.db.set_value(DOSSIER, nom, "delai_jusqu_au", d)
+
+    def a_dispenser(self, cours: str) -> tuple[str, ...]:
+        return tuple(frappe.get_all(DOSSIER, {"cours": cours, "dispense": 0}, pluck="name", order_by="creation"))
+
+    def dispenser(self, nom: str) -> None:
+        frappe.db.set_value(DOSSIER, nom, "dispense", 1)
 
     def client(self, apprenant: str) -> Client:
         u = frappe.db.get_value("User", apprenant, ["first_name", "last_name", "email"], as_dict=True) or {}
@@ -153,6 +159,14 @@ class TarifsFrappe:
         t = frappe.db.get_value("Tarif Parcours OpenLab", cours,
                                 ["frais_inscription", "prix_une_fois", "prix_deux_tranches", "prix_mensuel"])
         return Tarif(*t) if t else None
+
+
+CHAMP_GRATUIT = "parcours_gratuit"  # champ personnalisé de LMS Course (entrypoints/install)
+
+
+class ParcoursGratuitsFrappe:
+    def gratuit(self, cours: str) -> bool:
+        return bool(frappe.db.get_value("LMS Course", cours, CHAMP_GRATUIT))
 
 
 class ReglagesPaiementFrappe:

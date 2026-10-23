@@ -165,6 +165,21 @@ class Tarifs(Protocol):
     def charger(self, cours: str) -> Tarif | None: ...
 
 
+class ParcoursGratuits(Protocol):
+    def gratuit(self, cours: str) -> bool:
+        """Vrai si le parcours est marqué « Parcours gratuit (MOOC) » : aucun paiement."""
+
+
+class DossiersADispenser(Protocol):
+    """Dossiers d'un parcours devenu gratuit."""
+
+    def a_dispenser(self, cours: str) -> tuple[str, ...]:
+        """Noms des dossiers du parcours qui ne sont pas encore dispensés."""
+
+    def par_nom(self, nom: str) -> DossierEnregistre | None: ...
+    def dispenser(self, nom: str) -> None: ...
+
+
 class Reglages(Protocol):
     def charger(self) -> ReglagesPaiement: ...
 

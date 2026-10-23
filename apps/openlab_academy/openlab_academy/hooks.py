@@ -36,6 +36,7 @@ permission_query_conditions = {
     "LMS Programming Exercise": "openlab_academy.entrypoints.lms.conditions_exercices",
 }
 doc_events = {
+    "LMS Course": {"on_update": "openlab_academy.entrypoints.paiement.parcours_enregistre"},
     "LMS Batch Enrollment": {
         "before_insert": "openlab_academy.entrypoints.paiement.avant_inscription",
         "after_insert": "openlab_academy.entrypoints.paiement.apres_inscription",

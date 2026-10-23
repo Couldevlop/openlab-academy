@@ -5,7 +5,8 @@ from dataclasses import replace
 from datetime import date, datetime, timedelta
 
 from openlab_academy.application.ports_paiement import (
-    DepotDossiers, Journal, NouveauDossier, PagesPaiement, Passerelle, ReferenceDejaEnregistree, Reglages, Tarifs)
+    DepotDossiers, Journal, NouveauDossier, PagesPaiement, ParcoursGratuits, Passerelle, ReferenceDejaEnregistree,
+    Reglages, Tarifs)
 from openlab_academy.domain.dossier_paiement import Dossier, en_souffrance, statut
 from openlab_academy.domain.echeancier import Echeance, Mode, Tarif, echeancier, inscription_permise, replanifier
 
@@ -39,36 +40,50 @@ def valider_telephone(brut: str) -> str:
     return numero
 
 
+class _AucunGratuit:
+    def gratuit(self, cours: str) -> bool:
+        return False
+
+
 class OuvrirDossier:
-    def __init__(self, depot: DepotDossiers, tarifs: Tarifs, reglages: Reglages, aujourd_hui: Callable[[], date]):
+    def __init__(self, depot: DepotDossiers, tarifs: Tarifs, reglages: Reglages, aujourd_hui: Callable[[], date],
+                 gratuits: ParcoursGratuits | None = None):
         self._depot = depot
         self._tarifs = tarifs
         self._reglages = reglages
         self._aujourd_hui = aujourd_hui
+        self._gratuits = gratuits or _AucunGratuit()
 
-    def verifier(self, cours: str, debut: date) -> Tarif:
-        """Refuse l'inscription tardive ou sans tarif ; renvoie le tarif (validé) du parcours."""
+    def verifier(self, cours: str, debut: date) -> Tarif | None:
+        """Refuse l'inscription tardive (MOOC compris) ou sans tarif ; renvoie le tarif (validé) du parcours, None
+        pour un parcours gratuit. Un parcours payant sans tarif reste refusé : garde-fou contre l'oubli du prix."""
         if not inscription_permise(debut, self._aujourd_hui(), self._reglages.charger().inscription_tardive_mois):
             raise InscriptionTardive("Les inscriptions à cette cohorte sont closes.")
+        if self._gratuits.gratuit(cours):
+            return None
         tarif = self._tarifs.charger(cours)
         if tarif is None:
             raise TarifAbsent("Ce parcours n'a pas encore de tarif : inscription impossible.")
         tarif.valider()
         return tarif
 
-    def executer(self, apprenant: str, cours: str, cohorte: str, debut: date, fin: date) -> str:
+    def executer(self, apprenant: str, cours: str, cohorte: str, debut: date, fin: date) -> str | None:
         """Dossier en `une_fois` tant que l'apprenant n'a pas choisi : prix figés, échéancier complet (frais, puis le
-        reste au prochain jour d'échéance), jamais les frais seuls (ils solderaient le parcours) ; renvoie son nom."""
+        reste au prochain jour d'échéance), jamais les frais seuls (ils solderaient le parcours) ; renvoie son nom.
+        Parcours gratuit : aucun dossier (None)."""
         existant = self._depot.charger(apprenant, cours)
         if existant:
             return existant.nom
         tarif = self.verifier(cours, debut)
+        if tarif is None:
+            return None
         aujourd_hui = self._aujourd_hui()
         echeances = echeancier(Mode.UNE_FOIS, tarif, aujourd_hui, debut, fin, self._reglages.charger().jour_echeance)
         return self._depot.creer(NouveauDossier(apprenant, cours, cohorte, Mode.UNE_FOIS, tarif, aujourd_hui,
                                                 echeances))
 
 
+DISPENSE = "Ce dossier est dispensé de paiement : aucune opération possible."
 CHANGEMENT_EN_RETARD = "Réglez d'abord l'échéance en retard, ou contactez l'intendance."
 
 
@@ -88,6 +103,8 @@ class ChoisirMode:
         d = self._depot.charger(apprenant, cours)
         if d is None:
             raise DossierAbsent("Aucun dossier de paiement pour ce parcours.")
+        if d.dossier.dispense:  # dispensé, ou parcours devenu gratuit : plus rien à régler
+            raise OperationRefusee(DISPENSE)
         if nouveau is d.mode:  # téléphone seul : l'échéancier, et donc tout retard, reste tel quel
             self._depot.fixer_telephone(d.nom, numero)
             return d.dossier.echeances
@@ -297,7 +314,7 @@ def _charger_actif(depot: DepotDossiers, nom: str):
     if d is None:
         raise DossierAbsent("Aucun dossier de paiement pour ce parcours.")
     if d.dossier.dispense:
-        raise OperationRefusee("Ce dossier est dispensé de paiement : aucune opération possible.")
+        raise OperationRefusee(DISPENSE)
     return d
 
 
