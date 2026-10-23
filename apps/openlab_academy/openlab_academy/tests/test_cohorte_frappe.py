@@ -43,6 +43,18 @@ class TestDepotCohortesFrappe(FrappeTestCase):
         self.assertEqual((str(b.start_time), str(b.end_time)), ("18:30:00", "20:30:00"))
         self.assertEqual((b.allow_self_enrollment, b.certification, b.evaluation), (1, 1, 1))
         self.assertIn("12 h par semaine", b.batch_details)
+        self.assertIn("Séances de 18 h 30 à 20 h 30 (heure d'Abidjan).", b.batch_details)
+        # sans places, le LMS masque « Enroll Now » : aucune inscription autonome possible
+        self.assertEqual(b.seat_count, 30)
+
+    def test_places_et_seances_des_reglages(self):
+        p = parcours(title="Parcours cohorte réglée")
+        DepotFrappe(commit=False).creer(p)
+        reglages = Reglages(heure_debut="19:00", heure_fin="21:00", places_par_cohorte=12)
+        b = frappe.get_doc("LMS Batch", DepotCohortesFrappe().creer(Cohorte.pilote(p, LUNDI, STANDARD, reglages)))
+        self.assertEqual(b.seat_count, 12)
+        self.assertIn("Séances de 19 h à 21 h", b.batch_details)
+        self.assertNotIn("18 h 30", b.batch_details)
 
     def test_cours_absent_refuse(self):
         with self.assertRaisesRegex(ValueError, "cours « Inconnu » introuvable"):

@@ -49,6 +49,11 @@ class TestReglagesParDefaut(unittest.TestCase):
         self.assertIn("Tests automatisés, couverture ≥ 70 %", r.exigences_communes)
         self.assertEqual([(x.code, x.heures) for x in r.rythmes], [("standard", 12), ("intensif", 16)])
 
+    def test_places_par_cohorte(self):
+        self.assertEqual(Reglages().places_par_cohorte, 30)
+        with self.assertRaisesRegex(ReglagesInvalides, "places_par_cohorte doit être positif"):
+            Reglages(places_par_cohorte=0)
+
     def test_exercices_par_defaut(self):
         r = Reglages()
         self.assertEqual((r.questions_par_quiz, r.tentatives_max, r.score_min, r.delai_exercices_minutes),

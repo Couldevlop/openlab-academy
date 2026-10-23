@@ -57,7 +57,7 @@ Desk → `/app/reglages-openlab-academy` (System Manager uniquement). Tout régl
 | Exigences qualité | textes ajoutés à chaque énoncé de projet |
 | Rythmes | code, libellé, heures du lundi au dimanche (ex. standard 12 h, intensif 16 h, week-end…) |
 | Séances | heures de début et de fin, fuseau |
-| Cohorte pilote | parcours, formateur par défaut |
+| Cohorte pilote | parcours, formateur par défaut, places par cohorte (30 par défaut ; sans places, le LMS n'affiche pas l'inscription autonome) |
 | Plateforme | nom, logo, langue, devise |
 
 Un parcours peut surcharger `projets_par_portfolio` et `heures_par_module` dans son YAML (`parametres:`).

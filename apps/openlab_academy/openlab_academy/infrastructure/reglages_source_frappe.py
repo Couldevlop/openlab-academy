@@ -33,6 +33,7 @@ def vers_domaine(doc) -> Reglages:
                       for r in doc.rythmes),
         heure_debut=_hhmm(doc.heure_debut), heure_fin=_hhmm(doc.heure_fin), fuseau=doc.fuseau or "",
         parcours_pilote=doc.parcours_pilote or "", formateur=doc.formateur or "",
+        places_par_cohorte=int(doc.places_par_cohorte or 0),
     )
 
 
@@ -58,7 +59,8 @@ def initialiser() -> None:
         "questions_par_quiz": d.questions_par_quiz, "tentatives_max": d.tentatives_max, "score_min": d.score_min,
         "delai_exercices_minutes": d.delai_exercices_minutes,
         "heure_debut": f"{d.heure_debut}:00", "heure_fin": f"{d.heure_fin}:00", "fuseau": d.fuseau,
-        "parcours_pilote": d.parcours_pilote, "formateur": d.formateur, **PLATEFORME_DEFAUT,
+        "parcours_pilote": d.parcours_pilote, "formateur": d.formateur, "places_par_cohorte": d.places_par_cohorte,
+        **PLATEFORME_DEFAUT,
     })
     doc.set("bareme", [{"nom": c.nom, "poids": c.poids} for c in d.bareme])
     doc.set("exigences", [{"texte": e} for e in d.exigences_communes])
