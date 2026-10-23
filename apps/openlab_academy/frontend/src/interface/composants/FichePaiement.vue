@@ -1,11 +1,12 @@
 <script setup lang="ts">
 // Fiche d'un dossier pour l'intendance : panneau latéral sur grand écran, feuille plein écran sur mobile. Identité,
 // chiffres, échéancier, paiements, rappels par canal, journal (qui, quoi, quand, pourquoi) ; « Enregistrer un
-// virement » et « Accorder un délai », motif obligatoire. Tout texte venu du serveur est rendu comme du texte.
+// virement » et « Accorder un délai », motif obligatoire (ni l'un ni l'autre pour un dossier dispensé). Tout texte venu du serveur est rendu comme du texte.
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { messageErreur } from '../../application/erreurs'
 import {
   echeanceADecaler,
+  etatEcheanceFiche,
   etatLigne,
   formaterHorodatage,
   isoHorodatage,
@@ -13,25 +14,20 @@ import {
   validerDelai,
   validerVirement,
   type Erreurs,
+  type EtatEcheanceFiche,
   type FicheIntendance,
   type SaisieDelai,
   type SaisieVirement,
 } from '../../domaine/intendance'
-import {
-  etatEcheance,
-  formaterJour,
-  formaterTelephone,
-  formaterXof,
-  libelleMode,
-  type EtatEcheance,
-} from '../../domaine/paiement'
+import { formaterJour, formaterTelephone, formaterXof, libelleMode } from '../../domaine/paiement'
 import { utiliserCasUsages } from '../injection'
 import PuceStatut from './PuceStatut.vue'
 
 const props = defineProps<{ dossier: string }>()
 const emit = defineEmits<{ fermer: []; modifie: [] }>()
 
-const ETATS: Record<EtatEcheance, string> = {
+const ETATS: Record<EtatEcheanceFiche, string> = {
+  dispensee: 'Dispensée',
   reglee: 'Réglée',
   en_retard: 'En retard',
   aujourdhui: 'Due aujourd’hui',
@@ -275,7 +271,7 @@ const decrit = (prefixe: string, champ: string, erreurs: Partial<Record<string, 
 
           <p v-if="succes" ref="messageSucces" class="succes" role="status" tabindex="-1">{{ succes }}</p>
 
-          <div v-if="!formulaire" class="actions">
+          <div v-if="!formulaire && !fiche.dispense" class="actions">
             <button type="button" class="bouton bouton-principal vers-virement" @click="ouvrir('virement')">
               Enregistrer un virement
             </button>
@@ -409,11 +405,15 @@ const decrit = (prefixe: string, champ: string, erreurs: Partial<Record<string, 
           <section class="bloc">
             <h3>Échéancier</h3>
             <ol class="echeancier">
-              <li v-for="(e, i) in fiche.echeances" :key="i" :class="`etat-${etatEcheance(e, aujourdhui)}`">
+              <li
+                v-for="(e, i) in fiche.echeances"
+                :key="i"
+                :class="`etat-${etatEcheanceFiche(e, aujourdhui, fiche.dispense)}`"
+              >
                 <span class="date">{{ formaterJour(e.date_limite) }}</span>
                 <span class="libelle">{{ e.libelle }}</span>
                 <span class="montant">{{ formaterXof(e.montant) }}</span>
-                <span class="etat">{{ ETATS[etatEcheance(e, aujourdhui)] }}</span>
+                <span class="etat">{{ ETATS[etatEcheanceFiche(e, aujourdhui, fiche.dispense)] }}</span>
               </li>
             </ol>
           </section>

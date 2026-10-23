@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { ficheIntendance, ligneIntendance } from '../test/fabriques'
 import {
   echeanceADecaler,
+  etatEcheanceFiche,
   etatLigne,
   formaterHorodatage,
   isoHorodatage,
@@ -198,5 +199,19 @@ describe('journal', () => {
       process.env.TZ = 'Europe/Paris'
       expect(formaterHorodatage('2026-03-29 02:30:00')).toBe('29 mars 2026, 02:30')
     })
+  })
+})
+
+describe('échéance de la fiche', () => {
+  const e = (date_limite: string, couverte = false) => ({ date_limite, montant: 50000, libelle: 'Échéance', couverte })
+  it('dossier actif : réglée, en retard, due aujourd’hui, à venir', () => {
+    expect(etatEcheanceFiche(e('2026-10-10', true), '2026-11-02', false)).toBe('reglee')
+    expect(etatEcheanceFiche(e('2026-10-10'), '2026-11-02', false)).toBe('en_retard')
+    expect(etatEcheanceFiche(e('2026-11-02'), '2026-11-02', false)).toBe('aujourdhui')
+  })
+  it('dossier dispensé : ce qui n’est pas couvert est dispensé, jamais en retard', () => {
+    expect(etatEcheanceFiche(e('2026-10-10', true), '2026-11-02', true)).toBe('reglee')
+    expect(etatEcheanceFiche(e('2026-10-10'), '2026-11-02', true)).toBe('dispensee')
+    expect(etatEcheanceFiche(e('2026-11-02'), '2026-11-02', true)).toBe('dispensee')
   })
 })

@@ -1,6 +1,14 @@
 // Paiements vus par l'intendance et l'administration : lignes de dossiers (statut et blocage calculés par le serveur),
 // fiche d'un dossier, résumé ; état affiché d'une ligne, tri, filtres et règles des saisies (virement, délai).
-import type { EcheancePaiement, Mode, Prochaine, StatutPaiement, Tarif } from './paiement'
+import {
+  etatEcheance,
+  type EcheancePaiement,
+  type EtatEcheance,
+  type Mode,
+  type Prochaine,
+  type StatutPaiement,
+  type Tarif,
+} from './paiement'
 
 export interface LigneIntendance {
   dossier: string
@@ -278,4 +286,12 @@ export function formaterHorodatage(valeur: string | null): string {
 export function isoHorodatage(valeur: string | null): string | undefined {
   const d = lireHorodatage(valeur)
   return d ? `${d.toISOString().slice(0, 19)}Z` : undefined
+}
+
+export type EtatEcheanceFiche = EtatEcheance | 'dispensee'
+
+/** État d'une échéance dans la fiche : un dossier dispensé n'a plus rien de dû, ni en retard, ni aujourd'hui. */
+export function etatEcheanceFiche(e: EcheancePaiement, aujourdhui: string, dispense: boolean): EtatEcheanceFiche {
+  const etat = etatEcheance(e, aujourdhui)
+  return dispense && etat !== 'reglee' ? 'dispensee' : etat
 }

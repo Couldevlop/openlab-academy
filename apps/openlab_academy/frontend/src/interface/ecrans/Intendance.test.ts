@@ -219,6 +219,35 @@ describe('Fiche d’un dossier', () => {
     expect(w.find('.journal img').exists()).toBe(false)
   })
 
+  it('dossier dispensé : ni virement, ni délai, échéances sans retard ni « due aujourd’hui »', async () => {
+    const ports = portsAgent()
+    ports.intendance.fiche.mockResolvedValue(
+      ficheIntendance({
+        dispense: true,
+        statut: 'dispense',
+        reste: 0,
+        prochaine: null,
+        echeances: [
+          { date_limite: '2026-10-22', montant: 10000, libelle: "Frais d'inscription", couverte: true },
+          { date_limite: '2026-10-30', montant: 50000, libelle: 'Échéance', couverte: false },
+          { date_limite: '2026-11-02', montant: 50000, libelle: 'Échéance', couverte: false },
+        ],
+      }),
+    )
+    const { w } = await afficher(ports)
+    await ouvrirFiche(w)
+    expect(w.find('[role="dialog"]').text()).toContain('Dossier dispensé de paiement.')
+    expect(w.find('button.vers-virement').exists()).toBe(false)
+    expect(w.find('button.vers-delai').exists()).toBe(false)
+    const etats = w.findAll('.echeancier li')
+    expect(etats.map((e) => e.find('.etat').text())).toEqual(['Réglée', 'Dispensée', 'Dispensée'])
+    expect(etats.map((e) => e.classes().find((c) => c.startsWith('etat-')))).toEqual([
+      'etat-reglee',
+      'etat-dispensee',
+      'etat-dispensee',
+    ])
+  })
+
   it('Échap ferme le panneau et rend le focus au bouton de la ligne', async () => {
     const { w } = await afficher()
     await ouvrirFiche(w)
