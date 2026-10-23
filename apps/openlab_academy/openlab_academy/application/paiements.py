@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from openlab_academy.application.ports_paiement import (
     DepotDossiers, Journal, NouveauDossier, PagesPaiement, ParcoursGratuits, Passerelle, ReferenceDejaEnregistree,
     Reglages, Tarifs)
-from openlab_academy.domain.dossier_paiement import Dossier, en_souffrance, statut
+from openlab_academy.domain.dossier_paiement import Dossier, en_souffrance, reste_du, statut
 from openlab_academy.domain.echeancier import Echeance, Mode, Tarif, echeancier, inscription_permise, replanifier
 
 LIBELLE_FRAIS = "Frais d'inscription"
@@ -305,6 +305,13 @@ def _motif(motif) -> str:
     return motif
 
 
+DELAI_APRES_FIN = 90  # un délai au-delà reviendrait à débloquer à vie
+
+
+def _fcfa(montant: int) -> str:
+    return f"{montant:,}".replace(",", " ")
+
+
 def _jour(valeur) -> bool:
     return type(valeur) is date
 
@@ -319,8 +326,8 @@ def _charger_actif(depot: DepotDossiers, nom: str):
 
 
 class EnregistrerVirement:
-    """Enregistre un virement reçu (confirmé d'office, auteur = l'agent) ; référence unique, motif obligatoire,
-    journalisé."""
+    """Enregistre un virement reçu (confirmé d'office, auteur = l'agent), au plus le reste dû ; référence unique,
+    motif obligatoire, journalisé."""
 
     def __init__(self, depot: DepotDossiers, journal: Journal, aujourd_hui: Callable[[], date]):
         self._depot = depot
@@ -338,6 +345,8 @@ class EnregistrerVirement:
             raise OperationRefusee("La date du virement est invalide ou dans le futur.")
         motif = _motif(motif)
         d = _charger_actif(self._depot, dossier)
+        if montant > (reste := reste_du(d.dossier)):  # aucun geste d'annulation : une saisie en trop serait définitive
+            raise OperationRefusee(f"Le montant est supérieur au reste dû ({_fcfa(reste)} FCFA).")
         avant = {"paye": d.dossier.paye, "statut": statut(d.dossier, aujourd_hui).value}
         try:
             self._depot.enregistrer_virement(d.nom, montant, reference, date_paiement, acteur)
@@ -350,7 +359,8 @@ class EnregistrerVirement:
 
 
 class AccorderDelai:
-    """Accorde un délai de paiement (et débloque ainsi l'apprenant jusqu'à cette date) ; motif obligatoire."""
+    """Accorde un délai de paiement (et débloque ainsi l'apprenant jusqu'à cette date), au plus 90 jours après la fin
+    de la cohorte ; motif obligatoire."""
 
     def __init__(self, depot: DepotDossiers, journal: Journal, aujourd_hui: Callable[[], date]):
         self._depot = depot
@@ -363,6 +373,9 @@ class AccorderDelai:
             raise OperationRefusee("Le délai doit se terminer après aujourd'hui.")
         motif = _motif(motif)
         d = _charger_actif(self._depot, dossier)
+        if jusqu_au > (borne := d.fin + timedelta(days=DELAI_APRES_FIN)):
+            raise OperationRefusee(f"Le délai ne peut dépasser le {borne:%d/%m/%Y} (fin de la cohorte + "
+                                   f"{DELAI_APRES_FIN} jours).")
         ancien = d.dossier.delai_jusqu_au
         avant = {"delai_jusqu_au": ancien.isoformat() if ancien else None,
                  "statut": statut(d.dossier, aujourd_hui).value}

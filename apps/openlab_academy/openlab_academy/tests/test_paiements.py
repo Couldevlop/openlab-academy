@@ -645,6 +645,21 @@ class TestEnregistrerVirement(unittest.TestCase):
                 self.virer(date_paiement=jour)
         self.virer(date_paiement=AUJOURDHUI)
 
+    def test_montant_superieur_au_reste_du_refuse(self):
+        depot = en_retard()  # une fois : 100 000 FCFA dus, rien de payé
+        with self.assertRaisesRegex(OperationRefusee, r"supérieur au reste dû \(100 000 FCFA\)"):
+            self.virer(depot, montant=100005)
+        self.assertFalse(hasattr(depot, "virements"))
+        self.assertEqual(self.journal.appels, [])
+        self.virer(depot, montant=100000)
+        self.assertEqual(depot.virements[0][1], 100000)
+
+    def test_dossier_solde_refuse_tout_virement(self):
+        depot = en_retard(paye=100000)
+        with self.assertRaisesRegex(OperationRefusee, r"reste dû \(0 FCFA\)"):
+            self.virer(depot, montant=5)
+        self.assertFalse(hasattr(depot, "virements"))
+
     def test_motif_trop_long_refuse(self):
         with self.assertRaisesRegex(OperationRefusee, "motif"):
             self.virer(motif="m" * 501)
@@ -681,6 +696,14 @@ class TestAccorderDelai(unittest.TestCase):
         for jour in (AUJOURDHUI, date(2026, 10, 1), "2026-12-01", None, datetime(2026, 12, 1)):
             with self.subTest(jour=jour), self.assertRaisesRegex(OperationRefusee, "délai"):
                 self.accorder(jusqu_au=jour)
+
+    def test_delai_borne_a_la_fin_de_la_cohorte_plus_90_jours(self):
+        depot = en_retard()  # cohorte finie le 22/02/2027
+        with self.assertRaisesRegex(OperationRefusee, "ne peut dépasser le 23/05/2027"):
+            self.accorder(depot, jusqu_au=date(2027, 5, 24))
+        self.assertFalse(hasattr(depot, "delais"))
+        self.accorder(depot, jusqu_au=date(2027, 5, 23))
+        self.assertEqual(depot.delais, [("D1", date(2027, 5, 23))])
 
     def test_motif_obligatoire(self):
         for motif in ("", "   ", None, "m" * 501):
