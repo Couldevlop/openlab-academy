@@ -145,8 +145,29 @@ Evaluator, Intendant OpenLab) ne sont jamais bloqués.
 ### Tarifs (console)
 
 Desk → `/app/tarif-parcours-openlab` → Nouveau : parcours, frais d'inscription, prix en une fois, en deux tranches,
-mensuel. Un parcours **sans tarif refuse les inscriptions**. L'intendant choisit le parcours dans la liste (droit
-« sélection » seul sur les parcours, accordé à l'installation et à chaque migration).
+mensuel. Un parcours payant **sans tarif refuse les inscriptions** (un parcours gratuit n'en a pas, voir
+ci-dessous). L'intendant choisit le parcours dans la liste (droit « sélection » seul sur les parcours, accordé à
+l'installation et à chaque migration).
+
+### Parcours gratuits (MOOC)
+
+Un parcours se crée comme les autres ; pour le rendre gratuit, cocher **« Parcours gratuit (MOOC) »** dans son
+formulaire (Desk → `/app/lms-course/<parcours>`, section des prix). La case est posée par l'administrateur ou le
+créateur du parcours (droit d'écriture sur le parcours) ; l'intendant, qui n'a que le droit « sélection » sur les
+parcours, ne la modifie pas.
+
+- Inscription acceptée **sans tarif** : aucun dossier, aucun frais, aucun rappel, jamais bloqué ; le parcours
+  n'apparaît ni dans Intendance, ni dans Finances, ni dans l'export. « Mes paiements » affiche « Parcours gratuit —
+  aucun paiement ».
+- La limite d'inscription tardive (2 mois après le début de la cohorte) **s'applique aussi**.
+- Un tarif saisi sur un parcours gratuit est **refusé** (message : décocher la case pour rendre le parcours payant).
+  Un parcours **payant sans tarif reste refusé** à l'inscription (garde-fou contre l'oubli du prix).
+- **Payant → gratuit** : à l'enregistrement du parcours, ses dossiers existants sont **dispensés**, une ligne de
+  journal par dossier (auteur, date, motif « parcours devenu gratuit ») ; ils ne bloquent plus, ne reçoivent plus de
+  rappels et restent visibles, « Dispensé », dans l'historique de l'intendance. Les paiements déjà reçus restent
+  enregistrés.
+- **Gratuit → payant** : vaut pour les nouveaux inscrits seulement (créer d'abord le tarif) ; aucun dossier
+  rétroactif, les dossiers dispensés le restent.
 
 ### Réglages (console « Reglages Paiement OpenLab »)
 
