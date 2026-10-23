@@ -1,6 +1,6 @@
 """Points d'accroche de l'inscription (refus des inscriptions tardives ou sans tarif, ouverture du dossier ; rien
-pour un parcours gratuit) et de l'enregistrement d'un parcours (dispense des dossiers d'un parcours devenu gratuit),
-assemblage du paiement en ligne CinetPay (réglages, liens de retour et de notification) et tâche quotidienne des
+pour un parcours gratuit ; inscription directe à un parcours payant refusée hors cohorte) et de l'enregistrement d'un
+parcours (dispense des dossiers d'un parcours devenu gratuit, case d'inscription autonome du LMS), assemblage du paiement en ligne CinetPay (réglages, liens de retour et de notification) et tâche quotidienne des
 rappels (revérification des paiements en attente, puis rappels J-7, J-3, J-1 sur trois canaux)."""
 import datetime
 from urllib.parse import urlencode, urlsplit
@@ -10,10 +10,13 @@ from frappe.email.doctype.email_account.email_account import EmailAccount
 from frappe.utils import getdate, nowdate, now_datetime
 from rq.timeouts import JobTimeoutException
 
+from openlab_academy.application.inscriptions import (
+    InscriptionDirecte, InscriptionRefusee, parcours_facture, verifier_inscription_directe)
 from openlab_academy.application.paiements import (
     AccorderDelai, ChoisirMode, ConfirmerPaiement, DossierAbsent, EnregistrerVirement, InitierPaiement,
     InscriptionTardive, OuvrirDossier, PaiementIndisponible, ReverifierPaiements, TarifAbsent)
-from openlab_academy.application.parcours_gratuits import DispenseReservee, DispenserParcoursGratuit, etat_gratuit
+from openlab_academy.application.parcours_gratuits import (
+    DispenseReservee, DispenserParcoursGratuit, autonomie_fermee, etat_gratuit)
 from openlab_academy.application.ports_paiement import FiltresTableau
 from openlab_academy.application.rappels import EnvoyerRappels
 from openlab_academy.application.tableaux_paiement import Fiche, Intendance, Resume, vue_apprenant
@@ -22,8 +25,8 @@ from openlab_academy.entrypoints.lms import ROLES_NON_BLOQUES
 from openlab_academy.infrastructure.canaux import CanalEmail, CanalSms, CanalWhatsApp
 from openlab_academy.infrastructure.cinetpay import PasserelleCinetPay
 from openlab_academy.infrastructure.depot_dossiers_frappe import (
-    DepotDossiersFrappe, InscriptionsFrappe, PagesPaiementFrappe, ParcoursGratuitsFrappe, ReglagesPaiementFrappe,
-    TarifsFrappe)
+    CHAMP_GRATUIT, DepotDossiersFrappe, InscriptionsFrappe, PagesPaiementFrappe, ParcoursGratuitsFrappe,
+    ReglagesPaiementFrappe, TarifsFrappe)
 from openlab_academy.infrastructure.journal_paiement_frappe import journaliser
 from openlab_academy.infrastructure.rappels_frappe import DepotRappelsFrappe, RegistreRappelsFrappe
 from openlab_academy.infrastructure.tableaux_paiement_frappe import TableauxPaiementFrappe
@@ -43,24 +46,26 @@ def _ouvrir() -> OuvrirDossier:
                          ParcoursGratuitsFrappe())
 
 
+def _exempte(membre: str) -> bool:
+    return bool(ROLES_NON_BLOQUES & set(frappe.get_roles(membre)))
+
+
 def _cohorte(doc):
-    """(cours, début, fin) de la cohorte ; None pour un rôle exempté ou une cohorte sans parcours."""
-    if ROLES_NON_BLOQUES & set(frappe.get_roles(doc.member)):
+    """(parcours facturé, début, fin) de la cohorte ; None pour un rôle exempté ou une cohorte sans parcours.
+    Refuse une cohorte à plusieurs parcours payants (InscriptionRefusee)."""
+    if _exempte(doc.member):
         return None
-    cours = frappe.db.get_value("Batch Course", {"parent": doc.batch}, "course", order_by="idx")
-    if not cours:
-        return None
-    lot = frappe.db.get_value("LMS Batch", doc.batch, ["start_date", "end_date"], as_dict=True)
-    return cours, getdate(lot.start_date), getdate(lot.end_date)
+    cours, debut, fin = InscriptionsFrappe().cohorte(doc.batch)
+    facture = parcours_facture(ParcoursGratuitsFrappe(), cours)
+    return None if facture is None else (facture, debut, fin)
 
 
 def avant_inscription(doc, method=None) -> None:
-    lot = _cohorte(doc)
-    if lot is None:
-        return
     try:
-        _ouvrir().verifier(lot[0], lot[1])
-    except (InscriptionTardive, TarifAbsent) as e:
+        lot = _cohorte(doc)
+        if lot is not None:
+            _ouvrir().verifier(lot[0], lot[1])
+    except (InscriptionTardive, TarifAbsent, InscriptionRefusee) as e:
         frappe.throw(str(e), exc=frappe.ValidationError)
 
 
@@ -71,6 +76,20 @@ def apres_inscription(doc, method=None) -> None:
 
 
 ADMINISTRATEUR = "System Manager"
+
+
+def avant_inscription_parcours(doc, method=None) -> None:
+    """Inscription directe au parcours (LMS Enrollment : « Enroll Now », formulaire, API) : un parcours payant se
+    suit par une cohorte, sauf pour l'équipe, l'administrateur qui inscrit lui-même, ou l'inscription que la cohorte
+    crée. Sans ce refus, l'apprenant suivrait le parcours sans dossier, donc sans jamais être bloqué."""
+    demande = InscriptionDirecte(
+        doc.course, _exempte(doc.member), ADMINISTRATEUR in frappe.get_roles(frappe.session.user),
+        InscriptionsFrappe().via_cohorte(doc.member, doc.course, doc.enrollment_from_batch,
+                                         bool(doc.flags.via_batch_enrollment)))
+    try:
+        verifier_inscription_directe(ParcoursGratuitsFrappe(), demande)
+    except InscriptionRefusee as e:
+        frappe.throw(str(e), exc=frappe.ValidationError)
 
 
 def parcours_enregistre(doc, method=None) -> None:
@@ -84,6 +103,7 @@ def parcours_enregistre(doc, method=None) -> None:
                                                                 ADMINISTRATEUR in frappe.get_roles(utilisateur))
     except DispenseReservee as e:
         frappe.throw(str(e), frappe.PermissionError)
+    _tenir_autonomie(doc)
     messages = []
     if bilan.dispenses:
         messages.append(f"Parcours devenu gratuit : {bilan.dispenses} dossier(s) de paiement dispensé(s), visibles "
@@ -92,6 +112,17 @@ def parcours_enregistre(doc, method=None) -> None:
         messages.append("Le tarif de ce parcours est conservé mais ne s'applique plus tant qu'il est gratuit.")
     if messages:
         frappe.msgprint(" ".join(messages), alert=True)
+
+
+def _tenir_autonomie(doc) -> None:
+    """Case « inscription autonome désactivée » du LMS : cochée sur un parcours payant, décochée quand il devient
+    gratuit (application.parcours_gratuits.autonomie_fermee)."""
+    gratuit = bool(doc.get(CHAMP_GRATUIT))
+    avant = doc.get_doc_before_save()
+    voulue = int(autonomie_fermee(gratuit, gratuit and avant is not None and not avant.get(CHAMP_GRATUIT),
+                                  bool(doc.get("disable_self_learning"))))
+    if voulue != int(doc.get("disable_self_learning") or 0):
+        doc.db_set("disable_self_learning", voulue, update_modified=False)
 
 
 # --- paiement en ligne -----------------------------------------------------------------------------------

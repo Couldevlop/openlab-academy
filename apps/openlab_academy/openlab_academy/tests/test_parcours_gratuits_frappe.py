@@ -187,7 +187,7 @@ class TestPassage(Base):
         frappe.db.set_value("LMS Course", self.cours, "parcours_gratuit", 1)
         frappe.set_user(admin)
         try:
-            paiement.parcours_enregistre(frappe._dict(name=self.cours))
+            paiement.parcours_enregistre(frappe.get_doc("LMS Course", self.cours))
         finally:
             frappe.set_user("Administrator")
         self.assertEqual(set(frappe.get_all(JOURNAL, {"dossier": ("in", self.noms)}, pluck="acteur")), {admin})
@@ -201,7 +201,7 @@ class TestPassage(Base):
             try:
                 with self.subTest(utilisateur=utilisateur_), self.assertRaisesRegex(
                         frappe.PermissionError, "Seul l'administrateur"):
-                    paiement.parcours_enregistre(frappe._dict(name=self.cours))
+                    paiement.parcours_enregistre(frappe.get_doc("LMS Course", self.cours))
             finally:
                 frappe.set_user("Administrator")
         self.assertEqual([frappe.db.get_value(DOSSIER, n, "dispense") for n in self.noms], [0, 0])

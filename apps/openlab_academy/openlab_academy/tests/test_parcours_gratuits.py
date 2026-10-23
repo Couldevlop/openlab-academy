@@ -4,8 +4,8 @@ from dataclasses import replace
 from datetime import date
 
 from openlab_academy.application.parcours_gratuits import (
-    MOTIF_GRATUIT, Bilan, DispenseReservee, DispenserParcoursGratuit, TarifSurParcoursGratuit, etat_gratuit,
-    refuser_tarif_si_gratuit, vue_parcours_gratuit)
+    MOTIF_GRATUIT, Bilan, DispenseReservee, DispenserParcoursGratuit, TarifSurParcoursGratuit, autonomie_fermee,
+    etat_gratuit, refuser_tarif_si_gratuit, vue_parcours_gratuit)
 from openlab_academy.application.paiements import (
     ChoisirMode, InscriptionTardive, OperationRefusee, OuvrirDossier, TarifAbsent)
 from openlab_academy.application.ports_paiement import ReglagesPaiement
@@ -197,3 +197,18 @@ class TestPassageAuGratuit(unittest.TestCase):
         self.assertTrue(depot.dossiers[("a@x.ci", "C")].dossier.dispense)
         self.assertFalse(depot.dossiers[("d@x.ci", "C")].dossier.dispense)
 
+
+class TestAutonomie(unittest.TestCase):
+    """« Inscription autonome désactivée » du LMS : le bouton d'inscription directe d'un parcours payant cède la place
+    à « contactez l'administrateur »."""
+
+    def test_parcours_payant_toujours_ferme(self):
+        for fermee in (False, True):
+            self.assertTrue(autonomie_fermee(gratuit=False, devenu_gratuit=False, fermee=fermee))
+
+    def test_parcours_devenu_gratuit_rouvert(self):
+        self.assertFalse(autonomie_fermee(gratuit=True, devenu_gratuit=True, fermee=True))
+
+    def test_parcours_gratuit_reglage_de_l_administrateur_respecte(self):
+        for fermee in (False, True):
+            self.assertEqual(autonomie_fermee(gratuit=True, devenu_gratuit=False, fermee=fermee), fermee)

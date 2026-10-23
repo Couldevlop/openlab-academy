@@ -178,6 +178,21 @@ class InscriptionsFrappe:
         return bool(lots) and bool(frappe.db.exists("LMS Batch Enrollment", {"member": apprenant, "batch": ["in", lots]}))
 
 
+    def via_cohorte(self, membre: str, cours: str, cohorte: str | None, en_cours: bool) -> bool:
+        """Inscription au parcours créée par une cohorte : celle-ci porte le parcours, et le membre y est inscrit (ou
+        l'est en ce moment même : drapeau posé par le LMS, côté serveur, pendant l'enregistrement de l'inscription
+        à la cohorte)."""
+        if not cohorte or not frappe.db.exists("Batch Course", {"parent": cohorte, "course": cours}):
+            return False
+        return en_cours or bool(frappe.db.exists("LMS Batch Enrollment", {"batch": cohorte, "member": membre}))
+
+    def cohorte(self, cohorte: str) -> tuple[tuple[str, ...], datetime.date, datetime.date]:
+        """(parcours dans l'ordre de la cohorte, début, fin)."""
+        cours = tuple(frappe.get_all("Batch Course", {"parent": cohorte}, pluck="course", order_by="idx"))
+        lot = frappe.db.get_value("LMS Batch", cohorte, ["start_date", "end_date"], as_dict=True)
+        return cours, getdate(lot.start_date), getdate(lot.end_date)
+
+
 class ReglagesPaiementFrappe:
     def charger(self) -> ReglagesPaiement:
         def valeur(champ, defaut):

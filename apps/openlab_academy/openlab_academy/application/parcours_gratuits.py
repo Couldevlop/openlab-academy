@@ -37,6 +37,15 @@ def refuser_tarif_si_gratuit(gratuits: ParcoursGratuits, cours: str) -> None:
             "sur le parcours pour le rendre payant.")
 
 
+def autonomie_fermee(gratuit: bool, devenu_gratuit: bool, fermee: bool) -> bool:
+    """Case « inscription autonome désactivée » du LMS : toujours cochée sur un parcours payant (le LMS y remplace
+    « Enroll Now » par « contactez l'administrateur » ; le refus lui-même est porté par l'inscription), décochée quand
+    le parcours devient gratuit, sinon laissée au choix de l'administrateur."""
+    if not gratuit:
+        return True
+    return False if devenu_gratuit else fermee
+
+
 def vue_parcours_gratuit(cours: str, titre: str) -> dict:
     """« Mes paiements » d'un parcours gratuit : un état calme, jamais une erreur."""
     return {"cours": cours, "titre": titre, "gratuit": True}

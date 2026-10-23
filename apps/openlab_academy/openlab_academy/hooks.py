@@ -39,6 +39,8 @@ permission_query_conditions = {
 }
 doc_events = {
     "LMS Course": {"on_update": "openlab_academy.entrypoints.paiement.parcours_enregistre"},
+    # inscription directe à un parcours payant refusée hors cohorte (le dossier naît de l'inscription à la cohorte)
+    "LMS Enrollment": {"before_insert": "openlab_academy.entrypoints.paiement.avant_inscription_parcours"},
     "LMS Batch Enrollment": {
         "before_insert": "openlab_academy.entrypoints.paiement.avant_inscription",
         "after_insert": "openlab_academy.entrypoints.paiement.apres_inscription",
