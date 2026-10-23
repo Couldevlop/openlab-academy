@@ -151,23 +151,29 @@ l'installation et à chaque migration).
 
 ### Parcours gratuits (MOOC)
 
-Un parcours se crée comme les autres ; pour le rendre gratuit, cocher **« Parcours gratuit (MOOC) »** dans son
-formulaire (Desk → `/app/lms-course/<parcours>`, section des prix). La case est posée par l'administrateur ou le
-créateur du parcours (droit d'écriture sur le parcours) ; l'intendant, qui n'a que le droit « sélection » sur les
-parcours, ne la modifie pas.
+Un parcours se crée comme les autres ; pour le rendre gratuit, l'**administrateur** (System Manager) coche
+**« Parcours gratuit (MOOC) »** dans son formulaire (Desk → `/app/lms-course/<parcours>`, section des prix). La case
+est réservée à l'administrateur (niveau de droits 1) : le créateur du parcours, le modérateur et l'intendant ne la
+modifient pas, et un enregistrement qui dispenserait des dossiers est refusé s'il ne vient pas de l'administrateur
+(API, éditeur du LMS compris). L'éditeur de parcours de l'interface `/lms` ne montre pas la case : passer par le Desk.
 
 - Inscription acceptée **sans tarif** : aucun dossier, aucun frais, aucun rappel, jamais bloqué ; le parcours
   n'apparaît ni dans Intendance, ni dans Finances, ni dans l'export. « Mes paiements » affiche « Parcours gratuit —
-  aucun paiement ».
+  aucun paiement » à l'apprenant inscrit (cohorte ou parcours en autonomie).
 - La limite d'inscription tardive (2 mois après le début de la cohorte) **s'applique aussi**.
 - Un tarif saisi sur un parcours gratuit est **refusé** (message : décocher la case pour rendre le parcours payant).
+  Un tarif antérieur est conservé mais ignoré tant que le parcours est gratuit (l'administrateur en est averti).
   Un parcours **payant sans tarif reste refusé** à l'inscription (garde-fou contre l'oubli du prix).
-- **Payant → gratuit** : à l'enregistrement du parcours, ses dossiers existants sont **dispensés**, une ligne de
-  journal par dossier (auteur, date, motif « parcours devenu gratuit ») ; ils ne bloquent plus, ne reçoivent plus de
-  rappels et restent visibles, « Dispensé », dans l'historique de l'intendance. Les paiements déjà reçus restent
-  enregistrés.
+- **Payant → gratuit** : à l'enregistrement du parcours, ses dossiers qui ont encore quelque chose à payer sont
+  **dispensés**, une ligne de journal par dossier (auteur, date, motif « parcours devenu gratuit ») ; ils ne bloquent
+  plus, ne reçoivent plus de rappels et restent visibles, « Dispensé », dans l'historique de l'intendance (fiche sans
+  virement ni délai). Un dossier **soldé reste soldé**. Les paiements déjà reçus restent enregistrés ; un paiement en
+  ligne lancé avant la bascule et confirmé ensuite est encaissé sur le dossier dispensé (l'argent a bien été versé).
 - **Gratuit → payant** : vaut pour les nouveaux inscrits seulement (créer d'abord le tarif) ; aucun dossier
-  rétroactif, les dossiers dispensés le restent.
+  rétroactif, les dossiers dispensés le restent. Un apprenant inscrit pendant la période gratuite n'a pas de dossier :
+  son accès reste libre et « Mes paiements » lui indique qu'aucun dossier n'existe pour ce parcours.
+- La case doit être changée par le formulaire (enregistrement du parcours) : une écriture directe en base ne dispense
+  pas les dossiers.
 
 ### Réglages (console « Reglages Paiement OpenLab »)
 
