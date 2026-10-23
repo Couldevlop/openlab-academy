@@ -132,7 +132,7 @@ class TestLecon(Base):
     def test_correcteur_inscrit_en_retard_non_bloque(self):
         utilisateur(CORRECTEUR, "Batch Evaluator")
         suivre(self.a, CORRECTEUR)
-        hier = datetime.date.today() - datetime.timedelta(days=1)
+        hier = frappe.utils.getdate(frappe.utils.nowdate()) - datetime.timedelta(days=1)
         DepotDossiersFrappe().creer(NouveauDossier(
             CORRECTEUR, self.a, self.lots[self.a], Mode.UNE_FOIS, Tarif(10000, 100000, 110000, 120000), hier,
             (Echeance(hier, 10000, "Frais"), Echeance(hier, 100000, "Solde"))))

@@ -16,7 +16,7 @@ from openlab_academy.tests.test_paiement_inscription_frappe import cohorte, doss
 
 DOSSIER = "Dossier Paiement OpenLab"
 JOURNAL = "Journal Paiement OpenLab"
-AUJOURDHUI = datetime.date.today()
+AUJOURDHUI = frappe.utils.getdate(frappe.utils.nowdate())
 AUTRE = "autre.mooc@example.ci"
 
 

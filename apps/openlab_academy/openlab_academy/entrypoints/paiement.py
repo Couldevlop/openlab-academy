@@ -32,12 +32,14 @@ REGLAGES = "Reglages Paiement OpenLab"
 API = "/api/method/openlab_academy.entrypoints.paiement_api"
 
 
-def aujourd_hui() -> datetime.date:
-    return datetime.date.today()
+def jour_courant() -> datetime.date:
+    """Date du jour du site (Abidjan = UTC), jamais l'horloge du conteneur ; injectée dans les cas d'usage, jamais lue
+    par eux."""
+    return getdate(nowdate())
 
 
 def _ouvrir() -> OuvrirDossier:
-    return OuvrirDossier(DepotDossiersFrappe(), TarifsFrappe(), ReglagesPaiementFrappe(), aujourd_hui,
+    return OuvrirDossier(DepotDossiersFrappe(), TarifsFrappe(), ReglagesPaiementFrappe(), jour_courant,
                          ParcoursGratuitsFrappe())
 
 
@@ -137,11 +139,6 @@ def reconcilier_paiements(apprenant: str, cours: str) -> None:
 
 
 # --- virements et délais (intendant, administrateur) -----------------------------------------------------
-def jour_courant() -> datetime.date:
-    """Date du jour du site (Abidjan = UTC) ; injectée dans les cas d'usage, jamais lue par eux."""
-    return getdate(nowdate())
-
-
 def enregistrer_virement(acteur: str, dossier: str, montant: int, reference: str, date_paiement: datetime.date,
                          motif: str = "") -> None:
     EnregistrerVirement(DepotDossiersFrappe(), journaliser, jour_courant).executer(

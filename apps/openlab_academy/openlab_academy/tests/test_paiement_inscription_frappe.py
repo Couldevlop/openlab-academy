@@ -1,6 +1,7 @@
 """Inscription à une cohorte : refus (cohorte close, parcours sans tarif), dossier aux prix figés, choix du mode."""
 import datetime
 import json
+from unittest import mock
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -16,7 +17,7 @@ from openlab_academy.tests.fabriques import parcours
 from openlab_academy.tests.test_paiement_donnees_frappe import ELEVE, cours, tarif, utilisateur
 
 DOSSIER = "Dossier Paiement OpenLab"
-AUJOURDHUI = datetime.date.today()
+AUJOURDHUI = frappe.utils.getdate(frappe.utils.nowdate())
 
 
 def cohorte(c, debut=None, rythme="standard"):
@@ -57,6 +58,18 @@ class TestInscription(Base):
                           (str(dixieme_suivant(AUJOURDHUI, ReglagesPaiementFrappe().charger().jour_echeance)), 90000,
                            "Échéance")])
         self.assertEqual(str(d.date_inscription), str(AUJOURDHUI))
+
+    def test_date_d_inscription_au_jour_du_site_et_non_a_l_horloge_du_conteneur(self):
+        """Fuseau Abidjan : la date d'inscription (frais, premier 10, inscription tardive) vient du jour du site."""
+        from openlab_academy.entrypoints import paiement
+        tarif(self.cours).insert(ignore_permissions=True)
+        lot = cohorte(self.cours)
+        jour_du_site = AUJOURDHUI + datetime.timedelta(days=1)
+        with mock.patch.object(paiement, "jour_courant", return_value=jour_du_site):
+            inscrire(lot)
+        d = frappe.get_doc(DOSSIER, dossier_de(self.cours))
+        self.assertEqual(str(d.date_inscription), str(jour_du_site))
+        self.assertEqual(str(d.echeances[0].date_limite), str(jour_du_site))
 
     def test_tarif_modifie_ensuite_sans_effet_sur_le_dossier(self):
         t = tarif(self.cours).insert(ignore_permissions=True)

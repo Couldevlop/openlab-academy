@@ -21,7 +21,7 @@ SITE, CLE, SECRET = "105890", "cle-api-frappe-123", "secret-frappe-456"
 BASE = "https://academy.openlab.ci"
 API = f"{BASE}/api/method/openlab_academy.entrypoints.paiement_api"
 PAIEMENT = "Paiement OpenLab"
-AUJOURDHUI = datetime.date.today()
+AUJOURDHUI = frappe.utils.getdate(frappe.utils.nowdate())
 
 
 def jeton(corps, secret=SECRET):

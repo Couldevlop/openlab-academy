@@ -39,7 +39,7 @@ def inscrire_sans_paiement(lot, membre):
     if not frappe.db.exists("Tarif Parcours OpenLab", c):
         tarif(c).insert(ignore_permissions=True)
     debut = frappe.utils.getdate(frappe.db.get_value("LMS Batch", lot, "start_date"))
-    with mock.patch.object(paiement, "aujourd_hui", return_value=debut):
+    with mock.patch.object(paiement, "jour_courant", return_value=debut):
         return frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": lot, "member": membre}).insert(
             ignore_permissions=True)
 
