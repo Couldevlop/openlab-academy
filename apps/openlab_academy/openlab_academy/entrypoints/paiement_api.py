@@ -29,7 +29,6 @@ from urllib.parse import quote
 
 import frappe
 from frappe.rate_limiter import rate_limit
-from frappe.utils import getdate
 
 from frappe.utils.xlsxutils import make_xlsx
 
@@ -46,6 +45,7 @@ LIMITE_APPRENANTS = 60  # choix de mode et demandes de paiement par heure et par
 NOM_MAX = 140
 ROLES_AGENTS = frozenset({"System Manager", "Intendant OpenLab"})
 _ENTIER = re.compile(r"[0-9]{1,12}")
+_DATE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 
 
 def _consigner(titre: str, transaction: str, motif: str) -> None:
@@ -121,10 +121,13 @@ def _entier(valeur):
 
 
 def _jour(valeur) -> date | None:
-    """Date ISO d'une requête ; None si absente ou illisible (refusée ensuite par le cas d'usage)."""
+    """Date AAAA-MM-JJ d'une requête, jamais devinée (« 10/12/2026 » est ambigu) ; None si absente ou illisible
+    (refusée ensuite par le cas d'usage)."""
     try:
-        return getdate(valeur) if isinstance(valeur, str) and valeur.strip() else None
-    except Exception:
+        if isinstance(valeur, str) and _DATE.fullmatch(valeur := valeur.strip()):
+            return date.fromisoformat(valeur)
+        return None
+    except ValueError:
         return None
 
 

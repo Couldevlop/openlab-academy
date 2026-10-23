@@ -158,6 +158,21 @@ class TestVirement(Base):
                     self.virer(**{champ: v})
         self.assertEqual(frappe.get_all(PAIEMENT, {"dossier": self.dossier}), [])
 
+    def test_montant_superieur_au_reste_du_refuse_et_rien_n_est_ecrit(self):
+        with self.assertRaisesRegex(frappe.ValidationError, r"supérieur au reste dû \(100 000 FCFA\)"):
+            self.virer(montant=1000000)
+        self.assertEqual(frappe.get_all(PAIEMENT, {"dossier": self.dossier}), [])
+        self.assertEqual(self.journal("virement_enregistre"), [])
+        self.virer(montant=100000)
+        self.assertEqual(self.statut(), Statut.SOLDE)
+
+    def test_date_hors_format_iso_refusee(self):
+        """« 10/12/2025 » n'est jamais deviné (10 décembre ou 12 octobre) : seule la forme AAAA-MM-JJ est lue."""
+        for jour in ("10/12/2025", "12 oct. 2025", "2025.10.12"):
+            with self.subTest(jour=jour), self.assertRaisesRegex(frappe.ValidationError, "date"):
+                self.virer(date_paiement=jour)
+        self.assertEqual(frappe.get_all(PAIEMENT, {"dossier": self.dossier}), [])
+
     def test_dossier_inconnu_ou_dispense_refuse(self):
         with self.assertRaisesRegex(frappe.ValidationError, "Aucun dossier"):
             self.virer(dossier="inexistant")
@@ -191,6 +206,14 @@ class TestDelai(Base):
                 paiement_api.accorder_delai(self.dossier, jusqu_au, motif)
         self.assertIsNone(frappe.db.get_value(DOSSIER, self.dossier, "delai_jusqu_au"))
         self.assertEqual(self.journal("delai_accorde"), [])
+
+    def test_delai_borne_a_la_fin_de_la_cohorte_plus_90_jours(self):
+        fin = DepotDossiersFrappe().charger(ELEVE, self.cours).fin
+        with self.assertRaisesRegex(frappe.ValidationError, r"fin de la cohorte \+ 90 jours"):
+            paiement_api.accorder_delai(self.dossier, str(add_days(fin, 91)), "Geste")
+        self.assertIsNone(frappe.db.get_value(DOSSIER, self.dossier, "delai_jusqu_au"))
+        paiement_api.accorder_delai(self.dossier, str(add_days(fin, 90)), "Geste")
+        self.assertEqual(getdate(frappe.db.get_value(DOSSIER, self.dossier, "delai_jusqu_au")), add_days(fin, 90))
 
     def test_dossier_dispense_refuse(self):
         frappe.db.set_value(DOSSIER, self.dossier, "dispense", 1)
