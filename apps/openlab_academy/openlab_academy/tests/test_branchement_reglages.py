@@ -10,6 +10,7 @@ from frappe.tests.utils import FrappeTestCase
 from openlab_academy.entrypoints import cohorte, seed
 from openlab_academy.infrastructure import reglages_frappe, reglages_source_frappe
 from openlab_academy.tests.fabriques import parcours_brut
+from openlab_academy.tests.test_cohorte_frappe import supprimer_cohortes
 
 TITRE = "Parcours réglages test"
 
@@ -73,7 +74,7 @@ class TestBranchementReglages(FrappeTestCase):
     def test_horaires_de_seance_regles(self):
         regler(heure_debut="19:00:00", heure_fin="21:00:00")
         seed.run(commit=False)
-        frappe.db.delete("LMS Batch", {"title": ["like", "Promo 1 — Fondamentaux%"]})
+        supprimer_cohortes({"title": ["like", "Promo 1 — Fondamentaux%"]})
         b = frappe.get_doc("LMS Batch", cohorte.ouvrir_pilote(commit=False)["cohorte"])
         self.assertEqual((str(b.start_time), str(b.end_time)), ("19:00:00", "21:00:00"))
 

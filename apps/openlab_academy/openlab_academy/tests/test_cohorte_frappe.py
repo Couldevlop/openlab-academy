@@ -16,6 +16,16 @@ STANDARD = Reglages().rythme("standard")
 TITRE_PILOTE = "Promo 1 — Fondamentaux de la Data Science · Standard 12 h"
 
 
+def supprimer_cohortes(filtre: dict) -> None:
+    """Supprime les cohortes et leurs lignes (parcours, formateurs) : une suppression brute de LMS Batch laissait des
+    lignes orphelines qu'une cohorte recréée sous le même nom reprenait, en doublon, après un commit."""
+    lots = frappe.get_all("LMS Batch", filtre, pluck="name")
+    if lots:
+        frappe.db.delete("Batch Course", {"parent": ["in", lots]})
+        frappe.db.delete("Course Instructor", {"parent": ["in", lots], "parenttype": "LMS Batch"})
+        frappe.db.delete("LMS Batch", {"name": ["in", lots]})
+
+
 class TestDepotCohortesFrappe(FrappeTestCase):
     def tearDown(self):
         frappe.db.rollback()
@@ -48,7 +58,7 @@ class TestCommandeCohorte(FrappeTestCase):
 
     def test_ouvrir_pilote_idempotent(self):
         seed.run(commit=False)
-        frappe.db.delete("LMS Batch", {"title": TITRE_PILOTE})
+        supprimer_cohortes({"title": TITRE_PILOTE})
         premiere = commande.ouvrir_pilote(commit=False)
         self.assertTrue(premiere["creee"])
         self.assertEqual(frappe.db.get_value("LMS Batch", premiere["cohorte"], "title"), TITRE_PILOTE)
@@ -56,7 +66,7 @@ class TestCommandeCohorte(FrappeTestCase):
 
     def test_ouvrir_pilote_intensif(self):
         seed.run(commit=False)
-        frappe.db.delete("LMS Batch", {"title": ("like", "%· Intensif 16 h")})
+        supprimer_cohortes({"title": ("like", "%· Intensif 16 h")})
         resultat = commande.ouvrir_pilote(rythme="intensif", commit=False)
         b = frappe.get_doc("LMS Batch", resultat["cohorte"])
         self.assertTrue(b.title.endswith("· Intensif 16 h"))
@@ -68,10 +78,12 @@ class TestCommandeCohorte(FrappeTestCase):
 
     def test_ouverture_validee_en_base(self):
         seed.run(commit=False)
-        frappe.db.delete("LMS Batch", {"title": TITRE_PILOTE})
+        supprimer_cohortes({"title": TITRE_PILOTE})
         nom = commande.ouvrir_pilote(commit=True)["cohorte"]
         frappe.db.rollback()
         self.assertTrue(frappe.db.exists("LMS Batch", nom))
+        # rouverte après un commit, la cohorte ne reprend aucune ligne de la précédente
+        self.assertEqual(frappe.db.count("Batch Course", {"parent": nom}), 1)
 
     def test_non_exposee_a_l_api(self):
         """OWASP A01."""
