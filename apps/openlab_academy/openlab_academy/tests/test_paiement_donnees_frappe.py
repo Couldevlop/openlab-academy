@@ -216,6 +216,21 @@ class TestRappel(FrappeTestCase):
         self.rappel(canal="sms")
 
 
+DROITS = ("select", "read", "write", "create", "delete", "submit", "cancel", "amend", "report", "export", "import",
+          "share", "print", "email", "if_owner")
+
+
+def droits(doctype: str, ajoutees: bool = False) -> set:
+    """Règles de LMS Course (rôle, niveau, droits), hors règles ajoutées par l'application si `ajoutees` : choix du
+    parcours par l'intendant, case « Parcours gratuit » de l'administrateur. Une montée de LMS qui change ses droits
+    standard fait échouer la comparaison : les droits personnalisés, figés, sont alors à reprendre."""
+    regles = frappe.get_all(doctype, {"parent": "LMS Course"}, ["role", "permlevel", *DROITS])
+    if ajoutees:
+        regles = [r for r in regles if not (r.role == "Intendant OpenLab" and r.permlevel == 0)
+                  and not (r.role == "System Manager" and r.permlevel == 1)]
+    return {(r.role, r.permlevel, *(r[d] or 0 for d in DROITS)) for r in regles}
+
+
 class TestRoleIntendant(FrappeTestCase):
     def tearDown(self):
         frappe.db.rollback()
@@ -228,14 +243,13 @@ class TestRoleIntendant(FrappeTestCase):
 
     def test_l_intendant_choisit_le_parcours_d_un_tarif_sans_lire_les_parcours(self):
         frappe.db.delete("Custom DocPerm", {"parent": "LMS Course", "role": "Intendant OpenLab"})
-        avant = frappe.db.count("DocPerm", {"parent": "LMS Course"})
         install.preparer_roles()
         install.preparer_roles()
         (regle,) = frappe.get_all("Custom DocPerm", {"parent": "LMS Course", "role": "Intendant OpenLab"},
                                   ["select", "read", "write"])
         self.assertEqual((regle.select, regle.read, regle.write), (1, 0, 0))
-        # les droits standard restent en vigueur (recopiés avant la règle de l'intendant)
-        self.assertGreaterEqual(frappe.db.count("Custom DocPerm", {"parent": "LMS Course"}), avant + 1)
+        # les droits standard restent en vigueur, à l'identique (recopiés avant les règles ajoutées)
+        self.assertEqual(droits("Custom DocPerm", ajoutees=True), droits("DocPerm"))
         intendant = utilisateur("tarifs.intendant@example.ci")
         frappe.get_doc("User", intendant).add_roles("Intendant OpenLab")
         nom = cours("Parcours choisi par l'intendant")

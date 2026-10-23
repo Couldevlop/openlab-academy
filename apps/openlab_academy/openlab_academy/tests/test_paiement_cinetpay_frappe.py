@@ -323,7 +323,8 @@ class TestNotificationSansJetonCsrf(FrappeTestCase):
                 setattr(frappe.local, nom, valeur)
 
     def test_post_visiteur_sans_jeton_accepte(self):
-        self.controler({})
+        """Session Guest réelle : des données, mais aucun jeton enregistré."""
+        self.controler({"user": "Guest"})
 
     def test_post_d_une_session_a_jeton_sans_jeton_refuse(self):
         self.addCleanup(frappe.flags.pop, "disable_traceback", None)
