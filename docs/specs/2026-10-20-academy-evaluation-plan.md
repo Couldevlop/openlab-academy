@@ -1,8 +1,5 @@
 # OpenLab Academy — Moteur d'évaluation : plan d'implémentation
 
-> **Pour l'exécutant :** sous-compétence requise : superpowers:subagent-driven-development (recommandé) ou
-> superpowers:executing-plans. Cases `- [ ]` pour le suivi.
-
 **But :** chaque mise en situation, livrable, projet et capstone passe par une chaîne de correction non bloquante
 (auto-évaluation → contrôles → IA souveraine → pairs → jury → formateur), entièrement réglable dans la console.
 

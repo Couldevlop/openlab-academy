@@ -1,8 +1,5 @@
 # Paiement des parcours — plan de réalisation
 
-> **Pour les agents :** sous-skill requis : superpowers:subagent-driven-development (recommandé) ou
-> superpowers:executing-plans. Étapes en cases à cocher (`- [ ]`).
-
 **But :** rendre les parcours payants (frais d'inscription + trois modes, échéances le 10 du mois, rappels J-7/J-3/J-1
 sur trois canaux, blocage par parcours, CinetPay et virements, vue intendant et résumé administrateur).
 
