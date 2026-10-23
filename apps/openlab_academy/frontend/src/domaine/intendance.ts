@@ -243,6 +243,7 @@ const ACTIONS: Record<string, string> = {
   delai_accorde: 'Délai accordé',
   paiement_confirme: 'Paiement en ligne confirmé',
   mode: 'Mode de paiement changé',
+  dispense_parcours_gratuit: 'Dispensé : parcours devenu gratuit',
 }
 
 export function libelleAction(action: string): string {

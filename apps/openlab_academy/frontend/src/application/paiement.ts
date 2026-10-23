@@ -7,6 +7,7 @@ import {
   urlPaiementSure,
   type DossierPaiement,
   type Mode,
+  type MonPaiement,
 } from '../domaine/paiement'
 import { ErreurDepot } from './erreurs'
 import type { DepotPaiement, Horloge, Navigateur } from './ports'
@@ -17,7 +18,8 @@ export const LIEN_REFUSE =
   "Le lien de paiement reçu n'est pas sûr : il n'a pas été ouvert. Réessayez dans un instant ou réglez par virement."
 
 export interface DossierDuJour {
-  dossier: DossierPaiement
+  /** Le dossier, ou l'état gratuit d'un parcours gratuit (MOOC). */
+  dossier: MonPaiement
   /** AAAA-MM-JJ, pour situer chaque échéance (réglée, en retard, à venir). */
   aujourdhui: string
 }

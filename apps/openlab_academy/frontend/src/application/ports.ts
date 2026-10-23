@@ -3,7 +3,7 @@
 import type { ChargeCorrection, FileCorrection, ResultatLot, VueCopie } from '../domaine/correction'
 import type { Brouillon, ResumeRelecture, SaisieRelecture, VueRelecture } from '../domaine/relecture'
 import type { FicheIntendance, ResumeFinances, VueIntendance } from '../domaine/intendance'
-import type { DossierPaiement, Mode } from '../domaine/paiement'
+import type { DossierPaiement, Mode, MonPaiement } from '../domaine/paiement'
 import type { Retour } from '../domaine/retour'
 
 export interface DepotCorrection {
@@ -27,7 +27,8 @@ export interface DepotRetour {
 
 /** Dossier de paiement de l'apprenant connecté : le serveur le retrouve par la session, jamais par un identifiant. */
 export interface DepotPaiement {
-  monDossier(cours: string): Promise<DossierPaiement>
+  /** Le dossier du parcours, ou l'état gratuit d'un parcours gratuit (MOOC). */
+  monDossier(cours: string): Promise<MonPaiement>
   /** Rend le dossier replanifié dans le nouveau mode. */
   choisirMode(cours: string, mode: Mode, telephone: string): Promise<DossierPaiement>
   /** Adresse de la page de paiement CinetPay. */

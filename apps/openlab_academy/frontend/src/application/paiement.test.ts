@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dossierPaiement } from '../test/fabriques'
+import { dossierPaiement, parcoursGratuit } from '../test/fabriques'
 import { fauxCasUsages, fauxPorts, horlogeFixe } from '../test/faux-ports'
 import { ErreurDepot, messageErreur } from './erreurs'
 import { LIEN_REFUSE, TELEPHONE_INVALIDE } from './paiement'
@@ -13,6 +13,17 @@ describe('mes paiements', () => {
     ports.paiement.monDossier.mockResolvedValue(d)
     expect(await cas.chargerDossier.executer('fondamentaux-data')).toEqual({ dossier: d, aujourdhui: '2026-11-11' })
     expect(ports.paiement.monDossier).toHaveBeenCalledWith('fondamentaux-data')
+  })
+
+  it('parcours gratuit : l’état gratuit est rendu tel quel', async () => {
+    const ports = fauxPorts()
+    ports.horloge = horlogeFixe(new Date('2026-11-11T08:00:00Z'))
+    const { cas } = fauxCasUsages(ports)
+    ports.paiement.monDossier.mockResolvedValue(parcoursGratuit())
+    expect(await cas.chargerDossier.executer('initiation-ia')).toEqual({
+      dossier: parcoursGratuit(),
+      aujourdhui: '2026-11-11',
+    })
   })
 
   it('choisir un mode : téléphone normalisé avant l’envoi, dossier à jour rendu', async () => {

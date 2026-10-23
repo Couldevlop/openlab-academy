@@ -47,6 +47,20 @@ export interface DossierPaiement {
   instructions_virement: string
 }
 
+/** Parcours gratuit (MOOC) : ni tarif, ni échéancier, ni rappel, ni blocage ; aucun dossier de paiement. */
+export interface ParcoursGratuit {
+  cours: string
+  titre: string
+  gratuit: true
+}
+
+/** Ce que « Mes paiements » montre pour un parcours : son dossier, ou l'état gratuit. */
+export type MonPaiement = DossierPaiement | ParcoursGratuit
+
+export function estGratuit(p: MonPaiement): p is ParcoursGratuit {
+  return 'gratuit' in p && p.gratuit
+}
+
 const FINE = ' ' // espace fine insécable
 
 /** « 187 500 FCFA » : groupes de trois chiffres et unité séparés par des espaces fines insécables. */

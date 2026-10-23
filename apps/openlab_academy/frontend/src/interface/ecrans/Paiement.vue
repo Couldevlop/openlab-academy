@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // Mes paiements (apprenant, mobile d'abord) : relevé du parcours (statut, prochain versement, part réglée), échéancier,
 // choix du mode en trois cartes (groupe radio) avec téléphone, paiement en ligne ou virement. L'apprenant bloqué y
-// arrive par la redirection du serveur. Les instructions de virement sont du texte brut, jamais du HTML.
+// arrive par la redirection du serveur. Les instructions de virement sont du texte brut, jamais du HTML. Un parcours
+// gratuit (MOOC) n'a ni dossier ni paiement : un état calme, jamais une erreur.
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ErreurDepot, messageErreur } from '../../application/erreurs'
@@ -11,6 +12,7 @@ import {
   calendrierMode,
   changement,
   enSouffrance,
+  estGratuit,
   formaterJour,
   formaterTelephone,
   formaterXof,
@@ -22,6 +24,7 @@ import {
   type DossierPaiement,
   type EtatEcheance,
   type Mode,
+  type ParcoursGratuit,
 } from '../../domaine/paiement'
 import EnTete from '../composants/EnTete.vue'
 import { utiliserCasUsages } from '../injection'
@@ -40,6 +43,7 @@ const route = useRoute()
 const cours = computed(() => parametre(route.params.cours))
 
 const dossier = ref<DossierPaiement | null>(null)
+const gratuit = ref<ParcoursGratuit | null>(null)
 const aujourdhui = ref('')
 const chargement = ref(true)
 const erreur = ref('')
@@ -89,9 +93,16 @@ async function charger() {
   try {
     const vue = await cas.chargerDossier.executer(cours.value)
     aujourdhui.value = vue.aujourdhui
-    adopter(vue.dossier)
+    if (estGratuit(vue.dossier)) {
+      dossier.value = null
+      gratuit.value = vue.dossier
+    } else {
+      gratuit.value = null
+      adopter(vue.dossier)
+    }
   } catch (e) {
     dossier.value = null
+    gratuit.value = null
     erreur.value = e instanceof ErreurDepot && e.sorte === 'acces_refuse' ? AUCUN_DOSSIER : messageErreur(e)
   } finally {
     chargement.value = false
@@ -175,6 +186,26 @@ watch(cours, charger)
         <h1 class="titre-seul">Mes paiements</h1>
         <p class="bandeau bandeau-erreur" role="alert">{{ erreur }}</p>
       </template>
+
+      <section v-else-if="gratuit" class="releve releve-gratuit" aria-labelledby="titre-paiement">
+        <div class="releve-tete">
+          <div>
+            <h1 id="titre-paiement">Mes paiements</h1>
+            <p class="parcours">{{ gratuit.titre }}</p>
+          </div>
+          <p class="statut statut-gratuit">
+            <svg class="icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8" /></svg>
+            <span>Gratuit</span>
+          </p>
+        </div>
+        <p class="fin gratuit-message">Parcours gratuit — aucun paiement</p>
+        <p class="gratuit-detail">
+          Ni frais d’inscription, ni échéance, ni rappel : tout le parcours vous est ouvert. Bon apprentissage !
+        </p>
+        <a class="bouton bouton-principal ouvrir-parcours" :href="`/lms/courses/${encodeURIComponent(gratuit.cours)}`"
+          >Ouvrir le parcours</a
+        >
+      </section>
 
       <template v-else-if="dossier">
         <div v-if="dossier.bloque" class="suspendu" role="note">
@@ -591,6 +622,24 @@ watch(cours, charger)
   font-weight: 600;
   font-size: 14px;
 }
+.statut-gratuit {
+  background: var(--ol-sun);
+  color: var(--ol-navy);
+}
+.gratuit-detail {
+  margin: 8px 0 0;
+  font-size: 15px;
+  opacity: 0.9;
+  max-width: 52ch;
+}
+.ouvrir-parcours {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  min-height: 48px;
+  text-decoration: none;
+}
 .fin {
   margin: 22px 0 0;
   font-family: var(--ol-font-display);
@@ -979,6 +1028,9 @@ watch(cours, charger)
   }
   .releve-tete {
     grid-column: 1 / -1;
+  }
+  .releve-gratuit {
+    display: block;
   }
   .parcours {
     font-size: 26px;

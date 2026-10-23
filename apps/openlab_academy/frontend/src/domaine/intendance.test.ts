@@ -168,6 +168,7 @@ describe('journal', () => {
     expect(libelleAction('delai_accorde')).toBe('Délai accordé')
     expect(libelleAction('paiement_confirme')).toBe('Paiement en ligne confirmé')
     expect(libelleAction('mode')).toBe('Mode de paiement changé')
+    expect(libelleAction('dispense_parcours_gratuit')).toBe('Dispensé : parcours devenu gratuit')
     expect(libelleAction('autre_chose')).toBe('autre_chose')
   })
 

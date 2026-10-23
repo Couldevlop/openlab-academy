@@ -3,7 +3,7 @@ import type { ElementFile, FileCorrection, VueCopie } from '../domaine/correctio
 import type { Critere, Grille } from '../domaine/grille'
 import type { ResumeRelecture, VueRelecture } from '../domaine/relecture'
 import type { FicheIntendance, LigneIntendance, ResumeFinances, VueIntendance } from '../domaine/intendance'
-import type { DossierPaiement } from '../domaine/paiement'
+import type { DossierPaiement, ParcoursGratuit } from '../domaine/paiement'
 import type { CritereRetour, Retour } from '../domaine/retour'
 
 export const LIBELLES = ['Insuffisant', 'À consolider', 'Satisfaisant', 'Excellent']
@@ -131,6 +131,14 @@ export const retour = (autres: Partial<Retour> = {}): Retour => ({
   criteres: [],
   commentaire_general: '',
   message: '',
+  ...autres,
+})
+
+/** Parcours gratuit (MOOC) tel que `mon_dossier` le rend : aucun paiement. */
+export const parcoursGratuit = (autres: Partial<ParcoursGratuit> = {}): ParcoursGratuit => ({
+  cours: 'initiation-ia',
+  titre: 'Initiation à l’IA',
+  gratuit: true,
   ...autres,
 })
 

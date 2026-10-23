@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { dossierPaiement } from '../test/fabriques'
+import { dossierPaiement, parcoursGratuit } from '../test/fabriques'
 import {
+  estGratuit,
   MODES,
   calendrierMode,
   changement,
@@ -142,5 +143,13 @@ describe('lien de paiement', () => {
     ]) {
       expect(urlPaiementSure(u)).toBe(false)
     }
+  })
+})
+
+describe('parcours gratuit (MOOC)', () => {
+  it('distingue l’état gratuit d’un dossier de paiement', () => {
+    expect(estGratuit(parcoursGratuit())).toBe(true)
+    expect(estGratuit(dossierPaiement())).toBe(false)
+    expect(estGratuit(dossierPaiement({ statut: 'dispense' }))).toBe(false)
   })
 })

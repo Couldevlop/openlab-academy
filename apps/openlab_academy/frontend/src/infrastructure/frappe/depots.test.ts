@@ -167,6 +167,13 @@ describe('dépôt de paiement (Frappe)', () => {
     expect(await serveurPaiement(d).depot.monDossier('C1')).toEqual(d)
   })
 
+  it('parcours gratuit : état calme reconnu, jamais pris pour un dossier', async () => {
+    const g = { cours: 'initiation-ia', titre: 'Initiation à l’IA', gratuit: true }
+    expect(await serveurPaiement(g).depot.monDossier('initiation-ia')).toEqual(g)
+    await invalide(serveurPaiement({ ...g, gratuit: false }).depot.monDossier('initiation-ia'))
+    await invalide(serveurPaiement({ ...g, titre: 3 }).depot.monDossier('initiation-ia'))
+  })
+
   it('réponse malformée : erreur typée', async () => {
     const invalidePaiement = (r: unknown) => invalide(serveurPaiement(r).depot.monDossier('C1'))
     await invalidePaiement({ ...dossierPaiement(), mode: 'trimestriel' })

@@ -15,6 +15,7 @@ import {
   sansResultat,
   schemaDossierPaiement,
   schemaFicheIntendance,
+  schemaMonPaiement,
   schemaFile,
   schemaMesRelectures,
   schemaPaiement,
@@ -82,7 +83,7 @@ export class DepotPaiementFrappe implements DepotPaiement {
   constructor(private readonly client: ClientFrappe) {}
 
   monDossier(cours: string) {
-    return this.client.lire('mon_dossier', { cours }, schemaDossierPaiement)
+    return this.client.lire('mon_dossier', { cours }, schemaMonPaiement)
   }
 
   choisirMode(cours: string, mode: Mode, telephone: string) {

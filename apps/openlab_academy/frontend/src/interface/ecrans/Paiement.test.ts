@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { ErreurDepot } from '../../application/erreurs'
 import { LIEN_REFUSE } from '../../application/paiement'
 import { TELEPHONE_INVALIDE, type DossierPaiement } from '../../domaine/paiement'
-import { dossierPaiement } from '../../test/fabriques'
+import { dossierPaiement, parcoursGratuit } from '../../test/fabriques'
 import { fauxPorts, horlogeFixe } from '../../test/faux-ports'
 import { monterEcran } from '../../test/monter'
 
@@ -313,6 +313,32 @@ describe('Mes paiements', () => {
       'Aucun dossier de paiement pour ce parcours. Vérifiez le lien ou contactez l’intendance.',
     )
     expect(w.find('h1').text()).toBe('Mes paiements')
+  })
+
+  it('parcours gratuit (MOOC) : état calme, ni erreur, ni montant, ni mode', async () => {
+    const ports = fauxPorts()
+    ports.paiement.monDossier.mockResolvedValue(parcoursGratuit())
+    const { w } = await monterEcran('/paiement/initiation-ia', ports)
+    expect(w.find('[role="alert"]').exists()).toBe(false)
+    expect(w.find('h1').text()).toBe('Mes paiements')
+    expect(w.find('.parcours').text()).toBe('Initiation à l’IA')
+    expect(texte(w, '.gratuit-message')).toBe('Parcours gratuit — aucun paiement')
+    expect(w.find('.statut').text()).toBe('Gratuit')
+    for (const absent of ['.payer', '.modes', '.echeancier', '.virement', '.suspendu', '.jauge']) {
+      expect(w.find(absent).exists()).toBe(false)
+    }
+    expect(w.find('a.ouvrir-parcours').attributes('href')).toBe('/lms/courses/initiation-ia')
+  })
+
+  it('d’un parcours gratuit à un parcours payant : le dossier remplace l’état gratuit', async () => {
+    const ports = fauxPorts()
+    ports.horloge = horlogeFixe(new Date('2026-11-02T09:00:00Z'))
+    ports.paiement.monDossier.mockResolvedValueOnce(parcoursGratuit()).mockResolvedValue(dossierPaiement())
+    const { w, routeur } = await monterEcran('/paiement/initiation-ia', ports)
+    await routeur.push('/paiement/fondamentaux-data')
+    await flushPromises()
+    expect(w.find('.gratuit-message').exists()).toBe(false)
+    expect(w.find('.parcours').text()).toBe('Fondamentaux de la data science')
   })
 
   it('serveur injoignable : message de panne', async () => {

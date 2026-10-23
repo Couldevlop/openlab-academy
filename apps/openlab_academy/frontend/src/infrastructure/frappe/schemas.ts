@@ -4,7 +4,7 @@ import * as z from 'zod/mini'
 import type { FileCorrection, ResultatLot, VueCopie } from '../../domaine/correction'
 import type { Grille } from '../../domaine/grille'
 import type { FicheIntendance, ResumeFinances, VueIntendance } from '../../domaine/intendance'
-import type { DossierPaiement } from '../../domaine/paiement'
+import type { DossierPaiement, MonPaiement, ParcoursGratuit } from '../../domaine/paiement'
 import type { ResumeRelecture, VueRelecture } from '../../domaine/relecture'
 import type { Retour } from '../../domaine/retour'
 
@@ -158,6 +158,14 @@ export const schemaDossierPaiement: z.ZodMiniType<DossierPaiement> = z.object({
   bloque: z.boolean(),
   instructions_virement: texte,
 })
+
+// paiement_api.mon_dossier d'un parcours gratuit (application/parcours_gratuits.vue_parcours_gratuit)
+const schemaParcoursGratuit: z.ZodMiniType<ParcoursGratuit> = z.object({
+  cours: texte,
+  titre: texte,
+  gratuit: z.literal(true),
+})
+export const schemaMonPaiement: z.ZodMiniType<MonPaiement> = z.union([schemaParcoursGratuit, schemaDossierPaiement])
 
 // paiement_api.intendance, fiche, resume (application/tableaux_paiement : _ligne, Intendance, Fiche, Resume)
 const mode = z.enum(['une_fois', 'deux_tranches', 'mensuel'])
