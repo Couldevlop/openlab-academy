@@ -332,6 +332,41 @@ class TestEnvois(Base):
             self.assertEqual(lms.save_progress(self.lecon_b, None, {"is_complete": 1}), 7)
         sauve.assert_called_once_with(self.lecon_b, None, {"is_complete": 1})
 
+    def achever(self, cours):
+        frappe.db.set_value("LMS Enrollment", {"course": cours, "member": ELEVE}, "progress", 100)
+
+    def certificat(self, cours):
+        return frappe.get_doc({"doctype": "LMS Certificate", "member": ELEVE, "course": cours,
+                               "issue_date": frappe.utils.nowdate(),
+                               "template": lms.lms_certificate.get_default_certificate_template()})
+
+    def test_certificat_refuse_meme_contenu_acheve(self):
+        """Contenu fini tôt, puis paiements arrêtés : aucun certificat par l'API."""
+        self.achever(self.a)
+        frappe.set_user(ELEVE)
+        with mock.patch.object(lms.lms_certificate, "create_certificate") as cree,                 self.assertRaises(lms.ParcoursBloque):
+            lms.create_certificate(self.a)
+        cree.assert_not_called()
+        self.assertEqual(frappe.local.response["redirection"], f"/espace/paiement/{self.a}")
+        with self.assertRaises(lms.ParcoursBloque):
+            self.certificat(self.a).insert(ignore_permissions=True)
+        frappe.set_user("Administrator")
+        self.assertFalse(frappe.db.exists("LMS Certificate", {"member": ELEVE, "course": self.a}))
+
+    def test_certificat_du_parcours_ouvert_transmis(self):
+        self.achever(self.b)
+        frappe.set_user(ELEVE)
+        with mock.patch.object(lms.lms_certificate, "create_certificate", return_value="CERT") as cree:
+            self.assertEqual(lms.create_certificate(self.b), "CERT")
+        cree.assert_called_once_with(self.b)
+        self.certificat(self.b).insert(ignore_permissions=True)
+
+    def test_certificat_delivre_par_l_equipe_a_un_apprenant_bloque(self):
+        """Décision d'un membre de l'équipe (évaluateur, administrateur) : jamais refusée par le paiement."""
+        self.achever(self.a)
+        self.certificat(self.a).insert(ignore_permissions=True)
+        self.assertTrue(frappe.db.exists("LMS Certificate", {"member": ELEVE, "course": self.a}))
+
     def test_soumission_en_erreur_jamais_bloquante(self):
         with mock.patch.object(lms, "parcours_bloque", side_effect=RuntimeError("panne")), \
                 mock.patch.object(frappe, "log_error"):
@@ -416,7 +451,11 @@ class TestHooks(FrappeTestCase):
             "lms.lms.doctype.lms_quiz.lms_quiz.check_answer": "openlab_academy.entrypoints.lms.check_answer",
             "lms.lms.api.mark_lesson_progress": "openlab_academy.entrypoints.lms.mark_lesson_progress",
             "lms.lms.doctype.course_lesson.course_lesson.save_progress": "openlab_academy.entrypoints.lms.save_progress",
+            "lms.lms.doctype.lms_certificate.lms_certificate.create_certificate":
+                "openlab_academy.entrypoints.lms.create_certificate",
         })
+        self.assertEqual(hooks.doc_events["LMS Certificate"],
+                         {"before_insert": "openlab_academy.entrypoints.lms.avant_certificat"})
         for doctype in ("Course Lesson", "Course Chapter", "LMS Quiz", "LMS Assignment", "LMS Programming Exercise"):
             self.assertEqual(hooks.has_permission[doctype], "openlab_academy.entrypoints.lms.lecture_permise")
         self.assertEqual(hooks.permission_query_conditions, {

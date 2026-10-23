@@ -7,6 +7,7 @@ from frappe.utils import getdate, now_datetime, nowdate
 from lms.lms import api as lms_api
 from lms.lms import utils as lms_utils
 from lms.lms.doctype.course_lesson import course_lesson
+from lms.lms.doctype.lms_certificate import lms_certificate
 from lms.lms.doctype.lms_quiz import lms_quiz
 
 from openlab_academy.application.acces_exercices import EnregistrerOuverture, VerifierAccesExercices
@@ -187,6 +188,20 @@ def save_progress(lesson: str, course: str | None = None, scorm_details: dict = 
     """Surcharge : idem pour l'enregistrement direct (SCORM) ; le parcours retenu est celui de la leçon."""
     _refuser_si_bloque(contenus.cours_de_la_lecon(lesson))
     return course_lesson.save_progress(lesson, course, scorm_details)
+
+
+@frappe.whitelist()
+def create_certificate(course: str):
+    """Surcharge : pas de certificat sur un parcours bloqué, même au contenu achevé."""
+    _refuser_si_bloque(course)
+    return lms_certificate.create_certificate(course)
+
+
+def avant_certificat(doc, method=None) -> None:
+    """Tout autre chemin de création du certificat : refusé à l'apprenant bloqué ; un membre de l'équipe qui le
+    délivre (évaluateur, administrateur) n'est jamais arrêté par le paiement."""
+    if _concerne(frappe.session.user):
+        _refuser_si_bloque(doc.course, doc.member)
 
 
 # --- soumissions : parcours bloqué, puis verrou des exercices ----------------------------------------------
