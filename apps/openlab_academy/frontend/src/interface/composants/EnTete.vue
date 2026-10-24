@@ -3,13 +3,13 @@
 // quatre couleurs du logo, comme l'e-mail de rappel.
 withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
 
-const LOGO = '/assets/openlab_academy/images/logo-email.png'
+const LOGO = '/assets/openlab_academy/images/logo-horizontal.svg'
 </script>
 
 <template>
   <header class="entete" :class="{ compact }">
     <div class="ligne-marque">
-      <a class="marque" href="/lms"><img :src="LOGO" alt="OpenLab Academy" width="420" height="118" /></a>
+      <a class="marque" href="/lms"><img :src="LOGO" alt="OpenLab Academy" width="440" height="100" /></a>
       <slot />
     </div>
     <div class="filet" aria-hidden="true" />

@@ -276,7 +276,9 @@ describe('Mes paiements', () => {
     expect(texte(w, '.releve')).toContain('Paiement en ligne bientôt disponible')
     expect(w.find('.releve a[href="#virement"]').exists()).toBe(true)
     expect(w.find('#virement .instructions').text()).toBe(piege)
-    expect(w.findAll('img').map((i) => i.attributes('src'))).toEqual(['/assets/openlab_academy/images/logo-email.png'])
+    expect(w.findAll('img').map((i) => i.attributes('src'))).toEqual([
+      '/assets/openlab_academy/images/logo-horizontal.svg',
+    ])
   })
 
   it('virement sans instructions saisies : l’intendance est indiquée', async () => {

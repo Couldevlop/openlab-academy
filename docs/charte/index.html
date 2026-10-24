@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Charte OpenLab Academy</title>
+<link rel="icon" href="logo/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --nuit: #001e48; --orange: #ec7623; --royal: #244498; --ciel: #2890c8; --soleil: #fcd80f;
+    --ivoire: #faf8f5; --brume: #eef1f6; --graphite: #1a1d24; --ardoise: #6b7590; --orange-fonce: #b35210;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--brume); color: var(--graphite);
+         font: 16px/1.5 "Montserrat", "Segoe UI", system-ui, sans-serif; }
+  header { background: #fff; padding: 20px 16px; }
+  header img { height: 52px; display: block; }
+  .filet { height: 5px; background: linear-gradient(90deg, var(--royal) 0 34%, var(--ciel) 34% 50%,
+           var(--orange) 50% 84%, var(--soleil) 84%); }
+  main { max-width: 1080px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-weight: 800; color: var(--nuit); font-size: 32px; margin: 0 0 4px; }
+  h2 { font-weight: 800; color: var(--nuit); font-size: 22px; margin: 48px 0 16px; }
+  .surtitre { text-transform: uppercase; letter-spacing: .12em; font-weight: 700; font-size: 12px;
+              color: var(--orange-fonce); margin: 0; }
+  .grille { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .carte { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 30, 72, .08); }
+  .carte .visuel { padding: 24px; display: grid; place-items: center; min-height: 150px; }
+  .carte .visuel img { max-width: 100%; max-height: 120px; }
+  .carte p { margin: 0; padding: 10px 14px; font-size: 13px; border-top: 1px solid var(--brume); }
+  .carte code { font-size: 12px; color: var(--ardoise); }
+  .fonce { background: var(--nuit); }
+  .large { grid-column: 1 / -1; }
+  .large .visuel img { max-height: 220px; }
+  .nuancier { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .teinte { border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 2px 8px rgba(0, 30, 72, .08); }
+  .teinte div { height: 72px; }
+  .teinte p { margin: 0; padding: 8px 10px; font-size: 13px; }
+  .teinte b { display: block; }
+  .typo { background: #fff; border-radius: 14px; padding: 24px; box-shadow: 0 2px 8px rgba(0, 30, 72, .08); }
+  .typo .titre { font-weight: 800; font-size: 40px; color: var(--nuit); line-height: 1.2; margin: 8px 0; }
+  .bouton { display: inline-block; background: var(--orange-fonce); color: #fff; border-radius: 999px;
+            padding: 10px 22px; font-weight: 700; text-decoration: none; margin-top: 8px; }
+  ul { padding-left: 20px; }
+  @media (max-width: 520px) { h1 { font-size: 26px; } .typo .titre { font-size: 30px; } }
+</style>
+</head>
+<body>
+<header><img src="logo/openlab-academy-compact-couleur.svg" alt="OpenLab Academy"></header>
+<div class="filet"></div>
+<main>
+  <p class="surtitre">Édition du 24 octobre 2026</p>
+  <h1>Charte graphique OpenLab Academy</h1>
+  <p>Planche visuelle de la charte : les règles complètes sont dans <code>docs/charte-graphique.md</code>, et les
+    fichiers sont générés par <code>docs/charte/generer_charte.py</code>.</p>
+
+  <h2>Logo</h2>
+  <div class="grille">
+    <div class="carte large"><div class="visuel"><img src="logo/openlab-academy-couleur.svg" alt="Logo complet"></div>
+      <p>Complète · <code>openlab-academy-couleur.svg</code></p></div>
+    <div class="carte"><div class="visuel"><img src="logo/openlab-academy-court-couleur.svg" alt="Sans signature"></div>
+      <p>Sans signature · <code>openlab-academy-court-couleur.svg</code></p></div>
+    <div class="carte"><div class="visuel"><img src="logo/openlab-academy-compact-couleur.svg" alt="Compacte"></div>
+      <p>Compacte · <code>openlab-academy-compact-couleur.svg</code></p></div>
+    <div class="carte"><div class="visuel"><img src="logo/pictogramme-couleur.svg" alt="Pictogramme"></div>
+      <p>Pictogramme · <code>pictogramme-couleur.svg</code></p></div>
+    <div class="carte"><div class="visuel fonce"><img src="logo/openlab-academy-reserve.svg" alt="Réserve"></div>
+      <p>Réserve sur bleu nuit · <code>openlab-academy-reserve.svg</code></p></div>
+    <div class="carte"><div class="visuel"><img src="logo/openlab-academy-mono-nuit.svg" alt="Monochrome bleu nuit"></div>
+      <p>Monochrome bleu nuit · <code>openlab-academy-mono-nuit.svg</code></p></div>
+    <div class="carte"><div class="visuel fonce"><img src="logo/openlab-academy-mono-blanc.svg" alt="Monochrome blanc"></div>
+      <p>Monochrome blanc · <code>openlab-academy-mono-blanc.svg</code></p></div>
+    <div class="carte"><div class="visuel fonce"><img src="logo/pictogramme-reserve.svg" alt="Pictogramme en réserve"></div>
+      <p>Pictogramme en réserve · <code>pictogramme-reserve.svg</code></p></div>
+    <div class="carte"><div class="visuel"><img src="logo/vignette-partage.png" alt="Vignette de partage"></div>
+      <p>Partage réseaux sociaux · <code>vignette-partage.png</code></p></div>
+  </div>
+  <ul>
+    <li>Zone de protection : la hauteur du « O » d'OPENLAB tout autour (la moitié pour la version compacte).</li>
+    <li>Tailles minimales : complète 200 px, compacte 140 px, pictogramme 24 px.</li>
+    <li>Ne pas déformer, recolorer, ombrer, recomposer, ni poser la version couleur sur un fond orange, jaune ou chargé.</li>
+  </ul>
+
+  <h2>Couleurs</h2>
+  <div class="nuancier">
+    <div class="teinte"><div style="background:#001e48"></div><p><b>Bleu nuit</b>#001E48 · principale</p></div>
+    <div class="teinte"><div style="background:#ec7623"></div><p><b>Orange Academy</b>#EC7623 · principale</p></div>
+    <div class="teinte"><div style="background:#244498"></div><p><b>Bleu royal</b>#244498 · secondaire</p></div>
+    <div class="teinte"><div style="background:#2890c8"></div><p><b>Bleu ciel</b>#2890C8 · secondaire</p></div>
+    <div class="teinte"><div style="background:#fcd80f"></div><p><b>Jaune soleil</b>#FCD80F · accent</p></div>
+    <div class="teinte"><div style="background:#b35210"></div><p><b>Orange foncé</b>#B35210 · boutons</p></div>
+    <div class="teinte"><div style="background:#faf8f5;border-bottom:1px solid #eef1f6"></div><p><b>Ivoire</b>#FAF8F5</p></div>
+    <div class="teinte"><div style="background:#eef1f6"></div><p><b>Brume</b>#EEF1F6</p></div>
+    <div class="teinte"><div style="background:#1a1d24"></div><p><b>Graphite</b>#1A1D24 · texte</p></div>
+    <div class="teinte"><div style="background:#6b7590"></div><p><b>Gris ardoise</b>#6B7590</p></div>
+  </div>
+
+  <h2>Typographie</h2>
+  <div class="typo">
+    <p class="surtitre">Surtitre · Montserrat Bold, capitales espacées</p>
+    <p class="titre">Apprendre par le livrable</p>
+    <p>Texte courant en Montserrat Regular : des modules hebdomadaires d'environ 8 heures, un livrable concret à
+      chaque module, et un projet présenté devant un jury.</p>
+    <a class="bouton" href="#">Bouton principal</a>
+  </div>
+</main>
+</body>
+</html>

@@ -126,4 +126,8 @@ class TestFeuilleDeStyle(unittest.TestCase):
         images = CSS.parents[1] / "images"
         for nom in ("logo-email.png",):
             self.assertTrue((images / nom).read_bytes()[1:4] == b"PNG", nom)
-        self.assertIn('href="data:image/png;base64,', (images / "logo.svg").read_text(encoding="utf-8"))
+        # logos vectoriels (redessin du logo officiel, docs/charte) : aucune image matricielle embarquée
+        for nom in ("logo.svg", "logo-horizontal.svg"):
+            svg = (images / nom).read_text(encoding="utf-8")
+            self.assertIn("<path", svg)
+            self.assertNotIn("data:image", svg)
