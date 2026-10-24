@@ -10,3 +10,11 @@ apps/openlab_academy/openlab_academy/public/espace/
 apps/openlab_academy/frontend/coverage/
 credentials-local.md
 docker/secrets/
+
+# Documents et captures : jamais versionnés (sauf logos)
+*.docx
+*.xlsx
+*.png
+*.PNG
+!docs/charte/logo/**/*.png
+!apps/openlab_academy/openlab_academy/public/images/logo*.png
