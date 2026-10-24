@@ -32,21 +32,24 @@
   {
    "fieldname": "prix_une_fois",
    "fieldtype": "Int",
-   "label": "Prix en une fois (XOF)",
+   "label": "Prix global en une fois (XOF)",
+   "description": "Total payé dans ce mode, frais d'inscription compris.",
    "reqd": 1,
    "in_list_view": 1
   },
   {
    "fieldname": "prix_deux_tranches",
    "fieldtype": "Int",
-   "label": "Prix en deux tranches (XOF)",
+   "label": "Prix global en deux tranches (XOF)",
+   "description": "Total payé dans ce mode, frais d'inscription compris.",
    "reqd": 1,
    "in_list_view": 1
   },
   {
    "fieldname": "prix_mensuel",
    "fieldtype": "Int",
-   "label": "Prix mensuel (XOF)",
+   "label": "Prix global en mensuel (XOF)",
+   "description": "Total payé dans ce mode, frais d'inscription compris.",
    "reqd": 1,
    "in_list_view": 1
   }
@@ -75,7 +78,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-22 00:00:00",
- "modified": "2026-10-22 00:00:00",
+ "modified": "2026-10-24 00:00:00",
  "sort_field": "modified",
  "sort_order": "DESC",
  "custom": 0,

@@ -1,5 +1,6 @@
-"""Hooks HTTP Frappe : habillage des pages HTML de l'interface /lms (after_request) et redirection d'un parcours
-en retard de paiement vers sa page de paiement (before_request, chargement complet d'une page)."""
+"""Hooks HTTP Frappe : habillage des pages HTML de l'interface /lms et stockage du navigateur vidé à la connexion et
+à la déconnexion (after_request) ; redirection d'un parcours en retard de paiement vers sa page de paiement
+(before_request, chargement complet d'une page)."""
 import re
 
 import frappe
@@ -13,6 +14,9 @@ from openlab_academy.infrastructure.habillage import injecter
 # pages d'un parcours dans l'interface LMS : /lms/courses/<cours>[/learn/…|/chapter/…|/certification|…]
 PAGE_DE_PARCOURS = re.compile(r"^/lms/courses/([^/]+)(?:/|$)")
 PAS_UN_PARCOURS = {"new", "import"}  # écrans de création du LMS sous le même préfixe
+# le LMS garde ses documents dans le stockage du navigateur (IndexedDB), sans distinguer les utilisateurs : sur un poste
+# partagé, l'apprenant suivant verrait le rendu du précédent
+CHANGEMENT_D_UTILISATEUR = {"/api/method/login", "/api/method/logout"}
 
 
 def _est_page_lms(chemin: str) -> bool:
@@ -22,6 +26,8 @@ def _est_page_lms(chemin: str) -> bool:
 def after_request(response, request) -> None:
     if response is None:  # before_request a répondu (redirection) : rien à habiller
         return
+    if request.path in CHANGEMENT_D_UTILISATEUR or request.args.get("cmd") == "web_logout":
+        response.headers["Clear-Site-Data"] = '"storage"'
     if response.direct_passthrough or response.mimetype != "text/html" or not _est_page_lms(request.path):
         return
     response.set_data(injecter(response.get_data(as_text=True)))

@@ -118,7 +118,17 @@ export interface ResultatLot {
   publiees: string[]
 }
 
-const STATUTS: Record<string, string> = { a_corriger: 'à corriger', provisoire: 'note provisoire publiée' }
+const STATUTS: Record<string, string> = {
+  rendue: 'rendue',
+  renvoyee: "renvoyée à l'apprenant",
+  controlee: 'contrôlée',
+  pre_corrigee: "pré-corrigée par l'IA",
+  en_relecture: 'en relecture par les pairs',
+  a_corriger: 'à corriger',
+  provisoire: 'note provisoire publiée',
+  publiee: 'note publiée',
+  remplacee: 'remplacée par une version plus récente',
+}
 
 export function libelleStatut(statut: string): string {
   return STATUTS[statut] ?? statut

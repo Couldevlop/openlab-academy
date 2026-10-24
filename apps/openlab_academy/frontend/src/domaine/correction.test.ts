@@ -14,7 +14,10 @@ describe('copie à corriger', () => {
   it('libellé du statut, le code brut à défaut', () => {
     expect(libelleStatut('a_corriger')).toBe('à corriger')
     expect(libelleStatut('provisoire')).toBe('note provisoire publiée')
-    expect(libelleStatut('en_relecture')).toBe('en_relecture')
+    expect(libelleStatut('en_relecture')).toBe('en relecture par les pairs')
+    expect(libelleStatut('publiee')).toBe('note publiée')
+    expect(libelleStatut('renvoyee')).toBe("renvoyée à l'apprenant")
+    expect(libelleStatut('inconnu')).toBe('inconnu')
   })
 
   it("copie signalée (injection) : la proposition de l'IA est écartée", () => {

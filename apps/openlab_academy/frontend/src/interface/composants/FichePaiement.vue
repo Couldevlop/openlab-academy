@@ -189,10 +189,9 @@ async function accorderDelai() {
   erreursDelai.value = validerDelai(delai, aujourdhui.value)
   if (Object.keys(erreursDelai.value).length) return premierChampEnErreur('delai', erreursDelai.value)
   envoi.value = true
-  const jusquau = delai.jusquau
   try {
     await cas.accorderDelai.executer(fiche.value.dossier, { ...delai })
-    await apresSucces(`Délai accordé jusqu’au ${formaterJour(jusquau)}.`)
+    await apresSucces('Délai enregistré.')
   } catch (e) {
     erreurServeur.value = messageErreur(e)
   } finally {

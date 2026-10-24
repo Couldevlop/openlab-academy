@@ -88,6 +88,25 @@ class TestHookAfterRequest(unittest.TestCase):
         self.assertEqual(corps, injecter(PAGE))
 
 
+class TestCacheNavigateurVideAuChangementDUtilisateur(unittest.TestCase):
+    """Le LMS garde ses documents dans le stockage du navigateur : sur un poste partagé, l'apprenant suivant verrait
+    (et croirait modifier) le rendu du précédent. Connexion et déconnexion vident ce stockage."""
+
+    def test_connexion_et_deconnexion_vident_le_stockage(self):
+        for chemin in ("/api/method/login", "/api/method/logout", "/?cmd=web_logout"):
+            with self.subTest(chemin=chemin):
+                r = Response("{}", mimetype="application/json")
+                http.after_request(r, requete(chemin))
+                self.assertEqual(r.headers.get("Clear-Site-Data"), '"storage"')
+
+    def test_autres_requetes_intactes(self):
+        for chemin in ("/api/method/frappe.auth.get_logged_user", "/lms", "/?cmd=autre", "/login"):
+            with self.subTest(chemin=chemin):
+                r = Response("{}", mimetype="application/json")
+                http.after_request(r, requete(chemin))
+                self.assertNotIn("Clear-Site-Data", r.headers)
+
+
 class TestHooksDeclares(unittest.TestCase):
     def test_hooks(self):
         self.assertEqual(hooks.after_request, ["openlab_academy.entrypoints.http.after_request"])

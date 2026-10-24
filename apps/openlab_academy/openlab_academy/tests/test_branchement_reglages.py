@@ -89,6 +89,15 @@ class TestBranchementReglages(FrappeTestCase):
         self.assertEqual(frappe.db.get_single_value("System Settings", "currency"), "EUR")
         self.assertEqual(frappe.db.get_value("Currency", "EUR", "enabled"), 1)
 
+    def test_assistant_d_installation_marque_termine(self):
+        """Langue, fuseau et devise sont réglés ici : l'assistant Frappe ne doit plus bloquer le bureau (/app)."""
+        for app in frappe.get_all("Installed Application", pluck="name"):
+            frappe.db.set_value("Installed Application", app, "is_setup_complete", 0)
+        frappe.db.set_single_value("System Settings", "setup_complete", 0)
+        reglages_frappe.appliquer()
+        self.assertEqual(set(frappe.get_all("Installed Application", pluck="is_setup_complete")), {1})
+        self.assertEqual(frappe.db.get_single_value("System Settings", "setup_complete"), 1)
+
     def test_marque_de_la_plateforme_reglee(self):
         regler(nom_plateforme="Académie Test", devise="XOF", langue="fr")
         reglages_frappe.appliquer()

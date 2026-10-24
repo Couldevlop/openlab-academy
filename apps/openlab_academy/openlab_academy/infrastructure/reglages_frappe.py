@@ -28,3 +28,7 @@ def appliquer() -> None:
     _maj("Website Settings", {"app_name": marque["nom_plateforme"], "app_logo": marque["logo"],
                               "favicon": marque["logo"]})
     _maj("LMS Settings", {"default_currency": marque["devise"]})
+    # langue, fuseau et devise étant réglés ici, l'assistant d'installation Frappe ne doit plus bloquer le bureau
+    for app in frappe.get_all("Installed Application", pluck="name"):
+        frappe.db.set_value("Installed Application", app, "is_setup_complete", 1)
+    frappe.db.set_single_value("System Settings", "setup_complete", 1)
