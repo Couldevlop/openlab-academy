@@ -61,6 +61,21 @@ class TestDepotFrappe(FrappeTestCase):
         self.assertEqual(frappe.db.get_value("LMS Course", nom, "short_introduction"), "Nouvelle")
         self.assertTrue(frappe.db.exists("Course Lesson", {"course": nom, "title": "01 · Module renommé"}))
 
+    def test_remplacer_passe_par_les_documents(self):
+        """Hooks du LMS joués (notes de leçon supprimées) et aucune ligne enfant orpheline."""
+        nom = self.depot.creer(self.p)
+        chapitres = frappe.get_all("Course Chapter", {"course": nom}, pluck="name")
+        lecons = frappe.get_all("Course Lesson", {"course": nom}, pluck="name")
+        quiz = frappe.get_all("LMS Quiz", {"course": nom}, pluck="name")
+        frappe.get_doc({"doctype": "LMS Lesson Note", "lesson": lecons[0], "member": "Administrator",
+                        "note": "n", "color": "Yellow"}).db_insert()
+        self.depot.remplacer(nom, parcours(title=TITRE))
+        self.assertEqual(frappe.db.count("LMS Lesson Note", {"lesson": lecons[0]}), 0)
+        self.assertEqual(frappe.db.count("Lesson Reference", {"parent": ["in", chapitres]}), 0)
+        self.assertEqual(frappe.db.count("LMS Lesson Assessment", {"parent": ["in", lecons]}), 0)
+        if quiz:
+            self.assertEqual(frappe.db.count("LMS Quiz Question", {"parent": ["in", quiz]}), 0)
+
     def test_inscrits_detectes(self):
         nom = self.depot.creer(self.p)
         self.assertFalse(self.depot.a_des_inscrits(nom))

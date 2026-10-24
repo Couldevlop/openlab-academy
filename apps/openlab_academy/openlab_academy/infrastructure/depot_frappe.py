@@ -61,17 +61,23 @@ class DepotFrappe:
 
     @staticmethod
     def _purger(cours_id: str) -> None:
+        """Supprime le contenu du parcours document par document : hooks du LMS joués (on_trash des leçons) et
+        lignes enfants supprimées avec leur parent. force : ces documents se citent entre eux et partent ensemble."""
+        def supprimer(doctype: str, nom: str) -> None:
+            frappe.delete_doc(doctype, nom, force=True, ignore_permissions=True, delete_permanently=True)
+
         depot_copies_frappe.supprimer_grilles_sans_copie(frappe.get_all("LMS Assignment", {"course": cours_id}, pluck="name"))
+        for chapitre in frappe.get_all("Course Chapter", {"course": cours_id}, pluck="name"):
+            for lecon in frappe.get_all("Course Lesson", {"chapter": chapitre}, pluck="name"):
+                supprimer("Course Lesson", lecon)
+            supprimer("Course Chapter", chapitre)
         for quiz in frappe.get_all("LMS Quiz", {"course": cours_id}, pluck="name"):
             questions = frappe.get_all("LMS Quiz Question", {"parent": quiz}, pluck="question")
-            frappe.db.delete("LMS Quiz Question", {"parent": quiz})
-            frappe.db.delete("LMS Quiz", {"name": quiz})
-            if questions:
-                frappe.db.delete("LMS Question", {"name": ["in", questions]})
-        for chapitre in frappe.get_all("Course Chapter", {"course": cours_id}, pluck="name"):
-            frappe.db.delete("Course Lesson", {"chapter": chapitre})
-            frappe.db.delete("Course Chapter", {"name": chapitre})
-        frappe.db.delete("LMS Assignment", {"course": cours_id})
+            supprimer("LMS Quiz", quiz)
+            for question in questions:
+                supprimer("LMS Question", question)
+        for devoir in frappe.get_all("LMS Assignment", {"course": cours_id}, pluck="name"):
+            supprimer("LMS Assignment", devoir)
 
     def _ecrire_chapitres(self, cours_id: str, parcours: Parcours) -> None:
         noms = [self._chapitre(cours_id, c, parcours.heures_par_module) for c in parcours.chapitres()]
