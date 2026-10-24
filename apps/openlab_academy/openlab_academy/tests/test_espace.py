@@ -39,14 +39,25 @@ class TestPageEspace(FrappeTestCase):
 
     def test_droits_des_ecrans_selon_les_roles(self):
         """Seuls les liens des écrans sont masqués ; l'API refuse elle-même les rôles non habilités."""
-        cas = {"Intendant OpenLab": {"intendance": True, "finances": False, "pilotage": False},
-               "System Manager": {"intendance": True, "finances": True, "pilotage": True},
-               ROLE: {"intendance": False, "finances": False, "pilotage": True},
-               "LMS Student": {"intendance": False, "finances": False, "pilotage": False}}
+        cas = {"Intendant OpenLab": {"intendance": True, "finances": False, "pilotage": False, "paiements": []},
+               "System Manager": {"intendance": True, "finances": True, "pilotage": True, "paiements": []},
+               ROLE: {"intendance": False, "finances": False, "pilotage": True, "paiements": []},
+               "LMS Student": {"intendance": False, "finances": False, "pilotage": False, "paiements": []}}
         for role, attendu in cas.items():
             with self.subTest(role=role), mock.patch.object(espace.frappe, "get_roles", return_value=[role]):
                 context, _ = self.contexte()
                 self.assertEqual(context.droits, attendu)
+
+    def test_parcours_avec_dossier_de_paiement_de_l_apprenant(self):
+        """Lien « Mes paiements » de chaque parcours payant de l'apprenant, hors dossier dispensé."""
+        from openlab_academy.tests.test_paiement_donnees_frappe import cours, dossier, utilisateur
+        self.addCleanup(frappe.db.rollback)
+        payant, dispense = cours("Parcours payant espace"), cours("Parcours dispensé espace")
+        dossier(payant).db_insert()
+        dossier(dispense, dispense=1).db_insert()
+        frappe.set_user(utilisateur())
+        context, _ = self.contexte()
+        self.assertEqual(context.droits["paiements"], [{"cours": payant, "titre": "Parcours payant espace"}])
 
     def test_version_du_paquet_construit_ou_zero(self):
         with mock.patch.object(espace.os.path, "getmtime", return_value=1700000000.7):

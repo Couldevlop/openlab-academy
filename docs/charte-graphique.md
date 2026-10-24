@@ -74,11 +74,11 @@ Ces valeurs sont les jetons CSS de la plateforme (`--ol-navy`, `--ol-orange`, `-
 
 ## 3. Typographie
 
-- **Montserrat** (Google Fonts, licence SIL Open Font License), la police du logotype :
-  - titres en ExtraBold ou Bold ;
-  - surtitres en capitales espacées (Bold, interlettrage de 0,12 em) ;
-  - texte courant en Regular ou Medium.
-- **Inter** possible pour les écrans très denses (tableaux d'intendance), **JetBrains Mono** pour le code.
+- **Montserrat** (Google Fonts, licence SIL Open Font License), la police du logotype : titres en SemiBold (Bold
+  pour les grands montants), surtitres en capitales espacées (SemiBold, interlettrage de 0,12 em).
+- **Nunito Sans** (Google Fonts, licence SIL Open Font License) pour le texte courant, en Regular ou SemiBold :
+  humaniste, plus douce et plus compacte que Montserrat, qui fatiguait à la lecture en continu (retour du 25/10/2026).
+- **JetBrains Mono** pour le code.
 - Polices de repli : `'Segoe UI', system-ui, Helvetica, Arial, sans-serif` (obligatoires dans les e-mails).
 - Échelle conseillée : 12, 14, 16 (texte), 20, 24, 32, 40 px, avec une interligne de 1,5 pour le texte et de 1,2
   pour les titres.

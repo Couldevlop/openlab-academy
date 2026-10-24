@@ -98,6 +98,17 @@ class TestBranchementReglages(FrappeTestCase):
         self.assertEqual(set(frappe.get_all("Installed Application", pluck="is_setup_complete")), {1})
         self.assertEqual(frappe.db.get_single_value("System Settings", "setup_complete"), 1)
 
+    def test_logo_de_la_barre_laterale_du_lms(self):
+        """Le LMS affiche Website Settings.banner_image, résolu par une fiche File ; sans elle, son logo par défaut."""
+        from lms.lms.api import get_branding
+
+        frappe.db.set_single_value("Website Settings", "banner_image", "")
+        reglages_frappe.appliquer()
+        reglages_frappe.appliquer()  # idempotent : une seule fiche File
+        url = frappe.db.get_single_value("Website Settings", "banner_image")
+        self.assertEqual(frappe.db.count("File", {"file_url": url}), 1)
+        self.assertEqual(get_branding().banner_image["file_url"], url)
+
     def test_marque_de_la_plateforme_reglee(self):
         regler(nom_plateforme="Académie Test", devise="XOF", langue="fr")
         reglages_frappe.appliquer()

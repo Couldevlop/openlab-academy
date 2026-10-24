@@ -55,7 +55,7 @@ p {
 }
 .libelle {
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--es-gris);
@@ -63,7 +63,7 @@ p {
 .valeur {
   font-family: var(--ol-font-display);
   font-size: 26px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.2;
   color: var(--ol-navy);
   overflow-wrap: break-word;

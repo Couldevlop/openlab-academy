@@ -129,7 +129,7 @@ class TestFeuilleDeStyle(unittest.TestCase):
         css = CSS.read_text(encoding="utf-8")
         for jeton in ("--ol-orange: #ec7623", "--ol-orange-dark: #c25a12", "--ol-orange-light: #f39a5b",
                       "--ol-navy: #001e48", "--ol-navy-soft: #244498", "--ol-sky: #2890c8", "--ol-sun: #fcd80f",
-                      "--ol-ivory: #faf8f5", "--ol-mist: #eef1f6", "--ol-orange-deep: #b35210", "family=Montserrat", "JetBrains Mono"):
+                      "--ol-ivory: #faf8f5", "--ol-mist: #eef1f6", "--ol-orange-deep: #b35210", "family=Montserrat", "family=Nunito+Sans", "JetBrains Mono"):
             self.assertIn(jeton, css)
         for ancien in ("Geist", "Bricolage", "#ff5a00", "#0b1b3d"):
             self.assertNotIn(ancien, css)

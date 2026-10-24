@@ -39,7 +39,7 @@ const libelle = computed(() => libelleEtat(props.etat))
   padding: 3px 11px 3px 8px;
   border-radius: 999px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.4;
   white-space: nowrap;
 }

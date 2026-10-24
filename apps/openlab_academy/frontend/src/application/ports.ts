@@ -66,11 +66,18 @@ export interface DepotPilotage {
   reglagesEffectifs(exercice: string, cohorte?: string): Promise<ReglagesEffectifs>
 }
 
+/** Parcours payant de l'apprenant, dont la page « Mes paiements » est proposée sur l'accueil. */
+export interface ParcoursPayant {
+  cours: string
+  titre: string
+}
+
 /** Écrans ouverts à l'utilisateur ; ne sert qu'à afficher les liens, l'API refuse elle-même. */
 export interface Droits {
   intendance: boolean
   finances: boolean
   pilotage: boolean
+  paiements?: ParcoursPayant[]
 }
 
 export interface Session {

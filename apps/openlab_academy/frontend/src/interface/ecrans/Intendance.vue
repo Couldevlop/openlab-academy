@@ -341,7 +341,7 @@ onMounted(() => {
 .surtitre {
   margin: 0;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--es-gris);
@@ -349,7 +349,7 @@ onMounted(() => {
 h1 {
   margin: 0;
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .icone {
   width: 18px;
@@ -399,7 +399,7 @@ h1 {
 .champ label,
 .periode legend {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ol-navy);
   padding: 0;
 }
@@ -483,7 +483,7 @@ input[type='date'] {
 }
 .tri-mobile label {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 .tri-mobile select {
@@ -542,7 +542,7 @@ input[type='date'] {
 .tableau td::before {
   content: attr(data-label);
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--es-gris);
@@ -628,7 +628,7 @@ input[type='date'] {
   border: 0;
   background: transparent;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ol-navy);
@@ -652,7 +652,7 @@ input[type='date'] {
   padding: 0;
   border: 0;
   background: none;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 16px;
   color: var(--ol-navy-soft);
   text-align: left;

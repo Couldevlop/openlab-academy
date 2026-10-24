@@ -2,7 +2,7 @@
 
 La page ne porte aucune donnée : les écrans lisent l'API d'évaluation et de paiement, qui contrôle chaque accès côté
 serveur. Elle transmet seulement le jeton CSRF de la session, envoyé par les écrans sur chaque écriture, et les droits
-qui décident des liens affichés (Intendance, Finances, Pilotage) ; ces droits ne protègent rien : l'API refuse elle-même.
+qui décident des liens affichés (Intendance, Finances, Pilotage, Mes paiements de chaque parcours) ; ces droits ne protègent rien : l'API refuse elle-même.
 """
 import os
 from urllib.parse import urlencode
@@ -24,12 +24,19 @@ def version() -> str:
         return "0"
 
 
-def droits(user: str) -> dict[str, bool]:
+def _paiements(user: str) -> list[dict[str, str]]:
+    """Parcours payants de l'apprenant (dossier non dispensé), pour atteindre « Mes paiements » sans être bloqué."""
+    cours = frappe.get_all("Dossier Paiement OpenLab", {"apprenant": user, "dispense": 0}, pluck="cours",
+                           order_by="creation")
+    return [{"cours": c, "titre": frappe.db.get_value("LMS Course", c, "title") or c} for c in cours]
+
+
+def droits(user: str) -> dict:
     """Écrans des agents : Intendance (intendant, administrateur), Finances (administrateur), Pilotage
-    (administrateur, responsable pédagogique)."""
+    (administrateur, responsable pédagogique) ; page de paiement de chaque parcours payant de l'apprenant."""
     roles = set(frappe.get_roles(user))
     return {"intendance": bool(ROLES_AGENTS & roles), "finances": "System Manager" in roles,
-            "pilotage": bool({"System Manager", RESPONSABLE_PEDAGOGIQUE} & roles)}
+            "pilotage": bool({"System Manager", RESPONSABLE_PEDAGOGIQUE} & roles), "paiements": _paiements(user)}
 
 
 def get_context(context) -> None:

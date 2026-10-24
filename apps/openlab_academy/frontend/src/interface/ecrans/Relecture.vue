@@ -252,7 +252,7 @@ h1 {
   margin: 0;
   font-size: 23px;
   line-height: 1.2;
-  font-weight: 700;
+  font-weight: 600;
 }
 .consigne {
   padding: 12px 16px;

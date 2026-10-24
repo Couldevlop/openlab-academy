@@ -531,7 +531,7 @@ watch(cours, charger)
   font-family: var(--ol-font-display);
   font-size: 20px;
   line-height: 1.25;
-  font-weight: 800;
+  font-weight: 700;
 }
 .statut {
   display: inline-flex;
@@ -541,7 +541,7 @@ watch(cours, charger)
   padding: 4px 12px 4px 8px;
   border-radius: 999px;
   font-size: 13.5px;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
   background: var(--ol-mist);
   color: var(--ol-navy);
@@ -577,7 +577,7 @@ watch(cours, charger)
   font-family: var(--ol-font-display);
   font-size: clamp(38px, 11vw, 56px);
   line-height: 1.05;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
@@ -614,7 +614,7 @@ watch(cours, charger)
 .bientot a,
 .bientot a:hover {
   color: var(--es-sur-sombre);
-  font-weight: 700;
+  font-weight: 600;
 }
 .erreur-releve {
   margin-top: 12px !important;
@@ -647,7 +647,7 @@ watch(cours, charger)
   margin: 22px 0 0;
   font-family: var(--ol-font-display);
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .avancement {
   margin-top: 22px;
@@ -765,7 +765,7 @@ watch(cours, charger)
   text-align: right;
 }
 .montant {
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -870,13 +870,13 @@ watch(cours, charger)
   min-width: 0;
 }
 .mode-nom {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ol-navy);
 }
 .mode-prix {
   font-family: var(--ol-font-display);
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ol-navy);
   font-variant-numeric: tabular-nums;
 }
@@ -891,7 +891,7 @@ watch(cours, charger)
   padding: 1px 8px;
   border-radius: 9px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   background: var(--ol-mist);
   color: var(--ol-navy);
 }
@@ -963,7 +963,7 @@ watch(cours, charger)
 }
 .confirmation dd {
   margin: 0;
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 .confirmation .reste {
@@ -974,7 +974,7 @@ watch(cours, charger)
 .confirmation .reste dt,
 .confirmation .reste dd {
   color: var(--ol-navy);
-  font-weight: 800;
+  font-weight: 700;
 }
 .confirmation > p {
   margin: 0 0 12px;

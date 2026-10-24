@@ -11,6 +11,15 @@ const droits = utiliserCasUsages().consulterDroits.executer()
     <EnTete compact />
     <main class="contenu">
       <h1>Mon espace</h1>
+      <RouterLink
+        v-for="p in droits.paiements ?? []"
+        :key="p.cours"
+        class="carte lien paiement"
+        :to="{ name: 'paiement', params: { cours: p.cours } }"
+      >
+        <strong>Mes paiements</strong>
+        <span class="discret">{{ p.titre }} : échéancier, mode de paiement, virement.</span>
+      </RouterLink>
       <RouterLink class="carte lien" :to="{ name: 'relecture' }">
         <strong>Mes relectures</strong>
         <span class="discret">Relire les copies de vos pairs et leur laisser un conseil.</span>

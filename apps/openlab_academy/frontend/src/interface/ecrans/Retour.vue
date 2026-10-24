@@ -188,7 +188,7 @@ h1 {
   margin: 0 0 14px;
   font-size: 23px;
   line-height: 1.2;
-  font-weight: 700;
+  font-weight: 600;
 }
 .note {
   display: flex;
@@ -200,7 +200,7 @@ h1 {
   font-family: var(--ol-font-display);
   font-size: 64px;
   line-height: 0.9;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ol-navy);
 }
 .sur {

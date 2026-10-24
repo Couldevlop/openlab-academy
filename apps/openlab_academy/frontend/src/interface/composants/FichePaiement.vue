@@ -530,7 +530,7 @@ const decrit = (prefixe: string, champ: string, erreurs: Partial<Record<string, 
 .surtitre {
   margin: 0;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   opacity: 0.85;
@@ -602,7 +602,7 @@ dl div {
 }
 dt {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--es-gris);
 }
 dd {
@@ -736,16 +736,16 @@ dd {
   gap: 0 8px;
 }
 .echeancier .date {
-  font-weight: 700;
+  font-weight: 600;
 }
 .echeancier .montant {
   text-align: right;
-  font-weight: 700;
+  font-weight: 600;
 }
 .echeancier .etat {
   text-align: right;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .echeancier .libelle {
   color: var(--es-gris);

@@ -206,7 +206,7 @@ onMounted(() => {
 .surtitre {
   margin: 0;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--es-gris);
@@ -214,7 +214,7 @@ onMounted(() => {
 h1 {
   margin: 0;
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 700;
 }
 h2 {
   margin: 0 0 6px;

@@ -107,7 +107,7 @@ h3 {
   border-radius: 999px;
   padding: 0 24px;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   background: var(--ol-orange-deep, #b35210);
   color: var(--es-sur-sombre);
   box-shadow: 0 6px 16px rgba(0, 30, 72, 0.12);
