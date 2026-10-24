@@ -60,7 +60,9 @@ watch(() => route.params.copie, charger)
 
 <template>
   <div class="ecran">
-    <EnTete compact />
+    <EnTete compact>
+      <RouterLink class="lien-espace" :to="{ name: 'accueil' }">Mon espace</RouterLink>
+    </EnTete>
     <main class="contenu">
       <p v-if="chargement" class="discret" role="status">Chargement…</p>
       <p v-else-if="erreur" class="bandeau bandeau-erreur" role="alert">{{ erreur }}</p>

@@ -105,6 +105,7 @@ async function envoyer() {
 <template>
   <div class="ecran">
     <EnTete compact>
+      <RouterLink class="lien-espace" :to="{ name: 'accueil' }">Mon espace</RouterLink>
       <span class="espace" />
       <span v-if="vue" class="position">Relecture {{ vue.rang }} sur {{ vue.total }}</span>
     </EnTete>
