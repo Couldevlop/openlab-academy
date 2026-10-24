@@ -13,6 +13,7 @@ import {
   jourIso,
   libelleMode,
   libelleStatut,
+  libelleStatutDossier,
   lignesEcheancier,
   normaliserTelephone,
   progression,
@@ -89,6 +90,13 @@ describe('échéancier', () => {
     expect(enSouffrance(d, '2026-11-10')).toBe(false)
     expect(enSouffrance(d, '2026-11-11')).toBe(true)
     expect(enSouffrance(dossierPaiement({ echeances: [] }), '2027-12-01')).toBe(false)
+  })
+
+  it('statut du dossier : « À régler » tant que seule l’échéance du jour est due, « En retard » ensuite', () => {
+    const d = dossierPaiement({ statut: 'en_retard' })
+    expect(libelleStatutDossier(d, '2026-11-10')).toBe('À régler')
+    expect(libelleStatutDossier(d, '2026-11-11')).toBe('En retard')
+    expect(libelleStatutDossier(dossierPaiement({ statut: 'a_jour' }), '2026-11-11')).toBe('À jour')
   })
 
   it('part réglée du parcours, en pourcentage entier', () => {

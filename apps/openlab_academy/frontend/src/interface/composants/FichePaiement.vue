@@ -5,6 +5,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { messageErreur } from '../../application/erreurs'
 import {
+  detailAction,
   echeanceADecaler,
   etatEcheanceFiche,
   etatLigne,
@@ -464,6 +465,9 @@ const decrit = (prefixe: string, champ: string, erreurs: Partial<Record<string, 
                 <span class="par"
                   >par <span class="acteur">{{ j.acteur }}</span></span
                 >
+                <ul v-if="detailAction(j).length" class="detail">
+                  <li v-for="(d, k) in detailAction(j)" :key="k">{{ d }}</li>
+                </ul>
                 <p v-if="j.motif" class="motif">{{ j.motif }}</p>
               </li>
             </ol>
@@ -761,8 +765,20 @@ dd {
 .etat-a_venir .etat {
   color: var(--ol-navy-soft);
 }
-.journal li {
+.journal > li {
   border-left: 4px solid var(--ol-navy-soft);
+}
+.bloc .detail {
+  gap: 0;
+  margin-top: 2px;
+}
+.bloc .detail li {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
 }
 .journal time,
 .par {

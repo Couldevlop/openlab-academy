@@ -107,6 +107,21 @@ class TestLecon(Base):
             lms.get_lesson(self.a, 1, 1)
         lecture.assert_not_called()
 
+    def test_presentation_d_un_parcours_bloque_renvoyee_au_paiement(self):
+        """Navigation dans l'interface (sans chargement de page) : la présentation du parcours aussi."""
+        frappe.set_user(ELEVE)
+        with mock.patch.object(lms_utils, "get_course_details") as lecture, self.assertRaises(lms.ParcoursBloque):
+            lms.get_course_details(self.a)
+        lecture.assert_not_called()
+        self.assertEqual(frappe.local.response["redirection"], f"/espace/paiement/{self.a}")
+        self.assertEqual(lms.get_course_details(self.b)["name"], self.b)
+
+    def test_presentation_ouverte_au_visiteur(self):
+        frappe.set_user("Guest")
+        with mock.patch.object(lms_utils, "get_course_details", return_value={"name": self.a}) as lecture:
+            self.assertEqual(lms.get_course_details(self.a), {"name": self.a})
+        lecture.assert_called_once_with(self.a)
+
     def test_parcours_a_jour_ouvert_pendant_qu_un_autre_est_bloque(self):
         frappe.set_user(ELEVE)
         self.assertEqual(lms.get_lesson(self.b, 1, 1)["name"], self.lecon_b)
@@ -447,6 +462,7 @@ class TestHooks(FrappeTestCase):
         self.assertEqual(hooks.before_request, ["openlab_academy.entrypoints.http.before_request"])
         self.assertEqual(hooks.override_whitelisted_methods, {
             "lms.lms.utils.get_lesson": "openlab_academy.entrypoints.lms.get_lesson",
+            "lms.lms.utils.get_course_details": "openlab_academy.entrypoints.lms.get_course_details",
             "lms.lms.utils.get_quiz_with_questions": "openlab_academy.entrypoints.lms.get_quiz_with_questions",
             "lms.lms.doctype.lms_quiz.lms_quiz.check_answer": "openlab_academy.entrypoints.lms.check_answer",
             "lms.lms.api.mark_lesson_progress": "openlab_academy.entrypoints.lms.mark_lesson_progress",

@@ -140,6 +140,11 @@ export function enSouffrance(d: DossierPaiement, aujourdhui: string): boolean {
   return d.echeances.some((e) => etatEcheance(e, aujourdhui) === 'en_retard')
 }
 
+/** Statut écrit pour l'apprenant : des frais dus aujourd'hui sont « À régler », pas encore « En retard ». */
+export function libelleStatutDossier(d: DossierPaiement, aujourdhui: string): string {
+  return d.statut === 'en_retard' && !enSouffrance(d, aujourdhui) ? 'À régler' : libelleStatut(d.statut)
+}
+
 /** Part réglée du parcours, en pourcentage entier (100 quand il ne reste rien). */
 export function progression(d: DossierPaiement): number {
   const total = d.paye + d.reste

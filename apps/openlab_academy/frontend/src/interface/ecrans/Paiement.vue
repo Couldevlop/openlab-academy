@@ -17,7 +17,7 @@ import {
   formaterTelephone,
   formaterXof,
   libelleMode,
-  libelleStatut,
+  libelleStatutDossier,
   lignesEcheancier,
   normaliserTelephone,
   progression,
@@ -214,7 +214,10 @@ watch(cours, charger)
             <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
           </svg>
           <p>
-            <strong>L’accès à ce parcours est suspendu jusqu’au paiement de l’échéance en retard.</strong>
+            <strong
+              >L’accès à ce parcours est suspendu jusqu’au paiement de l’échéance
+              {{ modesVerrouilles ? 'en retard' : 'due' }}.</strong
+            >
             Il se rouvre dès votre paiement confirmé. Vos autres parcours à jour restent ouverts.
           </p>
         </div>
@@ -230,7 +233,7 @@ watch(cours, charger)
                 <path v-if="dossier.statut === 'en_retard'" d="M12 7v6M12 16.5v.5" />
                 <path v-else d="M6.5 12.5l3.5 3.5 7.5-8" />
               </svg>
-              <span>{{ libelleStatut(dossier.statut) }}</span>
+              <span>{{ libelleStatutDossier(dossier, aujourdhui) }}</span>
             </p>
           </div>
 

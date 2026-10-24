@@ -2,6 +2,11 @@
 // fiche d'un dossier, résumé ; état affiché d'une ligne, tri, filtres et règles des saisies (virement, délai).
 import {
   etatEcheance,
+  formaterJour,
+  formaterXof,
+  libelleMode,
+  libelleStatut,
+  MODES,
   type EcheancePaiement,
   type EtatEcheance,
   type Mode,
@@ -256,6 +261,62 @@ const ACTIONS: Record<string, string> = {
 
 export function libelleAction(action: string): string {
   return ACTIONS[action] ?? action
+}
+
+type Valeurs = Record<string, unknown>
+const STATUTS_PAIEMENT: readonly string[] = ['a_jour', 'en_retard', 'solde', 'dispense']
+const valeurs = (v: unknown): Valeurs => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Valeurs) : {})
+const nombre = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+const chaine = (v: unknown): string => (typeof v === 'string' ? v.trim() : '')
+const statutLu = (v: unknown): string =>
+  STATUTS_PAIEMENT.includes(v as string) ? libelleStatut(v as StatutPaiement) : ''
+
+function changementStatut(avant: Valeurs, apres: Valeurs): string[] {
+  const [a, b] = [statutLu(avant.statut), statutLu(apres.statut)]
+  return a && b && a !== b ? [`Statut : ${a} → ${b}`] : []
+}
+
+function versement(avant: Valeurs, apres: Valeurs): string[] {
+  const montant = nombre(apres.montant)
+  const reference = chaine(apres.reference)
+  const jour = formaterJour(chaine(apres.date_paiement) || null)
+  const tete = [
+    montant !== null ? formaterXof(montant) : '',
+    reference ? `réf. ${reference}` : '',
+    jour ? `versé le ${jour}` : '',
+  ].filter(Boolean)
+  const [pa, pb] = [nombre(avant.paye), nombre(apres.paye)]
+  return [
+    ...(tete.length ? [tete.join(' · ')] : []),
+    ...(pa !== null && pb !== null ? [`Payé : ${formaterXof(pa)} → ${formaterXof(pb)}`] : []),
+  ]
+}
+
+/** Avant/après d'une action du journal, en clair (montant, référence, modes, délai, statut). Le contenu vient de la
+ * base : tout champ absent ou inattendu est simplement omis. */
+export function detailAction(j: Pick<ActionJournal, 'action' | 'avant' | 'apres'>): string[] {
+  const [avant, apres] = [valeurs(j.avant), valeurs(j.apres)]
+  switch (j.action) {
+    case 'virement_enregistre':
+      return [...versement(avant, apres), ...changementStatut(avant, apres)]
+    case 'paiement_confirme':
+      return versement(avant, apres)
+    case 'mode': {
+      const [a, b] = [avant.mode, apres.mode]
+      return MODES.includes(a as Mode) && MODES.includes(b as Mode)
+        ? [`${libelleMode(a as Mode)} → ${libelleMode(b as Mode)}`]
+        : []
+    }
+    case 'delai_accorde': {
+      const fin = formaterJour(chaine(apres.delai_jusqu_au) || null)
+      const debut = formaterJour(chaine(avant.delai_jusqu_au) || null) || 'aucun'
+      return [...(fin ? [`Délai : ${debut} → ${fin}`] : []), ...changementStatut(avant, apres)]
+    }
+    case 'dispense_parcours_gratuit':
+      return changementStatut(avant, { statut: 'dispense' })
+    default:
+      return []
+  }
 }
 
 // heures naïves du serveur, au fuseau du site (Abidjan = UTC) : lues en UTC et affichées à Abidjan, quel que soit le

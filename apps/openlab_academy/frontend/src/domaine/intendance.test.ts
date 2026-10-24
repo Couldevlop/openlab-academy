@@ -4,6 +4,7 @@ import {
   echeanceADecaler,
   etatEcheanceFiche,
   etatLigne,
+  detailAction,
   formaterHorodatage,
   isoHorodatage,
   libelleAction,
@@ -171,6 +172,61 @@ describe('journal', () => {
     expect(libelleAction('mode')).toBe('Mode de paiement changé')
     expect(libelleAction('dispense_parcours_gratuit')).toBe('Dispensé : parcours devenu gratuit')
     expect(libelleAction('autre_chose')).toBe('autre_chose')
+  })
+
+  it('détail avant/après en clair : virement, paiement en ligne, mode, délai, dispense', () => {
+    const xof = (t: string) => t.replace(/(\d) (?=\d)/g, '$1 ').replace(/ FCFA/g, ' FCFA')
+    expect(
+      detailAction({
+        action: 'virement_enregistre',
+        avant: { paye: 0, statut: 'en_retard' },
+        apres: { paye: 10000, statut: 'a_jour', montant: 10000, reference: 'VIR-2210', date_paiement: '2026-10-22' },
+      }),
+    ).toEqual([
+      xof('10 000 FCFA · réf. VIR-2210 · versé le 22 octobre 2026'),
+      xof('Payé : 0 FCFA → 10 000 FCFA'),
+      'Statut : En retard → À jour',
+    ])
+    expect(
+      detailAction({
+        action: 'paiement_confirme',
+        avant: { statut: 'en_attente', paye: 0, montant: 50000 },
+        apres: { statut: 'confirme', paye: 50000, montant: 50000 },
+      }),
+    ).toEqual([xof('50 000 FCFA'), xof('Payé : 0 FCFA → 50 000 FCFA')])
+    expect(
+      detailAction({ action: 'mode', avant: { mode: 'une_fois', echeances: [] }, apres: { mode: 'mensuel' } }),
+    ).toEqual(['En une fois → Chaque mois'])
+    expect(
+      detailAction({
+        action: 'delai_accorde',
+        avant: { delai_jusqu_au: null, statut: 'en_retard' },
+        apres: { delai_jusqu_au: '2026-11-20', statut: 'a_jour' },
+      }),
+    ).toEqual(['Délai : aucun → 20 novembre 2026', 'Statut : En retard → À jour'])
+    expect(
+      detailAction({
+        action: 'dispense_parcours_gratuit',
+        avant: { statut: 'en_retard', paye: 0 },
+        apres: { statut: 'dispense' },
+      }),
+    ).toEqual(['Statut : En retard → Dispensé'])
+  })
+
+  it('détail : contenu inattendu ignoré, jamais d’erreur', () => {
+    expect(detailAction({ action: 'mode', avant: null, apres: 'x' })).toEqual([])
+    expect(detailAction({ action: 'mode', avant: { mode: 'turbo' }, apres: { mode: 'mensuel' } })).toEqual([])
+    expect(detailAction({ action: 'autre', avant: {}, apres: {} })).toEqual([])
+    expect(detailAction({ action: 'delai_accorde', avant: {}, apres: { delai_jusqu_au: 'demain' } })).toEqual([])
+    expect(detailAction({ action: 'delai_accorde', avant: {}, apres: {} })).toEqual([])
+    expect(
+      detailAction({
+        action: 'delai_accorde',
+        avant: { delai_jusqu_au: '2026-11-20' },
+        apres: { delai_jusqu_au: '2026-12-05' },
+      }),
+    ).toEqual(['Délai : 20 novembre 2026 → 5 décembre 2026'])
+    expect(detailAction({ action: 'virement_enregistre', avant: [], apres: { statut: 'a_jour' } })).toEqual([])
   })
 
   it('horodatage à la française, vide s’il est illisible', () => {

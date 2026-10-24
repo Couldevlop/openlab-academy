@@ -74,6 +74,23 @@ describe('Mes paiements', () => {
     expect(w.find('.suspendu').attributes('role')).toBe('note')
   })
 
+  it('frais du jour impayés : « À régler », pas « En retard »', async () => {
+    const { w } = await afficher(
+      dossierPaiement({
+        statut: 'en_retard',
+        bloque: true,
+        paye: 0,
+        echeances: [
+          { date_limite: '2026-11-02', montant: 10000, libelle: "Frais d'inscription", couverte: false },
+          { date_limite: '2026-12-10', montant: 50000, libelle: 'Échéance', couverte: false },
+        ],
+      }),
+    )
+    expect(w.find('.statut').text()).toBe('À régler')
+    expect(texte(w, '.suspendu')).toContain('jusqu’au paiement de l’échéance due.')
+    expect(texte(w, '.suspendu')).not.toContain('en retard')
+  })
+
   it('échéancier : chaque ligne datée, montant, état écrit, prochaine repérée', async () => {
     const { w } = await afficher()
     const lignes = w.findAll('.echeancier li')

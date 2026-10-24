@@ -204,6 +204,11 @@ describe('Fiche d’un dossier', () => {
     expect(w.find('.identite').text()).toContain('Data, octobre 2026')
     expect(w.find('.identite').text()).not.toContain('data-2026-10')
     expect(entree.find('.motif').text()).toBe('Relevé du 22 octobre')
+    expect(entree.findAll('.detail li').map((l) => l.text())).toEqual([
+      '10 000 FCFA · réf. VIR-2210 · versé le 22 octobre 2026',
+      'Payé : 0 FCFA → 10 000 FCFA',
+      'Statut : En retard → À jour',
+    ])
   })
 
   it('texte venu du serveur affiché tel quel, jamais interprété', async () => {

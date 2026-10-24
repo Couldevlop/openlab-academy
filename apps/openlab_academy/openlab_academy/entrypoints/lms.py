@@ -162,6 +162,14 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
     return details
 
 
+@frappe.whitelist(allow_guest=True)
+def get_course_details(course: str) -> dict:
+    """Surcharge : la présentation d'un parcours bloqué, ouverte en naviguant dans l'interface (sans chargement de
+    page, donc sans before_request), renvoie elle aussi vers la page de paiement."""
+    _refuser_si_bloque(course)
+    return lms_utils.get_course_details(course)
+
+
 @frappe.whitelist()
 def get_quiz_with_questions(quiz: str) -> dict:
     """Surcharge : questions d'un quiz d'un parcours bloqué jamais servies."""
