@@ -23,6 +23,14 @@ server {
         add_header X-Content-Type-Options "nosniff" always;
     }
 
+    # icônes demandées d'office par les navigateurs : celles de la charte (pictogramme)
+    location = /favicon.ico {
+        try_files /assets/openlab_academy/images/favicon.ico =404;
+    }
+    location = /apple-touch-icon.png {
+        try_files /assets/openlab_academy/images/logo-apple-touch-icon.png =404;
+    }
+
     location ~ ^/protected/(.*) {
         internal;
         try_files /$site/$1 =404;
