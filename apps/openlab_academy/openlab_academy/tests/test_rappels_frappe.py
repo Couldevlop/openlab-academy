@@ -107,6 +107,14 @@ class Base(FrappeTestCase):
                 frappe.get_all(RAPPEL, {"dossier": dossier or self.dossier}, ["canal", "jours_avant", "date_limite",
                                                                               "statut"])}
 
+    def diagnostic(self) -> str:
+        """Contexte affiché quand un envoi manque (environnement d'intégration continue : site neuf)."""
+        compte = EmailAccount.find_default_outgoing()
+        erreurs = frappe.get_all("Error Log", fields=["method", "error"], order_by="creation desc", limit=3)
+        return (f"rappels={self.rappels()} compte_sortant={getattr(compte, 'name', compte)!r} "
+                f"mute_emails={frappe.conf.get('mute_emails')!r} "
+                f"erreurs={[(e.method, (e.error or '')[-400:]) for e in erreurs]}")
+
     def courriels(self):
         return frappe.get_all("Email Queue Recipient", {"recipient": ELEVE}, pluck="parent")
 
@@ -118,7 +126,7 @@ class Base(FrappeTestCase):
 class TestEnvoyerRappels(Base):
     def test_j7_par_e_mail_une_seule_fois_canaux_non_configures_ignores(self):
         avant = set(self.courriels())
-        self.assertEqual(self.executer(), 1)
+        self.assertEqual(self.executer(), 1, self.diagnostic())
         self.assertEqual(self.executer(), 0)  # la tâche tourne deux fois le même jour
         nouveaux = set(self.courriels()) - avant
         self.assertEqual(len(nouveaux), 1)
@@ -140,7 +148,7 @@ class TestEnvoyerRappels(Base):
     def test_trois_canaux_et_corps_http(self):
         self.tous_les_canaux()
         http = Http()
-        self.assertEqual(self.executer(http), 3)
+        self.assertEqual(self.executer(http), 3, self.diagnostic())
         sms, = http.vers("smsmessaging")
         self.assertEqual(sms[1]["json"]["outboundSMSMessageRequest"]["address"], f"tel:{TELEPHONE}")
         self.assertIn(f"50 000 FCFA à régler au plus tard le {self.limite:%d/%m/%Y} pour le parcours Parcours rappels",
