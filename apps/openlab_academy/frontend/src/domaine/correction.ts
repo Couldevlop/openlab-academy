@@ -55,6 +55,18 @@ export interface CorrectionFormateur {
   au_nom_de: string | null
 }
 
+/** Version antérieure de la même soumission (re-soumission). */
+export interface VersionPrecedente {
+  copie: string
+  version: number
+  rendue_le: string | null
+}
+
+/** Texte d'une version antérieure, pour la comparer à la version corrigée. */
+export interface VersionTexte extends VersionPrecedente {
+  contenu: string
+}
+
 export interface VueCopie {
   copie: string
   apprenant: string
@@ -82,6 +94,9 @@ export interface VueCopie {
   formateur: CorrectionFormateur | null
   ecarts: string[]
   signalement: string
+  /** Version remplacée par un nouveau rendu : seule la dernière se corrige. */
+  remplacee: boolean
+  versions_precedentes: VersionPrecedente[]
 }
 
 /** Ce que le correcteur a saisi : niveaux, commentaires par critère et commentaire général. */

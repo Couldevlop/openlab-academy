@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ErreurDepot } from '../../application/erreurs'
 import {
+  accuseDepot,
+  copieEnSouffrance,
   critereRetour,
+  reglagesEffectifs,
   dossierPaiement,
   ficheIntendance,
   fileCorrection,
@@ -17,6 +20,7 @@ import {
   DepotCorrectionFrappe,
   DepotIntendanceFrappe,
   DepotPaiementFrappe,
+  DepotPilotageFrappe,
   DepotRelectureFrappe,
   DepotRetourFrappe,
 } from './depots'
@@ -88,6 +92,18 @@ describe('dépôt de correction (Frappe)', () => {
       ['valider_lot', 'POST', { copies: ['C1'], et_publier: 0 }],
     ])
   })
+
+  it('version précédente d’une copie, pour la comparaison', async () => {
+    const version = { copie: 'C1', version: 1, rendue_le: '2026-11-01 08:00:00', contenu: 'Ancien texte' }
+    const { client, appels } = serveur(version)
+    expect(await new DepotCorrectionFrappe(client).versionPrecedente('C2', 'C1')).toEqual(version)
+    expect(appels()).toEqual([['version_precedente', 'GET', { copie: 'C2', precedente: 'C1' }]])
+    const versions = vueCopie({ remplacee: true, versions_precedentes: [{ copie: 'C1', version: 1, rendue_le: null }] })
+    expect(await new DepotCorrectionFrappe(serveur(versions).client).copie('C2')).toEqual(versions)
+    await invalide(
+      new DepotCorrectionFrappe(serveur({ ...version, contenu: null }).client).versionPrecedente('C2', 'C1'),
+    )
+  })
 })
 
 describe('dépôt de relecture (Frappe)', () => {
@@ -136,6 +152,38 @@ describe('dépôt de retour (Frappe)', () => {
       .catch((e: unknown) => e)
     expect(erreur).toBeInstanceOf(ErreurDepot)
     expect((erreur as ErreurDepot).details).toEqual([expect.stringMatching(/^mon_retour\.note : /)])
+  })
+
+  it('accusé de dépôt de la copie', async () => {
+    const accuse = accuseDepot()
+    const { client, appels } = serveur(accuse)
+    expect(await new DepotRetourFrappe(client).accuse('C1')).toEqual(accuse)
+    expect(appels()).toEqual([['accuse_depot', 'GET', { copie: 'C1' }]])
+    await invalide(new DepotRetourFrappe(serveur({ ...accuse, version: '2' }).client).accuse('C1'))
+  })
+})
+
+describe('dépôt de pilotage (Frappe)', () => {
+  it('copies en souffrance, temps restant connu ou non', async () => {
+    const copies = [copieEnSouffrance('C1'), copieEnSouffrance('C2', { reste_heures: null, depuis: null })]
+    const { client, appels } = serveur({ copies })
+    expect(await new DepotPilotageFrappe(client).souffrances()).toEqual(copies)
+    expect(appels()).toEqual([['copies_en_souffrance', 'GET', undefined]])
+    await invalide(new DepotPilotageFrappe(serveur({ copies: [{ copie: 'C1' }] }).client).souffrances())
+  })
+
+  it('réglages appliqués, avec ou sans cohorte', async () => {
+    const reglages = reglagesEffectifs()
+    const { client, appels } = serveur(reglages)
+    const depot = new DepotPilotageFrappe(client)
+    expect(await depot.reglagesEffectifs('ASG-1', 'COH')).toEqual(reglages)
+    await depot.reglagesEffectifs('ASG-1')
+    expect(appels()).toEqual([
+      ['reglages_effectifs', 'GET', { exercice: 'ASG-1', cohorte: 'COH' }],
+      ['reglages_effectifs', 'GET', { exercice: 'ASG-1' }],
+    ])
+    const sansSource = { ...reglages, chaine: { nb_pairs: { valeur: 3 } } }
+    await invalide(new DepotPilotageFrappe(serveur(sansSource).client).reglagesEffectifs('ASG-1'))
   })
 })
 

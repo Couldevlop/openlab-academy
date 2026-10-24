@@ -5,6 +5,7 @@ import {
   DepotCorrectionFrappe,
   DepotIntendanceFrappe,
   DepotPaiementFrappe,
+  DepotPilotageFrappe,
   DepotRelectureFrappe,
   DepotRetourFrappe,
 } from './frappe/depots'
@@ -18,7 +19,7 @@ describe('adaptateurs', () => {
       requete,
       () => localStorage,
       () => lieu,
-      () => ({ intendance: true, finances: false }),
+      () => ({ intendance: true, finances: false, pilotage: false }),
     )
     expect(ports.correction).toBeInstanceOf(DepotCorrectionFrappe)
     expect(ports.relecture).toBeInstanceOf(DepotRelectureFrappe)
@@ -37,7 +38,15 @@ describe('adaptateurs', () => {
     expect(requete).toHaveBeenLastCalledWith(
       expect.objectContaining({ url: 'openlab_academy.entrypoints.paiement_api.resume', method: 'GET' }),
     )
-    expect(ports.session.droits()).toEqual({ intendance: true, finances: false })
+    expect(ports.pilotage).toBeInstanceOf(DepotPilotageFrappe)
+    await ports.pilotage.souffrances().catch(() => undefined)
+    expect(requete).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        url: 'openlab_academy.entrypoints.evaluation_api.copies_en_souffrance',
+        method: 'GET',
+      }),
+    )
+    expect(ports.session.droits()).toEqual({ intendance: true, finances: false, pilotage: false })
     ports.navigateur.aller('https://checkout.cinetpay.com/payment/abc')
     expect(lieu.assign).toHaveBeenCalledWith('https://checkout.cinetpay.com/payment/abc')
   })
@@ -52,9 +61,18 @@ describe('droits de la session', () => {
         () => ({ assign: vi.fn() }),
         () => valeur,
       )
-    expect(droits({ intendance: true, finances: true }).session.droits()).toEqual({ intendance: true, finances: true })
-    for (const v of [undefined, null, 'oui', { intendance: 'true', finances: false }, { intendance: true }]) {
-      expect(droits(v).session.droits()).toEqual({ intendance: false, finances: false })
+    const tous = { intendance: true, finances: true, pilotage: true }
+    expect(droits(tous).session.droits()).toEqual(tous)
+    const malformes = [
+      undefined,
+      null,
+      'oui',
+      { intendance: 'true', finances: false, pilotage: false },
+      { intendance: true },
+      { intendance: true, finances: true },
+    ]
+    for (const v of malformes) {
+      expect(droits(v).session.droits()).toEqual({ intendance: false, finances: false, pilotage: false })
     }
   })
 })

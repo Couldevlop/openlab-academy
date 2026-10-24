@@ -1,10 +1,11 @@
 // Ports des cas d'usage : ce que l'application attend du monde extérieur (API d'évaluation, appareil, horloge).
 // Les adaptateurs (infrastructure) les implémentent ; un échec d'appel est une ErreurDepot.
-import type { ChargeCorrection, FileCorrection, ResultatLot, VueCopie } from '../domaine/correction'
+import type { ChargeCorrection, FileCorrection, ResultatLot, VersionTexte, VueCopie } from '../domaine/correction'
 import type { Brouillon, ResumeRelecture, SaisieRelecture, VueRelecture } from '../domaine/relecture'
 import type { FicheIntendance, ResumeFinances, VueIntendance } from '../domaine/intendance'
 import type { DossierPaiement, Mode, MonPaiement } from '../domaine/paiement'
-import type { Retour } from '../domaine/retour'
+import type { CopieEnSouffrance, ReglagesEffectifs } from '../domaine/pilotage'
+import type { AccuseDepot, Retour } from '../domaine/retour'
 
 export interface DepotCorrection {
   file(exercice?: string): Promise<FileCorrection>
@@ -13,6 +14,8 @@ export interface DepotCorrection {
   /** Publie la note enregistrée ; rend la note publiée. */
   publier(copie: string): Promise<number>
   validerLot(copies: string[], etPublier: boolean): Promise<ResultatLot>
+  /** Texte d'une version antérieure de la copie (mêmes droits que la copie). */
+  versionPrecedente(copie: string, precedente: string): Promise<VersionTexte>
 }
 
 export interface DepotRelecture {
@@ -23,6 +26,8 @@ export interface DepotRelecture {
 
 export interface DepotRetour {
   monRetour(copie: string): Promise<Retour>
+  /** Accusé de dépôt : l'apprenant auteur et ses correcteurs seulement. */
+  accuse(copie: string): Promise<AccuseDepot>
 }
 
 /** Dossier de paiement de l'apprenant connecté : le serveur le retrouve par la session, jamais par un identifiant. */
@@ -55,10 +60,17 @@ export interface DepotIntendance {
   resume(): Promise<ResumeFinances>
 }
 
+/** API de pilotage de l'évaluation : le serveur la réserve au super administrateur et au responsable pédagogique. */
+export interface DepotPilotage {
+  souffrances(): Promise<CopieEnSouffrance[]>
+  reglagesEffectifs(exercice: string, cohorte?: string): Promise<ReglagesEffectifs>
+}
+
 /** Écrans ouverts à l'utilisateur ; ne sert qu'à afficher les liens, l'API refuse elle-même. */
 export interface Droits {
   intendance: boolean
   finances: boolean
+  pilotage: boolean
 }
 
 export interface Session {

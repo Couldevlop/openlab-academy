@@ -9,7 +9,7 @@ const FINE = ' '
 const xof = (texte: string) => texte.replace(/(\d) (?=\d)/g, `$1${FINE}`).replace(/ FCFA/g, `${FINE}FCFA`)
 const net = (w: Pick<VueWrapper, 'text'>) => w.text().replace(/\s+/g, ' ').trim()
 
-function afficher(resume = resumeFinances(), droits = { intendance: true, finances: true }) {
+function afficher(resume = resumeFinances(), droits = { intendance: true, finances: true, pilotage: false }) {
   const ports = fauxPorts()
   ports.session.droits.mockReturnValue(droits)
   ports.intendance.resume.mockResolvedValue(resume)
@@ -106,12 +106,12 @@ describe('Finances', () => {
   })
 
   it('réservé à l’administration : aucun appel sans le droit ; refus du serveur affiché', async () => {
-    const sans = await afficher(resumeFinances(), { intendance: true, finances: false })
+    const sans = await afficher(resumeFinances(), { intendance: true, finances: false, pilotage: false })
     expect(sans.w.find('.reserve').text()).toContain('réservé à l’administration')
     expect(sans.ports.intendance.resume).not.toHaveBeenCalled()
     sans.w.unmount()
     const ports = fauxPorts()
-    ports.session.droits.mockReturnValue({ intendance: true, finances: true })
+    ports.session.droits.mockReturnValue({ intendance: true, finances: true, pilotage: false })
     ports.intendance.resume.mockRejectedValue(new ErreurDepot('hors_ligne'))
     const { w } = await monterEcran('/finances', ports)
     expect(w.find('[role="alert"]').text()).toBe('Le serveur ne répond pas. Vérifiez votre connexion puis réessayez.')
@@ -119,8 +119,8 @@ describe('Finances', () => {
 })
 
 describe('liens de l’accueil selon les droits', () => {
-  it('apprenant : aucun lien d’agent ; intendant : Intendance ; administrateur : les deux', async () => {
-    const liens = async (droits: { intendance: boolean; finances: boolean }) => {
+  it('apprenant : aucun lien d’agent ; intendant : Intendance ; administrateur : les deux ; responsable : Pilotage', async () => {
+    const liens = async (droits: { intendance: boolean; finances: boolean; pilotage: boolean }) => {
       const ports = fauxPorts()
       ports.session.droits.mockReturnValue(droits)
       const { w } = await monterEcran('/', ports)
@@ -128,13 +128,22 @@ describe('liens de l’accueil selon les droits', () => {
       w.unmount()
       return hrefs
     }
-    expect(await liens({ intendance: false, finances: false })).toEqual(['/relecture', '/correcteur'])
-    expect(await liens({ intendance: true, finances: false })).toEqual(['/relecture', '/correcteur', '/intendance'])
-    expect(await liens({ intendance: true, finances: true })).toEqual([
+    expect(await liens({ intendance: false, finances: false, pilotage: false })).toEqual(['/relecture', '/correcteur'])
+    expect(await liens({ intendance: true, finances: false, pilotage: false })).toEqual([
+      '/relecture',
+      '/correcteur',
+      '/intendance',
+    ])
+    expect(await liens({ intendance: true, finances: true, pilotage: false })).toEqual([
       '/relecture',
       '/correcteur',
       '/intendance',
       '/finances',
+    ])
+    expect(await liens({ intendance: false, finances: false, pilotage: true })).toEqual([
+      '/relecture',
+      '/correcteur',
+      '/pilotage',
     ])
   })
 })

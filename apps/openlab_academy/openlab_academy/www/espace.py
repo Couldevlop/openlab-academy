@@ -2,7 +2,7 @@
 
 La page ne porte aucune donnée : les écrans lisent l'API d'évaluation et de paiement, qui contrôle chaque accès côté
 serveur. Elle transmet seulement le jeton CSRF de la session, envoyé par les écrans sur chaque écriture, et les droits
-qui décident des liens affichés (Intendance, Finances) ; ces droits ne protègent rien : l'API refuse elle-même.
+qui décident des liens affichés (Intendance, Finances, Pilotage) ; ces droits ne protègent rien : l'API refuse elle-même.
 """
 import os
 from urllib.parse import urlencode
@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 import frappe
 
 from openlab_academy.entrypoints.paiement_api import ROLES_AGENTS
+from openlab_academy.infrastructure.reglages_evaluation_frappe import ROLE as RESPONSABLE_PEDAGOGIQUE
 
 no_cache = 1
 PAQUET = os.path.join(os.path.dirname(os.path.dirname(__file__)), "public", "espace", "espace.js")
@@ -24,9 +25,11 @@ def version() -> str:
 
 
 def droits(user: str) -> dict[str, bool]:
-    """Écrans des agents : Intendance (intendant, administrateur), Finances (administrateur)."""
+    """Écrans des agents : Intendance (intendant, administrateur), Finances (administrateur), Pilotage
+    (administrateur, responsable pédagogique)."""
     roles = set(frappe.get_roles(user))
-    return {"intendance": bool(ROLES_AGENTS & roles), "finances": "System Manager" in roles}
+    return {"intendance": bool(ROLES_AGENTS & roles), "finances": "System Manager" in roles,
+            "pilotage": bool({"System Manager", RESPONSABLE_PEDAGOGIQUE} & roles)}
 
 
 def get_context(context) -> None:

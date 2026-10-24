@@ -6,6 +6,7 @@ import {
   DepotCorrectionFrappe,
   DepotIntendanceFrappe,
   DepotPaiementFrappe,
+  DepotPilotageFrappe,
   DepotRelectureFrappe,
   DepotRetourFrappe,
 } from './frappe/depots'
@@ -28,6 +29,7 @@ export function creerPorts(
     retour: new DepotRetourFrappe(client),
     paiement: new DepotPaiementFrappe(clientPaiement),
     intendance: new DepotIntendanceFrappe(clientPaiement),
+    pilotage: new DepotPilotageFrappe(client),
     session: sessionSur(droits),
     navigateur: navigateurSur(lieu),
     brouillons: new DepotBrouillonsNavigateur(stockage),

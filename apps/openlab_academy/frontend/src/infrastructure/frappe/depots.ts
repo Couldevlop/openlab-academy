@@ -3,6 +3,7 @@ import type {
   DepotCorrection,
   DepotIntendance,
   DepotPaiement,
+  DepotPilotage,
   DepotRelecture,
   DepotRetour,
   Virement,
@@ -27,6 +28,10 @@ import {
   schemaResultatLot,
   schemaRetour,
   schemaVueCopie,
+  schemaAccuseDepot,
+  schemaReglagesEffectifs,
+  schemaSouffrances,
+  schemaVersionTexte,
 } from './schemas'
 
 export class DepotCorrectionFrappe implements DepotCorrection {
@@ -50,6 +55,10 @@ export class DepotCorrectionFrappe implements DepotCorrection {
 
   validerLot(copies: string[], etPublier: boolean) {
     return this.client.ecrire('valider_lot', { copies, et_publier: etPublier ? 1 : 0 }, schemaResultatLot)
+  }
+
+  versionPrecedente(copie: string, precedente: string) {
+    return this.client.lire('version_precedente', { copie, precedente }, schemaVersionTexte)
   }
 }
 
@@ -75,6 +84,24 @@ export class DepotRetourFrappe implements DepotRetour {
 
   monRetour(copie: string) {
     return this.client.lire('mon_retour', { copie }, schemaRetour)
+  }
+
+  accuse(copie: string) {
+    return this.client.lire('accuse_depot', { copie }, schemaAccuseDepot)
+  }
+}
+
+/** API de pilotage de l'évaluation : réservée par le serveur au super administrateur et au responsable pédagogique. */
+export class DepotPilotageFrappe implements DepotPilotage {
+  constructor(private readonly client: ClientFrappe) {}
+
+  async souffrances() {
+    return (await this.client.lire('copies_en_souffrance', undefined, schemaSouffrances)).copies
+  }
+
+  reglagesEffectifs(exercice: string, cohorte?: string) {
+    const params = cohorte ? { exercice, cohorte } : { exercice }
+    return this.client.lire('reglages_effectifs', params, schemaReglagesEffectifs)
   }
 }
 

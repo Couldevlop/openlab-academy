@@ -3,14 +3,16 @@
 import * as z from 'zod/mini'
 import type { Droits, Session } from '../../application/ports'
 
-const AUCUN: Droits = { intendance: false, finances: false }
-const schema = z.object({ intendance: z.boolean(), finances: z.boolean() })
+const AUCUN: Droits = { intendance: false, finances: false, pilotage: false }
+const schema = z.object({ intendance: z.boolean(), finances: z.boolean(), pilotage: z.boolean() })
 
 export function sessionSur(lire: () => unknown): Session {
   return {
     droits() {
       const lu = schema.safeParse(lire())
-      return lu.success ? { intendance: lu.data.intendance, finances: lu.data.finances } : AUCUN
+      return lu.success
+        ? { intendance: lu.data.intendance, finances: lu.data.finances, pilotage: lu.data.pilotage }
+        : AUCUN
     },
   }
 }

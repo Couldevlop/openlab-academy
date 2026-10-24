@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { critereRetour, retour } from '../test/fabriques'
-import { detailVisible, libelleAutoEvaluation, remarquesPairs, segments } from './retour'
+import {
+  detailVisible,
+  formaterDepot,
+  libelleAutoEvaluation,
+  libelleInstantane,
+  remarquesPairs,
+  segments,
+} from './retour'
 
 describe('mon retour', () => {
   it('barre de niveaux : atteints, sommet, vides', () => {
@@ -28,5 +35,19 @@ describe('mon retour', () => {
     expect(libelleAutoEvaluation(critereRetour('a', 1, { auto_evaluation: 2 }))).toBe('Satisfaisant')
     expect(libelleAutoEvaluation(critereRetour('a', 1))).toBe('')
     expect(libelleAutoEvaluation(critereRetour('a', 1, { auto_evaluation: 9 }))).toBe('')
+  })
+})
+
+describe('accusé de dépôt', () => {
+  it('horodatage à l’heure du site, absent ou illisible : vide', () => {
+    expect(formaterDepot('2026-11-03T21:12:05Z')).toMatch(/^3 novembre 2026 (à )?21:12:05$/)
+    expect(formaterDepot(null)).toBe('')
+    expect(formaterDepot('pas une date')).toBe('')
+  })
+
+  it('état de l’instantané du dépôt', () => {
+    expect(libelleInstantane('pris')).toBe('Instantané du dépôt conservé.')
+    expect(libelleInstantane('indisponible')).toContain('injoignable')
+    expect(libelleInstantane('')).toBe('')
   })
 })

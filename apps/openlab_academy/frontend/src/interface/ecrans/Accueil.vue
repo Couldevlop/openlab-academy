@@ -27,6 +27,10 @@ const droits = utiliserCasUsages().consulterDroits.executer()
         <strong>Finances</strong>
         <span class="discret">Encaissements, recouvrement et retards, en résumé.</span>
       </RouterLink>
+      <RouterLink v-if="droits.pilotage" class="carte lien" :to="{ name: 'pilotage' }">
+        <strong>Pilotage</strong>
+        <span class="discret">Copies en souffrance et réglages appliqués à chaque exercice, avec leur origine.</span>
+      </RouterLink>
       <p class="discret">Vos retours de correction s'ouvrent depuis le lien laissé sur chaque exercice.</p>
     </main>
   </div>

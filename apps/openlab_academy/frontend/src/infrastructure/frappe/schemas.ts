@@ -1,12 +1,13 @@
 // Schémas des réponses de l'API d'évaluation (openlab_academy/entrypoints/evaluation_api.py et les cas d'usage
 // Python qu'elle appelle) : une réponse d'une autre forme est refusée à la frontière, jamais affichée à moitié.
 import * as z from 'zod/mini'
-import type { FileCorrection, ResultatLot, VueCopie } from '../../domaine/correction'
+import type { FileCorrection, ResultatLot, VersionTexte, VueCopie } from '../../domaine/correction'
 import type { Grille } from '../../domaine/grille'
 import type { FicheIntendance, ResumeFinances, VueIntendance } from '../../domaine/intendance'
 import type { DossierPaiement, MonPaiement, ParcoursGratuit } from '../../domaine/paiement'
 import type { ResumeRelecture, VueRelecture } from '../../domaine/relecture'
-import type { Retour } from '../../domaine/retour'
+import type { CopieEnSouffrance, ReglagesEffectifs } from '../../domaine/pilotage'
+import type { AccuseDepot, Retour } from '../../domaine/retour'
 
 const texte = z.string()
 const date = z.nullable(z.string()) // « 2026-11-03 21:12:00 », comme Frappe sérialise un datetime
@@ -79,6 +80,16 @@ export const schemaVueCopie: z.ZodMiniType<VueCopie> = z.object({
   formateur: z.nullable(z.object({ niveaux, commentaires: textes, auteur: texte, au_nom_de: z.nullable(texte) })),
   ecarts: z.array(texte),
   signalement: texte,
+  remplacee: z.boolean(),
+  versions_precedentes: z.array(z.object({ copie: texte, version: indice, rendue_le: date })),
+})
+
+// ConsulterCorrection.version_precedente
+export const schemaVersionTexte: z.ZodMiniType<VersionTexte> = z.object({
+  copie: texte,
+  version: indice,
+  rendue_le: date,
+  contenu: texte,
 })
 
 // publier
@@ -264,3 +275,43 @@ export const schemaSansRetour = z.unknown()
 
 // paiement_api.payer : adresse de la page CinetPay (vérifiée https par le cas d'usage avant d'y aller)
 export const schemaPaiement = z.object({ url: texte })
+
+// ConsulterAccuseDepot.executer
+export const schemaAccuseDepot: z.ZodMiniType<AccuseDepot> = z.object({
+  copie: texte,
+  exercice: texte,
+  version: indice,
+  depose_le: date,
+  empreinte: texte,
+  algorithme: texte,
+  instantane: texte,
+  commit: texte,
+})
+
+// copies_en_souffrance
+export const schemaSouffrances: z.ZodMiniType<{ copies: CopieEnSouffrance[] }> = z.object({
+  copies: z.array(
+    z.object({
+      copie: texte,
+      apprenant: texte,
+      exercice: texte,
+      cohorte: texte,
+      depuis: date,
+      escalade_a: texte,
+      action: texte,
+      reste_heures: z.nullable(z.number()),
+    }),
+  ),
+})
+
+// reglages_effectifs : valeurs de forme libre (nombre, booléen, configuration d'étape), affichées telles quelles
+export const schemaReglagesEffectifs: z.ZodMiniType<ReglagesEffectifs> = z.object({
+  type_exercice: texte,
+  chaine: z.record(z.string(), z.object({ valeur: z.unknown(), source: texte })),
+  equipe: z.object({
+    titulaires: z.array(texte),
+    suppleants: z.array(texte),
+    responsable: texte,
+    provenance: textes,
+  }),
+})

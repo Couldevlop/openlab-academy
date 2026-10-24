@@ -6,6 +6,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy import hooks
+from openlab_academy.infrastructure.reglages_evaluation_frappe import ROLE
 from openlab_academy.www import espace
 
 GABARIT = pathlib.Path(espace.__file__).with_suffix(".html")
@@ -38,9 +39,10 @@ class TestPageEspace(FrappeTestCase):
 
     def test_droits_des_ecrans_selon_les_roles(self):
         """Seuls les liens des écrans sont masqués ; l'API refuse elle-même les rôles non habilités."""
-        cas = {"Intendant OpenLab": {"intendance": True, "finances": False},
-               "System Manager": {"intendance": True, "finances": True},
-               "LMS Student": {"intendance": False, "finances": False}}
+        cas = {"Intendant OpenLab": {"intendance": True, "finances": False, "pilotage": False},
+               "System Manager": {"intendance": True, "finances": True, "pilotage": True},
+               ROLE: {"intendance": False, "finances": False, "pilotage": True},
+               "LMS Student": {"intendance": False, "finances": False, "pilotage": False}}
         for role, attendu in cas.items():
             with self.subTest(role=role), mock.patch.object(espace.frappe, "get_roles", return_value=[role]):
                 context, _ = self.contexte()

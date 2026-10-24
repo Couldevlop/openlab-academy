@@ -4,7 +4,8 @@ import type { Critere, Grille } from '../domaine/grille'
 import type { ResumeRelecture, VueRelecture } from '../domaine/relecture'
 import type { FicheIntendance, LigneIntendance, ResumeFinances, VueIntendance } from '../domaine/intendance'
 import type { DossierPaiement, ParcoursGratuit } from '../domaine/paiement'
-import type { CritereRetour, Retour } from '../domaine/retour'
+import type { CopieEnSouffrance, ReglagesEffectifs } from '../domaine/pilotage'
+import type { AccuseDepot, CritereRetour, Retour } from '../domaine/retour'
 
 export const LIBELLES = ['Insuffisant', 'À consolider', 'Satisfaisant', 'Excellent']
 
@@ -73,6 +74,8 @@ export const vueCopie = (autres: Partial<VueCopie> = {}): VueCopie => ({
   formateur: null,
   ecarts: [],
   signalement: '',
+  remplacee: false,
+  versions_precedentes: [],
   ...autres,
 })
 
@@ -308,5 +311,53 @@ export const resumeFinances = (autres: Partial<ResumeFinances> = {}): ResumeFina
       apres: {},
     },
   ],
+  ...autres,
+})
+
+/** Accusé de dépôt conforme à `accuse_depot` : rendu par lien, instantané pris. */
+export const accuseDepot = (autres: Partial<AccuseDepot> = {}): AccuseDepot => ({
+  copie: 'C1',
+  exercice: 'ASG-1',
+  version: 2,
+  depose_le: '2026-11-03T21:12:05Z',
+  empreinte: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+  algorithme: 'SHA-256',
+  instantane: 'pris',
+  commit: '4e1a2b3',
+  ...autres,
+})
+
+/** Ligne de `copies_en_souffrance` : escalade épuisée, publication provisoire dans deux jours. */
+export const copieEnSouffrance = (copie: string, autres: Partial<CopieEnSouffrance> = {}): CopieEnSouffrance => ({
+  copie,
+  apprenant: `${copie.toLowerCase()}@exemple.ci`,
+  exercice: 'ASG-1',
+  cohorte: 'COH',
+  depuis: '2026-11-01 08:00:00',
+  escalade_a: 'responsable@exemple.ci',
+  action: 'publier_provisoire',
+  reste_heures: 48,
+  ...autres,
+})
+
+/** Réponse de `reglages_effectifs` : valeurs dans le désordre, origines variées, équipe de l'exercice. */
+export const reglagesEffectifs = (autres: Partial<ReglagesEffectifs> = {}): ReglagesEffectifs => ({
+  type_exercice: 'livrable',
+  chaine: {
+    zeta: { valeur: 'x', source: 'défauts' },
+    'etape.formateur': {
+      valeur: { active: true, delai_heures: 48, expiration: 'escalader' },
+      source: 'type livrable',
+    },
+    note_sur: { valeur: 10, source: 'cohorte COH' },
+    'etape.ia': { valeur: { active: false, delai_heures: 1, expiration: 'passer' }, source: 'type livrable' },
+    nb_pairs: { valeur: 3, source: 'type livrable' },
+  },
+  equipe: {
+    titulaires: ['formateur@exemple.ci'],
+    suppleants: [],
+    responsable: 'responsable@exemple.ci',
+    provenance: { titulaires: 'cohorte COH', responsable: 'réglages' },
+  },
   ...autres,
 })

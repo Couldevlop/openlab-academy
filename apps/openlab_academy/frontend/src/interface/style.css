@@ -13,6 +13,7 @@
   --es-alerte-texte: #8a3300;
   --es-erreur: #9f2a1b;
   --es-succes: #1e6b3a;
+  --es-succes-fond: #e6f4ea;
   --es-citation: #ffe3d1;
   /* en-tête blanc : actions bleu nuit, indications grises */
   --es-entete-texte: var(--ol-navy, #001e48);

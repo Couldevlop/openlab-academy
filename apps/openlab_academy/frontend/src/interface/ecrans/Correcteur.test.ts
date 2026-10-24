@@ -284,4 +284,54 @@ describe('Correcteur', () => {
     expect(w.find('[role="status"]').text()).toBe('Votre note de juré est enregistrée.')
     expect(ports.correction.publier).not.toHaveBeenCalled()
   })
+
+  it('versions précédentes : la plus récente choisie, différences marquées et échappées', async () => {
+    const versions = [
+      { copie: 'V1', version: 1, rendue_le: '2026-11-01 08:00:00' },
+      { copie: 'V2', version: 2, rendue_le: null },
+    ]
+    const contenu = 'Titre\n<b>Nouvelle</b> idée'
+    const { w, ports } = await ouvrir(vueCopie({ version: 3, contenu, versions_precedentes: versions }))
+    ports.correction.versionPrecedente.mockResolvedValue({
+      copie: 'V2',
+      version: 2,
+      rendue_le: null,
+      contenu: 'Titre\nAncienne idée\n',
+    })
+    expect(w.find('.versions summary').text()).toBe('Versions précédentes (2)')
+    expect(w.findAll('.versions option').map((o) => o.text())).toEqual([
+      expect.stringMatching(/^Version 1 · rendue le 1 novembre/),
+      'Version 2',
+    ])
+    expect((w.find('.versions select').element as HTMLSelectElement).value).toBe('V2')
+    await w.find('.versions .bouton').trigger('click')
+    await flushPromises()
+    expect(ports.correction.versionPrecedente).toHaveBeenCalledWith('C2', 'V2')
+    expect(w.find('.resume-diff').text().replace(/\s+/g, ' ')).toBe(
+      'Version 2 → version 3 : 1 ligne ajoutée, 2 lignes retirées.',
+    )
+    const lignes = w.findAll('.diff li')
+    expect(lignes.map((l) => l.classes()[0])).toEqual(['egal', 'retrait', 'retrait', 'ajout'])
+    expect(lignes[3]!.text()).toBe('+Ajouté : <b>Nouvelle</b> idée')
+    expect(lignes[1]!.find('.sr-only').text()).toBe('Retiré :')
+    expect(w.find('.diff b').exists()).toBe(false)
+    expect(w.find('.remplacee').exists()).toBe(false)
+  })
+
+  it('comparaison en échec : message, sans casser la copie ; version remplacée signalée', async () => {
+    const versions = [{ copie: 'V1', version: 1, rendue_le: null }]
+    const { w, ports } = await ouvrir(vueCopie({ version: 2, remplacee: true, versions_precedentes: versions }))
+    expect(w.find('.remplacee').text()).toContain('remplacée par un nouveau rendu')
+    ports.correction.versionPrecedente.mockRejectedValue(new ErreurDepot('acces_refuse'))
+    await w.find('.versions .bouton').trigger('click')
+    await flushPromises()
+    expect(w.find('.versions [role="alert"]').text()).toBe("Cet élément n'existe pas ou ne vous est pas ouvert.")
+    expect(w.find('.diff').exists()).toBe(false)
+    expect(w.find('.texte-copie').exists()).toBe(true)
+  })
+
+  it('sans version précédente : aucune section de comparaison', async () => {
+    const { w } = await ouvrir()
+    expect(w.find('.versions').exists()).toBe(false)
+  })
 })

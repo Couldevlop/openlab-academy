@@ -6,6 +6,7 @@ import type {
   DepotCorrection,
   DepotIntendance,
   DepotPaiement,
+  DepotPilotage,
   DepotRelecture,
   DepotRetour,
   Horloge,
@@ -23,6 +24,7 @@ export function fauxDepotCorrection() {
     corriger: vi.fn<DepotCorrection['corriger']>(async () => undefined),
     publier: vi.fn<DepotCorrection['publier']>(),
     validerLot: vi.fn<DepotCorrection['validerLot']>(),
+    versionPrecedente: vi.fn<DepotCorrection['versionPrecedente']>(),
   } satisfies DepotCorrection
 }
 
@@ -35,7 +37,10 @@ export function fauxDepotRelecture() {
 }
 
 export function fauxDepotRetour() {
-  return { monRetour: vi.fn<DepotRetour['monRetour']>() } satisfies DepotRetour
+  return {
+    monRetour: vi.fn<DepotRetour['monRetour']>(),
+    accuse: vi.fn<DepotRetour['accuse']>(),
+  } satisfies DepotRetour
 }
 
 export function fauxDepotPaiement() {
@@ -57,9 +62,18 @@ export function fauxDepotIntendance() {
   } satisfies DepotIntendance
 }
 
+export function fauxDepotPilotage() {
+  return {
+    souffrances: vi.fn<DepotPilotage['souffrances']>(async () => []),
+    reglagesEffectifs: vi.fn<DepotPilotage['reglagesEffectifs']>(),
+  } satisfies DepotPilotage
+}
+
 /** Session sans droit d'agent, sauf mention contraire. */
 export function fausseSession() {
-  return { droits: vi.fn<Session['droits']>(() => ({ intendance: false, finances: false })) } satisfies Session
+  return {
+    droits: vi.fn<Session['droits']>(() => ({ intendance: false, finances: false, pilotage: false })),
+  } satisfies Session
 }
 
 /** Navigation retenue au lieu d'être suivie. */
@@ -93,6 +107,7 @@ export function fauxPorts() {
     retour: fauxDepotRetour(),
     paiement: fauxDepotPaiement(),
     intendance: fauxDepotIntendance(),
+    pilotage: fauxDepotPilotage(),
     session: fausseSession(),
     navigateur: fauxNavigateur(),
     brouillons: new FauxBrouillons(),

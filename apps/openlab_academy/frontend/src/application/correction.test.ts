@@ -58,4 +58,17 @@ describe('correction', () => {
     expect(await cas.validerLot.executer(['C1', 'C3'], false)).toEqual({ copies: ['C1', 'C3'], publiees: [] })
     expect(ports.correction.validerLot).toHaveBeenCalledWith(['C1', 'C3'], false)
   })
+
+  it('comparer une version précédente à la version ouverte', async () => {
+    const { ports, cas } = fauxCasUsages()
+    const versions = [{ copie: 'C1', version: 1, rendue_le: null }]
+    const vue = vueCopie({ contenu: 'Titre\nNouveau', versions_precedentes: versions })
+    const precedente = { copie: 'C1', version: 1, rendue_le: null, contenu: 'Titre\nAncien' }
+    ports.correction.versionPrecedente.mockResolvedValue(precedente)
+    const c = await cas.comparerVersions.executer(vue, 'C1')
+    expect(ports.correction.versionPrecedente).toHaveBeenCalledWith('C2', 'C1')
+    expect(c.precedente).toBe(precedente)
+    expect(c.diff.map((l) => l.sorte)).toEqual(['egal', 'retrait', 'ajout'])
+    expect(c.resume).toEqual({ ajouts: 1, retraits: 1 })
+  })
 })

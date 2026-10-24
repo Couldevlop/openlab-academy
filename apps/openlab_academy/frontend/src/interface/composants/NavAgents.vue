@@ -10,6 +10,7 @@ defineProps<{ droits: Droits }>()
     <RouterLink :to="{ name: 'accueil' }">Mon espace</RouterLink>
     <RouterLink v-if="droits.intendance" :to="{ name: 'intendance' }">Intendance</RouterLink>
     <RouterLink v-if="droits.finances" :to="{ name: 'finances' }">Finances</RouterLink>
+    <RouterLink v-if="droits.pilotage" :to="{ name: 'pilotage' }">Pilotage</RouterLink>
   </nav>
 </template>
 

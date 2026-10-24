@@ -5,6 +5,7 @@ import Finances from './ecrans/Finances.vue'
 import Intendance from './ecrans/Intendance.vue'
 import Lots from './ecrans/Lots.vue'
 import Paiement from './ecrans/Paiement.vue'
+import Pilotage from './ecrans/Pilotage.vue'
 import Relecture from './ecrans/Relecture.vue'
 import Retour from './ecrans/Retour.vue'
 
@@ -23,6 +24,7 @@ export const routes: RouteRecordRaw[] = [
   { path: '/paiement/:cours', name: 'paiement', component: Paiement, meta: { titre: 'Mes paiements' } },
   { path: '/intendance', name: 'intendance', component: Intendance, meta: { titre: 'Intendance' } },
   { path: '/finances', name: 'finances', component: Finances, meta: { titre: 'Finances' } },
+  { path: '/pilotage', name: 'pilotage', component: Pilotage, meta: { titre: 'Pilotage' } },
   { path: '/:chemin(.*)*', redirect: '/' },
 ]
 

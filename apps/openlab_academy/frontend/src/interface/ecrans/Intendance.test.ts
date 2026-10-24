@@ -9,7 +9,7 @@ const FINE = ' '
 const xof = (texte: string) => texte.replace(/(\d) (?=\d)/g, `$1${FINE}`).replace(/ FCFA/g, `${FINE}FCFA`)
 const net = (w: VueWrapper | ReturnType<VueWrapper['find']>) => w.text().replace(/\s+/g, ' ').trim()
 
-function portsAgent(droits = { intendance: true, finances: false }): FauxPorts {
+function portsAgent(droits = { intendance: true, finances: false, pilotage: false }): FauxPorts {
   const ports = fauxPorts()
   ports.horloge = horlogeFixe(new Date('2026-11-02T09:00:00Z'))
   ports.session.droits.mockReturnValue(droits)
@@ -162,7 +162,7 @@ describe('Intendance', () => {
   })
 
   it('sans le rôle : écran réservé, aucun appel', async () => {
-    const ports = portsAgent({ intendance: false, finances: false })
+    const ports = portsAgent({ intendance: false, finances: false, pilotage: false })
     const { w } = await afficher(ports)
     expect(w.find('.reserve').text()).toContain('réservé à l’intendance')
     expect(ports.intendance.intendance).not.toHaveBeenCalled()
