@@ -136,6 +136,9 @@ jobs:
             --mariadb-user-host-login-scope='%'
           for app in payments lms openlab_academy; do bench --site test_site install-app "$app"; done
           bench --site test_site set-config allow_tests true
+          # assets non compilés (--skip-assets) : sans manifeste, Frappe échoue en mettant en forme le HTML des
+          # e-mails (bundled_asset sur un manifeste absent) ; un manifeste vide suffit, le CSS absent est ignoré
+          mkdir -p sites/assets && [ -f sites/assets/assets.json ] || echo '{}' > sites/assets/assets.json
 
       # même commande que docker/dev-test.sh
       - name: Run tests with coverage
