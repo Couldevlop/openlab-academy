@@ -33,15 +33,19 @@ def tarif(c, **autres):
 
 
 def inscrire_sans_paiement(lot, membre):
-    """Inscription d'un autre test : tarif du parcours posé si absent, date figée au début de la cohorte."""
-    from openlab_academy.entrypoints import paiement
+    """Inscription d'un autre test : tarif du parcours posé si absent, date figée au début de la cohorte, dossier
+    dispensé (sinon les frais d'inscription impayés bloqueraient le parcours, selon l'ordre des tests)."""
+    from openlab_academy.entrypoints import lms, paiement
     c = frappe.db.get_value("Batch Course", {"parent": lot}, "course", order_by="idx")
     if not frappe.db.exists("Tarif Parcours OpenLab", c):
         tarif(c).insert(ignore_permissions=True)
     debut = frappe.utils.getdate(frappe.db.get_value("LMS Batch", lot, "start_date"))
     with mock.patch.object(paiement, "jour_courant", return_value=debut):
-        return frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": lot, "member": membre}).insert(
+        inscription = frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": lot, "member": membre}).insert(
             ignore_permissions=True)
+    frappe.db.set_value("Dossier Paiement OpenLab", {"apprenant": membre, "cours": c}, "dispense", 1)
+    lms.vider_cache()
+    return inscription
 
 
 def dossier(c, **autres):

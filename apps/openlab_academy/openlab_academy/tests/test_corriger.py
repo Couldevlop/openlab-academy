@@ -435,6 +435,19 @@ class TestVersionRemplacee(Cas):
         self.assertEqual(self.vue.copie(FORM, v1)["versions_precedentes"], [])
         self.assertNotIn(v1, [c["copie"] for c in self.vue.file(FORM)["copies"]])
 
+    def test_version_precedente_lue_pour_comparaison_et_bornee_a_la_soumission(self):
+        self.monter()
+        v1 = self.a_corriger()
+        self.remplacer(v1)
+        v2 = self.a_corriger()
+        self.m.copies[v2] = replace(self.m.copies[v2], version=2)
+        vue = self.vue.version_precedente(FORM, v2, v1)
+        self.assertEqual((vue["copie"], vue["version"], vue["contenu"]), (v1, 1, self.m.texte_lisible(v1)))
+        with self.assertRaisesRegex(AccesRefuse, "version étrangère"):
+            self.vue.version_precedente(FORM, v1, v2)
+        with self.assertRaisesRegex(AccesRefuse, "hors de votre correction"):
+            self.vue.version_precedente("intrus@exemple.ci", v2, v1)
+
 
 class TestSynthese(unittest.TestCase):
     def test_relectures_sous_le_minimum_sans_mediane(self):

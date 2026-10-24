@@ -3,6 +3,7 @@ registre idempotent, échecs consignés sans secret, revérification des paiemen
 import datetime
 import email
 import pathlib
+import traceback
 from unittest import mock
 
 import frappe
@@ -12,6 +13,7 @@ from frappe.utils import add_days, get_url, getdate, now_datetime, nowdate
 from rq.timeouts import JobTimeoutException
 
 from openlab_academy import hooks
+from openlab_academy.application.rappels import Destinataire, message_rappel
 from openlab_academy.entrypoints import paiement
 from openlab_academy.infrastructure.canaux import CanalEmail, CanalSms, CanalWhatsApp
 from openlab_academy.infrastructure.depot_dossiers_frappe import DepotDossiersFrappe, ReglagesPaiementFrappe
@@ -111,9 +113,15 @@ class Base(FrappeTestCase):
         """Contexte affiché quand un envoi manque (environnement d'intégration continue : site neuf)."""
         compte = EmailAccount.find_default_outgoing()
         erreurs = frappe.get_all("Error Log", fields=["method", "error"], order_by="creation desc", limit=3)
+        try:  # envoi direct : la trace de l'exception, que le journal des rappels réduit à son type
+            CanalEmail(frappe.sendmail).envoyer(Destinataire(ELEVE, "", "Awa"), message_rappel(
+                "Diagnostic", 1000, datetime.date(2026, 12, 1), "https://academy.example.ci/p", "Awa", 7))
+            envoi = "ok"
+        except Exception:
+            envoi = traceback.format_exc()[-1500:]
         return (f"rappels={self.rappels()} compte_sortant={getattr(compte, 'name', compte)!r} "
                 f"mute_emails={frappe.conf.get('mute_emails')!r} "
-                f"erreurs={[(e.method, (e.error or '')[-400:]) for e in erreurs]}")
+                f"erreurs={[(e.method, (e.error or '')[-400:]) for e in erreurs]} envoi_direct={envoi}")
 
     def courriels(self):
         return frappe.get_all("Email Queue Recipient", {"recipient": ELEVE}, pluck="parent")

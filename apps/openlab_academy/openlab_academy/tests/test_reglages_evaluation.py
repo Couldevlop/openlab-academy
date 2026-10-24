@@ -5,7 +5,8 @@ from datetime import datetime, timedelta
 from openlab_academy.domain.reglages import ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import (
     CHAINES_DEFAUT, RESERVE_REPONSE_JETONS, Chaine, ConfigEtape, ConfigIA, Etape, Expiration, ReglagesEvaluation,
-    ActionSouffrance, Resoumission, Surcharge, TypeExercice, reste_avant_action_souffrance, surcharges_invalidees,
+    ActionSouffrance, CopieEnCours, Resoumission, Surcharge, TypeExercice, impact_changement,
+    reste_avant_action_souffrance, surcharges_invalidees,
 )
 
 E = Etape
@@ -379,3 +380,30 @@ class TestChaineDict(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestImpactChangement(unittest.TestCase):
+    def setUp(self):
+        self.r = ReglagesEvaluation()
+        self.copies = (CopieEnCours("K1", TypeExercice.PROJET, "C1", "EX1"),
+                       CopieEnCours("K2", TypeExercice.PROJET, "C2", "EX1"),
+                       CopieEnCours("K3", TypeExercice.LIVRABLE, None, "EX2"))
+
+    def test_rien_ne_change_aucune_copie(self):
+        vide = impact_changement((self.r, ()), (self.r, ()), self.copies)
+        self.assertEqual(vide, {"copies": [], "exercices": [], "cohortes": [], "champs": [], "secours": []})
+
+    def test_surcharge_de_cohorte_ne_touche_que_ses_copies(self):
+        apres = (Surcharge("C1", None, {"nb_pairs": 1}),)
+        r = impact_changement((self.r, ()), (self.r, apres), self.copies)
+        self.assertEqual((r["copies"], r["exercices"], r["cohortes"], r["champs"]), (["K1"], ["EX1"], ["C1"],
+                                                                                      ["nb_pairs"]))
+
+    def test_reglage_d_un_type_touche_ses_copies_et_signale_la_chaine_de_secours(self):
+        nouveau = ReglagesEvaluation(chaines={TypeExercice.LIVRABLE: replace(
+            CHAINES_DEFAUT[TypeExercice.LIVRABLE], note_sur=40, seuil_reussite=20)})
+        r = impact_changement((self.r, ()), (nouveau, ()), self.copies)
+        self.assertEqual((r["copies"], r["cohortes"], r["champs"]), (["K3"], [], ["note_sur", "seuil_reussite"]))
+        provisoire = ConfigEtape(E.FORMATEUR, True, 1, Expiration.PUBLIER_PROVISOIRE)
+        r = impact_changement((self.r, ()), (self.r, (Surcharge(None, "EX1", etapes=(provisoire,)),)), self.copies)
+        self.assertEqual(r["secours"], ["K1", "K2"])

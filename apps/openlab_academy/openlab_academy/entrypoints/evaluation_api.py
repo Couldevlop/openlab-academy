@@ -20,7 +20,8 @@ from openlab_academy.application.pairs import EnregistrerRelecture, RelectureRef
 from openlab_academy.application.retours import (
     AutoEvaluer, ConsulterAccuseDepot, ConsulterRelectures, ConsulterRetour)
 from openlab_academy.domain.delegation import Delegation, DelegationRefusee
-from openlab_academy.domain.reglages_evaluation import reste_avant_action_souffrance
+from openlab_academy.domain.reglages import ReglagesInvalides
+from openlab_academy.domain.reglages_evaluation import impact_changement, reste_avant_action_souffrance
 from openlab_academy.entrypoints import evaluation
 from openlab_academy.infrastructure import delegations_frappe, journal_frappe, reglages_evaluation_frappe
 from openlab_academy.infrastructure.depot_copies_frappe import DepotCopiesFrappe
@@ -30,10 +31,11 @@ HEURE = 3600
 LOT_MAX = 200
 LIMITES = {  # requêtes par heure et par utilisateur
     "enregistrer_relecture": 60, "enregistrer_auto_evaluation": 30, "corriger": 600, "valider_lot": 600,
-    "publier": 600, "deleguer": 30, "revoquer": 30, "file_correction": 300,
+    "publier": 600, "deleguer": 30, "revoquer": 30, "simuler_impact": 120,
+    "file_correction": 300,
     "mes_relectures": 600, "relecture": 600, "mon_auto_evaluation": 600, "mon_retour": 600,
-    "copie_a_corriger": 1200, "fiabilite_ia": 120, "accuse_depot": 600, "reglages_effectifs": 300,
-    "copies_en_souffrance": 300,
+    "copie_a_corriger": 1200, "version_precedente": 600, "fiabilite_ia": 120, "accuse_depot": 600,
+    "reglages_effectifs": 300, "copies_en_souffrance": 300,
 }
 
 
@@ -202,6 +204,16 @@ def copie_a_corriger(copie: str) -> dict:
     return ConsulterCorrection(depot, _acces(depot), _seuil, evaluation.avanceur().chaine).copie(_moi(), _copie(depot, copie))
 
 
+@frappe.whitelist(methods=["GET"])
+@_api
+@_limite("version_precedente")
+def version_precedente(copie: str, precedente: str) -> dict:
+    """Texte d'une version antérieure de la copie, pour la comparaison entre versions du correcteur."""
+    depot = _depot()
+    return ConsulterCorrection(depot, _acces(depot), _seuil, evaluation.avanceur().chaine).version_precedente(
+        _moi(), _copie(depot, copie), _copie(depot, precedente))
+
+
 @frappe.whitelist(methods=["POST"])
 @_api
 @_limite("corriger")
@@ -288,6 +300,31 @@ def copies_en_souffrance() -> dict:
                        "action": reglages.souffrance_action.value,
                        "reste_heures": None if reste is None else round(reste.total_seconds() / 3600, 1)})
     return {"copies": copies}
+
+
+@frappe.whitelist(methods=["POST"])
+@_api
+@_limite("simuler_impact")
+def simuler_impact(cible: str, doc: dict | str) -> dict:
+    """Simulateur d'impact de la console : copies en cours, exercices, cohortes et champs que toucherait
+    l'enregistrement du formulaire (réglages ou surcharge), sans rien enregistrer."""
+    if not _superviseur(_moi()):
+        raise AccesRefuse("simulation réservée au super administrateur et au responsable pédagogique")
+    console = reglages_evaluation_frappe
+    if cible not in ("reglages", "surcharge"):
+        raise CorrectionRefusee("cible de simulation inconnue")
+    valeurs = {**_json(doc, dict), "doctype": console.REGLAGES if cible == "reglages" else console.SURCHARGE}
+    reglages, nommees = console.charger(), console.surcharges_nommees()
+    surcharges = tuple(s for _, s in nommees)
+    try:
+        if cible == "reglages":
+            apres = console.vers_domaine(frappe.get_doc(valeurs)), surcharges
+        else:
+            autres = tuple(s for nom, s in nommees if nom != valeurs.get("name"))  # la surcharge modifiée remplacée
+            apres = reglages, (*autres, console.surcharge_vers_domaine(frappe.get_doc(valeurs)))
+    except ReglagesInvalides as e:
+        raise CorrectionRefusee(str(e)) from e
+    return impact_changement((reglages, surcharges), apres, _depot().copies_en_cours())
 
 
 # --- délégations ---------------------------------------------------------------------------------------

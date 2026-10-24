@@ -12,6 +12,7 @@ after_request = ["openlab_academy.entrypoints.http.after_request"]
 # parcours en retard de paiement : pages redirigées vers le paiement (chargement complet d'une page)
 before_request = ["openlab_academy.entrypoints.http.before_request"]
 app_include_css = ["/assets/openlab_academy/css/openlab.css"]
+app_include_js = ["/assets/openlab_academy/js/simulateur_impact.js"]
 web_include_css = ["/assets/openlab_academy/css/openlab.css"]
 
 # écrans d'évaluation (relecture, correcteur, retour) : une page, routée côté navigateur
