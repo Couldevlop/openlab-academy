@@ -1,8 +1,29 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ErreurDepot } from '../../application/erreurs'
-import { fileCorrection, resumeRelecture, retour, critereRetour, vueCopie, vueRelecture } from '../../test/fabriques'
+import {
+  accuseDepot,
+  copieEnSouffrance,
+  critereRetour,
+  reglagesEffectifs,
+  dossierPaiement,
+  ficheIntendance,
+  fileCorrection,
+  resumeFinances,
+  vueIntendance,
+  resumeRelecture,
+  retour,
+  vueCopie,
+  vueRelecture,
+} from '../../test/fabriques'
 import { ClientFrappe, type RequeteFrappe } from './client'
-import { DepotCorrectionFrappe, DepotRelectureFrappe, DepotRetourFrappe } from './depots'
+import {
+  DepotCorrectionFrappe,
+  DepotIntendanceFrappe,
+  DepotPaiementFrappe,
+  DepotPilotageFrappe,
+  DepotRelectureFrappe,
+  DepotRetourFrappe,
+} from './depots'
 
 const RACINE = 'openlab_academy.entrypoints.evaluation_api.'
 
@@ -71,6 +92,18 @@ describe('dépôt de correction (Frappe)', () => {
       ['valider_lot', 'POST', { copies: ['C1'], et_publier: 0 }],
     ])
   })
+
+  it('version précédente d’une copie, pour la comparaison', async () => {
+    const version = { copie: 'C1', version: 1, rendue_le: '2026-11-01 08:00:00', contenu: 'Ancien texte' }
+    const { client, appels } = serveur(version)
+    expect(await new DepotCorrectionFrappe(client).versionPrecedente('C2', 'C1')).toEqual(version)
+    expect(appels()).toEqual([['version_precedente', 'GET', { copie: 'C2', precedente: 'C1' }]])
+    const versions = vueCopie({ remplacee: true, versions_precedentes: [{ copie: 'C1', version: 1, rendue_le: null }] })
+    expect(await new DepotCorrectionFrappe(serveur(versions).client).copie('C2')).toEqual(versions)
+    await invalide(
+      new DepotCorrectionFrappe(serveur({ ...version, contenu: null }).client).versionPrecedente('C2', 'C1'),
+    )
+  })
 })
 
 describe('dépôt de relecture (Frappe)', () => {
@@ -119,5 +152,143 @@ describe('dépôt de retour (Frappe)', () => {
       .catch((e: unknown) => e)
     expect(erreur).toBeInstanceOf(ErreurDepot)
     expect((erreur as ErreurDepot).details).toEqual([expect.stringMatching(/^mon_retour\.note : /)])
+  })
+
+  it('accusé de dépôt de la copie', async () => {
+    const accuse = accuseDepot()
+    const { client, appels } = serveur(accuse)
+    expect(await new DepotRetourFrappe(client).accuse('C1')).toEqual(accuse)
+    expect(appels()).toEqual([['accuse_depot', 'GET', { copie: 'C1' }]])
+    await invalide(new DepotRetourFrappe(serveur({ ...accuse, version: '2' }).client).accuse('C1'))
+  })
+})
+
+describe('dépôt de pilotage (Frappe)', () => {
+  it('copies en souffrance, temps restant connu ou non', async () => {
+    const copies = [copieEnSouffrance('C1'), copieEnSouffrance('C2', { reste_heures: null, depuis: null })]
+    const { client, appels } = serveur({ copies })
+    expect(await new DepotPilotageFrappe(client).souffrances()).toEqual(copies)
+    expect(appels()).toEqual([['copies_en_souffrance', 'GET', undefined]])
+    await invalide(new DepotPilotageFrappe(serveur({ copies: [{ copie: 'C1' }] }).client).souffrances())
+  })
+
+  it('réglages appliqués, avec ou sans cohorte', async () => {
+    const reglages = reglagesEffectifs()
+    const { client, appels } = serveur(reglages)
+    const depot = new DepotPilotageFrappe(client)
+    expect(await depot.reglagesEffectifs('ASG-1', 'COH')).toEqual(reglages)
+    await depot.reglagesEffectifs('ASG-1')
+    expect(appels()).toEqual([
+      ['reglages_effectifs', 'GET', { exercice: 'ASG-1', cohorte: 'COH' }],
+      ['reglages_effectifs', 'GET', { exercice: 'ASG-1' }],
+    ])
+    const sansSource = { ...reglages, chaine: { nb_pairs: { valeur: 3 } } }
+    await invalide(new DepotPilotageFrappe(serveur(sansSource).client).reglagesEffectifs('ASG-1'))
+  })
+})
+
+describe('dépôt de paiement (Frappe)', () => {
+  const RACINE_PAIEMENT = 'openlab_academy.entrypoints.paiement_api.'
+
+  function serveurPaiement(reponse: unknown) {
+    const requete = vi.fn<RequeteFrappe>(async () => reponse)
+    const appels = () => requete.mock.calls.map(([o]) => [o.url.slice(RACINE_PAIEMENT.length), o.method, o.params])
+    return { depot: new DepotPaiementFrappe(new ClientFrappe(requete, RACINE_PAIEMENT)), appels }
+  }
+
+  it('mon dossier (GET), choix du mode (POST) et paiement (POST) sur l’API de paiement', async () => {
+    const d = dossierPaiement({ prochaine: { date_limite: null, montant: 10000 } })
+    const lecture = serveurPaiement(d)
+    expect(await lecture.depot.monDossier('C1')).toEqual(d)
+    expect(await lecture.depot.choisirMode('C1', 'mensuel', '+2250700000002')).toEqual(d)
+    expect(lecture.appels()).toEqual([
+      ['mon_dossier', 'GET', { cours: 'C1' }],
+      ['choisir_mode', 'POST', { cours: 'C1', mode: 'mensuel', telephone: '+2250700000002' }],
+    ])
+    const paiement = serveurPaiement({ url: 'https://checkout.cinetpay.com/payment/abc' })
+    expect(await paiement.depot.payer('C1')).toBe('https://checkout.cinetpay.com/payment/abc')
+    expect(paiement.appels()).toEqual([['payer', 'POST', { cours: 'C1' }]])
+  })
+
+  it('dossier soldé ou dispensé : aucune prochaine échéance', async () => {
+    const d = dossierPaiement({ statut: 'solde', prochaine: null, reste: 0 })
+    expect(await serveurPaiement(d).depot.monDossier('C1')).toEqual(d)
+  })
+
+  it('parcours gratuit : état calme reconnu, jamais pris pour un dossier', async () => {
+    const g = { cours: 'initiation-ia', titre: 'Initiation à l’IA', gratuit: true }
+    expect(await serveurPaiement(g).depot.monDossier('initiation-ia')).toEqual(g)
+    await invalide(serveurPaiement({ ...g, gratuit: false }).depot.monDossier('initiation-ia'))
+    await invalide(serveurPaiement({ ...g, titre: 3 }).depot.monDossier('initiation-ia'))
+  })
+
+  it('réponse malformée : erreur typée', async () => {
+    const invalidePaiement = (r: unknown) => invalide(serveurPaiement(r).depot.monDossier('C1'))
+    await invalidePaiement({ ...dossierPaiement(), mode: 'trimestriel' })
+    await invalidePaiement({ ...dossierPaiement(), statut: 'bloque' })
+    await invalidePaiement({ ...dossierPaiement(), paye: '0' })
+    const { bloque: _b, ...sansBlocage } = dossierPaiement()
+    await invalidePaiement(sansBlocage)
+    await invalide(serveurPaiement({ url: 42 }).depot.payer('C1'))
+  })
+})
+
+describe('dépôt de l’intendance (Frappe)', () => {
+  const RACINE_PAIEMENT = 'openlab_academy.entrypoints.paiement_api.'
+
+  function serveurIntendance(reponse: unknown) {
+    const requete = vi.fn<RequeteFrappe>(async () => reponse)
+    const appels = () => requete.mock.calls.map(([o]) => [o.url.slice(RACINE_PAIEMENT.length), o.method, o.params])
+    return { depot: new DepotIntendanceFrappe(new ClientFrappe(requete, RACINE_PAIEMENT)), appels }
+  }
+
+  it('vue filtrée, fiche et résumé en GET, réponses validées', async () => {
+    const vue = vueIntendance()
+    const lecture = serveurIntendance(vue)
+    expect(await lecture.depot.intendance({ parcours: 'C1', statut: 'en_retard' })).toEqual(vue)
+    expect(lecture.appels()).toEqual([['intendance', 'GET', { parcours: 'C1', statut: 'en_retard' }]])
+    const f = ficheIntendance({ delai_jusqu_au: '2026-11-20', telephone: '' })
+    const fiche = serveurIntendance(f)
+    expect(await fiche.depot.fiche('DP-0001')).toEqual(f)
+    expect(fiche.appels()).toEqual([['fiche', 'GET', { dossier: 'DP-0001' }]])
+    const r = resumeFinances({ evolution_pct: null, taux_recouvrement: null })
+    const resume = serveurIntendance(r)
+    expect(await resume.depot.resume()).toEqual(r)
+    expect(resume.appels()).toEqual([['resume', 'GET', undefined]])
+  })
+
+  it('virement et délai en POST (jeton CSRF joint par la requête Frappe)', async () => {
+    const { depot, appels } = serveurIntendance(null)
+    await depot.enregistrerVirement('DP-1', {
+      montant: 50000,
+      reference: 'VIR-1',
+      date_paiement: '2026-11-02',
+      motif: 'Relevé',
+    })
+    await depot.accorderDelai('DP-1', '2026-11-20', 'Accord')
+    expect(appels()).toEqual([
+      [
+        'enregistrer_virement',
+        'POST',
+        { dossier: 'DP-1', montant: 50000, reference: 'VIR-1', date_paiement: '2026-11-02', motif: 'Relevé' },
+      ],
+      ['accorder_delai', 'POST', { dossier: 'DP-1', jusqu_au: '2026-11-20', motif: 'Accord' }],
+    ])
+  })
+
+  it('lien d’export : point de l’API avec les filtres encodés', () => {
+    const { depot } = serveurIntendance(null)
+    expect(depot.lienExport({})).toBe('/api/method/openlab_academy.entrypoints.paiement_api.export_intendance')
+    expect(depot.lienExport({ parcours: 'data & ia', au: '2026-10-31' })).toBe(
+      '/api/method/openlab_academy.entrypoints.paiement_api.export_intendance?parcours=data+%26+ia&au=2026-10-31',
+    )
+  })
+
+  it('réponse malformée : erreur typée', async () => {
+    await invalide(serveurIntendance({ ...vueIntendance(), tronque: 'non' }).depot.intendance({}))
+    const ligne = { ...vueIntendance().lignes[0], rappel_envoye: undefined }
+    await invalide(serveurIntendance({ ...vueIntendance(), lignes: [ligne] }).depot.intendance({}))
+    await invalide(serveurIntendance({ ...ficheIntendance(), journal: [{ acteur: 1 }] }).depot.fiche('D'))
+    await invalide(serveurIntendance({ ...resumeFinances(), modes: { une_fois: 1 } }).depot.resume())
   })
 })

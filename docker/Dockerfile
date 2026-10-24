@@ -1,6 +1,6 @@
 # Image figée OpenLab Academy : Frappe (tag), payments et LMS (commits) épinglés + openlab_academy, assets compilés.
-# Serveur de développement Frappe (bench start) : image de démonstration, à ne pas exposer sur Internet
-# avant le sous-projet « déploiement » (gunicorn + nginx).
+# Une seule image pour tous les services (docker-compose.yml) : web (gunicorn), socketio, worker, schedule ; le
+# frontal nginx sert les fichiers statiques. Le serveur de développement (bench start) n'est plus utilisé.
 FROM frappe/bench@sha256:1b27bb30ab18b0a50b5264f44988335bfe8e280a68b45d0ff2daf72ca6ddb85f
 USER frappe
 WORKDIR /home/frappe
@@ -23,8 +23,11 @@ RUN ./env/bin/pip install -q -e apps/openlab_academy \
  && printf "frappe\npayments\nlms\nopenlab_academy" > sites/apps.txt \
  && (cd apps/lms && yarn install --check-files) \
  && bench build --production \
- && sed -i '/redis/d;/watch/d' Procfile \
- && cp -a sites /home/frappe/sites-image
+ && cp -a sites /home/frappe/sites-image \
+ && rm -rf /home/frappe/sites-image/assets \
+ && cp -rL sites/assets /home/frappe/sites-image/assets
+# assets en fichiers réels (liens vers apps/ résolus) : le frontal nginx n'a que le volume « sites », pas les apps
 COPY --chown=frappe:frappe docker/entrypoint.sh /home/frappe/entrypoint.sh
 EXPOSE 8000 9000
 ENTRYPOINT ["bash", "/home/frappe/entrypoint.sh"]
+CMD ["web"]

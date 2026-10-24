@@ -34,6 +34,7 @@
   "section_cohorte",
   "parcours_pilote",
   "formateur",
+  "places_par_cohorte",
   "section_plateforme",
   "nom_plateforme",
   "logo",
@@ -196,6 +197,13 @@
    "default": "Administrator"
   },
   {
+   "default": "30",
+   "description": "Places ouvertes à l'inscription autonome dans chaque nouvelle cohorte.",
+   "fieldname": "places_par_cohorte",
+   "fieldtype": "Int",
+   "label": "Places par cohorte"
+  },
+  {
    "fieldname": "section_plateforme",
    "fieldtype": "Section Break",
    "label": "Plateforme"
@@ -244,7 +252,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-16 00:00:00",
- "modified": "2026-10-16 01:00:00",
+ "modified": "2026-10-23 21:30:00.000000",
  "sort_field": "modified",
  "sort_order": "DESC"
 }

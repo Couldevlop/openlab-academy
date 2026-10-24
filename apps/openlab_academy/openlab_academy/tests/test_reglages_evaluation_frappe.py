@@ -12,6 +12,7 @@ from openlab_academy.entrypoints import install
 from openlab_academy.infrastructure import delegations_frappe, journal_frappe
 from openlab_academy.infrastructure import reglages_evaluation_frappe as source
 from openlab_academy.patches import initialiser_reglages_evaluation, migrer_surcharges_partielles
+from openlab_academy.tests.test_paiement_donnees_frappe import inscrire_sans_paiement
 
 REGLAGES = "Reglages Evaluation OpenLab"
 SURCHARGE = "Surcharge Evaluation OpenLab"
@@ -571,11 +572,9 @@ class TestDelegations(FrappeTestCase):
     def test_regle_commune_du_domaine(self):
         lot = un_lot()
         if not frappe.db.exists("LMS Batch Enrollment", {"batch": lot, "member": ELEVE}):
-            frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": lot, "member": ELEVE}).insert(
-                ignore_permissions=True)
+            inscrire_sans_paiement(lot, ELEVE)
         utilisateur(ELEVE_CORRECTEUR, "Course Creator")
-        frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": lot, "member": ELEVE_CORRECTEUR}).insert(
-            ignore_permissions=True)
+        inscrire_sans_paiement(lot, ELEVE_CORRECTEUR)
         for champs, motif in (({"fin": self.debut}, "fin de la délégation doit suivre son début"),
                               ({"delegataire": "Administrator"}, "soi-même"),
                               ({"fin": None}, "date de fin"),

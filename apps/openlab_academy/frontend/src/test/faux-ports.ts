@@ -1,7 +1,18 @@
 // Faux ports en mémoire pour tester cas d'usage et écrans sans réseau ni stockage réel.
 import { vi } from 'vitest'
 import { creerCasUsages, type Ports } from '../application/cas-usages'
-import type { DepotBrouillons, DepotCorrection, DepotRelecture, DepotRetour, Horloge } from '../application/ports'
+import type {
+  DepotBrouillons,
+  DepotCorrection,
+  DepotIntendance,
+  DepotPaiement,
+  DepotPilotage,
+  DepotRelecture,
+  DepotRetour,
+  Horloge,
+  Navigateur,
+  Session,
+} from '../application/ports'
 import type { Brouillon } from '../domaine/relecture'
 
 export const MAINTENANT = new Date('2026-11-03T10:00:00Z')
@@ -13,6 +24,7 @@ export function fauxDepotCorrection() {
     corriger: vi.fn<DepotCorrection['corriger']>(async () => undefined),
     publier: vi.fn<DepotCorrection['publier']>(),
     validerLot: vi.fn<DepotCorrection['validerLot']>(),
+    versionPrecedente: vi.fn<DepotCorrection['versionPrecedente']>(),
   } satisfies DepotCorrection
 }
 
@@ -25,7 +37,48 @@ export function fauxDepotRelecture() {
 }
 
 export function fauxDepotRetour() {
-  return { monRetour: vi.fn<DepotRetour['monRetour']>() } satisfies DepotRetour
+  return {
+    monRetour: vi.fn<DepotRetour['monRetour']>(),
+    accuse: vi.fn<DepotRetour['accuse']>(),
+  } satisfies DepotRetour
+}
+
+export function fauxDepotPaiement() {
+  return {
+    monDossier: vi.fn<DepotPaiement['monDossier']>(),
+    choisirMode: vi.fn<DepotPaiement['choisirMode']>(),
+    payer: vi.fn<DepotPaiement['payer']>(),
+  } satisfies DepotPaiement
+}
+
+export function fauxDepotIntendance() {
+  return {
+    intendance: vi.fn<DepotIntendance['intendance']>(),
+    fiche: vi.fn<DepotIntendance['fiche']>(),
+    enregistrerVirement: vi.fn<DepotIntendance['enregistrerVirement']>(async () => undefined),
+    accorderDelai: vi.fn<DepotIntendance['accorderDelai']>(async () => undefined),
+    lienExport: vi.fn<DepotIntendance['lienExport']>(() => '/export'),
+    resume: vi.fn<DepotIntendance['resume']>(),
+  } satisfies DepotIntendance
+}
+
+export function fauxDepotPilotage() {
+  return {
+    souffrances: vi.fn<DepotPilotage['souffrances']>(async () => []),
+    reglagesEffectifs: vi.fn<DepotPilotage['reglagesEffectifs']>(),
+  } satisfies DepotPilotage
+}
+
+/** Session sans droit d'agent, sauf mention contraire. */
+export function fausseSession() {
+  return {
+    droits: vi.fn<Session['droits']>(() => ({ intendance: false, finances: false, pilotage: false })),
+  } satisfies Session
+}
+
+/** Navigation retenue au lieu d'être suivie. */
+export function fauxNavigateur() {
+  return { aller: vi.fn<Navigateur['aller']>() } satisfies Navigateur
 }
 
 /** Brouillons gardés dans une table en mémoire, comme sur l'appareil. */
@@ -52,6 +105,11 @@ export function fauxPorts() {
     correction: fauxDepotCorrection(),
     relecture: fauxDepotRelecture(),
     retour: fauxDepotRetour(),
+    paiement: fauxDepotPaiement(),
+    intendance: fauxDepotIntendance(),
+    pilotage: fauxDepotPilotage(),
+    session: fausseSession(),
+    navigateur: fauxNavigateur(),
     brouillons: new FauxBrouillons(),
     horloge: horlogeFixe(),
   } satisfies Ports

@@ -1,10 +1,11 @@
-// Appels à l'API d'évaluation de Frappe : seul endroit qui parle au réseau. La requête Frappe (frappe-ui) joint le
+// Appels aux API de Frappe (évaluation, paiement) : seul endroit qui parle au réseau. La requête Frappe (frappe-ui) joint le
 // jeton CSRF de la page à chaque écriture ; chaque réponse est validée par son schéma avant d'entrer dans
 // l'application, et chaque échec devient une ErreurDepot typée.
 import * as z from 'zod/mini'
 import { ErreurDepot } from '../../application/erreurs'
 
-const RACINE = 'openlab_academy.entrypoints.evaluation_api.'
+export const RACINE_EVALUATION = 'openlab_academy.entrypoints.evaluation_api.'
+export const RACINE_PAIEMENT = 'openlab_academy.entrypoints.paiement_api.'
 
 export interface OptionsRequete {
   url: string
@@ -34,12 +35,17 @@ export function erreurDepuis(erreur: unknown): ErreurDepot {
   const messages = Array.isArray(brut.messages) ? brut.messages.filter((m): m is string => typeof m === 'string') : []
   if (status === 429 || type === 'TooManyRequestsError') return new ErreurDepot('trop_de_demandes')
   if (status === 403 || type === 'PermissionError') return new ErreurDepot('acces_refuse')
+  // élément absent (404) : présenté comme refusé, sans dire s'il existe
+  if (status === 404 || type === 'DoesNotExistError') return new ErreurDepot('acces_refuse')
   if (type === 'ValidationError' && messages.length) return new ErreurDepot('refus', messages)
   return new ErreurDepot('hors_ligne')
 }
 
 export class ClientFrappe {
-  constructor(private readonly requete: RequeteFrappe) {}
+  constructor(
+    private readonly requete: RequeteFrappe,
+    private readonly racine = RACINE_EVALUATION,
+  ) {}
 
   lire<T>(methode: string, params: Parametres, schema: z.ZodMiniType<T>): Promise<T> {
     return this.appeler('GET', methode, params, schema)
@@ -52,7 +58,7 @@ export class ClientFrappe {
   private async appeler<T>(method: 'GET' | 'POST', methode: string, params: Parametres, schema: z.ZodMiniType<T>) {
     let reponse: unknown
     try {
-      reponse = await this.requete({ url: RACINE + methode, method, params })
+      reponse = await this.requete({ url: this.racine + methode, method, params })
     } catch (e) {
       throw erreurDepuis(e)
     }

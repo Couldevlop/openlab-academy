@@ -1,0 +1,159 @@
+{
+ "doctype": "DocType",
+ "name": "Reglages Paiement OpenLab",
+ "issingle": 1,
+ "istable": 0,
+ "editable_grid": 0,
+ "field_order": [
+  "section_cinetpay",
+  "cinetpay_site_id",
+  "cinetpay_api_key",
+  "cinetpay_secret",
+  "cinetpay_url_notification_base",
+  "section_sms",
+  "sms_url_jeton",
+  "sms_client_id",
+  "sms_client_secret",
+  "sms_expediteur",
+  "section_whatsapp",
+  "whatsapp_phone_id",
+  "whatsapp_jeton",
+  "whatsapp_modele",
+  "section_echeances",
+  "jour_echeance",
+  "delais_rappel",
+  "inscription_tardive_mois",
+  "section_virement",
+  "instructions_virement"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_cinetpay",
+   "fieldtype": "Section Break",
+   "label": "CinetPay"
+  },
+  {
+   "fieldname": "cinetpay_site_id",
+   "fieldtype": "Data",
+   "label": "Identifiant du site"
+  },
+  {
+   "fieldname": "cinetpay_api_key",
+   "fieldtype": "Password",
+   "label": "Clé API"
+  },
+  {
+   "fieldname": "cinetpay_secret",
+   "fieldtype": "Password",
+   "label": "Clé secrète"
+  },
+  {
+   "fieldname": "cinetpay_url_notification_base",
+   "fieldtype": "Data",
+   "label": "URL publique du site (notifications)"
+  },
+  {
+   "fieldname": "section_sms",
+   "fieldtype": "Section Break",
+   "label": "SMS"
+  },
+  {
+   "fieldname": "sms_url_jeton",
+   "fieldtype": "Data",
+   "label": "URL d'obtention du jeton"
+  },
+  {
+   "fieldname": "sms_client_id",
+   "fieldtype": "Data",
+   "label": "Identifiant client"
+  },
+  {
+   "fieldname": "sms_client_secret",
+   "fieldtype": "Password",
+   "label": "Secret client"
+  },
+  {
+   "fieldname": "sms_expediteur",
+   "fieldtype": "Data",
+   "label": "Expéditeur"
+  },
+  {
+   "fieldname": "section_whatsapp",
+   "fieldtype": "Section Break",
+   "label": "WhatsApp"
+  },
+  {
+   "fieldname": "whatsapp_phone_id",
+   "fieldtype": "Data",
+   "label": "Identifiant du numéro"
+  },
+  {
+   "fieldname": "whatsapp_jeton",
+   "fieldtype": "Password",
+   "label": "Jeton d'accès"
+  },
+  {
+   "fieldname": "whatsapp_modele",
+   "fieldtype": "Data",
+   "label": "Nom du modèle approuvé"
+  },
+  {
+   "fieldname": "section_echeances",
+   "fieldtype": "Section Break",
+   "label": "Échéances"
+  },
+  {
+   "fieldname": "jour_echeance",
+   "fieldtype": "Int",
+   "label": "Jour d'échéance du mois (1 à 28)",
+   "default": "10"
+  },
+  {
+   "fieldname": "delais_rappel",
+   "fieldtype": "Data",
+   "label": "Rappels (jours avant l'échéance, séparés par des virgules)",
+   "default": "7,3,1"
+  },
+  {
+   "fieldname": "inscription_tardive_mois",
+   "fieldtype": "Int",
+   "label": "Inscription refusée après (mois depuis le début)",
+   "default": "2",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "section_virement",
+   "fieldtype": "Section Break",
+   "label": "Virement"
+  },
+  {
+   "fieldname": "instructions_virement",
+   "fieldtype": "Small Text",
+   "label": "Instructions de virement (montrées aux apprenants)",
+   "description": "Texte public affiché tel quel sur l'écran de paiement : banque, titulaire, IBAN, motif à indiquer."
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 0
+  },
+  {
+   "role": "Intendant OpenLab",
+   "read": 1
+  }
+ ],
+ "track_changes": 1,
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-22 00:00:00",
+ "modified": "2026-10-22 12:00:00",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "custom": 0,
+ "engine": "InnoDB",
+ "module": "OpenLab Academy"
+}

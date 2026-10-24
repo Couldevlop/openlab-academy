@@ -32,16 +32,25 @@ bench --site lms.localhost execute openlab_academy.entrypoints.seed.run
 
 ```bash
 cd docker
-cp .env.example .env            # puis remplacer les mots de passe
+cp .env.example .env                      # nom du site, port publié
+cp -r secrets.example secrets             # puis remplacer les deux mots de passe (fichiers hors git)
 docker-compose -p ol-academy build
-docker-compose -p ol-academy up -d
+docker-compose -p ol-academy up -d        # http://<hôte>:8080
 ```
 
-- Premier démarrage : création du site `SITE_NAME`, installation de payments, lms et openlab_academy
-  (réglages fr / Africa/Abidjan / XOF, publication des parcours, cohorte pilote standard).
-- Redémarrages suivants : `bench migrate`, aucune recréation ; données dans les volumes `sites` et `mariadb-data`.
+- Services : `nginx` (seul port publié, fichiers statiques, en-têtes de sécurité) → `web` (gunicorn) et `socketio` ;
+  `worker` (file d'envoi des e-mails, tâches longues) et `schedule` (rappels quotidiens de paiement, chaîne
+  d'évaluation). Réglages gunicorn : `GUNICORN_WORKERS` (2) et `GUNICORN_THREADS` (4) dans `.env`.
+- Mots de passe (root MariaDB, Administrator) : secrets Docker `secrets/db_root_password.txt` et
+  `secrets/admin_password.txt`, lus seulement par `mariadb` et `web`, jamais placés dans l'environnement d'un conteneur.
+- Premier démarrage : `web` crée le site `SITE_NAME` et installe payments, lms et openlab_academy (réglages fr /
+  Africa/Abidjan / XOF, publication des parcours, cohorte pilote standard) ; les autres services attendent qu'il soit
+  prêt. Redémarrages suivants : `bench migrate`, aucune recréation ; données dans les volumes `sites` et
+  `mariadb-data`. Les assets ne sont recopiés dans le volume que lorsque l'image a changé.
+- HTTPS : placer la pile derrière le frontal TLS de l'hébergement (Ingress K3s, Traefik, Caddy…), qui transmet
+  `X-Forwarded-Proto`. Ne jamais publier MariaDB ni Redis.
 - Ouvrir une cohorte intensive (16 h/semaine) :
-  `docker exec ol-academy_app_1 bench --site <site> execute openlab_academy.entrypoints.cohorte.ouvrir_pilote --kwargs "{'rythme': 'intensif'}"`
+  `docker exec ol-academy_web_1 bench --site <site> execute openlab_academy.entrypoints.cohorte.ouvrir_pilote --kwargs "{'rythme': 'intensif'}"`
 - Ajouter ou modifier un parcours : éditer `data/parcours/NN-<slug>.yaml` (10 projets + 1 capstone obligatoires),
   reconstruire l'image, puis `bench --site <site> execute openlab_academy.entrypoints.seed.run`.
   Un cours qui a déjà des inscrits n'est jamais modifié.
@@ -57,7 +66,7 @@ Desk → `/app/reglages-openlab-academy` (System Manager uniquement). Tout régl
 | Exigences qualité | textes ajoutés à chaque énoncé de projet |
 | Rythmes | code, libellé, heures du lundi au dimanche (ex. standard 12 h, intensif 16 h, week-end…) |
 | Séances | heures de début et de fin, fuseau |
-| Cohorte pilote | parcours, formateur par défaut |
+| Cohorte pilote | parcours, formateur par défaut, places par cohorte (30 par défaut ; sans places, le LMS n'affiche pas l'inscription autonome) |
 | Plateforme | nom, logo, langue, devise |
 
 Un parcours peut surcharger `projets_par_portfolio` et `heures_par_module` dans son YAML (`parametres:`).
@@ -121,3 +130,129 @@ bench --site lms.localhost execute openlab_academy.tests.integration_ia.executer
 ```
 
 Fiabilité en continu : API `fiabilite_ia` (écart moyen IA/formateur par critère, superviseurs seulement).
+
+## Paiement des parcours
+
+Chaque parcours a des **frais d'inscription** et trois prix globaux (frais compris) : **en une fois**, **en deux
+tranches**, **chaque mois**. Montants en francs CFA (XOF), entiers et **multiples de 5** (contrainte CinetPay). Les
+prix sont **figés dans le dossier** de l'apprenant à son inscription : un nouveau tarif ne vaut que pour les
+inscriptions suivantes.
+
+### Rôles
+
+| Rôle | Peut |
+|---|---|
+| **Intendant OpenLab** (économe, créé à l'installation) | saisir les tarifs, voir l'écran Intendance (`/espace/intendance` : filtres, fiche, export Excel), enregistrer un virement, accorder un délai ; lire les réglages de paiement |
+| **System Manager** (administrateur) | tout ce que fait l'intendant, plus les réglages de paiement et l'écran Finances (`/espace/finances`, vue résumée) |
+| Apprenant | voir et régler son dossier (`/espace/paiement/<parcours>`), choisir ou changer son mode, donner son téléphone |
+
+Donner le rôle : Desk → Utilisateur → Rôles → « Intendant OpenLab ». Toute action d'un agent (virement, délai) et tout
+changement de mode d'un apprenant sont journalisés (qui, quoi, quand, avant/après, motif) ; le journal se lit dans la
+fiche de l'apprenant, écran Intendance. Les rôles de l'équipe (System Manager, Moderator, Course Creator, Batch
+Evaluator, Intendant OpenLab) ne sont jamais bloqués.
+
+### Tarifs (console)
+
+Desk → `/app/tarif-parcours-openlab` → Nouveau : parcours, frais d'inscription, prix en une fois, en deux tranches,
+mensuel. Un parcours payant **sans tarif refuse les inscriptions** (un parcours gratuit n'en a pas, voir
+ci-dessous). L'intendant choisit le parcours dans la liste (droit « sélection » seul sur les parcours, accordé à
+l'installation et à chaque migration).
+
+### Parcours gratuits (MOOC)
+
+Un parcours se crée comme les autres ; pour le rendre gratuit, l'**administrateur** (System Manager) coche
+**« Parcours gratuit (MOOC) »** dans son formulaire (Desk → `/app/lms-course/<parcours>`, section des prix). La case
+est réservée à l'administrateur (niveau de droits 1) : le créateur du parcours, le modérateur et l'intendant ne la
+modifient pas, et un enregistrement qui dispenserait des dossiers est refusé s'il ne vient pas de l'administrateur
+(API, éditeur du LMS compris). L'éditeur de parcours de l'interface `/lms` ne montre pas la case : passer par le Desk.
+
+- Inscription acceptée **sans tarif** : aucun dossier, aucun frais, aucun rappel, jamais bloqué ; le parcours
+  n'apparaît ni dans Intendance, ni dans Finances, ni dans l'export. « Mes paiements » affiche « Parcours gratuit —
+  aucun paiement » à l'apprenant inscrit (cohorte ou parcours en autonomie).
+- La limite d'inscription tardive (2 mois après le début de la cohorte) **s'applique aussi**.
+- Un tarif saisi sur un parcours gratuit est **refusé** (message : décocher la case pour rendre le parcours payant).
+  Un tarif antérieur est conservé mais ignoré tant que le parcours est gratuit (l'administrateur en est averti).
+  Un parcours **payant sans tarif reste refusé** à l'inscription (garde-fou contre l'oubli du prix).
+- **Payant → gratuit** : à l'enregistrement du parcours, ses dossiers qui ont encore quelque chose à payer sont
+  **dispensés**, une ligne de journal par dossier (auteur, date, motif « parcours devenu gratuit ») ; ils ne bloquent
+  plus, ne reçoivent plus de rappels et restent visibles, « Dispensé », dans l'historique de l'intendance (fiche sans
+  virement ni délai). Un dossier **soldé reste soldé**. Les paiements déjà reçus restent enregistrés ; un paiement en
+  ligne lancé avant la bascule et confirmé ensuite est encaissé sur le dossier dispensé (l'argent a bien été versé).
+- **Gratuit → payant** : vaut pour les nouveaux inscrits seulement (créer d'abord le tarif) ; aucun dossier
+  rétroactif, les dossiers dispensés le restent. Un apprenant inscrit pendant la période gratuite n'a pas de dossier :
+  son accès reste libre et « Mes paiements » lui indique qu'aucun dossier n'existe pour ce parcours.
+- La case doit être changée par le formulaire (enregistrement du parcours) : une écriture directe en base ne dispense
+  pas les dossiers.
+
+### Réglages (console « Reglages Paiement OpenLab »)
+
+Desk → `/app/reglages-paiement-openlab` (écriture : System Manager ; lecture : intendant). Les champs secrets sont des
+champs mot de passe : chiffrés en base, jamais renvoyés par l'API ni écrits dans un journal ou un message d'erreur.
+Laisser une section vide désactive le canal correspondant, sans gêner les autres.
+
+| Section | Champ | Rôle |
+|---|---|---|
+| CinetPay | Identifiant du site, Clé API, Clé secrète | compte marchand (back-office CinetPay) ; sans eux, le paiement en ligne est masqué et l'apprenant règle par virement |
+| CinetPay | URL publique du site (notifications) | adresse HTTPS du site vue d'Internet, ex. `https://academy.openlab.ci/` ; sert aux liens de retour et de notification |
+| SMS | URL d'obtention du jeton, Identifiant client, Secret client, Expéditeur | API SMS Orange (OAuth `client_credentials`) ; URL vide = URL Orange par défaut |
+| WhatsApp | Identifiant du numéro, Jeton d'accès, Nom du modèle approuvé | WhatsApp Cloud API ; le modèle doit être approuvé par Meta |
+| Échéances | Jour d'échéance (1 à 28, défaut 10) ; Rappels (défaut `7,3,1`) ; Inscription refusée après (défaut 2 mois) | calendrier et rappels |
+| Virement | Instructions de virement | texte montré tel quel aux apprenants (banque, titulaire, IBAN, motif à indiquer) |
+
+L'e-mail n'a pas de réglage propre : il part par le **compte e-mail sortant par défaut** du site (Desk → Email
+Account). Sans compte sortant, le canal e-mail est ignoré.
+
+### Calendrier et blocage
+
+- À l'inscription à une cohorte (`LMS Batch Enrollment`), le dossier s'ouvre en **une fois** : frais dus le jour même,
+  le reste le 10 du mois suivant. L'apprenant change de mode sur sa page de paiement ; ce qui est payé reste acquis.
+- **Deux tranches** : moitié le 10 du mois suivant l'inscription, moitié le 10 du mois de mi-parcours. **Mensuel** :
+  parts égales le 10 de chaque mois jusqu'au mois de fin de cohorte (au moins une).
+- Échéance due « au plus tard le 10 » : **en retard dès le 11 à 00:00** (heure d'Abidjan = UTC). Les frais
+  d'inscription non réglés bloquent dès l'inscription.
+- Un parcours en retard est **bloqué seul** : toute page de ce parcours redirige vers `/espace/paiement/<parcours>`,
+  l'API des leçons et des quiz refuse ; les autres parcours à jour restent ouverts. Rien n'est stocké : le blocage
+  est recalculé à chaque requête depuis l'échéancier, les paiements confirmés et le délai accordé.
+- Déblocage : paiement CinetPay confirmé, virement enregistré par l'intendance, ou **délai** accordé (date limite et
+  motif obligatoires).
+- Inscription refusée plus de 2 mois après le début de la cohorte (réglable).
+
+### Rappels (tâche de 08:00)
+
+Chaque jour à **08:00** (Abidjan = UTC), l'échéancier Frappe lance `openlab_academy.entrypoints.paiement.envoyer_rappels`
+dans la file `long` (une seule exécution à la fois). La tâche revérifie d'abord auprès de CinetPay les paiements en
+ligne en attente depuis moins de 7 jours (notification perdue), puis envoie les rappels **7, 3 et 1 jours** avant
+chaque échéance, par e-mail, SMS et WhatsApp (chaque canal seulement s'il est configuré). Chaque rappel (J-7, J-3,
+J-1) n'est envoyé qu'une fois par échéance et par canal ; il apparaît dans la fiche de l'apprenant. L'échéancier doit être actif
+(`bench --site <site> enable-scheduler`) et un worker doit servir la file `long`.
+
+Lancer à la main (sans attendre 08:00) :
+
+```bash
+bench --site <site> execute openlab_academy.entrypoints.paiement.envoyer_rappels
+```
+
+Les e-mails passent par la file d'envoi de Frappe (Desk → Email Queue).
+
+### Virements
+
+L'apprenant voit les instructions de virement sur sa page de paiement. À réception, l'intendant ouvre la fiche
+(`/espace/intendance` → apprenant) → « Enregistrer un virement » : montant, référence (unique), date, motif. Le
+virement est confirmé d'office et débloque aussitôt le parcours s'il couvre l'échéance en retard.
+
+### CinetPay : mise en service et essai
+
+1. Créer le compte marchand CinetPay ; dans le back-office, relever l'**identifiant du site**, la **clé API** et la
+   **clé secrète** (servant à signer les notifications, en-tête `x-token`).
+2. Les saisir dans `/app/reglages-paiement-openlab`, section CinetPay, avec l'**URL publique du site**.
+3. URL de notification à déclarer dans le back-office CinetPay (elle est aussi envoyée avec chaque paiement) :
+   `https://<site>/api/method/openlab_academy.entrypoints.paiement_api.notification_cinetpay`
+   — appel POST de serveur à serveur, sans session ni jeton CSRF : la preuve d'origine est le `x-token`, et le statut
+   comme le montant sont toujours relus auprès de `/v2/payment/check` avant toute écriture. Elle répond 200 dans tous
+   les cas ; un refus (`REFUSED`) marque le paiement échoué sans ouvrir l'accès. Retour du navigateur :
+   `https://<site>/api/method/openlab_academy.entrypoints.paiement_api.retour_cinetpay`.
+4. Essai : le site doit être joignable d'Internet en HTTPS (en local, un tunnel HTTPS vers `lms.localhost:8000`).
+   Inscrire un apprenant de test, cliquer « Payer <montant> » sur sa page de paiement, régler le plus petit montant que le compte
+   accepte (ou utiliser le mode test du compte s'il en propose un), puis vérifier dans la fiche que le paiement passe
+   « confirmé » et que le journal porte « paiement_confirme ». Un paiement abandonné reste « en attente » ; il est
+   revérifié au retour de l'apprenant et par la tâche de 08:00.

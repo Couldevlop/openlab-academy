@@ -1,0 +1,62 @@
+# Frontal nginx : fichiers statiques servis depuis le volume « sites », le reste vers gunicorn (web) et socketio.
+# ${SITE_NAME} est remplacé au démarrage du conteneur nginx (gabarits de l'image officielle) ; les variables nginx
+# ($uri, $host…) ne sont pas des variables d'environnement et restent intactes.
+upstream openlab_web { server web:8000; }
+upstream openlab_socketio { server socketio:9000; }
+
+server {
+    listen 8080;
+    server_name _;
+    root /home/frappe/frappe-bench/sites;
+    client_max_body_size 50m;
+    server_tokens off;
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    set $site "${SITE_NAME}";
+
+    location /assets {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        add_header X-Content-Type-Options "nosniff" always;
+    }
+
+    location ~ ^/protected/(.*) {
+        internal;
+        try_files /$site/$1 =404;
+    }
+
+    location /socket.io {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header X-Frappe-Site-Name $site;
+        proxy_set_header Origin $scheme://$http_host;
+        proxy_set_header Host $host;
+        proxy_pass http://openlab_socketio;
+    }
+
+    location / {
+        # fichiers téléversés pouvant contenir du script : toujours en téléchargement
+        location ~ ^/files/.*\.(htm|html|svg|xml)$ {
+            add_header Content-Disposition "attachment";
+            add_header X-Content-Type-Options "nosniff" always;
+            try_files /$site/public/$uri @webserver;
+        }
+        try_files /$site/public/$uri @webserver;
+    }
+
+    location @webserver {
+        proxy_http_version 1.1;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Frappe-Site-Name $site;
+        proxy_set_header Host $host;
+        proxy_set_header X-Use-X-Accel-Redirect True;
+        proxy_read_timeout 120;
+        proxy_redirect off;
+        proxy_pass http://openlab_web;
+    }
+}

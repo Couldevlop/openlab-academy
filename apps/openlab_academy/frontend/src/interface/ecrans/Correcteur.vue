@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // Correcteur (formateur, juré) : copie à gauche, grille à droite ; J/K copie suivante/précédente, 1–9 niveau du
 // critère actif. La note se recalcule à chaque choix ; seule la publication la rend visible à l'apprenant.
+// Une copie re-soumise se compare à ses versions précédentes (lignes retirées et ajoutées, texte brut échappé).
+import type { Comparaison } from '../../application/correction'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import { messageErreur } from '../../application/erreurs'
@@ -14,8 +16,9 @@ import {
   type Saisie,
   type VueCopie,
 } from '../../domaine/correction'
-import { lienSur } from '../../domaine/dates'
+import { formaterDate, lienSur } from '../../domaine/dates'
 import { calculerNote, complet, formaterNombre, reussie, type Niveaux } from '../../domaine/grille'
+import { libelleResume } from '../../domaine/versions'
 import CopieRendue from '../composants/CopieRendue.vue'
 import EnTete from '../composants/EnTete.vue'
 import GrilleCorrecteur from '../composants/GrilleCorrecteur.vue'
@@ -38,6 +41,10 @@ const occupe = ref(false)
 const erreur = ref('')
 const succes = ref('')
 const chargement = ref(true)
+const precedente = ref('')
+const comparaison = ref<Comparaison | null>(null)
+const erreurComparaison = ref('')
+const comparaisonEnCours = ref(false)
 
 const id = computed(() => parametre(route.params.copie))
 const exercice = computed(() => parametre(route.query.exercice) || undefined)
@@ -66,6 +73,23 @@ function preparer(vue: VueCopie) {
   general.value = depart.general
   actif.value = vue.grille.criteres[0]?.code ?? ''
   modifiee.value = false
+  precedente.value = vue.versions_precedentes.at(-1)?.copie ?? ''
+  comparaison.value = null
+  erreurComparaison.value = ''
+}
+
+async function comparer() {
+  if (!copie.value || !precedente.value || comparaisonEnCours.value) return
+  comparaisonEnCours.value = true
+  erreurComparaison.value = ''
+  try {
+    comparaison.value = await cas.comparerVersions.executer(copie.value, precedente.value)
+  } catch (e) {
+    comparaison.value = null
+    erreurComparaison.value = messageErreur(e)
+  } finally {
+    comparaisonEnCours.value = false
+  }
 }
 
 async function chargerCopie() {
@@ -230,6 +254,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', clavier))
           <CopieRendue :texte="copie.consigne" />
         </details>
 
+        <p v-if="copie.remplacee" class="bandeau bandeau-alerte remplacee" role="note">
+          Cette version a été remplacée par un nouveau rendu de l'apprenant : seule la dernière version se corrige.
+        </p>
+
         <p v-if="copie.signalement" class="bandeau bandeau-alerte signalement" role="alert">
           <strong>Attention :</strong> {{ copie.signalement }}. La pré-correction par l'IA est écartée pour cette copie
           : corrigez sur la seule copie.
@@ -273,6 +301,40 @@ onBeforeUnmount(() => window.removeEventListener('keydown', clavier))
         <article class="carte texte-copie" aria-label="Copie de l'apprenant">
           <CopieRendue :texte="copie.contenu" :citation="citation" />
         </article>
+
+        <details v-if="copie.versions_precedentes.length" class="carte versions">
+          <summary>
+            Versions précédentes <span class="discret">({{ copie.versions_precedentes.length }})</span>
+          </summary>
+          <div class="versions-choix">
+            <label for="version-precedente">Comparer la version {{ copie.version }} à</label>
+            <select id="version-precedente" v-model="precedente">
+              <option v-for="v in copie.versions_precedentes" :key="v.copie" :value="v.copie">
+                Version {{ v.version
+                }}<template v-if="v.rendue_le"> · rendue le {{ formaterDate(v.rendue_le) }}</template>
+              </option>
+            </select>
+            <button type="button" class="bouton" :disabled="comparaisonEnCours" @click="comparer">Comparer</button>
+          </div>
+          <p v-if="erreurComparaison" class="bandeau bandeau-erreur" role="alert">{{ erreurComparaison }}</p>
+          <template v-if="comparaison">
+            <p class="discret resume-diff" role="status">
+              Version {{ comparaison.precedente.version }} → version {{ copie.version }} :
+              {{ libelleResume(comparaison.resume) }}.
+            </p>
+            <ol class="diff" aria-label="Différences entre les versions">
+              <li v-for="(l, i) in comparaison.diff" :key="i" :class="l.sorte">
+                <span class="signe" aria-hidden="true">{{
+                  l.sorte === 'ajout' ? '+' : l.sorte === 'retrait' ? '−' : ' '
+                }}</span>
+                <span v-if="l.sorte !== 'egal'" class="sr-only">{{
+                  l.sorte === 'ajout' ? 'Ajouté : ' : 'Retiré : '
+                }}</span>
+                <span class="ligne">{{ l.texte || ' ' }}</span>
+              </li>
+            </ol>
+          </template>
+        </details>
       </main>
 
       <aside class="colonne-grille" aria-label="Grille d'évaluation">
@@ -351,13 +413,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', clavier))
   border-radius: 8px;
   border: 1px solid var(--es-entete-bord);
   background: transparent;
-  color: #fff;
+  color: var(--es-entete-texte);
 }
 kbd {
   margin-left: 6px;
   padding: 1px 6px;
   border-radius: 4px;
-  background: var(--ol-navy-soft);
+  background: var(--es-info);
   font-size: 12px;
 }
 .etat {
@@ -386,7 +448,7 @@ kbd {
   flex: 1 1 460px;
   max-width: 100%;
   padding: 24px 16px 40px;
-  background: #fff;
+  background: var(--es-surface);
   border-top: 1px solid var(--es-bord);
 }
 .surtitre {
@@ -408,8 +470,74 @@ h1 {
   font-size: 15px;
 }
 .signalement,
+.remplacee,
 .contexte {
   margin-bottom: 20px;
+}
+.remplacee {
+  display: block;
+}
+.versions {
+  max-width: 68ch;
+  margin-top: 20px;
+  padding: 14px 18px;
+}
+.versions summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+.versions-choix {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 12px 0;
+}
+.versions-choix label {
+  font-weight: 600;
+}
+.versions-choix select {
+  flex: 1 1 200px;
+  min-height: 40px;
+}
+.resume-diff {
+  margin: 0 0 8px;
+  font-size: 13.5px;
+}
+.diff {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--ol-font-mono);
+  font-size: 13.5px;
+  line-height: 1.5;
+  border: 1px solid var(--es-bord);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.diff li {
+  display: flex;
+  gap: 8px;
+  padding: 1px 10px;
+}
+.diff .ligne {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.diff .signe {
+  flex: none;
+  width: 1ch;
+  font-weight: 700;
+}
+.diff .ajout {
+  background: var(--es-succes-fond);
+  color: var(--es-succes);
+}
+.diff .retrait {
+  background: var(--es-alerte-fond);
+  color: var(--es-erreur);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
 }
 .signalement {
   display: block;

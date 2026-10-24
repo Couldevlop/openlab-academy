@@ -23,6 +23,12 @@ describe('client de l’API d’évaluation', () => {
     ])
   })
 
+  it('un autre module d’API se choisit à la construction', async () => {
+    const requete = vi.fn<RequeteFrappe>(async () => ({ copie: 'C1', note: 12 }))
+    await new ClientFrappe(requete, 'openlab_academy.entrypoints.paiement_api.').lire('mon_dossier', {}, SCHEMA)
+    expect(requete.mock.calls[0]![0].url).toBe('openlab_academy.entrypoints.paiement_api.mon_dossier')
+  })
+
   it('une réponse malformée donne une erreur typée qui dit où', async () => {
     const client = new ClientFrappe(async () => ({ copie: 7 }))
     const erreur = await client.lire('publier', {}, SCHEMA).catch((e: unknown) => e)
@@ -78,6 +84,11 @@ describe('erreurs typées', () => {
     })
     expect(erreurDepuis(echec({ exc_type: 'ValidationError', messages: [{}] })).sorte).toBe('hors_ligne')
     expect(erreurDepuis(echec({ status: 403, messages: 'motif' })).sorte).toBe('acces_refuse')
+    // dossier absent : 404 de Frappe, présenté comme un accès refusé (rien ne dit si l'élément existe)
+    expect(erreurDepuis(echec({ status: 404 })).sorte).toBe('acces_refuse')
+    expect(erreurDepuis(echec({ exc_type: 'DoesNotExistError', messages: ['Aucun dossier'] })).sorte).toBe(
+      'acces_refuse',
+    )
     expect(erreurDepuis(null).sorte).toBe('hors_ligne')
     expect(erreurDepuis(new TypeError('Failed to fetch')).sorte).toBe('hors_ligne')
     expect(erreurDepuis('panne').sorte).toBe('hors_ligne')

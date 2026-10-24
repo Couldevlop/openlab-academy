@@ -1,6 +1,7 @@
 // Cas d'usage du correcteur (formateur, juré) : file, copie, enregistrement, publication, validation par lots.
 // La publication enregistre d'abord la saisie : la note publiée est toujours celle qui est affichée.
-import { chargeCorrection, type Saisie } from '../domaine/correction'
+import { chargeCorrection, type Saisie, type VersionTexte, type VueCopie } from '../domaine/correction'
+import { comparerTextes, resumerDiff, type LigneDiff, type ResumeDiff } from '../domaine/versions'
 import type { DepotCorrection } from './ports'
 
 export class ConsulterFile {
@@ -42,5 +43,22 @@ export class ValiderLot {
 
   executer(copies: string[], etPublier: boolean) {
     return this.depot.validerLot(copies, etPublier)
+  }
+}
+
+export interface Comparaison {
+  precedente: VersionTexte
+  diff: LigneDiff[]
+  resume: ResumeDiff
+}
+
+/** Compare une version antérieure à la version ouverte : ce qui a été retiré, ce qui a été ajouté. */
+export class ComparerVersions {
+  constructor(private readonly depot: DepotCorrection) {}
+
+  async executer(vue: VueCopie, precedente: string): Promise<Comparaison> {
+    const version = await this.depot.versionPrecedente(vue.copie, precedente)
+    const diff = comparerTextes(version.contenu, vue.contenu)
+    return { precedente: version, diff, resume: resumerDiff(diff) }
   }
 }

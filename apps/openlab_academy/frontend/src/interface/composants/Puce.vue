@@ -27,7 +27,7 @@ withDefaults(defineProps<{ sorte: 'A' | 'IA' | 'P' | 'J'; inverse?: boolean }>()
 }
 .puce-ia {
   background: var(--ol-navy-soft);
-  color: #fff;
+  color: var(--es-sur-sombre);
 }
 .puce-p,
 .puce-j {
@@ -39,11 +39,11 @@ withDefaults(defineProps<{ sorte: 'A' | 'IA' | 'P' | 'J'; inverse?: boolean }>()
   line-height: 15px;
 }
 .inverse.puce-a {
-  border-color: #fff;
-  color: #fff;
+  border-color: var(--es-sur-sombre);
+  color: var(--es-sur-sombre);
 }
 .inverse.puce-ia {
-  background: #fff;
+  background: var(--es-surface);
   color: var(--ol-navy);
 }
 </style>

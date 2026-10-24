@@ -176,9 +176,13 @@ def charger() -> ReglagesEvaluation:
     return vers_domaine(doc)
 
 
-def surcharges() -> tuple[Surcharge, ...]:
-    return tuple(surcharge_vers_domaine(frappe.get_doc(SURCHARGE, nom))
+def surcharges_nommees() -> tuple[tuple[str, Surcharge], ...]:
+    return tuple((nom, surcharge_vers_domaine(frappe.get_doc(SURCHARGE, nom)))
                  for nom in frappe.get_all(SURCHARGE, pluck="name", order_by="creation"))
+
+
+def surcharges() -> tuple[Surcharge, ...]:
+    return tuple(s for _, s in surcharges_nommees())
 
 
 CHAMPS_DELEGATION = ["titulaire", "delegataire", "debut", "fin", "cours", "cohorte", "exercice", "revoquee"]

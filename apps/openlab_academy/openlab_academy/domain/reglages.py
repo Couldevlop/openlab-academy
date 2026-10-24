@@ -98,9 +98,11 @@ class Reglages:
     fuseau: str = "Africa/Abidjan"
     parcours_pilote: str = "Fondamentaux de la Data Science"
     formateur: str = "Administrator"
+    places_par_cohorte: int = 30  # sans places, le LMS n'offre pas l'inscription autonome
 
     def __post_init__(self):
-        for champ in ("projets_par_portfolio", "heures_par_module", "questions_par_quiz", "tentatives_max"):
+        for champ in ("projets_par_portfolio", "heures_par_module", "questions_par_quiz", "tentatives_max",
+                      "places_par_cohorte"):
             if getattr(self, champ) <= 0:
                 raise ReglagesInvalides(f"{champ} doit être positif")
         if not 1 <= self.score_min <= 100:

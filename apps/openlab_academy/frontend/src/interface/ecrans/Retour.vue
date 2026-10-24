@@ -1,11 +1,21 @@
 <script setup lang="ts">
 // Mon retour (apprenant, mobile d'abord) : note, niveau et commentaire par critère, mention « provisoire ».
 // Tant que l'apprenant doit des relectures, la note reste en attente. Les commentaires sont du texte brut.
+// L'accusé de dépôt (horodatage, empreinte SHA-256) prouve ce qui a été rendu ; son échec n'empêche pas le retour.
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { messageErreur } from '../../application/erreurs'
 import { formaterNombre } from '../../domaine/grille'
-import { detailVisible, libelleAutoEvaluation, remarquesPairs, segments, type Retour } from '../../domaine/retour'
+import {
+  detailVisible,
+  formaterDepot,
+  libelleAutoEvaluation,
+  libelleInstantane,
+  remarquesPairs,
+  segments,
+  type AccuseDepot,
+  type Retour,
+} from '../../domaine/retour'
 import EnTete from '../composants/EnTete.vue'
 import { utiliserCasUsages } from '../injection'
 import { parametre } from '../routeur'
@@ -13,17 +23,29 @@ import { parametre } from '../routeur'
 const cas = utiliserCasUsages()
 const route = useRoute()
 const retour = ref<Retour | null>(null)
+const accuse = ref<AccuseDepot | null>(null)
 const erreur = ref('')
 const chargement = ref(true)
 
 const visible = computed(() => detailVisible(retour.value))
 const remarques = computed(() => remarquesPairs(retour.value))
 
+async function chargerAccuse(copie: string) {
+  accuse.value = null
+  try {
+    accuse.value = await cas.consulterAccuse.executer(copie)
+  } catch {
+    accuse.value = null // accusé indisponible : le retour reste lisible
+  }
+}
+
 async function charger() {
   chargement.value = true
   erreur.value = ''
+  const copie = parametre(route.params.copie)
+  void chargerAccuse(copie)
   try {
-    retour.value = await cas.consulterRetour.executer(parametre(route.params.copie))
+    retour.value = await cas.consulterRetour.executer(copie)
   } catch (e) {
     retour.value = null
     erreur.value = messageErreur(e)
@@ -100,6 +122,41 @@ watch(() => route.params.copie, charger)
         <section v-if="visible && remarques.length" class="pairs">
           <h2>Ce que vos pairs ont retenu</h2>
           <p v-for="(r, i) in remarques" :key="i">« {{ r }} »</p>
+        </section>
+
+        <section v-if="accuse" class="carte accuse" aria-labelledby="titre-accuse">
+          <h2 id="titre-accuse">Accusé de dépôt</h2>
+          <dl>
+            <div>
+              <dt>Version</dt>
+              <dd>{{ accuse.version }}</dd>
+            </div>
+            <div v-if="accuse.depose_le">
+              <dt>Déposée le</dt>
+              <dd>
+                <time :datetime="accuse.depose_le">{{ formaterDepot(accuse.depose_le) }}</time>
+                <span class="discret"> (heure d'Abidjan)</span>
+              </dd>
+            </div>
+            <div v-if="accuse.empreinte">
+              <dt>Empreinte {{ accuse.algorithme }}</dt>
+              <dd>
+                <code class="empreinte">{{ accuse.empreinte }}</code>
+              </dd>
+            </div>
+            <div v-if="accuse.commit">
+              <dt>Version du dépôt</dt>
+              <dd>
+                <code>{{ accuse.commit }}</code>
+              </dd>
+            </div>
+          </dl>
+          <p v-if="libelleInstantane(accuse.instantane)" class="discret petit">
+            {{ libelleInstantane(accuse.instantane) }}
+          </p>
+          <p class="discret petit">
+            L'empreinte identifie exactement ce que vous avez rendu : toute modification ultérieure la changerait.
+          </p>
         </section>
       </template>
     </main>
@@ -251,5 +308,39 @@ h1 {
 }
 .pairs p:last-child {
   margin: 0;
+}
+.accuse {
+  padding: 14px 16px;
+}
+.accuse h2 {
+  margin: 0 0 8px;
+  font-family: var(--ol-font-body);
+  font-size: 15px;
+  font-weight: 600;
+}
+.accuse dl {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.accuse dt {
+  font-size: 13px;
+  color: var(--es-gris);
+}
+.accuse dd {
+  margin: 0;
+  font-size: 14px;
+}
+.empreinte {
+  display: block;
+  font-family: var(--ol-font-mono);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+.petit {
+  margin: 8px 0 0;
+  font-size: 13px;
 }
 </style>

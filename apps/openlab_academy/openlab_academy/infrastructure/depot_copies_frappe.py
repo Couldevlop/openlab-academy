@@ -12,7 +12,7 @@ from openlab_academy.domain.copie import (
     Copie, CopieVerrouillee, Etat, EtatInstantane, Proposition, Source, Statut)
 from openlab_academy.domain.equipe import EquipeEffective, resoudre_equipe
 from openlab_academy.domain.grille import Grille
-from openlab_academy.domain.reglages_evaluation import Chaine, TypeExercice
+from openlab_academy.domain.reglages_evaluation import Chaine, CopieEnCours, TypeExercice
 from openlab_academy.infrastructure import reglages_evaluation_frappe
 
 COPIE = "Copie OpenLab"
@@ -293,6 +293,15 @@ class DepotCopiesFrappe:
         lignes = frappe.get_all(COPIE, {"en_souffrance": 1, "statut": ["in", EN_COURS]}, CHAMPS_COPIE + CHAMPS_ETAT,
                                 order_by="souffrance_depuis")
         return [(_copie(ligne), _etat(ligne)) for ligne in lignes]
+
+    def copies_en_cours(self) -> list[CopieEnCours]:
+        """Copies encore dans la chaîne (avec une étape), et le YAML de leur exercice : périmètre du simulateur."""
+        lignes = frappe.get_all(COPIE, {"statut": ["in", EN_COURS], "etape_courante": ["is", "set"]}, CHAMPS_COPIE,
+                                order_by="creation")
+        exercices = {x: self.exercice(x) for x in {ligne.exercice for ligne in lignes}}
+        return [CopieEnCours(ligne.name, TypeExercice(ligne.type_exercice), ligne.cohorte or None, ligne.exercice,
+                             exercices[ligne.exercice].chaine if exercices[ligne.exercice] else None)
+                for ligne in lignes]
 
     def fixer_butoir(self, copie_id: str, butoir) -> None:
         frappe.db.set_value(COPIE, copie_id, "butoir", butoir)

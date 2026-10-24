@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { retour } from '../test/fabriques'
+import { accuseDepot, retour } from '../test/fabriques'
 import { fauxCasUsages } from '../test/faux-ports'
 
 describe('mon retour', () => {
@@ -9,5 +9,12 @@ describe('mon retour', () => {
     ports.retour.monRetour.mockResolvedValue(r)
     expect(await cas.consulterRetour.executer('C1')).toBe(r)
     expect(ports.retour.monRetour).toHaveBeenCalledWith('C1')
+  })
+
+  it('consulter l’accusé de dépôt de sa copie', async () => {
+    const { ports, cas } = fauxCasUsages()
+    ports.retour.accuse.mockResolvedValue(accuseDepot())
+    expect(await cas.consulterAccuse.executer('C1')).toEqual(accuseDepot())
+    expect(ports.retour.accuse).toHaveBeenCalledWith('C1')
   })
 })

@@ -16,6 +16,16 @@ STANDARD = Reglages().rythme("standard")
 TITRE_PILOTE = "Promo 1 — Fondamentaux de la Data Science · Standard 12 h"
 
 
+def supprimer_cohortes(filtre: dict) -> None:
+    """Supprime les cohortes et leurs lignes (parcours, formateurs) : une suppression brute de LMS Batch laissait des
+    lignes orphelines qu'une cohorte recréée sous le même nom reprenait, en doublon, après un commit."""
+    lots = frappe.get_all("LMS Batch", filtre, pluck="name")
+    if lots:
+        frappe.db.delete("Batch Course", {"parent": ["in", lots]})
+        frappe.db.delete("Course Instructor", {"parent": ["in", lots], "parenttype": "LMS Batch"})
+        frappe.db.delete("LMS Batch", {"name": ["in", lots]})
+
+
 class TestDepotCohortesFrappe(FrappeTestCase):
     def tearDown(self):
         frappe.db.rollback()
@@ -33,6 +43,18 @@ class TestDepotCohortesFrappe(FrappeTestCase):
         self.assertEqual((str(b.start_time), str(b.end_time)), ("18:30:00", "20:30:00"))
         self.assertEqual((b.allow_self_enrollment, b.certification, b.evaluation), (1, 1, 1))
         self.assertIn("12 h par semaine", b.batch_details)
+        self.assertIn("Séances de 18 h 30 à 20 h 30 (heure d'Abidjan).", b.batch_details)
+        # sans places, le LMS masque « Enroll Now » : aucune inscription autonome possible
+        self.assertEqual(b.seat_count, 30)
+
+    def test_places_et_seances_des_reglages(self):
+        p = parcours(title="Parcours cohorte réglée")
+        DepotFrappe(commit=False).creer(p)
+        reglages = Reglages(heure_debut="19:00", heure_fin="21:00", places_par_cohorte=12)
+        b = frappe.get_doc("LMS Batch", DepotCohortesFrappe().creer(Cohorte.pilote(p, LUNDI, STANDARD, reglages)))
+        self.assertEqual(b.seat_count, 12)
+        self.assertIn("Séances de 19 h à 21 h", b.batch_details)
+        self.assertNotIn("18 h 30", b.batch_details)
 
     def test_cours_absent_refuse(self):
         with self.assertRaisesRegex(ValueError, "cours « Inconnu » introuvable"):
@@ -48,7 +70,7 @@ class TestCommandeCohorte(FrappeTestCase):
 
     def test_ouvrir_pilote_idempotent(self):
         seed.run(commit=False)
-        frappe.db.delete("LMS Batch", {"title": TITRE_PILOTE})
+        supprimer_cohortes({"title": TITRE_PILOTE})
         premiere = commande.ouvrir_pilote(commit=False)
         self.assertTrue(premiere["creee"])
         self.assertEqual(frappe.db.get_value("LMS Batch", premiere["cohorte"], "title"), TITRE_PILOTE)
@@ -56,7 +78,7 @@ class TestCommandeCohorte(FrappeTestCase):
 
     def test_ouvrir_pilote_intensif(self):
         seed.run(commit=False)
-        frappe.db.delete("LMS Batch", {"title": ("like", "%· Intensif 16 h")})
+        supprimer_cohortes({"title": ("like", "%· Intensif 16 h")})
         resultat = commande.ouvrir_pilote(rythme="intensif", commit=False)
         b = frappe.get_doc("LMS Batch", resultat["cohorte"])
         self.assertTrue(b.title.endswith("· Intensif 16 h"))
@@ -68,10 +90,12 @@ class TestCommandeCohorte(FrappeTestCase):
 
     def test_ouverture_validee_en_base(self):
         seed.run(commit=False)
-        frappe.db.delete("LMS Batch", {"title": TITRE_PILOTE})
+        supprimer_cohortes({"title": TITRE_PILOTE})
         nom = commande.ouvrir_pilote(commit=True)["cohorte"]
         frappe.db.rollback()
         self.assertTrue(frappe.db.exists("LMS Batch", nom))
+        # rouverte après un commit, la cohorte ne reprend aucune ligne de la précédente
+        self.assertEqual(frappe.db.count("Batch Course", {"parent": nom}), 1)
 
     def test_non_exposee_a_l_api(self):
         """OWASP A01."""

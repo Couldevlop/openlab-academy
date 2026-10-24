@@ -156,6 +156,11 @@ class TestPublier(CasApi):
         self.en_tant_que(FORM)
         vue = api.copie_a_corriger(v2)
         self.assertEqual((vue["remplacee"], [v["copie"] for v in vue["versions_precedentes"]]), (False, [v1]))
+        precedente = api.version_precedente(v2, v1)
+        self.assertEqual((precedente["copie"], precedente["version"]), (v1, 1))
+        self.assertEqual(precedente["contenu"], self.depot.texte_lisible(v1))
+        with self.assertRaisesRegex(frappe.PermissionError, "version étrangère"):
+            api.version_precedente(v1, v2)
         self.en_tant_que("Administrator")
         self.assertEqual(frappe.db.get_value(SOUMISSION, soumission, ["status", "comments"]), lms_avant)
 
@@ -537,6 +542,33 @@ class TestCopiesEnSouffrance(CasApi):
             api.copies_en_souffrance()
 
 
+class TestSimulateurImpact(CasApi):
+    def test_surcharge_non_enregistree_simulee_pour_les_superviseurs(self):
+        (copie,) = self.a_corriger(A)
+        lot = frappe.db.get_value("Copie OpenLab", copie, "cohorte")
+        brouillon = {"cohorte": lot, "note_sur": "10"}
+        for qui in ("Administrator", RESP):
+            self.en_tant_que(qui)
+            r = api.simuler_impact("surcharge", json.dumps(brouillon))
+            self.assertEqual((r["copies"], r["exercices"], r["cohortes"], r["secours"]),
+                             ([copie], [self.livrable], [lot], []))
+            self.assertIn("note_sur", r["champs"])
+        self.en_tant_que("Administrator")
+        self.assertFalse(frappe.db.exists("Surcharge Evaluation OpenLab", {"cohorte": lot}))  # rien d'enregistré
+        existante = frappe.get_doc({"doctype": "Surcharge Evaluation OpenLab", **brouillon}).insert()
+        r = api.simuler_impact("surcharge", {**existante.as_dict(), "note_sur": "10"})
+        self.assertEqual(r["copies"], [])  # la surcharge enregistrée est remplacée, pas ajoutée
+        r = api.simuler_impact("reglages", frappe.get_single("Reglages Evaluation OpenLab").as_dict())
+        self.assertEqual(r["copies"], [])
+        with self.assertRaises(frappe.ValidationError):
+            api.simuler_impact("inconnue", "{}")
+        with self.assertRaises(frappe.ValidationError):
+            api.simuler_impact("surcharge", "{}")  # ni cohorte ni exercice : surcharge invalide
+        self.en_tant_que(FORM)
+        with self.assertRaises(frappe.PermissionError):
+            api.simuler_impact("surcharge", json.dumps(brouillon))
+
+
 class TestAdaptateur(CasApi):
     def test_texte_lisible_jamais_en_html(self):
         (copie,) = self.a_corriger(A)
@@ -574,6 +606,7 @@ class TestGardes(CasApi):
         "file_correction": (), "copie_a_corriger": ("C",), "corriger": ("C", "{}"), "valider_lot": ("[]",),
         "publier": ("C",), "deleguer": ("D", "2026-01-01", "2026-01-02"), "revoquer": ("D",), "fiabilite_ia": (),
         "accuse_depot": ("C",), "reglages_effectifs": ("E",), "copies_en_souffrance": (),
+        "version_precedente": ("C", "P"), "simuler_impact": ("reglages", "{}"),
     }
 
     def test_visiteur_refuse_partout(self):
@@ -613,7 +646,7 @@ class TestGardes(CasApi):
 
     LECTURES = {"mes_relectures", "relecture", "mon_auto_evaluation", "mon_retour", "file_correction",
                 "copie_a_corriger", "fiabilite_ia", "accuse_depot", "reglages_effectifs",
-                "copies_en_souffrance"}
+                "copies_en_souffrance", "version_precedente"}
 
     def test_lectures_en_get_seulement(self):
         """La liste des lectures du test de débit suit les méthodes déclarées par chaque point."""

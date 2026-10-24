@@ -505,6 +505,16 @@ class ConsulterCorrection:
             "remplacee": copie.statut == Statut.REMPLACEE, "versions_precedentes": self._depot.versions(copie_id),
         }
 
+    def version_precedente(self, acteur: str, copie_id: str, precedente: str) -> dict:
+        """Texte d'une version antérieure de la copie, pour la comparer à la version corrigée : mêmes droits que
+        la copie, et seulement l'une de ses devancières (jamais une autre soumission)."""
+        if self._habilitation(acteur, copie_id) is None:
+            raise AccesRefuse("copie hors de votre correction")
+        trouvee = next((v for v in self._depot.versions(copie_id) if v["copie"] == precedente), None)
+        if trouvee is None:
+            raise AccesRefuse("version étrangère à cette copie")
+        return {**trouvee, "contenu": self._depot.texte_lisible(precedente)}
+
 
 # --- délégations -------------------------------------------------------------------------------------------
 class GererDelegations:

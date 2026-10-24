@@ -1,8 +1,11 @@
 // Ports des cas d'usage : ce que l'application attend du monde extérieur (API d'évaluation, appareil, horloge).
 // Les adaptateurs (infrastructure) les implémentent ; un échec d'appel est une ErreurDepot.
-import type { ChargeCorrection, FileCorrection, ResultatLot, VueCopie } from '../domaine/correction'
+import type { ChargeCorrection, FileCorrection, ResultatLot, VersionTexte, VueCopie } from '../domaine/correction'
 import type { Brouillon, ResumeRelecture, SaisieRelecture, VueRelecture } from '../domaine/relecture'
-import type { Retour } from '../domaine/retour'
+import type { FicheIntendance, ResumeFinances, VueIntendance } from '../domaine/intendance'
+import type { DossierPaiement, Mode, MonPaiement } from '../domaine/paiement'
+import type { CopieEnSouffrance, ReglagesEffectifs } from '../domaine/pilotage'
+import type { AccuseDepot, Retour } from '../domaine/retour'
 
 export interface DepotCorrection {
   file(exercice?: string): Promise<FileCorrection>
@@ -11,6 +14,8 @@ export interface DepotCorrection {
   /** Publie la note enregistrée ; rend la note publiée. */
   publier(copie: string): Promise<number>
   validerLot(copies: string[], etPublier: boolean): Promise<ResultatLot>
+  /** Texte d'une version antérieure de la copie (mêmes droits que la copie). */
+  versionPrecedente(copie: string, precedente: string): Promise<VersionTexte>
 }
 
 export interface DepotRelecture {
@@ -21,6 +26,60 @@ export interface DepotRelecture {
 
 export interface DepotRetour {
   monRetour(copie: string): Promise<Retour>
+  /** Accusé de dépôt : l'apprenant auteur et ses correcteurs seulement. */
+  accuse(copie: string): Promise<AccuseDepot>
+}
+
+/** Dossier de paiement de l'apprenant connecté : le serveur le retrouve par la session, jamais par un identifiant. */
+export interface DepotPaiement {
+  /** Le dossier du parcours, ou l'état gratuit d'un parcours gratuit (MOOC). */
+  monDossier(cours: string): Promise<MonPaiement>
+  /** Rend le dossier replanifié dans le nouveau mode. */
+  choisirMode(cours: string, mode: Mode, telephone: string): Promise<DossierPaiement>
+  /** Adresse de la page de paiement CinetPay. */
+  payer(cours: string): Promise<string>
+}
+
+/** Virement saisi par un agent, relu par le cas d'usage. */
+export interface Virement {
+  montant: number
+  reference: string
+  /** AAAA-MM-JJ */
+  date_paiement: string
+  motif: string
+}
+
+/** API de l'intendance et de l'administration ; le serveur vérifie le rôle à chaque appel et journalise l'acteur. */
+export interface DepotIntendance {
+  intendance(filtres: Record<string, string>): Promise<VueIntendance>
+  fiche(dossier: string): Promise<FicheIntendance>
+  enregistrerVirement(dossier: string, virement: Virement): Promise<void>
+  accorderDelai(dossier: string, jusquau: string, motif: string): Promise<void>
+  /** Adresse du classeur Excel des lignes filtrées. */
+  lienExport(filtres: Record<string, string>): string
+  resume(): Promise<ResumeFinances>
+}
+
+/** API de pilotage de l'évaluation : le serveur la réserve au super administrateur et au responsable pédagogique. */
+export interface DepotPilotage {
+  souffrances(): Promise<CopieEnSouffrance[]>
+  reglagesEffectifs(exercice: string, cohorte?: string): Promise<ReglagesEffectifs>
+}
+
+/** Écrans ouverts à l'utilisateur ; ne sert qu'à afficher les liens, l'API refuse elle-même. */
+export interface Droits {
+  intendance: boolean
+  finances: boolean
+  pilotage: boolean
+}
+
+export interface Session {
+  droits(): Droits
+}
+
+/** Quitte l'application pour une page externe (paiement). */
+export interface Navigateur {
+  aller(url: string): void
 }
 
 /** Brouillons de relecture gardés sur l'appareil ; un stockage indisponible ne fait jamais échouer l'écran. */

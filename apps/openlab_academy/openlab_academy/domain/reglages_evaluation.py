@@ -3,7 +3,7 @@
 Aucune étape ne bloque : chacune a un délai et une action à expiration. Le formateur reste toujours actif,
 car seul un humain publie une note définitive.
 """
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
 from enum import Enum
@@ -378,3 +378,42 @@ def reste_avant_action_souffrance(reglages: ReglagesEvaluation, depuis: datetime
     if reglages.souffrance_action != ActionSouffrance.PUBLIER_PROVISOIRE or not reglages.publication_provisoire:
         return None
     return max(depuis + timedelta(days=reglages.souffrance_action_jours) - maintenant, timedelta(0))
+
+
+@dataclass(frozen=True)
+class CopieEnCours:
+    """Copie encore dans la chaîne : sa chaîne se résout à chaque étape, un changement de réglage la touche."""
+
+    copie: str
+    type_: TypeExercice
+    cohorte: str | None
+    exercice: str
+    yaml: Chaine | None = None
+
+
+def _champs_chaine(chaine: Chaine) -> dict:
+    return {**{c: getattr(chaine, c) for c in OPTIONS_CHAINE},
+            **{f"etape.{c.etape.value}": _config_dict(c) for c in chaine.etapes}}
+
+
+def impact_changement(avant: tuple[ReglagesEvaluation, tuple[Surcharge, ...]],
+                      apres: tuple[ReglagesEvaluation, tuple[Surcharge, ...]],
+                      copies: Iterable[CopieEnCours]) -> dict:
+    """Simulateur d'impact : copies en cours dont la chaîne effective changerait, avec les exercices, cohortes et
+    champs touchés, et celles qui basculeraient sur la chaîne de secours (formateur seul)."""
+    touchees, exercices, cohortes, champs, secours = [], set(), set(), set(), []
+    for c in copies:
+        (chaine_avant, _), (chaine_apres, cause) = (
+            r.chaine_effective(c.type_, c.cohorte, c.exercice, s, c.yaml) for r, s in (avant, apres))
+        if chaine_avant == chaine_apres:
+            continue
+        a, b = _champs_chaine(chaine_avant), _champs_chaine(chaine_apres)
+        touchees.append(c.copie)
+        exercices.add(c.exercice)
+        if c.cohorte:
+            cohortes.add(c.cohorte)
+        champs |= {k for k in a.keys() | b.keys() if a.get(k) != b.get(k)}
+        if cause:
+            secours.append(c.copie)
+    return {"copies": touchees, "exercices": sorted(exercices), "cohortes": sorted(cohortes),
+            "champs": sorted(champs), "secours": secours}

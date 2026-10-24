@@ -3,7 +3,7 @@ from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.infrastructure import reglages_source_frappe as source
-from openlab_academy.patches import completer_reglages_exercices, initialiser_reglages
+from openlab_academy.patches import completer_places_cohortes, completer_reglages_exercices, initialiser_reglages
 
 DOCTYPE = "Reglages OpenLab Academy"
 ELEVE = "eleve.reglages@example.ci"
@@ -47,13 +47,14 @@ class TestSourceReglagesFrappe(FrappeTestCase):
         doc = frappe.get_single(DOCTYPE)
         doc.update({"heures_par_module": 6, "jour_ouverture": "Samedi", "heure_debut": "19:00:00",
                     "questions_par_quiz": 4, "tentatives_max": 2, "score_min": 80, "delai_exercices_minutes": 30,
-                    "heure_fin": "21:00:00", "parcours_pilote": "Développeur Python"})
+                    "heure_fin": "21:00:00", "parcours_pilote": "Développeur Python", "places_par_cohorte": 12})
         doc.append("rythmes", {"code": "week-end", "libelle": "Week-end", "samedi": 5, "dimanche": 5})
         doc.save(ignore_permissions=True)
         r = source.charger()
         self.assertEqual((r.heures_par_module, r.jour_ouverture, r.heure_debut, r.heure_fin, r.parcours_pilote),
                          (6, 5, "19:00", "21:00", "Développeur Python"))
         self.assertEqual(r.rythme("week-end").heures, 10)
+        self.assertEqual(r.places_par_cohorte, 12)
         self.assertEqual((r.questions_par_quiz, r.tentatives_max, r.score_min, r.delai_exercices_minutes),
                          (4, 2, 80, 30))
 
@@ -95,6 +96,41 @@ class TestPatchExercices(FrappeTestCase):
         frappe.db.set_single_value(DOCTYPE, "score_min", 90)
         completer_reglages_exercices.execute()
         self.assertEqual(source.charger().score_min, 90)
+
+
+class TestPatchPlaces(FrappeTestCase):
+    """Sites existants : réglage des places renseigné, cohortes en inscription autonome sans places complétées."""
+
+    def tearDown(self):
+        frappe.db.rollback()
+
+    def lot(self, titre, **champs):
+        cours = frappe.get_all("LMS Course", pluck="name", limit=1)[0]
+        return frappe.get_doc({"doctype": "LMS Batch", "title": titre, "start_date": "2026-11-02",
+                               "end_date": "2027-02-22", "start_time": "18:30:00", "end_time": "20:30:00",
+                               "timezone": "Africa/Abidjan", "instructors": [{"instructor": "Administrator"}],
+                               "description": "d", "batch_details": "d", "courses": [{"course": cours}],
+                               **champs}).insert(ignore_permissions=True).name
+
+    def test_reglage_et_cohortes_completes(self):
+        source.initialiser()
+        frappe.db.set_single_value(DOCTYPE, "places_par_cohorte", None)
+        sans_places = self.lot("Patch places : sans places", allow_self_enrollment=1, seat_count=0)
+        fermee = self.lot("Patch places : fermée", allow_self_enrollment=0, seat_count=0)
+        reglee = self.lot("Patch places : réglée", allow_self_enrollment=1, seat_count=8)
+        completer_places_cohortes.execute()
+        completer_places_cohortes.execute()
+        self.assertEqual(source.charger().places_par_cohorte, 30)
+        places = {n: frappe.db.get_value("LMS Batch", n, "seat_count") for n in (sans_places, fermee, reglee)}
+        self.assertEqual(places, {sans_places: 30, fermee: 0, reglee: 8})
+
+    def test_reglage_existant_conserve_et_applique(self):
+        source.initialiser()
+        frappe.db.set_single_value(DOCTYPE, "places_par_cohorte", 20)
+        lot = self.lot("Patch places : réglage conservé", allow_self_enrollment=1, seat_count=0)
+        completer_places_cohortes.execute()
+        self.assertEqual((source.charger().places_par_cohorte, frappe.db.get_value("LMS Batch", lot, "seat_count")),
+                         (20, 20))
 
 
 class TestDroitsReglages(FrappeTestCase):

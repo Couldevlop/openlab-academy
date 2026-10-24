@@ -24,6 +24,7 @@ from openlab_academy.patches import marquer_versions_remplacees
 from openlab_academy.tests.fabriques import parcours
 from openlab_academy.tests.http_simule import SHA, github
 from openlab_academy.tests.test_exercices_frappe import module
+from openlab_academy.tests.test_paiement_donnees_frappe import inscrire_sans_paiement
 
 A = "eleve.a.copie@example.ci"
 B = "eleve.b.copie@example.ci"
@@ -217,7 +218,7 @@ class TestCopies(Base):
         lot = DepotCohortesFrappe().creer(Cohorte.pilote(self.p, datetime.date(2026, 11, 2),
                                                          Reglages().rythme("standard"), Reglages()))
         self.assertIsNone(self.depot.cohorte(A, self.livrable))  # pas encore inscrit
-        frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": lot, "member": A}).insert(ignore_permissions=True)
+        inscrire_sans_paiement(lot, A)
         self.assertEqual(self.depot.cohorte(A, self.livrable), lot)
         self.assertIsNone(self.depot.cohorte(B, self.livrable))
         self.soumettre(self.livrable)
@@ -227,7 +228,7 @@ class TestCopies(Base):
         DepotFrappe(commit=False).creer(parcours(title="Autre cours copies"))
         lot = DepotCohortesFrappe().creer(Cohorte.pilote(parcours(title="Autre cours copies"), datetime.date(2026, 11, 2),
                                                          Reglages().rythme("standard"), Reglages()))
-        frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": lot, "member": A}).insert(ignore_permissions=True)
+        inscrire_sans_paiement(lot, A)
         self.assertIsNone(self.depot.cohorte(A, self.livrable))
 
     def test_apprenant_b_ne_lit_pas_la_copie_de_a(self):

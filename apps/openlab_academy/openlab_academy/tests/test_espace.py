@@ -6,6 +6,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy import hooks
+from openlab_academy.infrastructure.reglages_evaluation_frappe import ROLE
 from openlab_academy.www import espace
 
 GABARIT = pathlib.Path(espace.__file__).with_suffix(".html")
@@ -36,6 +37,17 @@ class TestPageEspace(FrappeTestCase):
         self.assertEqual(context.version, "42")
         commit.assert_called_once()
 
+    def test_droits_des_ecrans_selon_les_roles(self):
+        """Seuls les liens des écrans sont masqués ; l'API refuse elle-même les rôles non habilités."""
+        cas = {"Intendant OpenLab": {"intendance": True, "finances": False, "pilotage": False},
+               "System Manager": {"intendance": True, "finances": True, "pilotage": True},
+               ROLE: {"intendance": False, "finances": False, "pilotage": True},
+               "LMS Student": {"intendance": False, "finances": False, "pilotage": False}}
+        for role, attendu in cas.items():
+            with self.subTest(role=role), mock.patch.object(espace.frappe, "get_roles", return_value=[role]):
+                context, _ = self.contexte()
+                self.assertEqual(context.droits, attendu)
+
     def test_version_du_paquet_construit_ou_zero(self):
         with mock.patch.object(espace.os.path, "getmtime", return_value=1700000000.7):
             self.assertEqual(espace.version(), "1700000000")
@@ -45,12 +57,16 @@ class TestPageEspace(FrappeTestCase):
     def test_gabarit_sans_donnee_et_jeton_echappe(self):
         """OWASP A03 : le jeton est sérialisé en JSON échappé ; la page ne porte aucune donnée d'évaluation."""
         html = frappe.render_template(GABARIT.read_text(encoding="utf-8"),
-                                      {"csrf_token": '</script><img src=x onerror=alert(1)>', "version": "1"})
+                                      {"csrf_token": '</script><img src=x onerror=alert(1)>', "version": "1",
+                                       "droits": {"intendance": True, "finances": False}})
         self.assertNotIn("</script><img", html)
         self.assertNotIn("<img", html)
         self.assertIn('/assets/openlab_academy/espace/espace.js?v=1', html)
         self.assertIn('/assets/openlab_academy/css/openlab.css', html)
         self.assertIn('<div id="espace"></div>', html)
+        self.assertIn("window.espace_droits = {", html)
+        self.assertIn('"intendance": true', html)
+        self.assertIn('"finances": false', html)
 
     def test_page_sans_cache_et_routee(self):
         self.assertEqual(espace.no_cache, 1)

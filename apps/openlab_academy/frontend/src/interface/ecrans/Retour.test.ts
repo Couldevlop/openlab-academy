@@ -2,7 +2,7 @@ import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ErreurDepot } from '../../application/erreurs'
 import type { Retour } from '../../domaine/retour'
-import { critereRetour, retour } from '../../test/fabriques'
+import { accuseDepot, critereRetour, retour } from '../../test/fabriques'
 import { fauxPorts } from '../../test/faux-ports'
 import { monterEcran } from '../../test/monter'
 
@@ -83,7 +83,10 @@ describe('Mon retour', () => {
         criteres: [critereRetour('pertinence', 1, { commentaire: piege, pairs: [piege] })],
       }),
     )
-    expect(w.find('img').exists()).toBe(false)
+    // seule image : le logo de l'en-tête
+    expect(w.findAll('img').map((i) => i.attributes('src'))).toEqual([
+      '/assets/openlab_academy/images/logo-horizontal.svg',
+    ])
     expect(w.find('strong').exists()).toBe(false)
     expect(w.find('.general').text()).toBe(piege)
     expect(w.find('.detail').text()).toBe(piege)
@@ -116,5 +119,42 @@ describe('Mon retour', () => {
     const { routeur, ports } = await afficher(retour())
     await routeur.push('/retour/C2')
     expect(ports.retour.monRetour).toHaveBeenLastCalledWith('C2')
+    expect(ports.retour.accuse).toHaveBeenLastCalledWith('C2')
+  })
+})
+
+describe('accusé de dépôt', () => {
+  async function avecAccuse(accuse: Promise<ReturnType<typeof accuseDepot>>) {
+    const ports = fauxPorts()
+    ports.retour.monRetour.mockResolvedValue(retour({ note: 15, note_sur: 20 }))
+    ports.retour.accuse.mockReturnValue(accuse)
+    return monterEcran('/retour/C1', ports)
+  }
+
+  it('horodatage, empreinte, version du dépôt et instantané', async () => {
+    const { w, ports } = await avecAccuse(Promise.resolve(accuseDepot()))
+    expect(ports.retour.accuse).toHaveBeenCalledWith('C1')
+    const carte = w.find('.accuse')
+    expect(carte.find('h2').text()).toBe('Accusé de dépôt')
+    expect(carte.find('time').attributes('datetime')).toBe('2026-11-03T21:12:05Z')
+    expect(carte.find('time').text()).toMatch(/^3 novembre 2026 (à )?21:12:05$/)
+    expect(carte.find('.empreinte').text()).toBe(accuseDepot().empreinte)
+    expect(carte.text()).toContain('Empreinte SHA-256')
+    expect(carte.text()).toContain('4e1a2b3')
+    expect(carte.text()).toContain('Instantané du dépôt conservé.')
+  })
+
+  it('accusé sans horodatage, empreinte, commit ni instantané : la version seule', async () => {
+    const accuse = accuseDepot({ depose_le: null, commit: '', instantane: '', empreinte: '' })
+    const { w } = await avecAccuse(Promise.resolve(accuse))
+    expect(w.findAll('.accuse dt').map((d) => d.text())).toEqual(['Version'])
+    expect(w.findAll('.accuse .petit')).toHaveLength(1)
+  })
+
+  it('accusé indisponible : le retour reste affiché, sans carte', async () => {
+    const { w } = await avecAccuse(Promise.reject(new ErreurDepot('acces_refuse')))
+    expect(w.find('.accuse').exists()).toBe(false)
+    expect(w.find('.valeur').text()).toBe('15')
+    expect(w.find('[role="alert"]').exists()).toBe(false)
   })
 })

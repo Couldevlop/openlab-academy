@@ -1,24 +1,59 @@
 # Format compatible docker-compose v1 (pas de clé name ni profiles).
+# Pile de production : nginx (seul port publié) → gunicorn (web) et socketio ; worker et schedule pour les tâches
+# de fond (e-mails, rappels quotidiens). Mots de passe en secrets Docker : docker/secrets/*.txt, hors git.
 version: "3.7"
+
+x-app: &app
+  image: openlab-academy:0.2.0
+  env_file: .env
+  depends_on: [mariadb, redis]
+  volumes: [sites:/home/frappe/frappe-bench/sites]
+  restart: unless-stopped
+
 services:
   mariadb:
     image: mariadb:11.4
     command: [--character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --skip-character-set-client-handshake]
     environment:
-      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+    secrets: [db_root_password]
     volumes: [mariadb-data:/var/lib/mysql]
     restart: unless-stopped
   redis:
     image: redis:7.4-alpine
     restart: unless-stopped
-  app:
+  web:
+    <<: *app
     build: { context: .., dockerfile: docker/Dockerfile }
-    image: openlab-academy:0.1.0
+    command: [web]
+    secrets: [db_root_password, admin_password]
+  socketio:
+    <<: *app
+    command: [socketio]
+  worker:
+    <<: *app
+    command: [worker]
+  schedule:
+    <<: *app
+    command: [schedule]
+  nginx:
+    image: nginx:1.27-alpine
     env_file: .env
-    depends_on: [mariadb, redis]
-    ports: ["8000:8000", "9000:9000"]
-    volumes: [sites:/home/frappe/frappe-bench/sites]
+    environment:
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx/conf.d
+    depends_on: [web, socketio]
+    ports: ["${PORT_HTTP:-8080}:8080"]
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites:ro
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
     restart: unless-stopped
+
+secrets:
+  db_root_password:
+    file: ./secrets/db_root_password.txt
+  admin_password:
+    file: ./secrets/admin_password.txt
+
 volumes:
   mariadb-data:
   sites:

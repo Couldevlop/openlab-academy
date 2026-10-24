@@ -51,6 +51,23 @@ class TestCohortePilote(unittest.TestCase):
         self.assertEqual(c.titre, "Promo 1 — P · Week-end 10 h")
         self.assertEqual(c.fin, LUNDI + datetime.timedelta(weeks=19))  # 188 / 10 = 18,8
 
+    def test_places_reglees(self):
+        self.assertEqual(Cohorte.pilote(parcours(title="P"), LUNDI, STANDARD, REGLAGES).places, 30)
+        reglages = Reglages(places_par_cohorte=12)
+        self.assertEqual(Cohorte.pilote(parcours(title="P"), LUNDI, STANDARD, reglages).places, 12)
+
+    def test_places_positives(self):
+        with self.assertRaisesRegex(CohorteInvalide, "au moins une place"):
+            Cohorte("T", "C", LUNDI, LUNDI + datetime.timedelta(days=1), "18:30", "20:30", "Africa/Abidjan",
+                    STANDARD, places=0)
+
+    def test_seances_lisibles_tirees_des_horaires(self):
+        c = Cohorte.pilote(parcours(title="P"), LUNDI, STANDARD, REGLAGES)
+        self.assertEqual(c.seances, "Séances de 18 h 30 à 20 h 30 (heure d'Abidjan).")
+        autre = Cohorte.pilote(parcours(title="P"), LUNDI, STANDARD,
+                               Reglages(heure_debut="19:00", heure_fin="21:05", fuseau="Africa/Dakar"))
+        self.assertEqual(autre.seances, "Séances de 19 h à 21 h 05 (fuseau Africa/Dakar).")
+
     def test_fin_apres_debut(self):
         with self.assertRaisesRegex(CohorteInvalide, "la fin doit suivre le début"):
             Cohorte("T", "C", LUNDI, LUNDI, "18:30", "20:30", "Africa/Abidjan", STANDARD)

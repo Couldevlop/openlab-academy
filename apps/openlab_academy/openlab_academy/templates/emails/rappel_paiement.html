@@ -1,0 +1,118 @@
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">{{ montant }} FCFA à régler avant le {{ date_limite }} pour votre parcours {{ titre }}.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef1f6;margin:0;padding:0;">
+  <tr>
+    <td align="center" style="padding:36px 12px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 28px rgba(0,30,72,0.10);">
+
+        <!-- Logo -->
+        <tr>
+          <td align="center" style="padding:30px 36px 24px 36px;background:#ffffff;">
+            <img embed="logo-email.png" width="230" alt="OpenLab Academy" style="display:block;width:230px;max-width:70%;height:auto;border:0;">
+          </td>
+        </tr>
+        <!-- Filet aux quatre couleurs du logo -->
+        <tr>
+          <td style="font-size:0;line-height:0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td width="34%" style="height:5px;background:#244498;"></td>
+              <td width="16%" style="height:5px;background:#2890c8;"></td>
+              <td width="34%" style="height:5px;background:#ec7623;"></td>
+              <td width="16%" style="height:5px;background:#fcd80f;"></td>
+            </tr></table>
+          </td>
+        </tr>
+
+        <!-- Bandeau -->
+        <tr>
+          <td style="background:#001e48;padding:30px 36px;font-family:Montserrat,'Segoe UI',Helvetica,Arial,sans-serif;">
+            <p style="margin:0 0 6px 0;font-size:12px;font-weight:700;color:#fcd80f;text-transform:uppercase;letter-spacing:2px;">Rappel d'échéance · {{ quand }}</p>
+            <p style="margin:0;font-size:24px;line-height:1.3;font-weight:800;color:#ffffff;">Votre parcours <span style="color:#ec7623;">{{ titre }}</span> continue</p>
+          </td>
+        </tr>
+
+        <!-- Message -->
+        <tr>
+          <td style="padding:32px 36px 8px 36px;font-family:Montserrat,'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1d24;">
+            <p style="margin:0 0 14px 0;font-size:16px;line-height:1.6;">Bonjour <strong>{{ nom }}</strong>,</p>
+            <p style="margin:0 0 26px 0;font-size:15px;line-height:1.75;color:#3b4150;">
+              Votre prochaine échéance approche. Réglez-la avant la date limite pour garder un accès continu à vos
+              cours, exercices et évaluations.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Carte échéance -->
+        <tr>
+          <td style="padding:0 36px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #dfe5f0;border-radius:14px;border-left:6px solid #ec7623;">
+              <tr>
+                <td style="padding:22px 24px;font-family:Montserrat,'Segoe UI',Helvetica,Arial,sans-serif;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="font-size:11px;font-weight:700;color:#5a6072;text-transform:uppercase;letter-spacing:1.4px;padding-bottom:6px;">Montant à régler</td>
+                      <td align="right" style="font-size:11px;font-weight:700;color:#5a6072;text-transform:uppercase;letter-spacing:1.4px;padding-bottom:6px;">Au plus tard le</td>
+                    </tr>
+                    <tr>
+                      <td style="font-size:30px;font-weight:800;color:#001e48;white-space:nowrap;">{{ montant }}&nbsp;<span style="font-size:15px;font-weight:700;color:#244498;">FCFA</span></td>
+                      <td align="right" style="font-size:20px;font-weight:800;color:#c25a12;white-space:nowrap;">{{ date_limite }}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Bouton -->
+        <tr>
+          <td align="center" style="padding:30px 36px 6px 36px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" bgcolor="#b35210" style="border-radius:999px;background:#b35210;">
+                  <a href="{{ lien }}" style="display:inline-block;padding:16px 42px;font-family:Montserrat,'Segoe UI',Helvetica,Arial,sans-serif;font-size:16px;font-weight:800;color:#ffffff;text-decoration:none;border-radius:999px;letter-spacing:0.3px;">Payer maintenant&nbsp;&rarr;</a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:14px 0 0 0;font-family:Montserrat,'Segoe UI',Helvetica,Arial,sans-serif;font-size:12px;color:#5a6072;">
+              Paiement sécurisé CinetPay : Orange Money, MTN MoMo, Moov, Wave, carte bancaire. Virement accepté.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Info -->
+        <tr>
+          <td style="padding:26px 36px 32px 36px;font-family:Montserrat,'Segoe UI',Helvetica,Arial,sans-serif;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f5f7fb;border-radius:12px;">
+              <tr>
+                <td style="padding:16px 20px;font-size:13px;line-height:1.7;color:#4a5368;">
+                  <strong style="color:#001e48;">Bon à savoir.</strong> Sans règlement à la date limite, l'accès à ce
+                  parcours est suspendu jusqu'au paiement ; vos autres parcours à jour restent ouverts. Déjà réglé ?
+                  Ignorez ce message. Une question : répondez simplement à cet e-mail.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Pied -->
+        <tr>
+          <td style="background:#001e48;padding:26px 36px;font-family:Montserrat,'Segoe UI',Helvetica,Arial,sans-serif;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="font-size:13px;line-height:1.7;color:#c9d3e6;">
+                  <strong style="color:#ffffff;font-size:14px;">OpenLab Academy</strong><br>
+                  Division Formation d'<a href="https://www.openlabconsulting.com" style="color:#fcd80f;text-decoration:none;font-weight:700;">OpenLab Consulting</a><br>
+                  Abidjan, Côte d'Ivoire
+                </td>
+                <td align="right" valign="bottom" style="font-size:12px;">
+                  <a href="https://www.openlabconsulting.com" style="color:#2890c8;text-decoration:none;font-weight:700;">www.openlabconsulting.com</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:18px 0 0 0;font-family:Montserrat,'Segoe UI',Helvetica,Arial,sans-serif;font-size:11px;color:#5a6072;">Vous recevez ce message car vous êtes inscrit(e) à un parcours OpenLab Academy.</p>
+    </td>
+  </tr>
+</table>
