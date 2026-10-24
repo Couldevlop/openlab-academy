@@ -32,16 +32,25 @@ bench --site lms.localhost execute openlab_academy.entrypoints.seed.run
 
 ```bash
 cd docker
-cp .env.example .env            # puis remplacer les mots de passe
+cp .env.example .env                      # nom du site, port publié
+cp -r secrets.example secrets             # puis remplacer les deux mots de passe (fichiers hors git)
 docker-compose -p ol-academy build
-docker-compose -p ol-academy up -d
+docker-compose -p ol-academy up -d        # http://<hôte>:8080
 ```
 
-- Premier démarrage : création du site `SITE_NAME`, installation de payments, lms et openlab_academy
-  (réglages fr / Africa/Abidjan / XOF, publication des parcours, cohorte pilote standard).
-- Redémarrages suivants : `bench migrate`, aucune recréation ; données dans les volumes `sites` et `mariadb-data`.
+- Services : `nginx` (seul port publié, fichiers statiques, en-têtes de sécurité) → `web` (gunicorn) et `socketio` ;
+  `worker` (file d'envoi des e-mails, tâches longues) et `schedule` (rappels quotidiens de paiement, chaîne
+  d'évaluation). Réglages gunicorn : `GUNICORN_WORKERS` (2) et `GUNICORN_THREADS` (4) dans `.env`.
+- Mots de passe (root MariaDB, Administrator) : secrets Docker `secrets/db_root_password.txt` et
+  `secrets/admin_password.txt`, lus seulement par `mariadb` et `web`, jamais placés dans l'environnement d'un conteneur.
+- Premier démarrage : `web` crée le site `SITE_NAME` et installe payments, lms et openlab_academy (réglages fr /
+  Africa/Abidjan / XOF, publication des parcours, cohorte pilote standard) ; les autres services attendent qu'il soit
+  prêt. Redémarrages suivants : `bench migrate`, aucune recréation ; données dans les volumes `sites` et
+  `mariadb-data`. Les assets ne sont recopiés dans le volume que lorsque l'image a changé.
+- HTTPS : placer la pile derrière le frontal TLS de l'hébergement (Ingress K3s, Traefik, Caddy…), qui transmet
+  `X-Forwarded-Proto`. Ne jamais publier MariaDB ni Redis.
 - Ouvrir une cohorte intensive (16 h/semaine) :
-  `docker exec ol-academy_app_1 bench --site <site> execute openlab_academy.entrypoints.cohorte.ouvrir_pilote --kwargs "{'rythme': 'intensif'}"`
+  `docker exec ol-academy_web_1 bench --site <site> execute openlab_academy.entrypoints.cohorte.ouvrir_pilote --kwargs "{'rythme': 'intensif'}"`
 - Ajouter ou modifier un parcours : éditer `data/parcours/NN-<slug>.yaml` (10 projets + 1 capstone obligatoires),
   reconstruire l'image, puis `bench --site <site> execute openlab_academy.entrypoints.seed.run`.
   Un cours qui a déjà des inscrits n'est jamais modifié.
