@@ -47,6 +47,12 @@ class TestInstallation(FrappeTestCase):
         self.assertNotEqual(frappe.db.get_value("LMS Course", {"title": "AI Engineer"}, "short_introduction"),
                             "périmé")
 
+    def test_after_migrate_termine_l_assistant_d_installation(self):
+        """Un site déjà installé reçoit aussi les réglages : sinon le bureau /app reste sur l'assistant, sans barre."""
+        frappe.db.set_value("Installed Application", {"app_name": "lms"}, "is_setup_complete", 0)
+        install.after_migrate(commit=False)
+        self.assertEqual(frappe.db.get_value("Installed Application", {"app_name": "lms"}, "is_setup_complete"), 1)
+
     def test_installation_non_exposee_a_l_api(self):
         """OWASP A01 : aucune fonction d'installation n'est appelable via /api/method."""
         for fonction in (install.after_install, install.after_migrate, reglages_frappe.appliquer):

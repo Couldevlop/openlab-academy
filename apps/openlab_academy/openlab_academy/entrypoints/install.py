@@ -80,4 +80,5 @@ def after_migrate(commit: bool = True) -> None:
     reglages_evaluation_frappe.preparer()
     preparer_roles()
     preparer_parcours_gratuits()
+    reglages_frappe.appliquer()
     seed.run(commit=commit)

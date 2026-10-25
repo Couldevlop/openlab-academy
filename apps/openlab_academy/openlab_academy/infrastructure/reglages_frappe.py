@@ -30,7 +30,9 @@ def _fichier_public(url: str) -> str:
     existant = frappe.db.get_value("File", {"file_name": nom, "is_private": 0}, "file_url")
     if existant:
         return existant
-    with open(os.path.join(frappe.local.sites_path, url.lstrip("/")), "rb") as f:
+    # lu dans le dossier public de l'app : sites/assets n'existe pas encore pendant install-app
+    app, chemin = url.removeprefix("/assets/").split("/", 1)
+    with open(frappe.get_app_path(app, "public", *chemin.split("/")), "rb") as f:
         contenu = f.read()
     return frappe.get_doc({"doctype": "File", "file_name": nom, "is_private": 0,
                            "content": contenu}).insert(ignore_permissions=True).file_url
