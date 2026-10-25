@@ -51,3 +51,4 @@ def appliquer() -> None:
     for app in frappe.get_all("Installed Application", pluck="name"):
         frappe.db.set_value("Installed Application", app, "is_setup_complete", 1)
     frappe.db.set_single_value("System Settings", "setup_complete", 1)
+    frappe.db.set_default("desktop:home_page", "workspace")

@@ -50,8 +50,10 @@ class TestInstallation(FrappeTestCase):
     def test_after_migrate_termine_l_assistant_d_installation(self):
         """Un site déjà installé reçoit aussi les réglages : sinon le bureau /app reste sur l'assistant, sans barre."""
         frappe.db.set_value("Installed Application", {"app_name": "lms"}, "is_setup_complete", 0)
+        frappe.db.set_default("desktop:home_page", "setup-wizard")
         install.after_migrate(commit=False)
         self.assertEqual(frappe.db.get_value("Installed Application", {"app_name": "lms"}, "is_setup_complete"), 1)
+        self.assertEqual(frappe.db.get_default("desktop:home_page"), "workspace")
 
     def test_installation_non_exposee_a_l_api(self):
         """OWASP A01 : aucune fonction d'installation n'est appelable via /api/method."""
