@@ -60,3 +60,35 @@ class TestInstallation(FrappeTestCase):
         for fonction in (install.after_install, install.after_migrate, reglages_frappe.appliquer):
             with self.subTest(fonction=fonction.__name__), self.assertRaises(frappe.PermissionError):
                 frappe.is_whitelisted(fonction)
+
+
+class TestChampsLancement(FrappeTestCase):
+    def tearDown(self):
+        frappe.db.rollback()
+        install.preparer_champs_lancement()
+        frappe.db.commit()
+
+    def test_champs_de_lancement_crees(self):
+        frappe.db.delete("Custom Field", {"fieldname": ["in", ["acces_limite_cohorte", "video_lecon"]]})
+        install.preparer_champs_lancement()
+        install.preparer_champs_lancement()
+        (limite,) = frappe.get_all("Custom Field", {"dt": "LMS Course", "fieldname": "acces_limite_cohorte"},
+                                   ["fieldtype", "label", "permlevel"])
+        self.assertEqual((limite.fieldtype, limite.label, limite.permlevel),
+                         ("Check", "Accès limité aux dates de la cohorte", 1))
+        (video,) = frappe.get_all("Custom Field", {"dt": "Course Lesson", "fieldname": "video_lecon"},
+                                  ["fieldtype", "label", "description", "insert_after"])
+        self.assertEqual((video.fieldtype, video.label, video.description, video.insert_after),
+                         ("Attach", "Vidéo de la leçon",
+                          "Lien YouTube, Vimeo ou fichier vidéo ; affichée en tête de la leçon.", "title"))
+
+    def test_champs_remis_a_jour_et_appel_a_l_installation(self):
+        nom = frappe.db.get_value("Custom Field", {"dt": "LMS Course", "fieldname": "acces_limite_cohorte"})
+        frappe.db.set_value("Custom Field", nom, {"permlevel": 0, "label": "Ancien"})
+        install.preparer_champs_lancement()
+        self.assertEqual(frappe.db.get_value("Custom Field", nom, ["permlevel", "label"]),
+                         (1, "Accès limité aux dates de la cohorte"))
+        for fonction in (install.after_install, install.after_migrate):
+            frappe.db.delete("Custom Field", {"fieldname": "video_lecon"})
+            fonction(commit=False)
+            self.assertTrue(frappe.db.exists("Custom Field", {"dt": "Course Lesson", "fieldname": "video_lecon"}))

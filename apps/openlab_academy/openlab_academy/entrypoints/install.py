@@ -5,6 +5,7 @@ import frappe
 from openlab_academy.entrypoints import cohorte, seed
 from openlab_academy.infrastructure import reglages_evaluation_frappe, reglages_frappe, reglages_source_frappe
 from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
+from openlab_academy.infrastructure.visibilite_frappe import CHAMP_LIMITE, CHAMP_VIDEO
 
 ROLE_INTENDANT = "Intendant OpenLab"
 PARCOURS = "LMS Course"
@@ -64,11 +65,40 @@ def preparer_parcours_gratuits() -> None:
     frappe.clear_cache(doctype=PARCOURS)
 
 
+def _champ_personnalise(doctype: str, nom: str, proprietes: dict) -> None:
+    """Crée le champ personnalisé, ou remet ses propriétés à jour s'il existe déjà."""
+    from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+
+    existant = frappe.db.get_value("Custom Field", {"dt": doctype, "fieldname": nom})
+    if existant:
+        champ = frappe.get_doc("Custom Field", existant)
+        if any(str(champ.get(k)) != str(v) for k, v in proprietes.items()):
+            champ.update(proprietes)
+            champ.save(ignore_permissions=True)
+    else:
+        create_custom_field(doctype, {"fieldname": nom, **proprietes})
+
+
+def preparer_champs_lancement() -> None:
+    """Case « Accès limité aux dates de la cohorte » des parcours (niveau administrateur, comme la case gratuite)
+    et emplacement vidéo des leçons, hors du contenu republié. Aucune validation du lien ici : le filtrage se fait
+    à l'affichage."""
+    _champ_personnalise(PARCOURS, CHAMP_LIMITE, {
+        "fieldtype": "Check", "label": "Accès limité aux dates de la cohorte", "default": "0",
+        "insert_after": CHAMP_GRATUIT, "permlevel": NIVEAU_GRATUIT})
+    _champ_personnalise("Course Lesson", CHAMP_VIDEO, {
+        "fieldtype": "Attach", "label": "Vidéo de la leçon", "insert_after": "title",
+        "description": "Lien YouTube, Vimeo ou fichier vidéo ; affichée en tête de la leçon."})
+    frappe.clear_cache(doctype=PARCOURS)
+    frappe.clear_cache(doctype="Course Lesson")
+
+
 def after_install(commit: bool = True) -> None:
     reglages_source_frappe.initialiser()
     reglages_evaluation_frappe.preparer()
     preparer_roles()
     preparer_parcours_gratuits()
+    preparer_champs_lancement()
     reglages_frappe.appliquer()
     seed.run(commit=commit)
     cohorte.ouvrir_pilote(commit=commit)
@@ -80,5 +110,6 @@ def after_migrate(commit: bool = True) -> None:
     reglages_evaluation_frappe.preparer()
     preparer_roles()
     preparer_parcours_gratuits()
+    preparer_champs_lancement()
     reglages_frappe.appliquer()
     seed.run(commit=commit)

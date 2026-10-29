@@ -7,8 +7,8 @@ import yaml
 from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy.application.publier_parcours import PublierParcours, Statut
-from openlab_academy.domain.parcours import Bloc, Module
-from openlab_academy.entrypoints import seed
+from openlab_academy.domain.parcours import Annonce, Bloc, Module
+from openlab_academy.entrypoints import install, seed
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
 from openlab_academy.tests.fabriques import parcours, parcours_brut, projet
 
@@ -75,6 +75,46 @@ class TestDepotFrappe(FrappeTestCase):
         self.assertEqual(frappe.db.count("LMS Lesson Assessment", {"parent": ["in", lecons]}), 0)
         if quiz:
             self.assertEqual(frappe.db.count("LMS Quiz Question", {"parent": ["in", quiz]}), 0)
+
+    def test_drapeaux_publies(self):
+        nom = self.depot.creer(parcours(title=TITRE, gratuit=True, acces_limite_a_la_cohorte=True, mise_en_avant=True))
+        self.assertEqual(frappe.db.get_value("LMS Course", nom, ["parcours_gratuit", "acces_limite_cohorte", "featured"]),
+                         (1, 1, 1))
+
+    def test_drapeaux_absents_n_ecrasent_pas_l_administrateur(self):
+        nom = self.depot.creer(self.p)
+        frappe.db.set_value("LMS Course", nom, {"featured": 1, "parcours_gratuit": 1, "acces_limite_cohorte": 1})
+        self.depot.remplacer(nom, self.p)
+        self.assertEqual(frappe.db.get_value("LMS Course", nom, ["parcours_gratuit", "acces_limite_cohorte", "featured"]),
+                         (1, 0, 1))
+
+    def test_annonce_sans_drapeaux(self):
+        nom = self.depot.creer(Annonce(TITRE, "s", "d", ("x",), "Blue"))
+        self.assertEqual(frappe.db.get_value("LMS Course", nom, ["parcours_gratuit", "acces_limite_cohorte", "featured"]),
+                         (0, 0, 0))
+
+    def test_video_preservee_a_la_republication(self):
+        video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        nom = self.depot.creer(self.p)
+        avant = lecon(nom, "01 ·")
+        frappe.db.set_value("Course Lesson", avant.name, "video_lecon", video)
+        self.depot.remplacer(nom, self.p)
+        apres = lecon(nom, "01 ·")
+        self.assertNotEqual(apres.name, avant.name)
+        self.assertEqual(apres.video_lecon, video)
+        enonce = frappe.get_all("Course Lesson", {"course": nom, "title": ["like", "Énoncé%"]}, pluck="video_lecon")
+        self.assertTrue(enonce and not any(enonce))
+
+    def test_completer_applique_les_drapeaux(self):
+        nom = self.depot.creer(self.p)
+        frappe.get_doc({"doctype": "LMS Enrollment", "course": nom, "member": "Administrator",
+                        "member_type": "Student"}).insert(ignore_permissions=True)
+        lecons = sorted(frappe.get_all("Course Lesson", {"course": nom}, pluck="name"))
+        self.depot.completer(nom, parcours(title=TITRE, gratuit=True, acces_limite_a_la_cohorte=True,
+                                           mise_en_avant=True))
+        self.assertEqual(frappe.db.get_value("LMS Course", nom, ["parcours_gratuit", "acces_limite_cohorte", "featured"]),
+                         (1, 1, 1))
+        self.assertEqual(sorted(frappe.get_all("Course Lesson", {"course": nom}, pluck="name")), lecons)
 
     def test_inscrits_detectes(self):
         nom = self.depot.creer(self.p)
