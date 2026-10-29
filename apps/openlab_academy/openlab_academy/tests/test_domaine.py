@@ -9,6 +9,10 @@ class TestInvariantsParcours(unittest.TestCase):
     def test_parcours_valide(self):
         self.assertEqual(parcours().title, "T")
 
+    def test_drapeaux_par_defaut_faux(self):
+        p = parcours()
+        self.assertEqual((p.gratuit, p.acces_limite_a_la_cohorte, p.mise_en_avant), (False, False, False))
+
     def test_portfolio_doit_compter_10_projets(self):
         with self.assertRaisesRegex(ParcoursInvalide, r"portfolio: 10 projets attendus, 9 trouvés"):
             parcours(portfolio=tuple(projet() for _ in range(9)))

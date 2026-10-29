@@ -43,6 +43,12 @@ class _Lecteur:
             valeurs[_PARAMETRES[cle]] = valeur
         return valeurs
 
+    def booleen(self, d: dict, cle: str) -> bool:
+        valeur = d.get(cle, False)
+        if not isinstance(valeur, bool):
+            raise FormatInvalide(f"{self.source}: {cle} doit être un booléen")
+        return valeur
+
     def exiger(self, obj: dict, champ: str, chemin: str):
         valeur = obj.get(champ)
         if valeur in (None, "", []):
@@ -160,8 +166,9 @@ class _Lecteur:
                  tuple(self.module(m, f"blocs[{i}].modules[{j}].")
                        for j, m in enumerate(self.exiger(b, "modules", f"blocs[{i}]."))))
             for i, b in enumerate(self.exiger(d, "blocs", "")))
-        portfolio = tuple(self.projet(p, f"portfolio[{k}].", True)
-                          for k, p in enumerate(self.exiger(d, "portfolio", "")))
+        parametres = self.parametres(d)
+        projets = self.exiger(d, "portfolio", "") if parametres["projets_attendus"] > 0 else d.get("portfolio") or ()
+        portfolio = tuple(self.projet(p, f"portfolio[{k}].", True) for k, p in enumerate(projets))
         return Parcours(
             title=str(self.exiger(d, "title", "")),
             short_introduction=str(self.exiger(d, "short_introduction", "")),
@@ -169,7 +176,10 @@ class _Lecteur:
             tags=self.textes(d.get("tags") or (), "tags"), card_gradient=str(d.get("card_gradient", "Blue")),
             blocs=blocs, portfolio=portfolio,
             capstone=self.projet(self.exiger(d, "capstone", ""), "capstone.", False),
-            **self.parametres(d),
+            gratuit=self.booleen(d, "gratuit"),
+            acces_limite_a_la_cohorte=self.booleen(d, "acces_limite_a_la_cohorte"),
+            mise_en_avant=self.booleen(d, "mise_en_avant"),
+            **parametres,
         )
 
 

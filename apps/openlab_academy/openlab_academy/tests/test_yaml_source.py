@@ -48,6 +48,38 @@ class TestConversion(unittest.TestCase):
         with self.assertRaisesRegex(FormatInvalide, r"parametres doit être un dictionnaire"):
             depuis_dict(brut, "t.yaml")
 
+    def test_cles_de_lancement_lues(self):
+        brut = parcours_brut()
+        brut.update(gratuit=True, acces_limite_a_la_cohorte=True, mise_en_avant=True)
+        p = depuis_dict(brut, "t.yaml")
+        self.assertEqual((p.gratuit, p.acces_limite_a_la_cohorte, p.mise_en_avant), (True, True, True))
+
+    def test_cles_de_lancement_absentes_valent_faux(self):
+        p = depuis_dict(parcours_brut(), "t.yaml")
+        self.assertEqual((p.gratuit, p.acces_limite_a_la_cohorte, p.mise_en_avant), (False, False, False))
+
+    def test_cle_de_lancement_non_booleenne_refusee(self):
+        for valeur in (1, "oui"):
+            brut = parcours_brut()
+            brut["gratuit"] = valeur
+            with self.subTest(valeur), self.assertRaisesRegex(FormatInvalide, "gratuit doit être un booléen"):
+                depuis_dict(brut, "t.yaml")
+
+    def test_sans_portfolio_si_zero_projet(self):
+        brut = parcours_brut()
+        brut["parametres"] = {"projets_par_portfolio": 0, "heures_par_module": 3}
+        del brut["portfolio"]
+        p = depuis_dict(brut, "t.yaml")
+        modules = sum(len(b.modules) for b in p.blocs)
+        self.assertEqual(p.portfolio, ())
+        self.assertEqual(p.charge_horaire(), modules * 3 + p.capstone.duree_h)
+
+    def test_portfolio_vide_refuse_si_projets_attendus(self):
+        brut = parcours_brut()
+        brut["portfolio"] = []
+        with self.assertRaisesRegex(FormatInvalide, "portfolio manquant"):
+            depuis_dict(brut, "t.yaml")
+
     def test_numero_de_module_numerique_normalise(self):
         brut = parcours_brut()
         brut["blocs"][0]["modules"][0]["num"] = 1

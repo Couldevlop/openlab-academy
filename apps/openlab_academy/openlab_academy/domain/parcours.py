@@ -152,6 +152,9 @@ class Parcours:
     projets_attendus: int = 10
     heures_par_module: int = 8
     questions_par_quiz: int = 0  # 0 = exercices de fin de leçon non exigés
+    gratuit: bool = False  # parcours MOOC : aucun tarif ni blocage pour paiement
+    acces_limite_a_la_cohorte: bool = False  # ouvert seulement entre les dates de sa cohorte
+    mise_en_avant: bool = False  # « featured » du LMS
 
     def __post_init__(self):
         if self.heures_par_module <= 0:
