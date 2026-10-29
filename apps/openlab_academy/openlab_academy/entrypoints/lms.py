@@ -14,9 +14,11 @@ from openlab_academy.application.acces_exercices import EnregistrerOuverture, Ve
 from openlab_academy.application.acces_parcours import cours_bloques, parcours_bloque, redirection_paiement
 from openlab_academy.domain.verrou import ExercicesVerrouilles
 from openlab_academy.infrastructure import contenus_parcours_frappe as contenus
+from openlab_academy.infrastructure import editorjs
 from openlab_academy.infrastructure import reglages_source_frappe
 from openlab_academy.infrastructure.depot_dossiers_frappe import DOSSIER, DepotDossiersFrappe
 from openlab_academy.infrastructure.depot_ouvertures_frappe import DepotOuverturesFrappe
+from openlab_academy.infrastructure.visibilite_frappe import CHAMP_VIDEO
 
 ROLES_NON_BLOQUES = {"System Manager", "Moderator", "Course Creator", "Batch Evaluator", "Intendant OpenLab"}
 PREFIXE_CAS = "Mise en situation"
@@ -159,6 +161,10 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
     utilisateur = frappe.session.user
     if utilisateur != "Guest" and isinstance(details, dict) and details.get("name"):
         EnregistrerOuverture(DepotOuverturesFrappe(), now_datetime).executer(utilisateur, details["name"])
+    if isinstance(details, dict) and details.get("name"):
+        bloc = editorjs.bloc_video(frappe.db.get_value("Course Lesson", details["name"], CHAMP_VIDEO))
+        if bloc:  # vidéo en tête du contenu servi, sans écrire en base
+            details["content"] = editorjs.avec_video_en_tete(details.get("content"), bloc)
     return details
 
 

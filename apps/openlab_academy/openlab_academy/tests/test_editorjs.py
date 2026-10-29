@@ -72,3 +72,65 @@ class TestConsignes(unittest.TestCase):
         c = editorjs.consigne_projet(projet(titre="<x>", criteres_acceptation=("a & b", "<c>")))
         self.assertIn("« &lt;x&gt; »", c)
         self.assertIn("<li>a &amp; b</li><li>&lt;c&gt;</li>", c)
+
+
+class TestBlocVideo(unittest.TestCase):
+    ID = "dQw4w9WgXcQ"
+
+    def test_youtube_watch_et_court(self):
+        attendu = {"type": "embed", "data": {
+            "service": "youtube", "source": f"https://www.youtube.com/watch?v={self.ID}", "embed": self.ID,
+            "width": 580, "height": 320, "caption": ""}}
+        for url in (f"https://www.youtube.com/watch?v={self.ID}", f"https://youtube.com/watch?v={self.ID}",
+                    f"https://www.youtube.com/watch?v={self.ID}&t=42", f"https://youtu.be/{self.ID}"):
+            with self.subTest(url=url):
+                self.assertEqual(editorjs.bloc_video(url), attendu)
+
+    def test_vimeo(self):
+        self.assertEqual(editorjs.bloc_video("https://vimeo.com/123456789"), {"type": "embed", "data": {
+            "service": "vimeo", "source": "https://vimeo.com/123456789",
+            "embed": "https://player.vimeo.com/video/123456789", "width": 580, "height": 320, "caption": ""}})
+
+    def test_url_d_integration_reconstruite_pas_recopiee(self):
+        bloc = editorjs.bloc_video(f"https://www.youtube.com/watch?v={self.ID}&autoplay=1&x=<b>")
+        self.assertNotIn("autoplay", json.dumps(bloc))
+        self.assertNotIn("<b>", json.dumps(bloc))
+
+    def test_fichier_local_et_distant(self):
+        for url, ext in (("/files/cours/intro.mp4", "mp4"), ("https://cdn.exemple.ci/v/a-b_c.webm", "webm"),
+                         ("https://cdn.exemple.ci/INTRO.OGG", "ogg")):
+            with self.subTest(url=url):
+                self.assertEqual(editorjs.bloc_video(url), {"type": "upload", "data": {
+                    "file_url": url, "file_type": ext, "quizzes": []}})
+
+    def test_refus(self):
+        for url in ("javascript:alert(1)", "http://exemple.ci/v.mp4", "data:video/mp4;base64,AA",
+                    "https://www.youtube.com/watch?v=<script>", "", None, "   ", "intro.mp4", "files/intro.mp4",
+                    "/files/../etc/passwd.mp4", "/files/a b.mp4", "/files/a.mp4?x=1", "/files/a.exe",
+                    "https://exemple.ci/a.mp4?x=1", "https://exemple.ci/a.mp4#x", "https://u:p@exemple.ci/a.mp4",
+                    "https://exemple.ci/a\"onerror=x.mp4", "https://exemple.ci/a.mp4\n",
+                    "https://evil.com/watch?v=dQw4w9WgXcQ", "https://www.youtube.com.evil.com/watch?v=dQw4w9WgXcQ",
+                    "https://evil.com/youtu.be/dQw4w9WgXcQ", "https://youtu.be/dQw4w9WgXcQ/x",
+                    "https://youtu.be/dQw4w9WgXcQ12", "https://www.youtube.com/watch?v=dQw4w9WgXc",
+                    "https://www.youtube.com/watch?v=dQw4w9WgXcQ&v=aaaaaaaaaaa", "http://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "https://vimeo.com/abc", "https://vimeo.com/123/456", "https://player.vimeo.com/video/123",
+                    "https://www.youtube.com:8080/watch?v=dQw4w9WgXcQ", "https://dailymotion.com/video/x7"):
+            with self.subTest(url=url):
+                self.assertIsNone(editorjs.bloc_video(url))
+
+    def test_insertion_en_tete(self):
+        bloc = editorjs.bloc_video("/files/a.mp4")
+        existant = editorjs.lecon_module(Module("01", "M", "c", "l"), "D", 8)
+        rendu = json.loads(editorjs.avec_video_en_tete(existant, bloc))
+        self.assertEqual(rendu["blocks"][0], bloc)
+        self.assertEqual(rendu["blocks"][1:], json.loads(existant)["blocks"])
+        self.assertEqual(rendu["version"], "2.29.0")
+
+    def test_insertion_contenu_vide_ou_illisible(self):
+        bloc = editorjs.bloc_video("/files/a.mp4")
+        self.assertEqual([b for b in json.loads(editorjs.avec_video_en_tete(None, bloc))["blocks"]], [bloc])
+        self.assertEqual(json.loads(editorjs.avec_video_en_tete("", bloc))["blocks"], [bloc])
+        for brut in ("pas du json", "[1]", '{"blocks": "x"}', '{"time": 0}'):
+            with self.subTest(brut=brut):
+                self.assertEqual(editorjs.avec_video_en_tete(brut, bloc), brut)
+        self.assertEqual(editorjs.avec_video_en_tete("{}", None), "{}")
