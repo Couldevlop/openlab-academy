@@ -2,9 +2,10 @@
 import unittest
 
 from openlab_academy.domain.parcours import Parcours
+from openlab_academy.domain.reglages import TITRE_LANCEMENT
 from openlab_academy.infrastructure.yaml_source import PARCOURS_DIR, charger_dossier
 
-TITRE = "IA agentique : comprendre, concevoir et maîtriser les agents IA"
+TITRE = TITRE_LANCEMENT
 MODULES = [
     ("01", "Anatomie d'un agent IA"),
     ("02", "Tool calling et boucle d'agent"),

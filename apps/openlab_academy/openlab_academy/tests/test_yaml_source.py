@@ -5,7 +5,7 @@ import unittest
 import yaml
 
 from openlab_academy.domain.parcours import Annonce, Niveau, Parcours
-from openlab_academy.domain.reglages import Reglages
+from openlab_academy.domain.reglages import TITRE_LANCEMENT, Reglages
 from openlab_academy.infrastructure.yaml_source import PARCOURS_DIR, FormatInvalide, charger_dossier, depuis_dict
 from openlab_academy.tests.fabriques import parcours_brut
 
@@ -176,7 +176,7 @@ class TestChargementDossier(unittest.TestCase):
         complets = [p for p in lot if isinstance(p, Parcours)]
         self.assertEqual(len(complets), 5)
         for p in complets:
-            attendus = 0 if p.title == "IA agentique : comprendre, concevoir et maîtriser les agents IA" else 10
+            attendus = 0 if p.title == TITRE_LANCEMENT else 10
             self.assertEqual(len(p.portfolio), attendus, p.title)
         self.assertEqual(sorted(p.title for p in lot if isinstance(p, Annonce)),
                          ["Ingénieur Cybersécurité I", "Ingénieur Cybersécurité II"])

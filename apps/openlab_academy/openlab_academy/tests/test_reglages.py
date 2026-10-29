@@ -1,7 +1,7 @@
 import dataclasses
 import unittest
 
-from openlab_academy.domain.reglages import CritereBareme, Reglages, ReglagesInvalides, Rythme
+from openlab_academy.domain.reglages import TITRE_LANCEMENT, CritereBareme, Reglages, ReglagesInvalides, Rythme
 
 JOURS_SEMAINE = ("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche")
 
@@ -42,7 +42,8 @@ class TestReglagesParDefaut(unittest.TestCase):
         self.assertEqual((r.projets_par_portfolio, r.heures_par_module, r.delai_ouverture_semaines, r.jour_ouverture),
                          (10, 8, 2, 0))
         self.assertEqual((r.heure_debut, r.heure_fin, r.fuseau), ("18:30", "20:30", "Africa/Abidjan"))
-        self.assertEqual((r.parcours_pilote, r.formateur), ("Fondamentaux de la Data Science", "Administrator"))
+        self.assertEqual((r.parcours_pilote, r.formateur), (TITRE_LANCEMENT, "Administrator"))
+        self.assertIsNone(r.ouverture_lancement)
         self.assertEqual([(c.nom, c.poids) for c in r.bareme],
                          [("Fonctionnel", 40), ("Qualité & tests", 25), ("Architecture", 15), ("Sécurité", 10),
                           ("Documentation", 10)])

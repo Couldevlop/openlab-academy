@@ -3,10 +3,12 @@
 Les valeurs par défaut sont celles du lancement ; les invariants garantissent qu'aucun réglage incohérent
 ne peut être enregistré.
 """
+import datetime
 import re
 from dataclasses import dataclass, field
 
 JOURS = ("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche")
+TITRE_LANCEMENT = "IA agentique : comprendre, concevoir et maîtriser les agents IA"
 _HEURE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
@@ -96,9 +98,10 @@ class Reglages:
     heure_debut: str = "18:30"
     heure_fin: str = "20:30"
     fuseau: str = "Africa/Abidjan"
-    parcours_pilote: str = "Fondamentaux de la Data Science"
+    parcours_pilote: str = TITRE_LANCEMENT
     formateur: str = "Administrator"
     places_par_cohorte: int = 30  # sans places, le LMS n'offre pas l'inscription autonome
+    ouverture_lancement: datetime.date | None = None  # ouverture du parcours de lancement (vide = date du jour)
 
     def __post_init__(self):
         for champ in ("projets_par_portfolio", "heures_par_module", "questions_par_quiz", "tentatives_max",

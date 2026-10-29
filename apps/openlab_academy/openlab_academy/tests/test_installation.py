@@ -2,6 +2,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy.entrypoints import install
+from openlab_academy.domain.reglages import TITRE_LANCEMENT
 from openlab_academy.infrastructure import reglages_frappe
 
 
@@ -37,8 +38,8 @@ class TestInstallation(FrappeTestCase):
     def test_after_install_configure_et_publie(self):
         install.after_install(commit=False)
         self.assertEqual(frappe.db.get_single_value("System Settings", "language"), "fr")
-        self.assertTrue(frappe.db.exists("LMS Course", {"title": "Fondamentaux de la Data Science"}))
-        self.assertTrue(frappe.db.exists("LMS Batch", {"title": "Promo 1 — Fondamentaux de la Data Science · Standard 12 h"}))
+        self.assertTrue(frappe.db.exists("LMS Course", {"title": TITRE_LANCEMENT}))
+        self.assertTrue(frappe.db.exists("LMS Batch", {"title": f"Promo 1 — {TITRE_LANCEMENT} · Standard 12 h"}))
 
     def test_after_migrate_republie_les_parcours(self):
         self.assertIn("openlab_academy.entrypoints.install.after_migrate", frappe.get_hooks("after_migrate"))

@@ -4,7 +4,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy.domain.cohorte import Cohorte
-from openlab_academy.domain.reglages import Reglages
+from openlab_academy.domain.reglages import TITRE_LANCEMENT, Reglages
 from openlab_academy.entrypoints import cohorte as commande
 from openlab_academy.entrypoints import seed
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
@@ -13,7 +13,7 @@ from openlab_academy.tests.fabriques import parcours
 
 LUNDI = datetime.date(2026, 11, 2)
 STANDARD = Reglages().rythme("standard")
-TITRE_PILOTE = "Promo 1 — Fondamentaux de la Data Science · Standard 12 h"
+TITRE_PILOTE = f"Promo 1 — {TITRE_LANCEMENT} · Standard 12 h"
 
 
 def supprimer_cohortes(filtre: dict) -> None:
