@@ -124,10 +124,26 @@ class TestRequete(Base):
 
     def test_traductions_lms_suivent_le_visiteur(self):
         from frappe.translate import get_all_translations
+        import csv
+        from pathlib import Path
+        dossier = Path(__file__).resolve().parent.parent / "translations"
+        with open(dossier / "en.csv", encoding="utf-8", newline="") as f:
+            anglais = {l[0]: l[1] for l in csv.reader(f) if len(l) >= 2}
+        with open(dossier / "fr.csv", encoding="utf-8", newline="") as f:
+            francais = {l[0]: l[1] for l in csv.reader(f) if len(l) >= 2}
+        frappe.translate.clear_cache()
         self.arriver(cookie="en")
-        self.assertEqual(langue.get_translations(), get_all_translations("en"))
+        en = langue.get_translations()
+        self.assertEqual(en, get_all_translations("en"))
+        self.assertTrue(en)
+        for cle, valeur in anglais.items():
+            self.assertEqual(en.get(cle), valeur)
         self.arriver(cookie=None)
-        self.assertEqual(langue.get_translations(), get_all_translations("fr"))
+        fr = langue.get_translations()
+        self.assertEqual(fr, get_all_translations("fr"))
+        self.assertNotEqual(fr, en)
+        for cle, valeur in francais.items():
+            self.assertEqual(fr.get(cle), valeur)
 
 
 class TestNouveauCompte(Base):
