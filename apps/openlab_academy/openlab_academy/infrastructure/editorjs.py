@@ -92,8 +92,8 @@ _ID_YOUTUBE = re.compile(r"[A-Za-z0-9_-]{11}")
 _SEGMENT_VIDEO = re.compile(r"/([A-Za-z0-9_-]{11})")
 _SEGMENT_VIMEO = re.compile(r"/([0-9]{1,12})")
 _REQUETE_SURE = re.compile(r"[A-Za-z0-9_=&%.-]*")
-_FICHIER_LOCAL = re.compile(r"/files/[A-Za-z0-9._~%+@/-]+\.(mp4|webm|ogg)", re.IGNORECASE)
-_FICHIER_DISTANT = re.compile(r"https://[A-Za-z0-9.-]+(?::[0-9]{1,5})?/[A-Za-z0-9._~%+@/-]+\.(mp4|webm|ogg)", re.IGNORECASE)
+_FICHIER_LOCAL = re.compile(r"/files/[A-Za-z0-9._~+@/-]+\.((?i:mp4|webm))")
+_FICHIER_DISTANT = re.compile(r"https://[A-Za-z0-9.-]+(?::[0-9]{1,5})?/[A-Za-z0-9._~+@/-]+\.((?i:mp4|webm))")
 _HOTES_YOUTUBE = {"youtube.com", "www.youtube.com"}
 _HOTES_VIMEO = {"vimeo.com", "www.vimeo.com"}
 
@@ -110,7 +110,7 @@ def _bloc_integration(url: str) -> dict | None:
         port = morceaux.port
     except ValueError:
         return None
-    if morceaux.scheme != "https" or morceaux.fragment or port is not None or morceaux.username is not None \
+    if not url.startswith("https://") or morceaux.fragment or port is not None or morceaux.username is not None \
             or morceaux.netloc != morceaux.hostname or not _REQUETE_SURE.fullmatch(morceaux.query):
         return None
     hote = morceaux.hostname

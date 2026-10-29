@@ -98,7 +98,7 @@ class TestBlocVideo(unittest.TestCase):
 
     def test_fichier_local_et_distant(self):
         for url, ext in (("/files/cours/intro.mp4", "mp4"), ("https://cdn.exemple.ci/v/a-b_c.webm", "webm"),
-                         ("https://cdn.exemple.ci/INTRO.OGG", "ogg")):
+                         ("/files/Cours.MP4", "mp4")):
             with self.subTest(url=url):
                 self.assertEqual(editorjs.bloc_video(url), {"type": "upload", "data": {
                     "file_url": url, "file_type": ext, "quizzes": []}})
@@ -114,7 +114,9 @@ class TestBlocVideo(unittest.TestCase):
                     "https://youtu.be/dQw4w9WgXcQ12", "https://www.youtube.com/watch?v=dQw4w9WgXc",
                     "https://www.youtube.com/watch?v=dQw4w9WgXcQ&v=aaaaaaaaaaa", "http://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "https://vimeo.com/abc", "https://vimeo.com/123/456", "https://player.vimeo.com/video/123",
-                    "https://www.youtube.com:8080/watch?v=dQw4w9WgXcQ", "https://dailymotion.com/video/x7"):
+                    "https://www.youtube.com:8080/watch?v=dQw4w9WgXcQ", "https://dailymotion.com/video/x7", "/files/%2e%2e/x.mp4", "/files/%2E%2E/x.mp4", "/FILES/x.mp4",
+                    "/files/x.ogg", "https://cdn.exemple.ci/x.ogg", "https://youtube.com@evil.example/watch?v=dQw4w9WgXcQ",
+                    "HTTPS://WWW.YOUTUBE.COM/watch?v=dQw4w9WgXcQ", "HTTPS://cdn.exemple.ci/x.mp4"):
             with self.subTest(url=url):
                 self.assertIsNone(editorjs.bloc_video(url))
 
