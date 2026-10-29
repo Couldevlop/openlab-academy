@@ -174,9 +174,10 @@ class TestChargementDossier(unittest.TestCase):
         lot = charger_dossier(PARCOURS_DIR)
         self.assertTrue(lot)
         complets = [p for p in lot if isinstance(p, Parcours)]
-        self.assertEqual(len(complets), 4)
+        self.assertEqual(len(complets), 5)
         for p in complets:
-            self.assertEqual(len(p.portfolio), 10)
+            attendus = 0 if p.title == "IA agentique : comprendre, concevoir et maîtriser les agents IA" else 10
+            self.assertEqual(len(p.portfolio), attendus, p.title)
         self.assertEqual(sorted(p.title for p in lot if isinstance(p, Annonce)),
                          ["Ingénieur Cybersécurité I", "Ingénieur Cybersécurité II"])
 
