@@ -22,6 +22,7 @@ website_route_rules = [{"from_route": "/espace/<path:app_path>", "to_route": "es
 # et listes retirés par les permissions, progression et certificat refusés. Nos hooks has_permission ne font que
 # refuser (None sinon) : Frappe retient le premier avis non nul, un True court-circuiterait les refus du LMS.
 override_whitelisted_methods = {
+    "lms.lms.api.get_translations": "openlab_academy.entrypoints.langue.get_translations",
     "lms.lms.utils.get_lesson": "openlab_academy.entrypoints.lms.get_lesson",
     "lms.lms.utils.get_course_details": "openlab_academy.entrypoints.lms.get_course_details",
     "lms.lms.utils.get_quiz_with_questions": "openlab_academy.entrypoints.lms.get_quiz_with_questions",
@@ -40,6 +41,7 @@ permission_query_conditions = {
     "LMS Programming Exercise": "openlab_academy.entrypoints.lms.conditions_exercices",
 }
 doc_events = {
+    "User": {"after_insert": "openlab_academy.entrypoints.langue.initialiser_langue"},
     "LMS Course": {"on_update": "openlab_academy.entrypoints.paiement.parcours_enregistre"},
     # inscription directe à un parcours payant refusée hors cohorte (le dossier naît de l'inscription à la cohorte)
     "LMS Enrollment": {"before_insert": "openlab_academy.entrypoints.paiement.avant_inscription_parcours"},

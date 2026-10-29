@@ -1,6 +1,6 @@
 """Hooks HTTP Frappe : habillage des pages HTML de l'interface /lms et stockage du navigateur vidé à la connexion et
 à la déconnexion (after_request) ; redirection d'un parcours en retard de paiement vers sa page de paiement
-(before_request, chargement complet d'une page)."""
+(before_request, chargement complet d'une page) ; langue de la requête restreinte à fr/en (before_request)."""
 import re
 
 import frappe
@@ -8,6 +8,7 @@ from werkzeug.exceptions import abort
 from werkzeug.utils import redirect
 
 from openlab_academy.application.acces_parcours import redirection_paiement
+from openlab_academy.domain.langues import resoudre
 from openlab_academy.entrypoints import lms
 from openlab_academy.infrastructure.habillage import injecter
 
@@ -43,9 +44,20 @@ def _parcours_demande(request) -> str | None:
     return trouve.group(1)
 
 
+def _fixer_langue(request) -> None:
+    """Frappe a déjà résolu frappe.local.lang (HTTPRequest.set_lang, avant les hooks before_request) en suivant _lang,
+    le compte, le cookie puis Accept-Language : on ramène le résultat à fr/en, sans jamais suivre Accept-Language."""
+    connecte = frappe.session.user != "Guest"
+    frappe.local.lang = resoudre(
+        frappe.form_dict.get("_lang"), request.cookies.get("preferred_language"),
+        frappe.get_cached_value("User", frappe.session.user, "language") if connecte else None,
+        connecte, frappe.local.lang)
+
+
 def before_request() -> None:
-    """Page d'un parcours bloqué → 302 vers /espace/paiement/<cours>. Aucune lecture en base hors de ces pages.
+    """Langue ramenée à fr/en ; page d'un parcours bloqué → 302 vers /espace/paiement/<cours>. Aucune lecture en base hors de ces pages.
     Frappe renvoie telle quelle une HTTPException levée ici (frappe.Redirect n'y est pas géré)."""
+    _fixer_langue(frappe.local.request)
     cours = _parcours_demande(frappe.local.request)
     if cours and lms.bloque_pour(frappe.session.user, cours):
         abort(redirect(redirection_paiement(cours), 302))

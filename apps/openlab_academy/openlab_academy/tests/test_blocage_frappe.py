@@ -461,6 +461,7 @@ class TestHooks(FrappeTestCase):
     def test_declares(self):
         self.assertEqual(hooks.before_request, ["openlab_academy.entrypoints.http.before_request"])
         self.assertEqual(hooks.override_whitelisted_methods, {
+            "lms.lms.api.get_translations": "openlab_academy.entrypoints.langue.get_translations",
             "lms.lms.utils.get_lesson": "openlab_academy.entrypoints.lms.get_lesson",
             "lms.lms.utils.get_course_details": "openlab_academy.entrypoints.lms.get_course_details",
             "lms.lms.utils.get_quiz_with_questions": "openlab_academy.entrypoints.lms.get_quiz_with_questions",
