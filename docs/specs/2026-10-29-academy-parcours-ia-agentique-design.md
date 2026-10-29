@@ -21,7 +21,7 @@ montrer la qualité de la plateforme (cohorte, exercices, correction) et créer 
   3. Orchestrer plusieurs étapes avec un framework adapté.
   4. Connecter un agent à des outils via MCP et comprendre les usages d'A2A.
   5. Tester, observer, sécuriser et maîtriser le coût d'exécution d'un agent.
-- **Méthode** : démonstration en direct, exercices guidés, analyse des traces d'exécution, développement progressif et
+- **Méthode** : démonstration, exercices guidés, analyse des traces d'exécution, développement progressif et
   projet final.
 - **Fil rouge** : un agent d'analyse documentaire et de recherche métier qui utilise des outils, vérifie ses résultats
   et produit une synthèse argumentée.
