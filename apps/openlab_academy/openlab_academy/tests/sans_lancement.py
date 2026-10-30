@@ -17,7 +17,7 @@ def sans_phase_de_lancement(test):
 
 @contextmanager
 def inscription_libre():
-    """Inscription de préparation d'un test : ni refus (parcours fermé ou caché), ni rattachement à la cohorte-fenêtre ;
-    ces deux comportements ont leur propre suite."""
+    """Préparation de données seulement (jamais autour d'une assertion de refus) : l'inscription d'un test se fait
+    sans refus (parcours fermé ou caché) ni rattachement à la cohorte-fenêtre ; ces comportements ont leur suite."""
     with mock.patch.object(lms, "refuser_inscription"), mock.patch.object(lancement, "rejoindre_cohorte"):
         yield

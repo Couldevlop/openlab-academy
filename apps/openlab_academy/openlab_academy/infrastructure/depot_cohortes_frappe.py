@@ -1,7 +1,7 @@
 """Adaptateur de sortie : cohortes du domaine -> doctype LMS Batch."""
 import frappe
 
-from openlab_academy.domain.cohorte import Cohorte
+from openlab_academy.domain.cohorte import PLACES_FENETRE, Cohorte
 
 class DepotCohortesFrappe:
     def __init__(self, formateur: str = "Administrator"):
@@ -11,9 +11,11 @@ class DepotCohortesFrappe:
         return frappe.db.get_value("LMS Batch", {"title": titre})
 
     def fenetre_de(self, cours: str) -> str | None:
-        """Cohorte publiée la plus récente (début maximal) qui porte le parcours : sa cohorte-fenêtre."""
+        """Cohorte-fenêtre du parcours : la cohorte publiée à accès libre (places de la fenêtre, jamais celles d'une
+        cohorte pilote) qui le porte, la plus récente si plusieurs."""
         lots = frappe.get_all("Batch Course", {"course": cours, "parenttype": "LMS Batch"}, pluck="parent")
-        trouvees = frappe.get_all("LMS Batch", {"name": ["in", lots], "published": 1}, pluck="name",
+        trouvees = frappe.get_all("LMS Batch", {"name": ["in", lots], "published": 1, "seat_count": PLACES_FENETRE},
+                                  pluck="name",
                                   order_by="start_date desc", limit=1) if lots else []
         return trouvees[0] if trouvees else None
 

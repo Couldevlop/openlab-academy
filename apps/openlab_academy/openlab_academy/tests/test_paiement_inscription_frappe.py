@@ -14,7 +14,7 @@ from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFr
 from openlab_academy.infrastructure.depot_dossiers_frappe import DepotDossiersFrappe, ReglagesPaiementFrappe, TarifsFrappe
 from openlab_academy.infrastructure.journal_paiement_frappe import journaliser
 from openlab_academy.tests.fabriques import parcours
-from openlab_academy.tests.sans_lancement import inscription_libre, sans_phase_de_lancement
+from openlab_academy.tests.sans_lancement import sans_phase_de_lancement
 from openlab_academy.tests.test_paiement_donnees_frappe import ELEVE, cours, tarif, utilisateur
 
 DOSSIER = "Dossier Paiement OpenLab"
@@ -28,9 +28,8 @@ def cohorte(c, debut=None, rythme="standard"):
 
 
 def inscrire(lot, membre=ELEVE):
-    with inscription_libre():
-        return frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": lot, "member": membre}).insert(
-            ignore_permissions=True)
+    return frappe.get_doc({"doctype": "LMS Batch Enrollment", "batch": lot, "member": membre}).insert(
+        ignore_permissions=True)
 
 
 def dossier_de(c, membre=ELEVE):

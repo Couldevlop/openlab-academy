@@ -146,12 +146,53 @@ class TestRefus(Base):
         lot.append("courses", {"course": self.o})
         lot.save(ignore_permissions=True)
         self.lancement(self.f)
-        self.s_inscrire_cohorte()  # F reste visible : acceptée
+        frappe.clear_messages()
+        self.s_inscrire_cohorte()  # F reste visible : acceptée, sans message de refus laissé
+        self.assertEqual(frappe.local.message_log, [])
         self.oublier()
         self.jour(APRES)
         self.lancement(self.f)
-        with self.assertRaises(frappe.ValidationError):  # F fermé, O caché : tous refusés
+        frappe.clear_messages()
+        with self.assertRaises(frappe.ValidationError):  # F fermé, O caché : tous refusés, un seul message
             self.s_inscrire_cohorte()
+        self.assertEqual(len(frappe.local.message_log), 1)
+
+    def test_drapeau_de_cohorte_pose_par_le_client_ne_contourne_pas_le_refus(self):
+        self.jour(APRES)
+        for flags in ({"via_batch_enrollment": True}, {"via_batch_enrollment": True, "ignore_permissions": True}):
+            frappe.set_user(ELEVE)
+            try:
+                with self.assertRaises((frappe.ValidationError, frappe.PermissionError)):
+                    frappe.client.insert({"doctype": INSCRIPTION, "course": self.f, "member": ELEVE,
+                                          "enrollment_from_batch": self.lot, "flags": flags})
+            finally:
+                frappe.set_user("Administrator")
+        self.assertEqual(self.inscriptions(self.f), 0)
+
+    def test_drapeau_pose_cote_serveur_sans_inscription_de_cohorte_ne_contourne_pas_le_refus(self):
+        self.jour(APRES)
+        doc = frappe.get_doc({"doctype": INSCRIPTION, "course": self.f, "member": ELEVE,
+                              "enrollment_from_batch": self.lot})
+        doc.flags.via_batch_enrollment = True
+        frappe.set_user(ELEVE)
+        try:
+            with self.assertRaisesRegex(frappe.ValidationError, FERMEES):
+                doc.insert()
+        finally:
+            frappe.set_user("Administrator")
+        self.assertEqual(self.inscriptions(self.f), 0)
+
+    def test_visiteur_refuse(self):
+        self.jour(APRES)
+        frappe.set_user("Guest")
+        try:
+            with self.assertRaises((frappe.ValidationError, frappe.PermissionError)):
+                frappe.client.insert({"doctype": INSCRIPTION, "course": self.f, "member": "Guest"})
+            with self.assertRaises((frappe.ValidationError, frappe.PermissionError)):
+                frappe.client.insert({"doctype": LOT_INSCRIPTION, "batch": self.lot, "member": "Guest"})
+        finally:
+            frappe.set_user("Administrator")
+        self.assertEqual(frappe.db.count(INSCRIPTION, {"member": "Guest"}), 0)
 
     def test_agent_inscrit_hors_fenetre(self):
         for i, role in enumerate(AGENTS):
@@ -207,6 +248,16 @@ class TestRattachement(Base):
         self.s_inscrire_cohorte()
         self.assertEqual(self.rattachements(), 1)
         self.assertEqual(self.inscriptions(self.f), 1)
+
+    def test_rattache_a_la_cohorte_fenetre_et_non_a_une_cohorte_plus_tardive(self):
+        debut = DEBUT + datetime.timedelta(days=60)
+        pilote = DepotCohortesFrappe().creer(
+            Cohorte.pilote(parcours(title=TITRE), debut, Reglages().rythme("standard"), Reglages()))
+        self.assertEqual(DepotCohortesFrappe().fenetre_de(self.f), self.lot)
+        self.jour(debut)  # la visibilité suit la cohorte la plus récente : le parcours est ouvert ce jour-là
+        lancement.rejoindre_cohorte(frappe.get_doc({"doctype": INSCRIPTION, "course": self.f, "member": ELEVE}))
+        self.assertEqual(self.rattachements(), 1)
+        self.assertFalse(frappe.db.exists(LOT_INSCRIPTION, {"batch": pilote, "member": ELEVE}))
 
     def test_parcours_ordinaire_non_rattache(self):
         self.s_inscrire(self.o)

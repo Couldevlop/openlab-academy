@@ -2,7 +2,7 @@
 comme les autres."""
 import frappe
 
-from openlab_academy.entrypoints.lms import _exempte
+from openlab_academy.entrypoints.lms import _exempte, issue_de_cohorte
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
 from openlab_academy.infrastructure.visibilite_frappe import SourceVisibiliteFrappe
 
@@ -13,7 +13,7 @@ def rejoindre_cohorte(doc, method=None) -> None:
     """`after_insert` de LMS Enrollment : parcours limité, membre non agent, inscription qui ne vient pas déjà d'une
     cohorte -> inscription à la cohorte-fenêtre, si elle n'existe pas. Sans effet sinon (rejouable, sans boucle :
     l'inscription que la cohorte crée porte `enrollment_from_batch` ou le drapeau du LMS)."""
-    if doc.enrollment_from_batch or doc.flags.via_batch_enrollment or _exempte(doc.member):
+    if doc.enrollment_from_batch or issue_de_cohorte(doc) or _exempte(doc.member):
         return
     if not SourceVisibiliteFrappe().limite(doc.course):
         return

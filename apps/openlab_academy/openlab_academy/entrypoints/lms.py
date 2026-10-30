@@ -192,6 +192,23 @@ def refuser_inscription(membre: str, cours: str) -> None:
         frappe.throw(_("Ce parcours n'est pas disponible pour le moment."), frappe.ValidationError)
 
 
+def annoncer_cohorte(membre: str, lot: str) -> None:
+    """Retient, pour la requête, que l'inscription de ce membre à cette cohorte est en cours d'enregistrement ; posé par
+    le crochet de l'inscription à la cohorte, jamais par le client."""
+    _cache()[("cohorte_en_cours", membre, lot)] = True
+
+
+def issue_de_cohorte(doc) -> bool:
+    """Inscription au parcours créée par le LMS pendant l'enregistrement d'une inscription à une cohorte qui porte ce
+    parcours. Le drapeau `via_batch_enrollment` ne suffit pas (un code ou une entrée mal formée peut le poser) : la
+    cohorte doit porter le parcours et son inscription être en cours côté serveur."""
+    lot = doc.enrollment_from_batch
+    if not (lot and doc.flags.get("via_batch_enrollment")):
+        return False
+    return bool(_cache().get(("cohorte_en_cours", doc.member, lot))
+                and frappe.db.exists("Batch Course", {"parent": lot, "parenttype": "LMS Batch", "course": doc.course}))
+
+
 def _cours_bloquants(utilisateur: str, doctype: str, nom: str) -> list[str]:
     """Parcours bloqués qui portent l'évaluation, si TOUS ses parcours le sont (sinon aucun) : une évaluation
     partagée reste ouverte tant qu'un de ses parcours l'est."""

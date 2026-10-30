@@ -20,6 +20,7 @@ from openlab_academy.application.parcours_gratuits import (
 from openlab_academy.application.ports_paiement import FiltresTableau
 from openlab_academy.application.rappels import EnvoyerRappels
 from openlab_academy.application.tableaux_paiement import Fiche, Intendance, Resume, vue_apprenant
+from openlab_academy.application.visibilite import Refus
 from openlab_academy.domain.dossier_paiement import Statut
 from openlab_academy.entrypoints import lms
 from openlab_academy.entrypoints.lms import ROLES_NON_BLOQUES
@@ -65,20 +66,14 @@ def _refuser_cohorte(doc) -> None:
     """Cohorte refusée si tous ses parcours le sont (fermés ou cachés) ; un seul parcours ouvert suffit."""
     cours = frappe.get_all("Batch Course", {"parent": doc.batch, "parenttype": "LMS Batch"}, pluck="course",
                            order_by="idx")
-    refus = []
-    for c in cours:
-        try:
-            lms.refuser_inscription(doc.member, c)
-        except frappe.ValidationError as e:
-            refus.append(e)
-        else:
-            return
-    if refus:
-        raise refus[0]
+    refus = [lms.refus_pour(doc.member, c) for c in cours]
+    if refus and all(r is not None for r in refus):
+        lms.refuser_inscription(doc.member, cours[refus.index(Refus.FERME)] if Refus.FERME in refus else cours[0])
 
 
 def avant_inscription(doc, method=None) -> None:
     _refuser_cohorte(doc)
+    lms.annoncer_cohorte(doc.member, doc.batch)
     try:
         lot = _cohorte(doc)
         if lot is not None:
@@ -102,12 +97,13 @@ def avant_inscription_parcours(doc, method=None) -> None:
     crée. Sans ce refus, l'apprenant suivrait le parcours sans dossier, donc sans jamais être bloqué. Un parcours
     fermé ou caché (lancement) refuse d'abord l'inscription, sauf celle que crée une cohorte, déjà jugée dans son
     ensemble (drapeau posé par le LMS côté serveur)."""
-    if not doc.flags.via_batch_enrollment:
+    par_cohorte = lms.issue_de_cohorte(doc)
+    if not par_cohorte:
         lms.refuser_inscription(doc.member, doc.course)
     demande = InscriptionDirecte(
         doc.course, _exempte(doc.member), ADMINISTRATEUR in frappe.get_roles(frappe.session.user),
         InscriptionsFrappe().via_cohorte(doc.member, doc.course, doc.enrollment_from_batch,
-                                         bool(doc.flags.via_batch_enrollment)))
+                                         par_cohorte))
     try:
         verifier_inscription_directe(ParcoursGratuitsFrappe(), demande)
     except InscriptionRefusee as e:
