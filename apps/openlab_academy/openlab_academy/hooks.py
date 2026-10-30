@@ -16,7 +16,9 @@ app_include_js = ["/assets/openlab_academy/js/simulateur_impact.js"]
 web_include_css = ["/assets/openlab_academy/css/openlab.css"]
 
 # écrans d'évaluation (relecture, correcteur, retour) : une page, routée côté navigateur
-website_route_rules = [{"from_route": "/espace/<path:app_path>", "to_route": "espace"}]
+website_route_rules = [{"from_route": "/espace/<path:app_path>", "to_route": "espace"},
+                       # parcours fermé : destination d'un refus de la fenêtre d'accès (page publique)
+                       {"from_route": "/parcours-ferme/<cours>", "to_route": "parcours-ferme"}]
 
 # parcours en retard de paiement : présentation, leçons, quiz et réponses refusés par l'API (ParcoursBloque), documents
 # et listes retirés par les permissions, progression et certificat refusés. Nos hooks has_permission ne font que
