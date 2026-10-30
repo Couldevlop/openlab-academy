@@ -157,14 +157,21 @@ def _cours_refuses(utilisateur: str | None) -> tuple[str, ...]:
             return ()
 
 
+def cours_refuses_courants() -> frozenset[str]:
+    """Parcours refusés à l'utilisateur de la session (fermés ou cachés) ; vide pour les agents."""
+    utilisateur = frappe.session.user
+    return frozenset() if _exempte(utilisateur) else frozenset(_cours_refuses(utilisateur))
+
+
 def lot_cache_pour(utilisateur: str, lot: str) -> bool:
-    """Cohorte dont tous les parcours sont cachés à cet utilisateur (sa page n'a plus rien à montrer)."""
+    """Cohorte dont tous les parcours sont refusés à cet utilisateur, fermés ou cachés (sa page n'a plus rien à montrer,
+    et les listes l'ont déjà retirée)."""
     try:
         cours = frappe.get_all("Batch Course", {"parent": lot, "parenttype": "LMS Batch"}, pluck="course")
     except Exception:
         frappe.log_error(title=TITRE_ERREUR_VISIBILITE, message=f"cohorte {lot}")
         return False
-    return bool(cours) and all(refus_pour(utilisateur, c) is Refus.CACHE for c in cours)
+    return bool(cours) and all(refus_pour(utilisateur, c) is not None for c in cours)
 
 
 def _lever(refus: Refus, cours: str) -> None:
@@ -182,6 +189,12 @@ def _refuser(cours: str | None, utilisateur: str | None = None) -> None:
         e = ParcoursBloque(cours)
         frappe.local.response["redirection"] = e.redirection
         raise e
+
+
+def refuser_visibilite(cours: str | None) -> None:
+    """Refuse (visiteur compris) l'accès aux données d'un parcours fermé ou caché ; les agents ne le sont jamais."""
+    if isinstance(cours, str) and (refus := refus_pour(frappe.session.user, cours)):
+        _lever(refus, cours)
 
 
 def refuser_inscription(membre: str, cours: str) -> None:
@@ -326,8 +339,7 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
 def get_course_outline(course: str, progress: bool = False) -> list:
     """Surcharge : le plan d'un parcours fermé ou caché (titres de chapitres et de leçons) n'est pas servi, visiteur
     compris ; les agents ne sont jamais refusés."""
-    if isinstance(course, str) and (refus := refus_pour(frappe.session.user, course)):
-        _lever(refus, course)
+    refuser_visibilite(course)
     return lms_utils.get_course_outline(course, progress)
 
 

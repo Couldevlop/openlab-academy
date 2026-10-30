@@ -223,11 +223,9 @@ class TestRefus(Base):
         frappe.set_user("Guest")
         try:
             # le visiteur n'a aucun droit de création : refusé par les permissions du LMS avant notre crochet
-            frappe.clear_messages()
+            # (exception typée : le libellé du message dépend de la langue)
             with self.assertRaises(frappe.PermissionError):
                 frappe.client.insert({"doctype": INSCRIPTION, "course": self.f, "member": "Guest"})
-            self.assertRegex(" ".join(m["message"] for m in frappe.local.message_log),
-                             r"Guest</strong>.*pas d.{1,6}accès.*LMS Enrollment</strong>")
             # droits contournés : c'est notre refus (parcours fermé) qui retient le visiteur
             with self.assertRaisesRegex(frappe.ValidationError, FERMEES):
                 frappe.get_doc({"doctype": INSCRIPTION, "course": self.f, "member": "Guest"}).insert(

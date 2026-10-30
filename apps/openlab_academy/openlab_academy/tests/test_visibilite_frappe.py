@@ -209,6 +209,17 @@ class TestPages(Base):
         self.cacher()
         self.assertIsNone(self.entrer("/lms/batches/new"))
 
+    def test_cohorte_dont_tous_les_parcours_sont_fermes_redirigee(self):
+        """Comme les listes, qui la retirent : la page d'une cohorte entièrement fermée n'est plus servie."""
+        self.jour(DEDANS)
+        self.assertIsNone(self.entrer(f"/lms/batches/{self.lot}"))
+        self.jour(LENDEMAIN)
+        for u in (ELEVE, "Guest"):
+            with self.subTest(u=u):
+                r = self.entrer(f"/lms/batches/{self.lot}", u)
+                self.assertEqual((r.status_code, r.headers["Location"]), (302, "/lms/courses"))
+        self.assertIsNone(self.entrer(f"/lms/batches/{self.lot}", "Administrator"))
+
     def test_destinations_jamais_redirigees_en_boucle(self):
         self.cacher()
         for chemin in (f"/parcours-ferme/{self.l}", "/lms/courses", "/lms", "/lms/courses/new"):
