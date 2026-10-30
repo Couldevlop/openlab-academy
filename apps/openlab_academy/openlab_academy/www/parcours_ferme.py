@@ -35,9 +35,10 @@ def get_context(context) -> None:
     context.a_venir = False
     context.message = ""
     nom = frappe.form_dict.get("cours")
-    titre = frappe.db.get_value("LMS Course", nom, "title") if isinstance(nom, str) and nom else None
-    if not titre:
+    cours = frappe.db.get_value("LMS Course", nom, ["title", "published"], as_dict=True)         if isinstance(nom, str) and nom else None
+    if not cours or not cours.published or not cours.title:  # non publié = inexistant : rien d'observable
         return
+    titre = cours.title
     context.titre = titre
     fenetre = _fenetre(nom)
     if fenetre is None:

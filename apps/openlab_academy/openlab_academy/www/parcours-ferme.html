@@ -3,14 +3,10 @@
 {% block title %}{{ _("Ce parcours est fermé") }}{% endblock %}
 
 {% block page_content %}
-<main class="parcours-ferme" style="max-width: 40rem; margin: 3rem auto; padding: 0 1rem;">
-  <div style="height: 4px; background: var(--ol-filet); margin-bottom: 1.5rem;"></div>
-  <h1 class="text-3xl" style="font-size: 1.75rem; line-height: 1.25; color: var(--ol-navy-soft);">
-    {{ _("Ce parcours est fermé") }}</h1>
-  {% if message %}<p style="font-size: 1.0625rem; line-height: 1.6; overflow-wrap: anywhere;">{{ message | e }}</p>{% endif %}
-  <p style="margin-top: 1.5rem;">
-    <a href="{{ catalogue }}" style="display: inline-block; padding: 0.75rem 1.25rem; background: var(--ol-orange-deep);
-       color: #fff; border-radius: 6px; font-weight: 600; text-decoration: none;">{{ _("Voir le catalogue") }}</a>
-  </p>
+<main class="ol-parcours-ferme">
+  <div class="ol-filet"></div>
+  <h1 class="text-3xl">{{ _("Ce parcours est fermé") }}</h1>
+  {% if message %}<p>{{ message | e }}</p>{% endif %}
+  <p><a class="ol-bouton" href="{{ catalogue }}">{{ _("Voir le catalogue") }}</a></p>
 </main>
 {% endblock %}

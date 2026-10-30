@@ -101,11 +101,24 @@ class TestPageParcoursFerme(FrappeTestCase):
 
     def test_cohorte_non_publiee_ignoree(self):
         nom = self.cours("Cohorte non publiée test", datetime.date(2020, 1, 10))
-        frappe.db.set_value("LMS Batch", {"title": ["like", "Promo 1 — Cohorte non publiée%"]}, "published", 0)
+        lots = frappe.get_all("Batch Course", {"course": nom, "parenttype": "LMS Batch"}, pluck="parent")
+        frappe.db.set_value("LMS Batch", {"name": ["in", lots]}, "published", 0)
         context = frappe._dict()
         with self._form(nom):
             parcours_ferme.get_context(context)
         self.assertEqual((context.debut, context.fin), ("", ""))
+
+    def test_cours_non_publie_page_generique(self):
+        nom = self.cours("Parcours non publié test", datetime.date(2020, 1, 10))
+        frappe.db.set_value("LMS Course", nom, "published", 0)
+        context = frappe._dict()
+        with self._form(nom):
+            parcours_ferme.get_context(context)
+        self.assertEqual((context.titre, context.debut, context.fin, context.message), ("", "", "", ""))
+        statut, html = self.rendre(nom)
+        self.assertEqual(statut, 200)
+        self.assertNotIn("Parcours non publié test", html)
+        self.assertNotIn("était ouvert", html)
 
     def _form(self, nom):
         return mock.patch.object(frappe.local, "form_dict", frappe._dict(cours=nom))
