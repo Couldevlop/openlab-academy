@@ -3,6 +3,18 @@ import frappe
 
 from openlab_academy.domain.cohorte import PLACES_FENETRE, Cohorte
 
+def cohorte_fenetre(cours: str, champs: tuple[str, ...] = ("name",)):
+    """Cohorte-fenêtre d'un parcours : la cohorte publiée à accès libre (places de la fenêtre, jamais celles d'une
+    cohorte pilote) qui le porte, la plus récente si plusieurs. Seule sélection, partagée par le rattachement des
+    inscrits et les dates de visibilité."""
+    lots = frappe.get_all("Batch Course", {"course": cours, "parenttype": "LMS Batch"}, pluck="parent")
+    if not lots:
+        return None
+    trouvees = frappe.get_all("LMS Batch", {"name": ["in", lots], "published": 1, "seat_count": PLACES_FENETRE},
+                              list(champs), order_by="start_date desc", limit=1)
+    return trouvees[0] if trouvees else None
+
+
 class DepotCohortesFrappe:
     def __init__(self, formateur: str = "Administrator"):
         self._formateur = formateur
@@ -11,13 +23,9 @@ class DepotCohortesFrappe:
         return frappe.db.get_value("LMS Batch", {"title": titre})
 
     def fenetre_de(self, cours: str) -> str | None:
-        """Cohorte-fenêtre du parcours : la cohorte publiée à accès libre (places de la fenêtre, jamais celles d'une
-        cohorte pilote) qui le porte, la plus récente si plusieurs."""
-        lots = frappe.get_all("Batch Course", {"course": cours, "parenttype": "LMS Batch"}, pluck="parent")
-        trouvees = frappe.get_all("LMS Batch", {"name": ["in", lots], "published": 1, "seat_count": PLACES_FENETRE},
-                                  pluck="name",
-                                  order_by="start_date desc", limit=1) if lots else []
-        return trouvees[0] if trouvees else None
+        """Cohorte-fenêtre du parcours (voir `cohorte_fenetre`)."""
+        trouvee = cohorte_fenetre(cours)
+        return trouvee.name if trouvee else None
 
     def creer(self, cohorte: Cohorte) -> str:
         cours = frappe.db.get_value("LMS Course", {"title": cohorte.cours})

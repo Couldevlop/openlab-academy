@@ -21,15 +21,18 @@ def cours_de_l_evaluation(doctype: str, nom: str) -> set[str]:
     return {c for c in cours if c}
 
 
-def cours_de_la_ressource(file_url: str) -> set[str]:
-    """Parcours des leçons qui citent ce fichier privé (pièces jointes ou corps de leçon), avec le même repérage que
-    le service des médias du LMS. Vide si aucune leçon ne le cite."""
+def references_avouees(file_url: str) -> list[tuple[str, bool, str]]:
+    """Références avouées du fichier privé (leçon, réservée aux instructeurs, parcours), avec le même repérage et le
+    même aveu que le service des médias du LMS. Vide si aucune leçon avouée ne le cite."""
     from lms.lms.doctype.course_lesson import course_lesson
 
-    lecons = {r.lesson for r in course_lesson._resolve_lesson_references(file_url)}
-    if not lecons:
-        return set()
-    return {c for c in frappe.get_all("Course Lesson", {"name": ["in", list(lecons)]}, pluck="course") if c}
+    references = course_lesson._resolve_lesson_references(file_url)
+    avouees = course_lesson._references_vouched_by_owner(references) if references else []
+    if not avouees:
+        return []
+    cours = dict(frappe.get_all("Course Lesson", {"name": ["in", list({lecon for lecon, _ in avouees})]},
+                                ["name", "course"], as_list=True))
+    return [(lecon, reservee, cours[lecon]) for lecon, reservee in avouees if cours.get(lecon)]
 
 
 def _liste(cours: tuple[str, ...]) -> str:

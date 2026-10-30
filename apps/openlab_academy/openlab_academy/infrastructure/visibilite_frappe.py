@@ -5,6 +5,7 @@ from frappe.utils import getdate
 from openlab_academy.domain.fenetre import Fenetre
 from openlab_academy.domain.lancement import PhaseLancement
 from openlab_academy.infrastructure import reglages_source_frappe
+from openlab_academy.infrastructure.depot_cohortes_frappe import cohorte_fenetre
 
 CHAMP_LIMITE = "acces_limite_cohorte"  # Check sur LMS Course : ouvert seulement aux dates de la cohorte
 CHAMP_VIDEO = "video_lecon"  # Attach sur Course Lesson : lien ou fichier vidéo, hors du contenu republié
@@ -35,13 +36,11 @@ class SourceVisibiliteFrappe:
         return cours in self.cours_limites()
 
     def fenetre(self, cours: str) -> Fenetre | None:
-        """Dates de la cohorte publiée la plus récente (début maximal) qui porte le parcours."""
+        """Dates de la cohorte-fenêtre du parcours (la même que celle du rattachement des inscrits)."""
         if cours not in self._fenetres:
-            lots = frappe.get_all("Batch Course", {"course": cours, "parenttype": "LMS Batch"}, pluck="parent")
-            trouvees = frappe.get_all("LMS Batch", {"name": ["in", lots], "published": 1},
-                                      ["start_date", "end_date"], order_by="start_date desc", limit=1) if lots else []
-            self._fenetres[cours] = (Fenetre(getdate(trouvees[0].start_date), getdate(trouvees[0].end_date))
-                                     if trouvees and trouvees[0].start_date and trouvees[0].end_date else None)
+            trouvee = cohorte_fenetre(cours, ("name", "start_date", "end_date"))
+            self._fenetres[cours] = (Fenetre(getdate(trouvee.start_date), getdate(trouvee.end_date))
+                                     if trouvee and trouvee.start_date and trouvee.end_date else None)
         return self._fenetres[cours]
 
     def tous_les_cours(self) -> tuple[str, ...]:

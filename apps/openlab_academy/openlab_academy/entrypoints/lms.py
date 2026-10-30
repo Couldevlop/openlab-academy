@@ -11,6 +11,7 @@ from lms.lms import utils as lms_utils
 from lms.lms.doctype.course_lesson import course_lesson
 from lms.lms.doctype.lms_certificate import lms_certificate
 from lms.lms.doctype.lms_quiz import lms_quiz
+from lms.lms.permissions import can_access_lesson
 
 from openlab_academy.application.acces_exercices import EnregistrerOuverture, VerifierAccesExercices
 from openlab_academy.application.acces_parcours import cours_bloques, parcours_bloque, redirection_paiement
@@ -30,6 +31,7 @@ EVALUATIONS = ("LMS Quiz", "LMS Assignment", "LMS Programming Exercise")
 CACHE = "openlab_blocages"
 TITRE_ERREUR = "Blocage par parcours : calcul impossible"
 TITRE_ERREUR_VISIBILITE = "Visibilité des parcours : calcul impossible"
+TITRE_ERREUR_RESSOURCE = "Médias de leçon : références introuvables"
 
 
 class ParcoursBloque(frappe.ValidationError):
@@ -355,13 +357,33 @@ def create_certificate(course: str):
     return lms_certificate.create_certificate(course)
 
 
+def _journaliser_refus_ressource(file_url: str, motif: str) -> None:
+    """Même trace d'audit que le LMS (journal `lms.security`) : membre, adresse et motif, rien de plus."""
+    frappe.logger("lms.security").warning(
+        "Lesson resource access denied: user=%s file_url=%s reason=%s", frappe.session.user, file_url, motif)
+
+
 def _refuser_ressource(utilisateur: str, file_url: str) -> None:
-    """Fichier privé de leçon : refusé (sans redirection, il se charge comme une image ou une vidéo) si TOUS les
-    parcours qui le citent sont refusés ou bloqués ; cité par un parcours ouvert, il reste servi. Fichier cité par
-    aucune leçon : le refus appartient au LMS."""
-    cours = sorted(contenus.cours_de_la_ressource(unquote(file_url)))
-    if cours and all(refus_pour(utilisateur, c) or bloque_pour(utilisateur, c) for c in cours):
+    """Fichier privé de leçon : décidé leçon par leçon, comme le LMS. Servi seulement si une référence avouée a un
+    parcours ni refusé ni bloqué pour ce membre ET une leçon qui lui est accessible ; sinon refus sans redirection (il
+    se charge comme une image ou une vidéo). Agents exemptés avant tout calcul ; un calcul impossible refuse (échec
+    fermé) et se journalise. Fichier cité par aucune référence avouée : le refus appartient au LMS."""
+    if _exempte(utilisateur):
+        return
+    adresse = unquote(file_url)
+    try:
+        references = contenus.references_avouees(adresse)
+    except Exception:
+        frappe.log_error(title=TITRE_ERREUR_RESSOURCE)
+        _journaliser_refus_ressource(adresse, "calcul impossible des références")
         raise frappe.PermissionError
+    if not references:
+        return
+    for lecon, reservee, cours in references:
+        if not (refus_pour(utilisateur, cours) or bloque_pour(utilisateur, cours))                 and can_access_lesson(lecon, instructor_only=reservee):
+            return
+    _journaliser_refus_ressource(adresse, "aucune référence ouverte et accessible")
+    raise frappe.PermissionError
 
 
 @frappe.whitelist(allow_guest=True)  # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method

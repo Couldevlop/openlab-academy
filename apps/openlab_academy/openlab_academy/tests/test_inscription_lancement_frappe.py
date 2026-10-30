@@ -254,7 +254,7 @@ class TestRattachement(Base):
         pilote = DepotCohortesFrappe().creer(
             Cohorte.pilote(parcours(title=TITRE), debut, Reglages().rythme("standard"), Reglages()))
         self.assertEqual(DepotCohortesFrappe().fenetre_de(self.f), self.lot)
-        self.jour(debut)  # la visibilité suit la cohorte la plus récente : le parcours est ouvert ce jour-là
+        self.jour(DEDANS)  # la visibilité suit la cohorte-fenêtre, pas le pilote plus tardif
         lancement.rejoindre_cohorte(frappe.get_doc({"doctype": INSCRIPTION, "course": self.f, "member": ELEVE}))
         self.assertEqual(self.rattachements(), 1)
         self.assertFalse(frappe.db.exists(LOT_INSCRIPTION, {"batch": pilote, "member": ELEVE}))

@@ -3,6 +3,7 @@ agents jamais refusés ; jamais rien d'écrit en base par le calcul."""
 import dataclasses
 import datetime
 from unittest import mock
+from urllib.parse import quote
 
 import frappe
 import frappe.client
@@ -144,6 +145,15 @@ class TestSource(Base):
         DepotCohortesFrappe().creer(dataclasses.replace(
             base, titre=f"Promo 2 — {TITRE_LIMITE}", debut=debut, fin=un_mois_apres(debut)))
         self.assertEqual(SourceVisibiliteFrappe().fenetre(self.l).debut, debut)
+
+    def test_fenetre_de_visibilite_suit_la_cohorte_fenetre_et_non_un_pilote_plus_tardif(self):
+        debut = DEBUT + datetime.timedelta(days=60)
+        pilote = DepotCohortesFrappe().creer(
+            Cohorte.pilote(parcours(title=TITRE_LIMITE), debut, Reglages().rythme("standard"), Reglages()))
+        self.assertNotEqual(pilote, self.lot)
+        fenetre = SourceVisibiliteFrappe().fenetre(self.l)
+        self.assertEqual((fenetre.debut, fenetre.fin), (DEBUT, FIN))
+        self.assertEqual(DepotCohortesFrappe().fenetre_de(self.l), self.lot)
 
     def test_limites_et_cours(self):
         source = SourceVisibiliteFrappe()
@@ -395,9 +405,10 @@ class TestRefusEvaluationPartagee(Base):
     def test_ferme_prime_sur_cache_quel_que_soit_l_ordre(self):
         """Évaluation partagée refusée dans deux parcours : la destination ne dépend pas de l'ordre des noms."""
         cible = "openlab_academy.infrastructure.contenus_parcours_frappe.cours_de_l_evaluation"
-        for ferme, cache in ((self.l, self.a), (self.a, self.l)):
-            with self.subTest(ferme=ferme), mock.patch(cible, return_value={self.l, self.a}),                     mock.patch.object(lms, "refus_pour", side_effect=lambda u, c: lms.Refus.FERME if c == ferme
-                                      else lms.Refus.CACHE):
+        for ferme in (self.l, self.a):
+            refus = lambda u, c: lms.Refus.FERME if c == ferme else lms.Refus.CACHE  # noqa: E731
+            with self.subTest(ferme=ferme), mock.patch(cible, return_value={self.l, self.a}), \
+                    mock.patch.object(lms, "refus_pour", side_effect=refus):
                 self.assertEqual(lms._refus_evaluation(ELEVE, "LMS Quiz", "q"), (lms.Refus.FERME, ferme))
                 with self.assertRaises(lms.ParcoursFerme) as e:
                     lms._refuser_evaluation_bloquee(ELEVE, "LMS Quiz", "q")
@@ -415,35 +426,56 @@ class TestMessages(Base):
                 self.assertEqual(str(lms.ParcoursCache(self.a)), cache)
 
 
-LIEN = "/private/files/support_visibilite.pdf"
 FICHIER = "openlab_academy.entrypoints.lms.course_lesson.serve_resource"
+REFERENCES = "openlab_academy.infrastructure.contenus_parcours_frappe.references_avouees"
 
 
 class TestRessources(Base):
-    """serve_resource du LMS (allow_guest) sert les fichiers privés d'une leçon : il suit le refus de son parcours."""
+    """serve_resource du LMS (allow_guest) sert les fichiers privés d'une leçon : il suit le refus de son parcours,
+    leçon par leçon (un fichier partagé n'est servi que par une leçon accessible d'un parcours ni refusé ni bloqué)."""
 
     def setUp(self):
         super().setUp()
+        frappe.set_user("Administrator")
+        fichier = frappe.get_doc({
+            "doctype": "File", "file_name": f"support visibilite {frappe.generate_hash(length=6)}.txt",
+            "content": frappe.generate_hash(length=20).encode(), "is_private": 1}).insert()
+        self.addCleanup(self.supprimer_fichier, fichier.name)
+        self.lien = fichier.file_url
         for lecon in (self.lecon_l, self.lecon_a):
-            frappe.db.set_value("Course Lesson", lecon, "content", f'{{"blocks": ["{LIEN}"]}}')
+            frappe.db.set_value("Course Lesson", lecon, "content", f'{{"blocks": ["{self.lien}"]}}')
+        frappe.db.set_single_value("LMS Settings", "allow_guest_access", 1)
+        for cours in (self.l, self.a):
+            frappe.db.set_value("LMS Course", cours, "published", 1)
+        frappe.db.set_value("Course Lesson", self.lecon_l, "include_in_preview", 1)
         lms.vider_cache()
 
-    def servir(self, utilisateur, attendu_servi):
+    @staticmethod
+    def supprimer_fichier(nom):
+        if frappe.db.exists("File", nom):
+            frappe.get_doc("File", nom).delete()
+
+    def servir(self, utilisateur, attendu_servi, adresse=None):
+        adresse = adresse or self.lien
         frappe.set_user(utilisateur)
         lms.vider_cache()
         with mock.patch(FICHIER, return_value="octets") as service:
             if attendu_servi:
-                self.assertEqual(lms.serve_resource(LIEN), "octets")
-                service.assert_called_once_with(LIEN)
+                self.assertEqual(lms.serve_resource(adresse), "octets")
+                service.assert_called_once_with(adresse)
             else:
                 with self.assertRaises(frappe.PermissionError):
-                    lms.serve_resource(LIEN)
+                    lms.serve_resource(adresse)
                 service.assert_not_called()
 
     def parcours_seul(self, cours):
         """Le fichier n'est cité que par la leçon de ce parcours."""
         autre = self.lecon_a if cours == self.l else self.lecon_l
         frappe.db.set_value("Course Lesson", autre, "content", "{}")
+
+    def desinscrire(self, cours):
+        for nom in frappe.get_all("LMS Enrollment", {"course": cours, "member": ELEVE}, pluck="name"):
+            frappe.delete_doc("LMS Enrollment", nom, force=True, ignore_permissions=True)
 
     def test_servi_quand_le_parcours_est_ouvert(self):
         self.jour(DEDANS)
@@ -481,11 +513,64 @@ class TestRessources(Base):
             with self.subTest(role=role), mock.patch.object(lms, "parcours_bloque", return_value=True):
                 self.servir(utilisateur(f"agent.{role.split()[0].lower()}.res@example.ci", role), True)
 
-    def test_fichier_partage_servi_tant_qu_un_parcours_est_ouvert(self):
-        self.jour(LENDEMAIN)  # L fermé, A ouvert (ordinaire)
+    def test_fichier_partage_servi_par_la_lecon_accessible_d_un_parcours_ouvert(self):
+        self.jour(LENDEMAIN)  # L fermé, A ouvert (ordinaire), élève inscrit aux deux
         self.servir(ELEVE, True)
         self.cacher()
         self.servir(ELEVE, False)
+
+    def test_fichier_partage_refuse_a_l_eleve_inscrit_au_seul_parcours_ferme(self):
+        self.desinscrire(self.a)
+        self.jour(DEDANS)
+        self.servir(ELEVE, True)  # témoin : L ouvert
+        self.jour(LENDEMAIN)
+        self.servir(ELEVE, False)  # la leçon de A n'est pas accessible à l'élève, celle de L est fermée
+        self.servir("Administrator", True)
+
+    def test_fichier_partage_refuse_au_visiteur_via_la_lecon_d_apercu_du_parcours_ferme(self):
+        self.jour(DEDANS)
+        self.servir("Guest", True)  # témoin : leçon d'aperçu de L, L ouvert
+        self.jour(LENDEMAIN)
+        self.servir("Guest", False)  # A ordinaire est ouvert mais sa leçon n'est pas d'aperçu
+        frappe.db.set_value("Course Lesson", self.lecon_a, "include_in_preview", 1)
+        self.servir("Guest", True)  # une leçon d'aperçu d'un parcours ouvert sert le fichier
+
+    def test_adresse_encodee_decodee_comme_le_lms(self):
+        self.jour(DEDANS)
+        self.parcours_seul(self.l)
+        encodee = quote(self.lien)
+        self.assertIn("%20", encodee)
+        self.servir(ELEVE, True, adresse=encodee)
+        self.jour(LENDEMAIN)
+        self.servir(ELEVE, False, adresse=encodee)
+
+    def test_refus_journalise_sans_donnee_sensible(self):
+        self.jour(LENDEMAIN)
+        self.parcours_seul(self.l)
+        frappe.set_user(ELEVE)
+        with mock.patch.object(frappe, "logger") as journal:
+            with self.assertRaises(frappe.PermissionError):
+                lms.serve_resource(self.lien)
+        journal.assert_called_with("lms.security")
+        format_, utilisateur_, adresse_, motif = journal.return_value.warning.call_args.args
+        self.assertEqual((utilisateur_, adresse_), (ELEVE, self.lien))
+        self.assertIn("denied", format_)
+        self.assertNotIn(ELEVE, motif)
+
+    def test_agent_servi_meme_si_le_calcul_des_references_echoue(self):
+        with mock.patch(REFERENCES, side_effect=RuntimeError("changement interne")) as calcul:
+            self.servir("Administrator", True)
+        calcul.assert_not_called()
+
+    def test_echec_du_calcul_refuse_les_autres_et_le_journalise(self):
+        for u in (ELEVE, "Guest"):
+            frappe.set_user(u)
+            with self.subTest(u=u), mock.patch(REFERENCES, side_effect=RuntimeError("changement interne")),                     mock.patch.object(frappe, "logger") as journal, mock.patch.object(frappe, "log_error") as erreur,                     mock.patch(FICHIER) as service:
+                with self.assertRaises(frappe.PermissionError):
+                    lms.serve_resource(self.lien)
+                service.assert_not_called()
+                erreur.assert_called_once()
+                self.assertIn("calcul impossible", journal.return_value.warning.call_args.args[-1])
 
     def test_fichier_inconnu_laisse_au_lms(self):
         frappe.set_user(ELEVE)
