@@ -58,6 +58,9 @@ class Base(FrappeTestCase):
         self.lecon_l = frappe.db.get_value("Course Lesson", {"course": self.l, "title": ["like", "01 ·%"]})
         self.lecon_a = frappe.db.get_value("Course Lesson", {"course": self.a, "title": ["like", "01 ·%"]})
         self.quiz_l = frappe.db.get_value("LMS Quiz", {"course": self.l})
+        self.chapitre_l = frappe.db.get_value("Course Chapter", {"course": self.l})
+        self.devoir_l = frappe.db.get_value(
+            "LMS Lesson Assessment", {"parent": self.lecon_l, "assessment_type": "LMS Assignment"}, "assessment_name")
         self.lot = frappe.db.get_value("Batch Course", {"course": self.l, "parenttype": "LMS Batch"}, "parent")
 
     def tearDown(self):
@@ -104,6 +107,27 @@ class Base(FrappeTestCase):
         """La condition SQL de permission retire la leçon des requêtes de liste."""
         condition = lms.conditions_lecons(utilisateur)
         return lecon not in frappe.db.sql_list(f"select name from `tabCourse Lesson` where {condition or '1=1'}")
+
+    def hors_liste(self, doctype, condition, nom):
+        """La condition SQL de permission retire l'évaluation des requêtes de liste."""
+        return nom not in frappe.db.sql_list(f"select name from `tab{doctype}` where {condition or '1=1'}")
+
+    def lecture_refusee(self, utilisateur):
+        """Le hook has_permission refuse la lecture de la leçon, du chapitre et des évaluations du parcours limité
+        (lui seul : Course Lesson n'est lisible que des rôles d'écriture, la lecture du LMS ne prouve rien)."""
+        for doctype, nom in (("Course Lesson", self.lecon_l), ("Course Chapter", self.chapitre_l),
+                             ("LMS Quiz", self.quiz_l), ("LMS Assignment", self.devoir_l)):
+            with self.subTest(doctype=doctype, utilisateur=utilisateur):
+                doc = frappe.get_doc(doctype, nom)
+                self.assertIs(lms.lecture_permise(doc, "read", utilisateur), False)
+                self.assertIsNone(lms.lecture_permise(doc, "write", utilisateur))
+
+    def evaluations_retirees(self, utilisateur):
+        """Les quatre conditions de liste retirent les évaluations du parcours limité (et celui-là seul)."""
+        self.assertTrue(self.hors_liste("LMS Quiz", lms.conditions_quiz(utilisateur), self.quiz_l))
+        self.assertTrue(self.hors_liste("LMS Assignment", lms.conditions_devoirs(utilisateur), self.devoir_l))
+        self.assertIn(frappe.db.escape(self.l), lms.conditions_exercices(utilisateur))
+        self.assertNotIn(frappe.db.escape(self.a), lms.conditions_exercices(utilisateur))
 
     def servie(self, cours, lecon):
         with mock.patch.object(lms_utils, "get_lesson", return_value={"name": lecon}):
@@ -203,6 +227,8 @@ class TestApi(Base):
                     frappe.client.get("Course Lesson", self.lecon_l)
                 self.assertEqual(self.lecons_listees(self.l), [])
                 self.assertTrue(self.hors_condition(u, self.lecon_l))
+                self.lecture_refusee(u)
+                self.evaluations_retirees(u)
                 self.refusee(lms.get_quiz_with_questions, lms.ParcoursFerme, self.quiz_l)
                 self.refusee(lms.check_answer, lms.ParcoursFerme, self.quiz_l, "q", "Choices", "[]")
                 self.refusee(lms.get_course_details, lms.ParcoursFerme, self.l)
@@ -220,6 +246,19 @@ class TestApi(Base):
                     frappe.client.get("Course Lesson", self.lecon_a)
                 self.assertEqual(self.lecons_listees(self.a), [])
                 self.assertTrue(self.hors_condition(u, self.lecon_a))
+                self.assertIs(lms.lecture_permise(frappe.get_doc("Course Lesson", self.lecon_a), "read", u), False)
+
+    def test_evaluations_du_parcours_ferme_refusees_a_l_apprenant(self):
+        """LMS Student lit les quiz : le refus vient bien de notre hook, pas des rôles du LMS."""
+        self.jour(LENDEMAIN)
+        frappe.set_user(ELEVE)
+        with self.assertRaises(frappe.PermissionError):
+            frappe.client.get("LMS Quiz", self.quiz_l)
+        self.assertNotIn(self.quiz_l, frappe.get_list("LMS Quiz", pluck="name"))
+        self.assertNotIn(self.devoir_l, frappe.get_list("LMS Assignment", pluck="name"))
+        self.jour(DEDANS)
+        self.assertEqual(frappe.client.get("LMS Quiz", self.quiz_l)["name"], self.quiz_l)
+        self.assertIn(self.quiz_l, frappe.get_list("LMS Quiz", pluck="name"))
 
     def test_progression_et_certificat_refuses(self):
         self.cacher()
@@ -231,6 +270,8 @@ class TestApi(Base):
 
     def test_dernier_jour_ouvert_lendemain_ferme(self):
         frappe.set_user(ELEVE)
+        self.jour(DEBUT)
+        self.servie(self.l, self.lecon_l)
         self.jour(FIN)
         self.servie(self.l, self.lecon_l)
         self.jour(LENDEMAIN)
@@ -257,9 +298,11 @@ class TestApi(Base):
                     self.assertIsNone(self.entrer(f"/lms/courses/{cours}", agent))
                     self.servie(cours, lecon)
                     self.assertIsNone(lms.lecture_permise(frappe.get_doc("Course Lesson", lecon), "read", agent))
+                    self.assertIsNone(lms.lecture_permise(frappe.get_doc("LMS Quiz", self.quiz_l), "read", agent))
                     self.assertIsNone(lms.refus_pour(agent, cours))
                 self.assertEqual(lms.conditions_lecons(agent), "")
-                self.assertEqual(lms.conditions_quiz(agent), "")
+                self.assertEqual((lms.conditions_quiz(agent), lms.conditions_devoirs(agent),
+                                  lms.conditions_exercices(agent)), ("", "", ""))
                 self.assertIsNone(self.entrer(f"/lms/batches/{self.lot}", agent))
 
     def test_phase_decochee_tout_revient(self):
@@ -346,6 +389,115 @@ class TestApi(Base):
             self.assertIsNone(lms._refus_evaluation(ELEVE, "LMS Quiz", self.quiz_l))
         with mock.patch(cible, side_effect=RuntimeError("panne")), mock.patch.object(frappe, "log_error"):
             self.assertIsNone(lms._refus_evaluation(ELEVE, "LMS Quiz", self.quiz_l))
+
+
+class TestRefusEvaluationPartagee(Base):
+    def test_ferme_prime_sur_cache_quel_que_soit_l_ordre(self):
+        """Évaluation partagée refusée dans deux parcours : la destination ne dépend pas de l'ordre des noms."""
+        cible = "openlab_academy.infrastructure.contenus_parcours_frappe.cours_de_l_evaluation"
+        for ferme, cache in ((self.l, self.a), (self.a, self.l)):
+            with self.subTest(ferme=ferme), mock.patch(cible, return_value={self.l, self.a}),                     mock.patch.object(lms, "refus_pour", side_effect=lambda u, c: lms.Refus.FERME if c == ferme
+                                      else lms.Refus.CACHE):
+                self.assertEqual(lms._refus_evaluation(ELEVE, "LMS Quiz", "q"), (lms.Refus.FERME, ferme))
+                with self.assertRaises(lms.ParcoursFerme) as e:
+                    lms._refuser_evaluation_bloquee(ELEVE, "LMS Quiz", "q")
+                self.assertEqual(e.exception.redirection, f"/parcours-ferme/{ferme}")
+
+
+class TestMessages(Base):
+    def test_messages_traduits(self):
+        self.addCleanup(setattr, frappe.local, "lang", frappe.local.lang)
+        for langue, ferme, cache in (("fr", "Parcours fermé", "Parcours indisponible"),
+                                     ("en", "Course closed", "Course unavailable")):
+            frappe.local.lang = langue
+            with self.subTest(langue=langue):
+                self.assertEqual(str(lms.ParcoursFerme(self.l)), ferme)
+                self.assertEqual(str(lms.ParcoursCache(self.a)), cache)
+
+
+LIEN = "/private/files/support_visibilite.pdf"
+FICHIER = "openlab_academy.entrypoints.lms.course_lesson.serve_resource"
+
+
+class TestRessources(Base):
+    """serve_resource du LMS (allow_guest) sert les fichiers privés d'une leçon : il suit le refus de son parcours."""
+
+    def setUp(self):
+        super().setUp()
+        for lecon in (self.lecon_l, self.lecon_a):
+            frappe.db.set_value("Course Lesson", lecon, "content", f'{{"blocks": ["{LIEN}"]}}')
+        lms.vider_cache()
+
+    def servir(self, utilisateur, attendu_servi):
+        frappe.set_user(utilisateur)
+        lms.vider_cache()
+        with mock.patch(FICHIER, return_value="octets") as service:
+            if attendu_servi:
+                self.assertEqual(lms.serve_resource(LIEN), "octets")
+                service.assert_called_once_with(LIEN)
+            else:
+                with self.assertRaises(frappe.PermissionError):
+                    lms.serve_resource(LIEN)
+                service.assert_not_called()
+
+    def parcours_seul(self, cours):
+        """Le fichier n'est cité que par la leçon de ce parcours."""
+        autre = self.lecon_a if cours == self.l else self.lecon_l
+        frappe.db.set_value("Course Lesson", autre, "content", "{}")
+
+    def test_servi_quand_le_parcours_est_ouvert(self):
+        self.jour(DEDANS)
+        self.parcours_seul(self.l)
+        for u in (ELEVE, "Guest", "Administrator"):
+            with self.subTest(u=u):
+                self.servir(u, True)
+
+    def test_refuse_hors_fenetre_a_l_apprenant_et_au_visiteur(self):
+        self.jour(LENDEMAIN)
+        self.parcours_seul(self.l)
+        for u in (ELEVE, "Guest"):
+            with self.subTest(u=u):
+                self.servir(u, False)
+
+    def test_refuse_pendant_le_masquage(self):
+        self.cacher()
+        self.parcours_seul(self.a)
+        for u in (ELEVE, "Guest"):
+            with self.subTest(u=u):
+                self.servir(u, False)
+
+    def test_refuse_pour_paiement(self):
+        self.jour(DEDANS)
+        self.parcours_seul(self.l)
+        with mock.patch.object(lms, "parcours_bloque", return_value=True):
+            self.servir(ELEVE, False)
+        self.servir(ELEVE, True)  # payeur à jour
+
+    def test_agents_toujours_servis(self):
+        self.cacher()
+        self.jour(LENDEMAIN)
+        self.parcours_seul(self.l)
+        for role in sorted(lms.ROLES_NON_BLOQUES):
+            with self.subTest(role=role), mock.patch.object(lms, "parcours_bloque", return_value=True):
+                self.servir(utilisateur(f"agent.{role.split()[0].lower()}.res@example.ci", role), True)
+
+    def test_fichier_partage_servi_tant_qu_un_parcours_est_ouvert(self):
+        self.jour(LENDEMAIN)  # L fermé, A ouvert (ordinaire)
+        self.servir(ELEVE, True)
+        self.cacher()
+        self.servir(ELEVE, False)
+
+    def test_fichier_inconnu_laisse_au_lms(self):
+        frappe.set_user(ELEVE)
+        with mock.patch(FICHIER, return_value="refus du LMS") as service:
+            self.assertEqual(lms.serve_resource("/private/files/introuvable.pdf"), "refus du LMS")
+        service.assert_called_once()
+
+    def test_surcharge_declaree(self):
+        self.assertEqual(hooks.override_whitelisted_methods["lms.lms.doctype.course_lesson.course_lesson.serve_resource"],
+                         "openlab_academy.entrypoints.lms.serve_resource")
+        self.assertIs(lms.serve_resource.__module__, lms.__name__)
+        self.assertTrue(lms.serve_resource in frappe.guest_methods)
 
 
 class TestHooks(FrappeTestCase):

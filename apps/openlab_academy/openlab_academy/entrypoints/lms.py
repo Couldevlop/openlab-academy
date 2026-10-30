@@ -1,6 +1,7 @@
 """Points d'accroche dans Frappe LMS : ouverture des leçons, verrou des exercices et blocage des parcours impayés
 (vérifiés côté serveur)."""
 import datetime
+from urllib.parse import unquote
 
 import frappe
 from frappe import _
@@ -42,25 +43,20 @@ class ParcoursBloque(frappe.ValidationError):
 class _ParcoursRefuse(frappe.ValidationError):
     """Parcours refusé par la visibilité : le navigateur reçoit exc_type (ParcoursFerme ou ParcoursCache) et
     `redirection`, calculée par le serveur (jamais fournie par le client)."""
-    message = ""
 
-    def __init__(self, cours: str, refus: Refus):
+    def __init__(self, cours: str, refus: Refus, message: str):
         self.redirection = redirection(refus, cours)
-        super().__init__(self.message)
+        super().__init__(message)
 
 
 class ParcoursFerme(_ParcoursRefuse):
-    message = "Parcours fermé"
-
     def __init__(self, cours: str):
-        super().__init__(cours, Refus.FERME)
+        super().__init__(cours, Refus.FERME, _("Parcours fermé"))
 
 
 class ParcoursCache(_ParcoursRefuse):
-    message = "Parcours indisponible"
-
     def __init__(self, cours: str):
-        super().__init__(cours, Refus.CACHE)
+        super().__init__(cours, Refus.CACHE, _("Parcours indisponible"))
 
 
 # --- blocage par parcours : calculé depuis le dossier (une fois par requête), jamais stocké -----------------
@@ -210,7 +206,8 @@ def _cours_bloquants(utilisateur: str, doctype: str, nom: str) -> list[str]:
 
 def _refus_evaluation(utilisateur: str, doctype: str, nom: str) -> tuple[Refus, str] | None:
     """Refus de visibilité d'une évaluation, si TOUS ses parcours sont refusés (une évaluation partagée reste
-    ouverte tant qu'un de ses parcours l'est). Les agents n'y sont jamais soumis."""
+    ouverte tant qu'un de ses parcours l'est). La fermeture prime sur le masquage, quel que soit l'ordre des
+    parcours. Les agents n'y sont jamais soumis."""
     if _exempte(utilisateur):
         return None
     try:
@@ -219,7 +216,10 @@ def _refus_evaluation(utilisateur: str, doctype: str, nom: str) -> tuple[Refus, 
         frappe.log_error(title=TITRE_ERREUR_VISIBILITE, message=f"évaluation {doctype} {nom}")
         return None
     refus = [refus_pour(utilisateur, c) for c in cours]
-    return (refus[0], cours[0]) if cours and all(refus) else None
+    if not cours or not all(refus):
+        return None
+    rang = refus.index(Refus.FERME) if Refus.FERME in refus else 0
+    return refus[rang], cours[rang]
 
 
 def _refuser_evaluation_bloquee(utilisateur: str, doctype: str, nom: str) -> None:
@@ -234,7 +234,7 @@ def lecture_permise(doc, ptype="read", user=None, debug=False):
     compris) ou bloqué, sinon sans avis (None). Jamais True : Frappe retient le premier avis non nul, un True
     court-circuiterait les refus du LMS."""
     utilisateur = user or frappe.session.user
-    if ptype not in LECTURE:
+    if ptype not in LECTURE or _exempte(utilisateur):
         return None
     if doc.doctype in EVALUATIONS:
         refuse = bool(_refus_evaluation(utilisateur, doc.doctype, doc.name)) or (
@@ -336,6 +336,24 @@ def create_certificate(course: str):
     """Surcharge : pas de certificat sur un parcours bloqué, même au contenu achevé."""
     _refuser(course)
     return lms_certificate.create_certificate(course)
+
+
+def _refuser_ressource(utilisateur: str, file_url: str) -> None:
+    """Fichier privé de leçon : refusé (sans redirection, il se charge comme une image ou une vidéo) si TOUS les
+    parcours qui le citent sont refusés ou bloqués ; cité par un parcours ouvert, il reste servi. Fichier cité par
+    aucune leçon : le refus appartient au LMS."""
+    cours = sorted(contenus.cours_de_la_ressource(unquote(file_url)))
+    if cours and all(refus_pour(utilisateur, c) or bloque_pour(utilisateur, c) for c in cours):
+        raise frappe.PermissionError
+
+
+@frappe.whitelist(allow_guest=True)  # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
+def serve_resource(file_url: str):
+    """Surcharge de lms...course_lesson.serve_resource : un média privé n'est pas servi hors du parcours ouvert
+    (fermé, caché ou bloqué pour paiement), même à qui a gardé son adresse ; le LMS applique ensuite ses règles."""
+    if isinstance(file_url, str):
+        _refuser_ressource(frappe.session.user, file_url)
+    return course_lesson.serve_resource(file_url)
 
 
 def avant_certificat(doc, method=None) -> None:

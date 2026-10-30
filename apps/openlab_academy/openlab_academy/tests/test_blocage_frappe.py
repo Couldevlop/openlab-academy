@@ -472,6 +472,8 @@ class TestHooks(FrappeTestCase):
             "lms.lms.doctype.lms_quiz.lms_quiz.check_answer": "openlab_academy.entrypoints.lms.check_answer",
             "lms.lms.api.mark_lesson_progress": "openlab_academy.entrypoints.lms.mark_lesson_progress",
             "lms.lms.doctype.course_lesson.course_lesson.save_progress": "openlab_academy.entrypoints.lms.save_progress",
+            "lms.lms.doctype.course_lesson.course_lesson.serve_resource":
+                "openlab_academy.entrypoints.lms.serve_resource",
             "lms.lms.doctype.lms_certificate.lms_certificate.create_certificate":
                 "openlab_academy.entrypoints.lms.create_certificate",
         })

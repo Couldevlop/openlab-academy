@@ -21,6 +21,17 @@ def cours_de_l_evaluation(doctype: str, nom: str) -> set[str]:
     return {c for c in cours if c}
 
 
+def cours_de_la_ressource(file_url: str) -> set[str]:
+    """Parcours des leçons qui citent ce fichier privé (pièces jointes ou corps de leçon), avec le même repérage que
+    le service des médias du LMS. Vide si aucune leçon ne le cite."""
+    from lms.lms.doctype.course_lesson import course_lesson
+
+    lecons = {r.lesson for r in course_lesson._resolve_lesson_references(file_url)}
+    if not lecons:
+        return set()
+    return {c for c in frappe.get_all("Course Lesson", {"name": ["in", list(lecons)]}, pluck="course") if c}
+
+
 def _liste(cours: tuple[str, ...]) -> str:
     return ", ".join(frappe.db.escape(c) for c in cours)
 

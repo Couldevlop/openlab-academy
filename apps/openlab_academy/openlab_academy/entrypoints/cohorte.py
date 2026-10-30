@@ -1,9 +1,9 @@
 """Commande : bench --site <site> execute openlab_academy.entrypoints.cohorte.ouvrir_pilote
              [--kwargs "{'rythme': '<code réglé dans l'écran>'}"]"""
 import frappe
-from frappe.utils import getdate, nowdate
 
 from openlab_academy.application.ouvrir_cohorte import OuvrirCohorte
+from openlab_academy.entrypoints import lms
 from openlab_academy.infrastructure import reglages_source_frappe
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
 from openlab_academy.infrastructure.yaml_source import PARCOURS_DIR, charger_dossier
@@ -16,7 +16,7 @@ def ouvrir_pilote(rythme: str | None = None, commit: bool = True) -> dict:
     if parcours is None:
         raise ValueError(f"parcours pilote « {reglages.parcours_pilote} » introuvable dans les fichiers de parcours")
     nom, creee = OuvrirCohorte(DepotCohortesFrappe(reglages.formateur), reglages,
-                         aujourd_hui=lambda: getdate(nowdate())).executer(parcours, rythme=format_)
+                               aujourd_hui=lambda: lms.aujourd_hui()).executer(parcours, rythme=format_)
     if commit:
         frappe.db.commit()
     return {"cohorte": nom, "creee": creee}
