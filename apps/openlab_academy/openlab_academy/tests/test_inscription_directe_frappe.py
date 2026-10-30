@@ -8,6 +8,7 @@ from openlab_academy import hooks
 from openlab_academy.entrypoints import lms
 from openlab_academy.patches import fermer_autonomie_parcours_payants
 from openlab_academy.tests.test_paiement_api_frappe import agent
+from openlab_academy.tests.sans_lancement import sans_phase_de_lancement
 from openlab_academy.tests.test_paiement_donnees_frappe import ELEVE, cours, tarif, utilisateur
 from openlab_academy.tests.test_paiement_inscription_frappe import cohorte, dossier_de, inscrire
 from openlab_academy.tests.test_parcours_gratuits_frappe import rendre
@@ -22,6 +23,7 @@ def autonomie_fermee(c) -> int:
 
 class Base(FrappeTestCase):
     def setUp(self):
+        sans_phase_de_lancement(self)
         utilisateur()
         lms.vider_cache()
         self.cours = cours("Parcours payant inscription directe")
@@ -47,8 +49,8 @@ class Base(FrappeTestCase):
 
 class TestInscriptionDirecte(Base):
     def test_hook_declare(self):
-        self.assertEqual(hooks.doc_events[INSCRIPTION],
-                         {"before_insert": "openlab_academy.entrypoints.paiement.avant_inscription_parcours"})
+        self.assertEqual(hooks.doc_events[INSCRIPTION]["before_insert"],
+                         "openlab_academy.entrypoints.paiement.avant_inscription_parcours")
 
     def test_parcours_payant_refuse_meme_autonomie_rouverte(self):
         """Le refus ne dépend pas de la case du LMS : un administrateur peut la décocher."""

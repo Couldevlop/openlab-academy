@@ -3,6 +3,7 @@
 import datetime
 
 import frappe
+from frappe import _
 from frappe.utils import getdate, now_datetime, nowdate
 from lms.lms import api as lms_api
 from lms.lms import utils as lms_utils
@@ -183,6 +184,16 @@ def _refuser(cours: str | None, utilisateur: str | None = None) -> None:
         e = ParcoursBloque(cours)
         frappe.local.response["redirection"] = e.redirection
         raise e
+
+
+def refuser_inscription(membre: str, cours: str) -> None:
+    """Inscription à un parcours fermé (hors fenêtre) ou caché (phase de lancement) refusée ; les agents ne le sont
+    jamais. Le message est traduit dans la langue de la requête."""
+    refus = refus_pour(membre, cours)
+    if refus is Refus.FERME:
+        frappe.throw(_("Les inscriptions à ce parcours sont fermées."), frappe.ValidationError)
+    if refus is Refus.CACHE:
+        frappe.throw(_("Ce parcours n'est pas disponible pour le moment."), frappe.ValidationError)
 
 
 def _cours_bloquants(utilisateur: str, doctype: str, nom: str) -> list[str]:

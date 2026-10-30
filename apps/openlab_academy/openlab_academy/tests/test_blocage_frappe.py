@@ -16,15 +16,14 @@ from werkzeug.wrappers import Request
 from openlab_academy import hooks
 from openlab_academy.application.ports_paiement import NouveauDossier
 from openlab_academy.domain.echeancier import Echeance, Mode, Tarif
-from openlab_academy.domain.lancement import PhaseLancement
 from openlab_academy.domain.parcours import Bloc
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.entrypoints import http, lms
 from openlab_academy.infrastructure.depot_dossiers_frappe import DepotDossiersFrappe
-from openlab_academy.infrastructure import reglages_source_frappe
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
 from openlab_academy.tests.fabriques import parcours
 from openlab_academy.tests.test_exercices_frappe import module
+from openlab_academy.tests.sans_lancement import inscription_libre, sans_phase_de_lancement
 from openlab_academy.tests.test_paiement_donnees_frappe import tarif
 from openlab_academy.tests.test_paiement_inscription_frappe import cohorte, inscrire
 
@@ -44,16 +43,9 @@ def utilisateur(email, *roles):
 
 def suivre(cours, membre):
     if not frappe.db.exists("LMS Enrollment", {"course": cours, "member": membre}):
-        frappe.get_doc({"doctype": "LMS Enrollment", "course": cours, "member": membre,
-                        "member_type": "Student"}).insert(ignore_permissions=True)
-
-
-def sans_phase_de_lancement(test):
-    """Ces suites éprouvent le blocage pour paiement : la phase de lancement du site (qui cacherait leurs parcours
-    de test) est décochée le temps du test ; la visibilité a sa propre suite."""
-    patch = mock.patch.object(reglages_source_frappe, "phase_lancement", return_value=PhaseLancement(False))
-    patch.start()
-    test.addCleanup(patch.stop)
+        with inscription_libre():
+            frappe.get_doc({"doctype": "LMS Enrollment", "course": cours, "member": membre,
+                            "member_type": "Student"}).insert(ignore_permissions=True)
 
 
 def requete(chemin, methode="GET", entetes=None):
@@ -190,6 +182,7 @@ class TestLecon(Base):
         self.assertTrue(lms.bloque_pour(ELEVE, self.a))
 
     def test_resultat_mis_en_cache_pour_la_requete(self):
+        lms.vider_cache()  # les inscriptions de setUp ont déjà rangé la source de visibilité dans le cache
         with mock.patch.object(lms, "parcours_bloque", return_value=True) as calcul:
             self.assertTrue(lms.bloque_pour(ELEVE, self.a))
             self.assertTrue(lms.bloque_pour(ELEVE, self.a))

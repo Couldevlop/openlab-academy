@@ -11,6 +11,7 @@ from openlab_academy.infrastructure.depot_dossiers_frappe import ParcoursGratuit
 from openlab_academy.infrastructure.rappels_frappe import DepotRappelsFrappe
 from openlab_academy.application.ports_paiement import FiltresTableau
 from openlab_academy.tests.test_paiement_api_frappe import INTENDANT, agent, appeler
+from openlab_academy.tests.sans_lancement import sans_phase_de_lancement
 from openlab_academy.tests.test_paiement_donnees_frappe import ELEVE, cours, tarif, utilisateur
 from openlab_academy.tests.test_paiement_inscription_frappe import cohorte, dossier_de, inscrire
 
@@ -28,6 +29,7 @@ def rendre(c, gratuit=True):
 
 class Base(FrappeTestCase):
     def setUp(self):
+        sans_phase_de_lancement(self)
         utilisateur()
         lms.vider_cache()
 

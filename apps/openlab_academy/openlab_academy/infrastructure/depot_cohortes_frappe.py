@@ -10,6 +10,13 @@ class DepotCohortesFrappe:
     def trouver(self, titre: str) -> str | None:
         return frappe.db.get_value("LMS Batch", {"title": titre})
 
+    def fenetre_de(self, cours: str) -> str | None:
+        """Cohorte publiée la plus récente (début maximal) qui porte le parcours : sa cohorte-fenêtre."""
+        lots = frappe.get_all("Batch Course", {"course": cours, "parenttype": "LMS Batch"}, pluck="parent")
+        trouvees = frappe.get_all("LMS Batch", {"name": ["in", lots], "published": 1}, pluck="name",
+                                  order_by="start_date desc", limit=1) if lots else []
+        return trouvees[0] if trouvees else None
+
     def creer(self, cohorte: Cohorte) -> str:
         cours = frappe.db.get_value("LMS Course", {"title": cohorte.cours})
         if not cours:

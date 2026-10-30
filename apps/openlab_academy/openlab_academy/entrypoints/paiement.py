@@ -21,6 +21,7 @@ from openlab_academy.application.ports_paiement import FiltresTableau
 from openlab_academy.application.rappels import EnvoyerRappels
 from openlab_academy.application.tableaux_paiement import Fiche, Intendance, Resume, vue_apprenant
 from openlab_academy.domain.dossier_paiement import Statut
+from openlab_academy.entrypoints import lms
 from openlab_academy.entrypoints.lms import ROLES_NON_BLOQUES
 from openlab_academy.infrastructure.canaux import CanalEmail, CanalSms, CanalWhatsApp
 from openlab_academy.infrastructure.cinetpay import PasserelleCinetPay
@@ -60,7 +61,24 @@ def _cohorte(doc):
     return None if facture is None else (facture, debut, fin)
 
 
+def _refuser_cohorte(doc) -> None:
+    """Cohorte refusée si tous ses parcours le sont (fermés ou cachés) ; un seul parcours ouvert suffit."""
+    cours = frappe.get_all("Batch Course", {"parent": doc.batch, "parenttype": "LMS Batch"}, pluck="course",
+                           order_by="idx")
+    refus = []
+    for c in cours:
+        try:
+            lms.refuser_inscription(doc.member, c)
+        except frappe.ValidationError as e:
+            refus.append(e)
+        else:
+            return
+    if refus:
+        raise refus[0]
+
+
 def avant_inscription(doc, method=None) -> None:
+    _refuser_cohorte(doc)
     try:
         lot = _cohorte(doc)
         if lot is not None:
@@ -81,7 +99,11 @@ ADMINISTRATEUR = "System Manager"
 def avant_inscription_parcours(doc, method=None) -> None:
     """Inscription directe au parcours (LMS Enrollment : « Enroll Now », formulaire, API) : un parcours payant se
     suit par une cohorte, sauf pour l'équipe, l'administrateur qui inscrit lui-même, ou l'inscription que la cohorte
-    crée. Sans ce refus, l'apprenant suivrait le parcours sans dossier, donc sans jamais être bloqué."""
+    crée. Sans ce refus, l'apprenant suivrait le parcours sans dossier, donc sans jamais être bloqué. Un parcours
+    fermé ou caché (lancement) refuse d'abord l'inscription, sauf celle que crée une cohorte, déjà jugée dans son
+    ensemble (drapeau posé par le LMS côté serveur)."""
+    if not doc.flags.via_batch_enrollment:
+        lms.refuser_inscription(doc.member, doc.course)
     demande = InscriptionDirecte(
         doc.course, _exempte(doc.member), ADMINISTRATEUR in frappe.get_roles(frappe.session.user),
         InscriptionsFrappe().via_cohorte(doc.member, doc.course, doc.enrollment_from_batch,
