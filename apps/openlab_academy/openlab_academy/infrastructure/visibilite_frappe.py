@@ -50,3 +50,9 @@ class SourceVisibiliteFrappe:
 
     def cours_limites_publies(self) -> tuple[str, ...]:
         return tuple(frappe.get_all("LMS Course", {CHAMP_LIMITE: 1, "published": 1}, pluck="name"))
+
+    def depublier(self, cours: str) -> None:
+        """Retire le parcours du catalogue : la seule écriture, sans date de modification ni crochet de document
+        (leçons, inscriptions, progressions et certificats restent intacts)."""
+        frappe.db.set_value("LMS Course", cours, "published", 0, update_modified=False)
+        frappe.clear_document_cache("LMS Course", cours)

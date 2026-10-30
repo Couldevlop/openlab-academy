@@ -3,7 +3,7 @@ parcours, passage au parcours de lancement et sa cohorte."""
 import frappe
 
 from openlab_academy.domain.reglages import TITRE_LANCEMENT
-from openlab_academy.entrypoints import cohorte, seed
+from openlab_academy.entrypoints import cohorte, lancement, seed
 from openlab_academy.infrastructure import reglages_evaluation_frappe, reglages_frappe, reglages_source_frappe
 from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
 from openlab_academy.infrastructure.visibilite_frappe import CHAMP_LIMITE, CHAMP_VIDEO
@@ -120,7 +120,8 @@ def after_install(commit: bool = True) -> None:
 
 
 def after_migrate(commit: bool = True) -> None:
-    """Republie les parcours à chaque migration : un YAML modifié arrive en base sans commande manuelle."""
+    """Republie les parcours à chaque migration : un YAML modifié arrive en base sans commande manuelle. Le retrait
+    des parcours dont la fenêtre est close vient en dernier : la republication les remettait au catalogue."""
     reglages_source_frappe.initialiser()
     reglages_evaluation_frappe.preparer()
     preparer_roles()
@@ -129,3 +130,4 @@ def after_migrate(commit: bool = True) -> None:
     reglages_frappe.appliquer()
     seed.run(commit=commit)
     preparer_lancement(commit=commit)
+    lancement.retirer_parcours_echus(commit=commit)
