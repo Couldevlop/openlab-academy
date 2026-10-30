@@ -1,4 +1,6 @@
 import datetime
+import json
+import os
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -146,6 +148,19 @@ class TestLancementFrappe(FrappeTestCase):
         doc.phase_lancement = 0
         with self.assertRaises(frappe.PermissionError):
             doc.save()
+
+    def test_ecran_sans_acces_pour_apprenant_et_formateur(self):
+        for mail, role in ((ELEVE, "LMS Student"), ("formateur.reglages@example.ci", "Course Creator")):
+            if not frappe.db.exists("User", mail):
+                frappe.get_doc({"doctype": "User", "email": mail, "first_name": "Test", "send_welcome_email": 0,
+                                "roles": [{"role": role}]}).insert(ignore_permissions=True)
+            with self.subTest(role=role):
+                for droit in ("read", "write"):
+                    self.assertFalse(frappe.has_permission(DOCTYPE, droit, user=mail))
+        chemin = os.path.join(os.path.dirname(__file__), "..", "openlab_academy", "doctype",
+                              "reglages_openlab_academy", "reglages_openlab_academy.json")
+        with open(chemin, encoding="utf-8") as f:
+            self.assertEqual({p["role"] for p in json.load(f)["permissions"]}, {"System Manager"})
 
 
 class TestPatchExercices(FrappeTestCase):

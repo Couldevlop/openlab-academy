@@ -4,6 +4,7 @@ from collections.abc import Callable
 from typing import Protocol
 
 from openlab_academy.domain.cohorte import Cohorte
+from openlab_academy.domain.fenetre import date_ouverture
 from openlab_academy.domain.parcours import Parcours
 from openlab_academy.domain.reglages import Reglages, Rythme
 
@@ -26,9 +27,14 @@ class OuvrirCohorte:
 
     def executer(self, parcours: Parcours, debut: datetime.date | None = None,
                  rythme: Rythme | None = None) -> tuple[str, bool]:
-        """Renvoie (identifiant, créée ?). Rythme par défaut : le premier des réglages."""
-        cohorte = Cohorte.pilote(parcours, debut or self._debut_par_defaut(),
-                                 rythme or self._reglages.rythmes[0], self._reglages)
+        """Renvoie (identifiant, créée ?). Rythme par défaut : le premier des réglages. Un parcours limité à ses
+        dates reçoit une fenêtre d'un mois, sans rythme, depuis la date d'ouverture réglée."""
+        if parcours.acces_limite_a_la_cohorte:
+            ouverture = date_ouverture(self._reglages.ouverture_lancement, self._aujourd_hui())
+            cohorte = Cohorte.fenetre(parcours, debut or ouverture, self._reglages)
+        else:
+            cohorte = Cohorte.pilote(parcours, debut or self._debut_par_defaut(),
+                                     rythme or self._reglages.rythmes[0], self._reglages)
         existante = self._depot.trouver(cohorte.titre)
         if existante:
             return existante, False

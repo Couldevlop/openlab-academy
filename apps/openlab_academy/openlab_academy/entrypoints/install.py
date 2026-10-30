@@ -1,7 +1,8 @@
 """Hooks Frappe after_install / after_migrate : réglages, rôles, case « Parcours gratuit », publication des
-parcours, cohorte pilote."""
+parcours, passage au parcours de lancement et sa cohorte."""
 import frappe
 
+from openlab_academy.domain.reglages import TITRE_LANCEMENT
 from openlab_academy.entrypoints import cohorte, seed
 from openlab_academy.infrastructure import reglages_evaluation_frappe, reglages_frappe, reglages_source_frappe
 from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
@@ -9,6 +10,7 @@ from openlab_academy.infrastructure.visibilite_frappe import CHAMP_LIMITE, CHAMP
 
 ROLE_INTENDANT = "Intendant OpenLab"
 PARCOURS = "LMS Course"
+DOCTYPE_REGLAGES = reglages_source_frappe.DOCTYPE
 
 
 def preparer_roles() -> None:
@@ -93,6 +95,18 @@ def preparer_champs_lancement() -> None:
     frappe.clear_cache(doctype="Course Lesson")
 
 
+def preparer_lancement(commit: bool = True) -> None:
+    """Passe le site au parcours de lancement, une seule fois : l'écran de réglages en garde la trace
+    (« lancement_initialise ») et le choix de l'administrateur survit ensuite aux migrations."""
+    doc = frappe.get_single(DOCTYPE_REGLAGES)
+    if doc.lancement_initialise:
+        return
+    doc.update({"parcours_pilote": TITRE_LANCEMENT, "phase_lancement": 1, "lancement_initialise": 1})
+    doc.set("parcours_lancement", [{"cours": frappe.db.get_value("LMS Course", {"title": TITRE_LANCEMENT})}])
+    doc.save(ignore_permissions=True)
+    cohorte.ouvrir_pilote(commit=commit)
+
+
 def after_install(commit: bool = True) -> None:
     reglages_source_frappe.initialiser()
     reglages_evaluation_frappe.preparer()
@@ -101,7 +115,7 @@ def after_install(commit: bool = True) -> None:
     preparer_champs_lancement()
     reglages_frappe.appliquer()
     seed.run(commit=commit)
-    cohorte.ouvrir_pilote(commit=commit)
+    preparer_lancement(commit=commit)
 
 
 def after_migrate(commit: bool = True) -> None:
@@ -113,3 +127,4 @@ def after_migrate(commit: bool = True) -> None:
     preparer_champs_lancement()
     reglages_frappe.appliquer()
     seed.run(commit=commit)
+    preparer_lancement(commit=commit)

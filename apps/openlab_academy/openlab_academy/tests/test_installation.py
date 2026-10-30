@@ -1,9 +1,18 @@
+import datetime
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from openlab_academy.entrypoints import install
+from openlab_academy.domain.fenetre import un_mois_apres
 from openlab_academy.domain.reglages import TITRE_LANCEMENT
+from openlab_academy.entrypoints import cohorte as commande
+from openlab_academy.entrypoints import install
 from openlab_academy.infrastructure import reglages_frappe
+from openlab_academy.tests.test_cohorte_frappe import supprimer_cohortes
+
+REGLAGES = "Reglages OpenLab Academy"
+FONDAMENTAUX = "Fondamentaux de la Data Science"
+TITRE_FENETRE = f"Promo 1 — {TITRE_LANCEMENT}"
 
 
 class TestReglages(FrappeTestCase):
@@ -36,10 +45,55 @@ class TestInstallation(FrappeTestCase):
         frappe.db.rollback()
 
     def test_after_install_configure_et_publie(self):
+        frappe.db.set_single_value(REGLAGES, "lancement_initialise", 0)
+        supprimer_cohortes({"title": TITRE_FENETRE})
         install.after_install(commit=False)
         self.assertEqual(frappe.db.get_single_value("System Settings", "language"), "fr")
         self.assertTrue(frappe.db.exists("LMS Course", {"title": TITRE_LANCEMENT}))
-        self.assertTrue(frappe.db.exists("LMS Batch", {"title": f"Promo 1 — {TITRE_LANCEMENT} · Standard 12 h"}))
+        lot = frappe.get_doc("LMS Batch", {"title": TITRE_FENETRE})
+        aujourd_hui = datetime.date.today()
+        self.assertEqual((lot.start_date, lot.end_date), (aujourd_hui, un_mois_apres(aujourd_hui)))
+        self.assertEqual(frappe.db.get_single_value(REGLAGES, "lancement_initialise"), 1)
+
+    def test_migration_site_existant(self):
+        """Un site déjà installé, réglé sur l'ancien parcours pilote, passe au parcours de lancement."""
+        install.after_migrate(commit=False)
+        frappe.db.set_single_value(REGLAGES, "parcours_pilote", FONDAMENTAUX)
+        commande.ouvrir_pilote(commit=False)
+        supprimer_cohortes({"title": TITRE_FENETRE})
+        doc = frappe.get_doc(REGLAGES)
+        doc.phase_lancement = 0
+        doc.set("parcours_lancement", [])
+        doc.lancement_initialise = 0
+        doc.save(ignore_permissions=True)
+        avant = frappe.get_all("LMS Batch", {"title": ("like", f"Promo 1 — {FONDAMENTAUX}%")},
+                               ["name", "start_date", "end_date"])
+        self.assertTrue(avant)
+        install.after_migrate(commit=False)
+        doc = frappe.get_doc(REGLAGES)
+        self.assertEqual(doc.parcours_pilote, TITRE_LANCEMENT)
+        self.assertEqual(doc.phase_lancement, 1)
+        self.assertEqual([l.cours for l in doc.parcours_lancement],
+                         [frappe.db.get_value("LMS Course", {"title": TITRE_LANCEMENT})])
+        self.assertEqual(doc.lancement_initialise, 1)
+        self.assertTrue(frappe.db.exists("LMS Batch", {"title": TITRE_FENETRE}))
+        apres = frappe.get_all("LMS Batch", {"title": ("like", f"Promo 1 — {FONDAMENTAUX}%")},
+                               ["name", "start_date", "end_date"])
+        self.assertEqual(apres, avant)
+
+    def test_choix_de_l_administrateur_conserve(self):
+        """Une fois le lancement initialisé, une migration ne remet rien en cause."""
+        install.after_migrate(commit=False)
+        doc = frappe.get_doc(REGLAGES)
+        doc.phase_lancement = 0
+        doc.parcours_pilote = FONDAMENTAUX
+        doc.set("parcours_lancement", [])
+        doc.lancement_initialise = 1
+        doc.save(ignore_permissions=True)
+        install.after_migrate(commit=False)
+        doc = frappe.get_doc(REGLAGES)
+        self.assertEqual((doc.phase_lancement, doc.parcours_pilote, len(doc.parcours_lancement)),
+                         (0, FONDAMENTAUX, 0))
 
     def test_after_migrate_republie_les_parcours(self):
         self.assertIn("openlab_academy.entrypoints.install.after_migrate", frappe.get_hooks("after_migrate"))
