@@ -201,14 +201,17 @@ def annoncer_cohorte(membre: str, lot: str) -> None:
 
 
 def issue_de_cohorte(doc) -> bool:
-    """Inscription au parcours créée par le LMS pendant l'enregistrement d'une inscription à une cohorte qui porte ce
-    parcours. Le drapeau `via_batch_enrollment` ne suffit pas (un code ou une entrée mal formée peut le poser) : la
-    cohorte doit porter le parcours et son inscription être en cours côté serveur."""
+    """Inscription au parcours créée par le LMS pour une inscription à une cohorte qui porte ce parcours : soit en cours
+    d'enregistrement (premier enregistrement), soit déjà enregistrée (l'équipe ré-enregistre l'inscription après avoir
+    ajouté un parcours à la cohorte). Le drapeau `via_batch_enrollment` ne suffit pas (un code ou une entrée mal
+    formée peut le poser) : la cohorte doit porter le parcours et l'inscription du membre exister côté serveur."""
     lot = doc.enrollment_from_batch
     if not (lot and doc.flags.get("via_batch_enrollment")):
         return False
+    if not frappe.db.exists("Batch Course", {"parent": lot, "parenttype": "LMS Batch", "course": doc.course}):
+        return False
     return bool(_cache().get(("cohorte_en_cours", doc.member, lot))
-                and frappe.db.exists("Batch Course", {"parent": lot, "parenttype": "LMS Batch", "course": doc.course}))
+                or frappe.db.exists("LMS Batch Enrollment", {"batch": lot, "member": doc.member}))
 
 
 def _cours_bloquants(utilisateur: str, doctype: str, nom: str) -> list[str]:

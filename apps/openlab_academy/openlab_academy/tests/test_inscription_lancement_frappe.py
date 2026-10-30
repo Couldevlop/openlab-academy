@@ -162,7 +162,7 @@ class TestRefus(Base):
         for flags in ({"via_batch_enrollment": True}, {"via_batch_enrollment": True, "ignore_permissions": True}):
             frappe.set_user(ELEVE)
             try:
-                with self.assertRaises((frappe.ValidationError, frappe.PermissionError)):
+                with self.assertRaisesRegex(frappe.ValidationError, FERMEES):
                     frappe.client.insert({"doctype": INSCRIPTION, "course": self.f, "member": ELEVE,
                                           "enrollment_from_batch": self.lot, "flags": flags})
             finally:
@@ -182,14 +182,61 @@ class TestRefus(Base):
             frappe.set_user("Administrator")
         self.assertEqual(self.inscriptions(self.f), 0)
 
+    def test_reenregistrement_d_une_inscription_de_cohorte_apres_ajout_d_un_parcours_cache(self):
+        """L'équipe ajoute à la cohorte un parcours caché puis ré-enregistre l'inscription existante du membre : le LMS
+        crée l'inscription à ce parcours, qui n'est pas refusée (la cohorte est jugée dans son ensemble)."""
+        inscription = self.s_inscrire_cohorte()
+        lot = frappe.get_doc("LMS Batch", self.lot)
+        lot.append("courses", {"course": self.o})
+        lot.save(ignore_permissions=True)
+        self.lancement(self.f)
+        frappe.clear_messages()
+        inscription.reload()
+        inscription.save(ignore_permissions=True)
+        self.assertEqual(self.inscriptions(self.o), 1)
+        self.assertEqual(frappe.local.message_log, [])
+
+    def test_drapeau_sans_inscription_de_cohorte_ni_en_cours_ni_existante_reste_refuse(self):
+        """Même cohorte qui porte le parcours, mais le membre n'y est pas inscrit : le drapeau seul ne suffit pas."""
+        lot = frappe.get_doc("LMS Batch", self.lot)
+        lot.append("courses", {"course": self.o})
+        lot.save(ignore_permissions=True)
+        self.lancement(self.f)
+        doc = frappe.get_doc({"doctype": INSCRIPTION, "course": self.o, "member": ELEVE,
+                              "enrollment_from_batch": self.lot})
+        doc.flags.via_batch_enrollment = True
+        self.assertFalse(lms.issue_de_cohorte(doc))
+        with self.assertRaisesRegex(frappe.ValidationError, CACHE):
+            doc.insert(ignore_permissions=True)
+        self.assertEqual(self.inscriptions(self.o), 0)
+
+    def test_issue_de_cohorte_exige_que_la_cohorte_porte_le_parcours(self):
+        self.s_inscrire_cohorte()
+        autre = creer("Parcours hors cohorte")
+        doc = frappe.get_doc({"doctype": INSCRIPTION, "course": autre, "member": ELEVE,
+                              "enrollment_from_batch": self.lot})
+        doc.flags.via_batch_enrollment = True
+        self.assertFalse(lms.issue_de_cohorte(doc))
+
     def test_visiteur_refuse(self):
         self.jour(APRES)
         frappe.set_user("Guest")
         try:
-            with self.assertRaises((frappe.ValidationError, frappe.PermissionError)):
+            # le visiteur n'a aucun droit de création : refusé par les permissions du LMS avant notre crochet
+            frappe.clear_messages()
+            with self.assertRaises(frappe.PermissionError):
                 frappe.client.insert({"doctype": INSCRIPTION, "course": self.f, "member": "Guest"})
-            with self.assertRaises((frappe.ValidationError, frappe.PermissionError)):
-                frappe.client.insert({"doctype": LOT_INSCRIPTION, "batch": self.lot, "member": "Guest"})
+            self.assertRegex(" ".join(m["message"] for m in frappe.local.message_log),
+                             r"Guest</strong>.*pas d.{1,6}accès.*LMS Enrollment</strong>")
+            # droits contournés : c'est notre refus (parcours fermé) qui retient le visiteur
+            with self.assertRaisesRegex(frappe.ValidationError, FERMEES):
+                frappe.get_doc({"doctype": INSCRIPTION, "course": self.f, "member": "Guest"}).insert(
+                    ignore_permissions=True)
+            self.lancement()
+            self.jour(DEDANS)
+            with self.assertRaisesRegex(frappe.ValidationError, CACHE):
+                frappe.get_doc({"doctype": INSCRIPTION, "course": self.o, "member": "Guest"}).insert(
+                    ignore_permissions=True)
         finally:
             frappe.set_user("Administrator")
         self.assertEqual(frappe.db.count(INSCRIPTION, {"member": "Guest"}), 0)
