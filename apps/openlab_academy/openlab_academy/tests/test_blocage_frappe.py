@@ -16,10 +16,12 @@ from werkzeug.wrappers import Request
 from openlab_academy import hooks
 from openlab_academy.application.ports_paiement import NouveauDossier
 from openlab_academy.domain.echeancier import Echeance, Mode, Tarif
+from openlab_academy.domain.lancement import PhaseLancement
 from openlab_academy.domain.parcours import Bloc
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.entrypoints import http, lms
 from openlab_academy.infrastructure.depot_dossiers_frappe import DepotDossiersFrappe
+from openlab_academy.infrastructure import reglages_source_frappe
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
 from openlab_academy.tests.fabriques import parcours
 from openlab_academy.tests.test_exercices_frappe import module
@@ -46,6 +48,14 @@ def suivre(cours, membre):
                         "member_type": "Student"}).insert(ignore_permissions=True)
 
 
+def sans_phase_de_lancement(test):
+    """Ces suites éprouvent le blocage pour paiement : la phase de lancement du site (qui cacherait leurs parcours
+    de test) est décochée le temps du test ; la visibilité a sa propre suite."""
+    patch = mock.patch.object(reglages_source_frappe, "phase_lancement", return_value=PhaseLancement(False))
+    patch.start()
+    test.addCleanup(patch.stop)
+
+
 def requete(chemin, methode="GET", entetes=None):
     return Request(EnvironBuilder(path=chemin, method=methode, headers=HTML if entetes is None else entetes).get_environ())
 
@@ -55,6 +65,7 @@ class Base(FrappeTestCase):
 
     def setUp(self):
         self.requete_initiale = getattr(frappe.local, "request", None)
+        sans_phase_de_lancement(self)
         lms.vider_cache()
         depot = DepotFrappe(commit=False, reglages=Reglages())
         self.a = depot.creer(parcours(title="Parcours bloqué test", questions_par_quiz=5,

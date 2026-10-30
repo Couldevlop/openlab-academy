@@ -119,9 +119,11 @@ class TestHooksDeclares(unittest.TestCase):
 class TestScriptDePaiement(unittest.TestCase):
     def test_present_et_sans_dependance(self):
         js = (pathlib.Path(__file__).parents[1] / "public" / "js" / "paiement.js").read_text(encoding="utf-8")
-        for jeton in ("ParcoursBloque", "/espace/paiement/", "clone()", "location.assign"):
+        for jeton in ("ParcoursBloque", "/espace/paiement/", "clone()", "location.assign",
+                      "ParcoursFerme", "/parcours-ferme/", "ParcoursCache", "/lms/courses"):
             self.assertIn(jeton, js)
         self.assertNotIn("import ", js)
+        self.assertNotIn("innerHTML", js)
 
 
 class TestFeuilleDeStyle(unittest.TestCase):

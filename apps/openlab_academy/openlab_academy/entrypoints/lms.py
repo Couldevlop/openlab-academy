@@ -12,13 +12,14 @@ from lms.lms.doctype.lms_quiz import lms_quiz
 
 from openlab_academy.application.acces_exercices import EnregistrerOuverture, VerifierAccesExercices
 from openlab_academy.application.acces_parcours import cours_bloques, parcours_bloque, redirection_paiement
+from openlab_academy.application.visibilite import Refus, Visibilite, redirection
 from openlab_academy.domain.verrou import ExercicesVerrouilles
 from openlab_academy.infrastructure import contenus_parcours_frappe as contenus
 from openlab_academy.infrastructure import editorjs
 from openlab_academy.infrastructure import reglages_source_frappe
 from openlab_academy.infrastructure.depot_dossiers_frappe import DOSSIER, DepotDossiersFrappe
 from openlab_academy.infrastructure.depot_ouvertures_frappe import DepotOuverturesFrappe
-from openlab_academy.infrastructure.visibilite_frappe import CHAMP_VIDEO
+from openlab_academy.infrastructure.visibilite_frappe import CHAMP_VIDEO, SourceVisibiliteFrappe
 
 ROLES_NON_BLOQUES = {"System Manager", "Moderator", "Course Creator", "Batch Evaluator", "Intendant OpenLab"}
 PREFIXE_CAS = "Mise en situation"
@@ -26,6 +27,7 @@ LECTURE = {"read", "select", "print"}
 EVALUATIONS = ("LMS Quiz", "LMS Assignment", "LMS Programming Exercise")
 CACHE = "openlab_blocages"
 TITRE_ERREUR = "Blocage par parcours : calcul impossible"
+TITRE_ERREUR_VISIBILITE = "Visibilité des parcours : calcul impossible"
 
 
 class ParcoursBloque(frappe.ValidationError):
@@ -34,6 +36,30 @@ class ParcoursBloque(frappe.ValidationError):
     def __init__(self, cours: str):
         self.redirection = redirection_paiement(cours)
         super().__init__("Paiement requis")
+
+
+class _ParcoursRefuse(frappe.ValidationError):
+    """Parcours refusé par la visibilité : le navigateur reçoit exc_type (ParcoursFerme ou ParcoursCache) et
+    `redirection`, calculée par le serveur (jamais fournie par le client)."""
+    message = ""
+
+    def __init__(self, cours: str, refus: Refus):
+        self.redirection = redirection(refus, cours)
+        super().__init__(self.message)
+
+
+class ParcoursFerme(_ParcoursRefuse):
+    message = "Parcours fermé"
+
+    def __init__(self, cours: str):
+        super().__init__(cours, Refus.FERME)
+
+
+class ParcoursCache(_ParcoursRefuse):
+    message = "Parcours indisponible"
+
+    def __init__(self, cours: str):
+        super().__init__(cours, Refus.CACHE)
 
 
 # --- blocage par parcours : calculé depuis le dossier (une fois par requête), jamais stocké -----------------
@@ -86,8 +112,74 @@ def bloque_pour(utilisateur: str, cours: str | None) -> bool:
     return cache[cle]
 
 
-def _refuser_si_bloque(cours: str | None, utilisateur: str | None = None) -> None:
-    if bloque_pour(utilisateur or frappe.session.user, cours):
+# --- visibilité (fermeture hors fenêtre, masquage pendant la phase de lancement) : même principe, mais le visiteur
+# est concerné et seuls les agents sont exemptés. Erreur de calcul : journalisée, FERME pour un parcours limité
+# (fail-safe : la fenêtre ne s'ouvre pas par accident), aucun masquage sinon.
+def _source() -> SourceVisibiliteFrappe:
+    """Une source par requête : phase, limites et dates lues une fois (vider_cache l'oublie)."""
+    cache = _cache()
+    if "source" not in cache:
+        cache["source"] = SourceVisibiliteFrappe()
+    return cache["source"]
+
+
+def _visibilite() -> Visibilite:
+    return Visibilite(_source(), lambda: aujourd_hui())
+
+
+def refus_pour(utilisateur: str, cours: str | None) -> Refus | None:
+    if not cours or not utilisateur:
+        return None
+    cle = ("refus", utilisateur, cours, aujourd_hui())
+    cache = _cache()
+    if cle not in cache:
+        try:
+            cache[cle] = _visibilite().refus(cours, _exempte(utilisateur))
+        except Exception:
+            frappe.log_error(title=TITRE_ERREUR_VISIBILITE, message=f"parcours {cours}")
+            try:
+                limite = _source().limite(cours) and not _exempte(utilisateur)
+            except Exception:
+                limite = False
+            cache[cle] = Refus.FERME if limite else None
+    return cache[cle]
+
+
+def _cours_refuses(utilisateur: str | None) -> tuple[str, ...]:
+    if not utilisateur:
+        return ()
+    try:
+        return tuple(sorted(_visibilite().refuses(_exempte(utilisateur))))
+    except Exception:
+        frappe.log_error(title=TITRE_ERREUR_VISIBILITE, message="liste des parcours refusés")
+        try:
+            return () if _exempte(utilisateur) else tuple(sorted(_source().cours_limites()))
+        except Exception:
+            return ()
+
+
+def lot_cache_pour(utilisateur: str, lot: str) -> bool:
+    """Cohorte dont tous les parcours sont cachés à cet utilisateur (sa page n'a plus rien à montrer)."""
+    try:
+        cours = frappe.get_all("Batch Course", {"parent": lot, "parenttype": "LMS Batch"}, pluck="course")
+    except Exception:
+        frappe.log_error(title=TITRE_ERREUR_VISIBILITE, message=f"cohorte {lot}")
+        return False
+    return bool(cours) and all(refus_pour(utilisateur, c) is Refus.CACHE for c in cours)
+
+
+def _lever(refus: Refus, cours: str) -> None:
+    e = ParcoursFerme(cours) if refus is Refus.FERME else ParcoursCache(cours)
+    frappe.local.response["redirection"] = e.redirection
+    raise e
+
+
+def _refuser(cours: str | None, utilisateur: str | None = None) -> None:
+    """Refus de visibilité d'abord (le visiteur y est soumis), puis blocage pour paiement."""
+    utilisateur = utilisateur or frappe.session.user
+    if refus := refus_pour(utilisateur, cours):
+        _lever(refus, cours)
+    if bloque_pour(utilisateur, cours):
         e = ParcoursBloque(cours)
         frappe.local.response["redirection"] = e.redirection
         raise e
@@ -105,21 +197,40 @@ def _cours_bloquants(utilisateur: str, doctype: str, nom: str) -> list[str]:
     return bloques if cours and len(bloques) == len(cours) else []
 
 
+def _refus_evaluation(utilisateur: str, doctype: str, nom: str) -> tuple[Refus, str] | None:
+    """Refus de visibilité d'une évaluation, si TOUS ses parcours sont refusés (une évaluation partagée reste
+    ouverte tant qu'un de ses parcours l'est). Les agents n'y sont jamais soumis."""
+    if _exempte(utilisateur):
+        return None
+    try:
+        cours = sorted(contenus.cours_de_l_evaluation(doctype, nom))
+    except Exception:
+        frappe.log_error(title=TITRE_ERREUR_VISIBILITE, message=f"évaluation {doctype} {nom}")
+        return None
+    refus = [refus_pour(utilisateur, c) for c in cours]
+    return (refus[0], cours[0]) if cours and all(refus) else None
+
+
 def _refuser_evaluation_bloquee(utilisateur: str, doctype: str, nom: str) -> None:
+    if refus := _refus_evaluation(utilisateur, doctype, nom):
+        _lever(*refus)
     if _concerne(utilisateur) and (bloques := _cours_bloquants(utilisateur, doctype, nom)):
-        _refuser_si_bloque(bloques[0], utilisateur)
+        _refuser(bloques[0], utilisateur)
 
 
 def lecture_permise(doc, ptype="read", user=None, debug=False):
-    """Hook has_permission (leçons, chapitres, évaluations) : refuse la lecture d'un parcours bloqué, sinon sans
-    avis (None). Jamais True : Frappe retient le premier avis non nul, un True court-circuiterait les refus du LMS."""
+    """Hook has_permission (leçons, chapitres, évaluations) : refuse la lecture d'un parcours fermé, caché (visiteur
+    compris) ou bloqué, sinon sans avis (None). Jamais True : Frappe retient le premier avis non nul, un True
+    court-circuiterait les refus du LMS."""
     utilisateur = user or frappe.session.user
-    if ptype not in LECTURE or not _concerne(utilisateur):
+    if ptype not in LECTURE:
         return None
     if doc.doctype in EVALUATIONS:
-        refuse = bool(_cours_bloquants(utilisateur, doc.doctype, doc.name))
+        refuse = bool(_refus_evaluation(utilisateur, doc.doctype, doc.name)) or (
+            _concerne(utilisateur) and bool(_cours_bloquants(utilisateur, doc.doctype, doc.name)))
     else:
-        refuse = bloque_pour(utilisateur, doc.get("course"))
+        cours = doc.get("course")
+        refuse = bool(refus_pour(utilisateur, cours)) or (_concerne(utilisateur) and bloque_pour(utilisateur, cours))
     return False if refuse else None
 
 
@@ -133,21 +244,26 @@ def _cours_bloques(utilisateur: str | None) -> tuple[str, ...]:
         return ()
 
 
+def _cours_exclus(utilisateur: str | None) -> tuple[str, ...]:
+    """Parcours retirés des listes : bloqués pour paiement, fermés ou cachés."""
+    return tuple(sorted(set(_cours_bloques(utilisateur)) | set(_cours_refuses(utilisateur))))
+
+
 def conditions_lecons(user=None, doctype=None) -> str:
-    """Listes de leçons (corps compris) : celles des parcours bloqués en sont retirées."""
-    return contenus.condition_lecons(_cours_bloques(user or frappe.session.user))
+    """Listes de leçons (corps compris) : celles des parcours bloqués, fermés ou cachés en sont retirées."""
+    return contenus.condition_lecons(_cours_exclus(user or frappe.session.user))
 
 
 def conditions_quiz(user=None, doctype=None) -> str:
-    return contenus.condition_evaluations("LMS Quiz", _cours_bloques(user or frappe.session.user), True, True)
+    return contenus.condition_evaluations("LMS Quiz", _cours_exclus(user or frappe.session.user), True, True)
 
 
 def conditions_devoirs(user=None, doctype=None) -> str:
-    return contenus.condition_evaluations("LMS Assignment", _cours_bloques(user or frappe.session.user), True, False)
+    return contenus.condition_evaluations("LMS Assignment", _cours_exclus(user or frappe.session.user), True, False)
 
 
 def conditions_exercices(user=None, doctype=None) -> str:
-    return contenus.condition_evaluations("LMS Programming Exercise", _cours_bloques(user or frappe.session.user),
+    return contenus.condition_evaluations("LMS Programming Exercise", _cours_exclus(user or frappe.session.user),
                                           False, False)
 
 
@@ -156,7 +272,7 @@ def conditions_exercices(user=None, doctype=None) -> str:
 def get_lesson(course: str, chapter: int, lesson: int) -> dict:
     """Surcharge de lms.lms.utils.get_lesson : refus d'un parcours bloqué avant toute lecture, puis même réponse
     et première ouverture enregistrée."""
-    _refuser_si_bloque(course)
+    _refuser(course)
     details = lms_utils.get_lesson(course, chapter, lesson)
     utilisateur = frappe.session.user
     if utilisateur != "Guest" and isinstance(details, dict) and details.get("name"):
@@ -172,7 +288,7 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
 def get_course_details(course: str) -> dict:
     """Surcharge : la présentation d'un parcours bloqué, ouverte en naviguant dans l'interface (sans chargement de
     page, donc sans before_request), renvoie elle aussi vers la page de paiement."""
-    _refuser_si_bloque(course)
+    _refuser(course)
     return lms_utils.get_course_details(course)
 
 
@@ -193,21 +309,21 @@ def check_answer(quiz: str, question: str, question_type: str, answers: str):
 @frappe.whitelist()
 def mark_lesson_progress(course: str, chapter_number: int, lesson_number: int):
     """Surcharge : pas de progression enregistrée sur un parcours bloqué."""
-    _refuser_si_bloque(course)
+    _refuser(course)
     return lms_api.mark_lesson_progress(course, chapter_number, lesson_number)
 
 
 @frappe.whitelist()
 def save_progress(lesson: str, course: str | None = None, scorm_details: dict = None):
     """Surcharge : idem pour l'enregistrement direct (SCORM) ; le parcours retenu est celui de la leçon."""
-    _refuser_si_bloque(contenus.cours_de_la_lecon(lesson))
+    _refuser(contenus.cours_de_la_lecon(lesson))
     return course_lesson.save_progress(lesson, course, scorm_details)
 
 
 @frappe.whitelist()
 def create_certificate(course: str):
     """Surcharge : pas de certificat sur un parcours bloqué, même au contenu achevé."""
-    _refuser_si_bloque(course)
+    _refuser(course)
     return lms_certificate.create_certificate(course)
 
 
@@ -215,7 +331,7 @@ def avant_certificat(doc, method=None) -> None:
     """Tout autre chemin de création du certificat : refusé à l'apprenant bloqué ; un membre de l'équipe qui le
     délivre (évaluateur, administrateur) n'est jamais arrêté par le paiement."""
     if _concerne(frappe.session.user):
-        _refuser_si_bloque(doc.course, doc.member)
+        _refuser(doc.course, doc.member)
 
 
 # --- soumissions : parcours bloqué, puis verrou des exercices ----------------------------------------------
