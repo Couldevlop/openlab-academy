@@ -1,4 +1,5 @@
 import datetime
+from unittest import mock
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -41,6 +42,9 @@ class TestReglages(FrappeTestCase):
 
 
 class TestInstallation(FrappeTestCase):
+    def setUp(self):
+        frappe.db.set_single_value(REGLAGES, "ouverture_lancement", None)  # indépendant de l'état du banc
+
     def tearDown(self):
         frappe.db.rollback()
 
@@ -54,6 +58,14 @@ class TestInstallation(FrappeTestCase):
         aujourd_hui = datetime.date.today()
         self.assertEqual((lot.start_date, lot.end_date), (aujourd_hui, un_mois_apres(aujourd_hui)))
         self.assertEqual(frappe.db.get_single_value(REGLAGES, "lancement_initialise"), 1)
+
+    def test_sans_cours_de_lancement_aucune_ligne_de_parcours(self):
+        """Jamais de ligne `cours=None` dans les parcours visibles pendant le lancement."""
+        frappe.db.set_single_value(REGLAGES, "lancement_initialise", 0)
+        frappe.db.set_value("LMS Course", {"title": TITRE_LANCEMENT}, "title", "Titre écarté")
+        with mock.patch.object(install.cohorte, "ouvrir_pilote"):
+            install.preparer_lancement(commit=False)
+        self.assertEqual(frappe.get_single(REGLAGES).get("parcours_lancement"), [])
 
     def test_migration_site_existant(self):
         """Un site déjà installé, réglé sur l'ancien parcours pilote, passe au parcours de lancement."""

@@ -102,7 +102,8 @@ def preparer_lancement(commit: bool = True) -> None:
     if doc.lancement_initialise:
         return
     doc.update({"parcours_pilote": TITRE_LANCEMENT, "phase_lancement": 1, "lancement_initialise": 1})
-    doc.set("parcours_lancement", [{"cours": frappe.db.get_value("LMS Course", {"title": TITRE_LANCEMENT})}])
+    cours = frappe.db.get_value("LMS Course", {"title": TITRE_LANCEMENT})
+    doc.set("parcours_lancement", [{"cours": cours}] if cours else [])
     doc.save(ignore_permissions=True)
     cohorte.ouvrir_pilote(commit=commit)
 
