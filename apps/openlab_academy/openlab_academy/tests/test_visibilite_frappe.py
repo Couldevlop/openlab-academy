@@ -259,7 +259,8 @@ class TestApi(Base):
                 self.assertIs(lms.lecture_permise(frappe.get_doc("Course Lesson", self.lecon_a), "read", u), False)
 
     def test_plan_du_parcours_refuse(self):
-        """Les titres de chapitres et de leçons d'un parcours fermé ou caché ne sont pas servis (apprenant, visiteur)."""
+        """Les titres de chapitres et de leçons d'un parcours fermé ou caché ne sont pas servis (apprenant,
+        visiteur)."""
         for u in (ELEVE, "Guest"):
             frappe.set_user(u)
             self.jour(DEDANS)
@@ -291,7 +292,8 @@ class TestApi(Base):
         frappe.set_user(ELEVE)
         self.assertNotIn(self.chapitre_l, frappe.get_list("Course Chapter", pluck="name"))
         self.jour(DEDANS)
-        self.assertNotIn(frappe.db.escape(self.l), lms.conditions_chapitres(ELEVE))  # le site peut garder d'autres parcours fermés
+        # le site peut garder d'autres parcours fermés
+        self.assertNotIn(frappe.db.escape(self.l), lms.conditions_chapitres(ELEVE))
         self.assertIn(self.chapitre_l, frappe.get_list("Course Chapter", pluck="name"))
         self.jour(LENDEMAIN)
         agent = utilisateur("agent.chapitres.vis@example.ci", "Course Creator")
@@ -594,7 +596,23 @@ class TestRessources(Base):
         format_, utilisateur_, adresse_, motif = journal.return_value.warning.call_args.args
         self.assertEqual((utilisateur_, adresse_), (ELEVE, self.lien))
         self.assertIn("denied", format_)
-        self.assertNotIn(ELEVE, motif)
+        self.assertEqual(motif, "aucune référence ouverte et accessible")
+
+    def test_adresse_journalisee_sans_caractere_de_controle(self):
+        """Seule une adresse hors des références peut porter des caractères de contrôle : elle n'arrive au journal
+        que par l'échec du calcul."""
+        frappe.set_user(ELEVE)
+        lms.vider_cache()
+        hostile = quote(self.lien + "\nWARNING forgé\x1b[31m\r\t")
+        with (
+            mock.patch(REFERENCES, side_effect=RuntimeError("changement interne")),
+            mock.patch.object(frappe, "logger") as journal,
+            mock.patch.object(frappe, "log_error"),
+        ):
+            with self.assertRaises(frappe.PermissionError):
+                lms.serve_resource(hostile)
+        adresse = journal.return_value.warning.call_args.args[2]
+        self.assertEqual(adresse, self.lien + "WARNING forgé[31m")
 
     def test_agent_servi_meme_si_le_calcul_des_references_echoue(self):
         with mock.patch(REFERENCES, side_effect=RuntimeError("changement interne")) as calcul:
@@ -604,12 +622,43 @@ class TestRessources(Base):
     def test_echec_du_calcul_refuse_les_autres_et_le_journalise(self):
         for u in (ELEVE, "Guest"):
             frappe.set_user(u)
-            with self.subTest(u=u), mock.patch(REFERENCES, side_effect=RuntimeError("changement interne")),                     mock.patch.object(frappe, "logger") as journal, mock.patch.object(frappe, "log_error") as erreur,                     mock.patch(FICHIER) as service:
+            lms.vider_cache()
+            with (
+                self.subTest(u=u),
+                mock.patch(REFERENCES, side_effect=RuntimeError("changement interne")),
+                mock.patch.object(frappe, "logger") as journal,
+                mock.patch.object(frappe, "log_error") as erreur,
+                mock.patch(FICHIER) as service,
+            ):
                 with self.assertRaises(frappe.PermissionError):
                     lms.serve_resource(self.lien)
                 service.assert_not_called()
                 erreur.assert_called_once()
                 self.assertIn("calcul impossible", journal.return_value.warning.call_args.args[-1])
+
+    def test_echec_du_calcul_journalise_une_seule_fois_par_requete(self):
+        """Une page qui charge dix médias ne doit pas écrire dix fois le même rapport d'erreur."""
+        frappe.set_user(ELEVE)
+        lms.vider_cache()
+        with (
+            mock.patch(REFERENCES, side_effect=RuntimeError("changement interne")),
+            mock.patch.object(frappe, "logger") as journal,
+            mock.patch.object(frappe, "log_error") as erreur,
+        ):
+            for _ in range(3):
+                with self.assertRaises(frappe.PermissionError):
+                    lms.serve_resource(self.lien)
+        erreur.assert_called_once()
+        journal.return_value.warning.assert_called_once()
+        lms.vider_cache()  # requête suivante : de nouveau journalisé
+        with (
+            mock.patch(REFERENCES, side_effect=RuntimeError("changement interne")),
+            mock.patch.object(frappe, "logger"),
+            mock.patch.object(frappe, "log_error") as erreur,
+        ):
+            with self.assertRaises(frappe.PermissionError):
+                lms.serve_resource(self.lien)
+        erreur.assert_called_once()
 
     def test_fichier_inconnu_laisse_au_lms(self):
         frappe.set_user(ELEVE)

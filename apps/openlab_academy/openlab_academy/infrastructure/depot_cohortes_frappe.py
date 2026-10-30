@@ -3,6 +3,7 @@ import frappe
 
 from openlab_academy.domain.cohorte import PLACES_FENETRE, Cohorte
 
+
 def cohorte_fenetre(cours: str, champs: tuple[str, ...] = ("name",)):
     """Cohorte-fenêtre d'un parcours : la cohorte publiée à accès libre (places de la fenêtre, jamais celles d'une
     cohorte pilote) qui le porte, la plus récente si plusieurs. Seule sélection, partagée par le rattachement des

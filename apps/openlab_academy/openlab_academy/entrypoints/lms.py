@@ -374,10 +374,17 @@ def create_certificate(course: str):
     return lms_certificate.create_certificate(course)
 
 
+def _sans_controle(texte: str) -> str:
+    """Adresse fournie par le client, rendue sûre pour un journal : sans saut de ligne ni autre caractère de contrôle
+    (aucune fausse ligne ne peut s'y glisser)."""
+    return "".join(c for c in texte if c.isprintable())
+
+
 def _journaliser_refus_ressource(file_url: str, motif: str) -> None:
-    """Même trace d'audit que le LMS (journal `lms.security`) : membre, adresse et motif, rien de plus."""
+    """Même trace d'audit que le LMS (journal `lms.security`) : membre, adresse nettoyée et motif, rien de plus."""
     frappe.logger("lms.security").warning(
-        "Lesson resource access denied: user=%s file_url=%s reason=%s", frappe.session.user, file_url, motif)
+        "Lesson resource access denied: user=%s file_url=%s reason=%s", frappe.session.user,
+        _sans_controle(file_url), motif)
 
 
 def _refuser_ressource(utilisateur: str, file_url: str) -> None:
@@ -391,13 +398,17 @@ def _refuser_ressource(utilisateur: str, file_url: str) -> None:
     try:
         references = contenus.references_avouees(adresse)
     except Exception:
-        frappe.log_error(title=TITRE_ERREUR_RESSOURCE)
-        _journaliser_refus_ressource(adresse, "calcul impossible des références")
+        cache = _cache()  # au plus un rapport par requête : une page de dix médias n'écrit pas dix erreurs
+        if not cache.get("erreur_ressource"):
+            cache["erreur_ressource"] = True
+            frappe.log_error(title=TITRE_ERREUR_RESSOURCE)
+            _journaliser_refus_ressource(adresse, "calcul impossible des références")
         raise frappe.PermissionError
     if not references:
         return
     for lecon, reservee, cours in references:
-        if not (refus_pour(utilisateur, cours) or bloque_pour(utilisateur, cours))                 and can_access_lesson(lecon, instructor_only=reservee):
+        if (not (refus_pour(utilisateur, cours) or bloque_pour(utilisateur, cours))
+                and can_access_lesson(lecon, instructor_only=reservee)):
             return
     _journaliser_refus_ressource(adresse, "aucune référence ouverte et accessible")
     raise frappe.PermissionError
