@@ -287,6 +287,11 @@ def conditions_lecons(user=None, doctype=None) -> str:
     return contenus.condition_lecons(_cours_exclus(user or frappe.session.user))
 
 
+def conditions_chapitres(user=None, doctype=None) -> str:
+    """Listes de chapitres : ceux des parcours bloqués, fermés ou cachés en sont retirés (leurs titres)."""
+    return contenus.condition_chapitres(_cours_exclus(user or frappe.session.user))
+
+
 def conditions_quiz(user=None, doctype=None) -> str:
     return contenus.condition_evaluations("LMS Quiz", _cours_exclus(user or frappe.session.user), True, True)
 
@@ -315,6 +320,15 @@ def get_lesson(course: str, chapter: int, lesson: int) -> dict:
         if bloc:  # vidéo en tête du contenu servi, sans écrire en base
             details["content"] = editorjs.avec_video_en_tete(details.get("content"), bloc)
     return details
+
+
+@frappe.whitelist(allow_guest=True)
+def get_course_outline(course: str, progress: bool = False) -> list:
+    """Surcharge : le plan d'un parcours fermé ou caché (titres de chapitres et de leçons) n'est pas servi, visiteur
+    compris ; les agents ne sont jamais refusés."""
+    if isinstance(course, str) and (refus := refus_pour(frappe.session.user, course)):
+        _lever(refus, course)
+    return lms_utils.get_course_outline(course, progress)
 
 
 @frappe.whitelist(allow_guest=True)

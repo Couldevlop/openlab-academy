@@ -43,6 +43,10 @@ def condition_lecons(cours: tuple[str, ...]) -> str:
     return f"ifnull(`tabCourse Lesson`.course, '') not in ({_liste(cours)})" if cours else ""
 
 
+def condition_chapitres(cours: tuple[str, ...]) -> str:
+    return f"ifnull(`tabCourse Chapter`.course, '') not in ({_liste(cours)})" if cours else ""
+
+
 def condition_evaluations(doctype: str, cours: tuple[str, ...], champ_cours: bool, champ_lecon: bool) -> str:
     if not cours:
         return ""

@@ -258,6 +258,45 @@ class TestApi(Base):
                 self.assertTrue(self.hors_condition(u, self.lecon_a))
                 self.assertIs(lms.lecture_permise(frappe.get_doc("Course Lesson", self.lecon_a), "read", u), False)
 
+    def test_plan_du_parcours_refuse(self):
+        """Les titres de chapitres et de leçons d'un parcours fermé ou caché ne sont pas servis (apprenant, visiteur)."""
+        for u in (ELEVE, "Guest"):
+            frappe.set_user(u)
+            self.jour(DEDANS)
+            self.assertTrue(lms.get_course_outline(self.l))  # ouvert : servi
+            self.jour(LENDEMAIN)
+            with mock.patch.object(lms_utils, "get_course_outline") as plan:
+                e = self.refusee(lms.get_course_outline, lms.ParcoursFerme, self.l)
+            plan.assert_not_called()
+            self.assertEqual(e.redirection, f"/parcours-ferme/{self.l}")
+            self.cacher()
+            e = self.refusee(lms.get_course_outline, lms.ParcoursCache, self.a)
+            self.assertEqual(e.redirection, "/lms/courses")
+            self.phase.return_value = PhaseLancement(False, frozenset())
+
+    def test_plan_du_parcours_servi_aux_agents(self):
+        self.cacher()
+        self.jour(LENDEMAIN)
+        for role in sorted(lms.ROLES_NON_BLOQUES):
+            frappe.set_user(utilisateur(f"agent.{role.split()[0].lower()}.plan@example.ci", role))
+            lms.vider_cache()
+            for cours in (self.l, self.a):
+                self.assertTrue(lms.get_course_outline(cours))
+
+    def test_liste_des_chapitres_du_parcours_refuse_retiree(self):
+        self.jour(LENDEMAIN)
+        for u in (ELEVE, "Guest"):
+            frappe.set_user(u)
+            self.assertTrue(self.hors_liste("Course Chapter", lms.conditions_chapitres(u), self.chapitre_l))
+        frappe.set_user(ELEVE)
+        self.assertNotIn(self.chapitre_l, frappe.get_list("Course Chapter", pluck="name"))
+        self.jour(DEDANS)
+        self.assertNotIn(frappe.db.escape(self.l), lms.conditions_chapitres(ELEVE))  # le site peut garder d'autres parcours fermés
+        self.assertIn(self.chapitre_l, frappe.get_list("Course Chapter", pluck="name"))
+        self.jour(LENDEMAIN)
+        agent = utilisateur("agent.chapitres.vis@example.ci", "Course Creator")
+        self.assertEqual(lms.conditions_chapitres(agent), "")
+
     def test_evaluations_du_parcours_ferme_refusees_a_l_apprenant(self):
         """LMS Student lit les quiz : le refus vient bien de notre hook, pas des rôles du LMS."""
         self.jour(LENDEMAIN)
