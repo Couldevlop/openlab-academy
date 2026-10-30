@@ -27,6 +27,16 @@ override_whitelisted_methods = {
     "lms.lms.api.get_translations": "openlab_academy.entrypoints.langue.get_translations",
     "lms.lms.utils.get_lesson": "openlab_academy.entrypoints.lms.get_lesson",
     "lms.lms.utils.get_course_details": "openlab_academy.entrypoints.lms.get_course_details",
+    # catalogue, accueil, recherche et cohortes limités aux parcours visibles (agents jamais filtrés)
+    "lms.lms.utils.get_courses": "openlab_academy.entrypoints.catalogue.get_courses",
+    "lms.lms.utils.get_course_count": "openlab_academy.entrypoints.catalogue.get_course_count",
+    "lms.lms.api.get_my_courses": "openlab_academy.entrypoints.catalogue.get_my_courses",
+    "lms.lms.utils.get_related_courses": "openlab_academy.entrypoints.catalogue.get_related_courses",
+    "lms.lms.utils.get_batches": "openlab_academy.entrypoints.catalogue.get_batches",
+    "lms.lms.api.get_my_batches": "openlab_academy.entrypoints.catalogue.get_my_batches",
+    "lms.lms.utils.get_batch_details": "openlab_academy.entrypoints.catalogue.get_batch_details",
+    "lms.command_palette.search_sqlite": "openlab_academy.entrypoints.catalogue.search_sqlite",
+    "lms.lms.utils.get_course_outline": "openlab_academy.entrypoints.lms.get_course_outline",
     "lms.lms.utils.get_quiz_with_questions": "openlab_academy.entrypoints.lms.get_quiz_with_questions",
     "lms.lms.doctype.lms_quiz.lms_quiz.check_answer": "openlab_academy.entrypoints.lms.check_answer",
     "lms.lms.api.mark_lesson_progress": "openlab_academy.entrypoints.lms.mark_lesson_progress",
@@ -40,6 +50,7 @@ has_permission = {d: "openlab_academy.entrypoints.lms.lecture_permise"
                   for d in ("Course Lesson", "Course Chapter", "LMS Quiz", "LMS Assignment", "LMS Programming Exercise")}
 permission_query_conditions = {
     "Course Lesson": "openlab_academy.entrypoints.lms.conditions_lecons",
+    "Course Chapter": "openlab_academy.entrypoints.lms.conditions_chapitres",
     "LMS Quiz": "openlab_academy.entrypoints.lms.conditions_quiz",
     "LMS Assignment": "openlab_academy.entrypoints.lms.conditions_devoirs",
     "LMS Programming Exercise": "openlab_academy.entrypoints.lms.conditions_exercices",
