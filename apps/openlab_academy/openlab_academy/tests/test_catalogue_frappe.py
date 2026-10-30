@@ -18,6 +18,7 @@ from openlab_academy.entrypoints import catalogue, lms
 from openlab_academy.infrastructure import reglages_source_frappe
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
+from openlab_academy.infrastructure.visibilite_frappe import CHAMP_LIMITE
 from openlab_academy.tests.fabriques import parcours
 from openlab_academy.tests.test_blocage_frappe import suivre, utilisateur
 from openlab_academy.tests.test_exercices_frappe import module
@@ -63,6 +64,16 @@ class Base(FrappeTestCase):
     def decocher(self):
         lms.vider_cache()
         self.phase.return_value = PhaseLancement(False)
+
+    def creer_cache(self, titre):
+        """Un parcours de plus, caché (hors des visibles), avec sa cohorte."""
+        c = DepotFrappe(commit=False, reglages=Reglages()).creer(
+            parcours(title=titre, questions_par_quiz=5, blocs=(Bloc("B1", (module(),)),)))
+        self.lots[c] = DepotCohortesFrappe().creer(Cohorte.fenetre(parcours(title=titre), DEBUT, Reglages()))
+        return c
+
+    def agent(self, role="Course Creator"):
+        return utilisateur(f"agent.{role.split()[0].lower()}.cat2@example.ci", role)
 
     def mes(self, liste):
         """Les parcours de ce test dans une liste de noms, dans l'ordre servi."""
@@ -137,6 +148,35 @@ class TestCatalogue(Base):
                 self.assertEqual(len(liste), catalogue.get_course_count(dict(filtre)))
         self.assertEqual(noms(catalogue.get_courses({"name": ["in", [self.c[0], self.c[3]]]})), [self.c[0]])
 
+    def test_filtre_in_en_chaine_separee_par_des_virgules(self):
+        for u in (ELEVE, "Guest"):
+            with self.subTest(u=u):
+                frappe.set_user(u)
+                filtre = {"name": ["in", f"{self.c[0]}, {self.c[3]},{self.c[1]}"]}
+                self.assertCountEqual(noms(catalogue.get_courses(dict(filtre))), [self.c[0], self.c[1]])
+                self.assertEqual(catalogue.get_course_count(dict(filtre)), 2)
+
+    def test_filet_si_le_lms_cesse_d_appeler_les_filtres(self):
+        """Défense en profondeur : même sans l'exclusion avant requête, les listes sont refiltrées (et journalisées)."""
+        agent = self.agent()
+        with mock.patch.object(lms_utils, "update_course_filters", lms_utils.update_course_filters.original), \
+                mock.patch.object(lms_utils, "update_batch_filters", lms_utils.update_batch_filters.original), \
+                mock.patch.object(frappe, "log_error") as journal:
+            for u in (ELEVE, "Guest"):
+                with self.subTest(u=u):
+                    frappe.set_user(u)
+                    liste = noms(catalogue.get_courses({}, 0, 120))
+                    self.assertTrue(set(self.visibles) <= set(liste))
+                    self.assertFalse(set(liste) & set(self.caches))
+                    lots = noms(catalogue.get_batches({}, 0, "start_date", 120))
+                    self.assertIn(self.lots[self.c[0]], lots)
+                    self.assertFalse(set(lots) & {self.lots[c] for c in self.caches})
+            self.assertTrue(journal.called)
+            journal.reset_mock()
+            frappe.set_user(agent)
+            self.assertTrue(set(self.c) <= set(noms(catalogue.get_courses({}, 0, 120))))
+            journal.assert_not_called()
+
     def test_parcours_de_lancement_en_tete(self):
         frappe.db.set_value("LMS Course", self.c[2], "featured", 1)
         for u in (ELEVE, "Guest"):
@@ -178,12 +218,22 @@ class TestCatalogue(Base):
                 catalogue.get_courses({})
         self.assertIsNone(getattr(frappe.local, catalogue.CLE_EXCLUSION, None))
 
-    def test_calcul_impossible_ne_laisse_pas_tout_passer(self):
-        """Échec du calcul de visibilité : la liste de repli (parcours limités) s'applique, jamais le catalogue entier."""
-        frappe.set_user(ELEVE)
-        with mock.patch.object(lms, "_visibilite", side_effect=RuntimeError("panne")), \
-                mock.patch.object(frappe, "log_error"):
-            self.assertTrue(set(noms(catalogue.get_courses({}, 0, 120))) >= set(self.c))
+    def test_calcul_impossible_ferme_les_parcours_limites_des_non_agents(self):
+        """Échec du calcul de visibilité : échec fermé pour le visiteur et l'apprenant (le parcours limité à sa cohorte
+        est retiré de la liste et du total, sans fermer tout le catalogue) ; les agents gardent tout."""
+        frappe.db.set_value("LMS Course", self.c[0], CHAMP_LIMITE, 1)
+        agent = self.agent()
+        for u in (ELEVE, "Guest", agent):
+            with self.subTest(u=u):
+                frappe.set_user(u)
+                lms.vider_cache()
+                with mock.patch.object(lms, "_visibilite", side_effect=RuntimeError("panne")), \
+                        mock.patch.object(frappe, "log_error"):
+                    liste = noms(catalogue.get_courses({}, 0, 120))
+                    total = catalogue.get_course_count({})
+                self.assertEqual(self.c[0] in liste, u == agent)
+                self.assertTrue(set(self.c[1:]) <= set(liste))
+                self.assertEqual(total, len(liste))
 
 
 class TestAccueil(Base):
@@ -205,16 +255,30 @@ class TestAccueil(Base):
         self.assertTrue(liste)
         self.assertFalse(set(liste) & set(self.caches))
 
+    def test_accueil_inscriptions_visibles_au_dela_des_trois_dernieres(self):
+        """Les trois dernières inscriptions sont cachées : les inscriptions visibles plus anciennes restent servies, au
+        plus trois (comme le LMS une fois filtré), les plus récentes d'abord."""
+        extra = self.creer_cache("Catalogue extra 1")
+        for i, c in enumerate([self.c[0], self.c[1], self.c[2], self.c[3], self.c[4], extra]):
+            suivre(c, ELEVE)
+            frappe.db.set_value("LMS Enrollment", {"course": c, "member": ELEVE}, "modified",
+                                datetime.datetime(2037, 1, 1, 10, i, 0), update_modified=False)
+        frappe.set_user(ELEVE)
+        self.assertEqual(noms(catalogue.get_my_courses()), [self.c[2], self.c[1], self.c[0]])
+
     def test_accueil_sans_rien_a_montrer(self):
         suivre(self.c[3], ELEVE)
         self.cacher(visibles=())
         frappe.set_user(ELEVE)
         self.assertEqual(catalogue.get_my_courses(), [])
 
-    def test_accueil_sans_inscription_inchange(self):
+    def test_accueil_sans_filtre_appelle_l_original(self):
+        """Phase décochée : rien n'est refusé, le LMS répond tel quel."""
+        self.decocher()
         frappe.set_user(ELEVE)
-        with mock.patch.object(lms_api, "get_my_courses", return_value=[]):
-            self.assertEqual(catalogue.get_my_courses(), [])
+        with mock.patch.object(lms_api, "get_my_courses", return_value=["tel quel"]) as original:
+            self.assertEqual(catalogue.get_my_courses(), ["tel quel"])
+        original.assert_called_once_with()
 
     def test_parcours_associes_filtres(self):
         for c in (self.c[1], self.c[3]):
@@ -269,6 +333,58 @@ class TestCohortes(Base):
         self.assertEqual(noms(catalogue.get_my_batches()), [self.lots[self.c[0]]])
         self.assertEqual(noms(catalogue.get_batches({"enrolled": 1})), [self.lots[self.c[0]]])
 
+    def lot_mixte(self):
+        """La cohorte du parcours caché c4 porte aussi le parcours visible c1."""
+        lot = frappe.get_doc("LMS Batch", self.lots[self.c[4]])
+        lot.append("courses", {"course": self.c[1]})
+        lot.save(ignore_permissions=True)
+        return lot.name
+
+    def test_parcours_de_cohorte_sans_parcours_refuses(self):
+        lot = self.lot_mixte()
+        for u in (ELEVE, "Guest"):
+            with self.subTest(u=u):
+                frappe.set_user(u)
+                self.assertEqual(noms(catalogue.get_batch_courses(self.lots[self.c[0]])), [self.c[0]])
+                self.assertEqual(catalogue.get_batch_courses(self.lots[self.c[3]]), [])
+                self.assertEqual(noms(catalogue.get_batch_courses(lot)), [self.c[1]])
+        frappe.set_user(self.agent("Batch Evaluator"))
+        self.assertEqual(noms(catalogue.get_batch_courses(self.lots[self.c[3]])), [self.c[3]])
+        self.assertCountEqual(noms(catalogue.get_batch_courses(lot)), [self.c[1], self.c[4]])
+
+    def test_total_des_cohortes_egal_a_la_liste(self):
+        self.inscrire_a_la_cohorte(self.c[0])
+        self.inscrire_a_la_cohorte(self.c[3])
+        for u in (ELEVE, "Guest"):
+            for filtre in ({}, {"enrolled": 1}):
+                with self.subTest(u=u, filtre=filtre):
+                    frappe.set_user(u)
+                    liste = catalogue.get_batches(dict(filtre), 0, "start_date", 120)
+                    self.assertEqual(catalogue.get_batch_count(dict(filtre)), len(liste))
+        frappe.set_user(ELEVE)
+        total_apprenant = catalogue.get_batch_count({})
+        frappe.set_user(self.agent("Batch Evaluator"))
+        self.assertGreaterEqual(catalogue.get_batch_count({}), total_apprenant + 2)  # c3, c4 et le reste du site
+
+    def test_cohorte_mixte_sans_titre_du_parcours_refuse(self):
+        lot = self.lot_mixte()
+        for u in (ELEVE, "Guest"):
+            with self.subTest(u=u):
+                frappe.set_user(u)
+                self.assertEqual([c["course"] for c in catalogue.get_batch_details(lot)["courses"]], [self.c[1]])
+        frappe.set_user(self.agent("Batch Evaluator"))
+        self.assertCountEqual([c["course"] for c in catalogue.get_batch_details(lot)["courses"]],
+                              [self.c[1], self.c[4]])
+
+    def test_mes_cohortes_inscriptions_visibles_au_dela_des_quatre_dernieres(self):
+        extra = [self.creer_cache(f"Catalogue extra {i}") for i in (1, 2)]
+        for i, c in enumerate([self.c[0], self.c[3], self.c[4], *extra]):
+            self.inscrire_a_la_cohorte(c)
+            frappe.db.set_value("LMS Batch Enrollment", {"batch": self.lots[c], "member": ELEVE}, "creation",
+                                datetime.datetime(2037, 1, 1, 10, i, 0), update_modified=False)
+        frappe.set_user(ELEVE)
+        self.assertEqual(noms(catalogue.get_my_batches()), [self.lots[self.c[0]]])
+
     def test_mes_cohortes_repli_sur_les_cohortes_visibles(self):
         self.inscrire_a_la_cohorte(self.c[3])
         frappe.set_user(ELEVE)
@@ -306,6 +422,96 @@ class TestCohortes(Base):
         liste = noms(catalogue.get_batches({}, 0, "start_date", 120))
         for c in self.c:
             self.assertIn(self.lots[c], liste)
+
+
+class TestAutresSurfaces(Base):
+    """Catégories, statistiques, avis, programmes et résumé de commande : rien d'un parcours refusé."""
+
+    def test_categories_des_seuls_parcours_visibles(self):
+        frappe.db.set_value("LMS Course", self.c[0], "category", "Categorie visible")
+        frappe.db.set_value("LMS Course", self.c[3], "category", "Categorie cachee")
+        for u in (ELEVE, "Guest"):
+            with self.subTest(u=u):
+                frappe.set_user(u)
+                valeurs = [o["value"] for o in catalogue.get_course_categories()]
+                self.assertIn("Categorie visible", valeurs)
+                self.assertNotIn("Categorie cachee", valeurs)
+                self.assertIn(None, valeurs)
+        frappe.set_user(self.agent())
+        valeurs = [o["value"] for o in catalogue.get_course_categories()]
+        self.assertTrue({"Categorie visible", "Categorie cachee"} <= set(valeurs))
+
+    def test_statistiques_des_seuls_parcours_visibles(self):
+        for c in (self.c[0], self.c[3]):
+            suivre(c, ELEVE)
+        visibles = {"course": ["in", self.visibles]}
+        for u in (ELEVE, "Guest"):
+            with self.subTest(u=u):
+                frappe.set_user(u)
+                stats = catalogue.get_chart_details()
+                self.assertEqual(stats["courses"], frappe.db.count(
+                    "LMS Course", {"published": 1, "upcoming": 0, "name": ["in", self.visibles]}))
+                self.assertEqual(stats["enrollments"], frappe.db.count("LMS Enrollment", visibles))
+                self.assertEqual(stats["completions"], frappe.db.count(
+                    "LMS Enrollment", {**visibles, "progress": ["like", "%100%"]}))
+                self.assertEqual(stats["certifications"], frappe.db.count(
+                    "LMS Certificate", {**visibles, "published": 1}))
+        frappe.set_user(self.agent())
+        agent = catalogue.get_chart_details()
+        self.assertGreaterEqual(agent["courses"], 5)
+        self.assertGreater(agent["enrollments"], frappe.db.count("LMS Enrollment", visibles))
+
+    def avis(self, cours):
+        """Donnée de test : avis écrit sans passer par les contrôles d'inscription du LMS."""
+        doc = frappe.get_doc({"doctype": "LMS Course Review", "course": cours, "rating": 0.8, "review": "Très bien"})
+        doc.name = frappe.generate_hash(length=10)
+        doc.owner = doc.modified_by = "Administrator"
+        doc.creation = doc.modified = frappe.utils.now()
+        doc.db_insert()
+
+    def test_avis_d_un_parcours_refuse_refuses(self):
+        self.avis(self.c[0])
+        self.avis(self.c[3])
+        for u in (ELEVE, "Guest"):
+            with self.subTest(u=u):
+                frappe.set_user(u)
+                lms.vider_cache()
+                self.assertEqual(len(catalogue.get_reviews(self.c[0])), 1)
+                with self.assertRaises(lms.ParcoursCache):
+                    catalogue.get_reviews(self.c[3])
+                frappe.local.response.pop("redirection", None)
+        frappe.set_user(self.agent())
+        self.assertEqual(len(catalogue.get_reviews(self.c[3])), 1)
+
+    def test_resume_de_commande_d_un_parcours_refuse_refuse(self):
+        with mock.patch.object(lms_utils, "get_order_summary", return_value={"title": "x"}) as original:
+            frappe.set_user(ELEVE)
+            self.assertEqual(catalogue.get_order_summary("LMS Course", self.c[0], "CODE", "CI"), {"title": "x"})
+            original.assert_called_once_with("LMS Course", self.c[0], "CODE", "CI")
+            original.reset_mock()
+            with self.assertRaises(lms.ParcoursCache):
+                catalogue.get_order_summary("LMS Course", self.c[3])
+            original.assert_not_called()
+            frappe.local.response.pop("redirection", None)
+            frappe.set_user(self.agent())
+            catalogue.get_order_summary("LMS Course", self.c[3])
+            original.assert_called_once()
+
+    def test_resume_de_commande_d_une_cohorte_inchange(self):
+        with mock.patch.object(lms_utils, "get_order_summary", return_value={"title": "x"}) as original:
+            frappe.set_user(ELEVE)
+            catalogue.get_order_summary("LMS Batch", self.lots[self.c[0]])
+            original.assert_called_once()
+
+    def test_programme_sans_parcours_refuse(self):
+        def detail(_):
+            return frappe._dict(name="prog", courses=[frappe._dict(name=n) for n in (self.c[0], self.c[3], self.c[1])])
+
+        with mock.patch.object(lms_utils, "get_program_details", side_effect=detail):
+            frappe.set_user(ELEVE)
+            self.assertEqual(noms(catalogue.get_program_details("prog")["courses"]), [self.c[0], self.c[1]])
+            frappe.set_user(self.agent())
+            self.assertEqual(noms(catalogue.get_program_details("prog")["courses"]), [self.c[0], self.c[3], self.c[1]])
 
 
 class TestRecherche(Base):
@@ -367,6 +573,13 @@ class TestHooks(FrappeTestCase):
             "lms.lms.api.get_my_batches": "get_my_batches",
             "lms.lms.utils.get_batch_details": "get_batch_details",
             "lms.command_palette.search_sqlite": "search_sqlite",
+            "lms.lms.utils.get_batch_courses": "get_batch_courses",
+            "lms.lms.utils.get_batch_count": "get_batch_count",
+            "lms.lms.utils.get_course_categories": "get_course_categories",
+            "lms.lms.api.get_chart_details": "get_chart_details",
+            "lms.lms.utils.get_reviews": "get_reviews",
+            "lms.lms.utils.get_program_details": "get_program_details",
+            "lms.lms.utils.get_order_summary": "get_order_summary",
         }
         for chemin, nom in attendu.items():
             self.assertEqual(hooks.override_whitelisted_methods[chemin], f"openlab_academy.entrypoints.catalogue.{nom}")
