@@ -16,6 +16,7 @@ from openlab_academy.entrypoints import paiement, paiement_api
 from openlab_academy.infrastructure.depot_dossiers_frappe import DepotDossiersFrappe, PagesPaiementFrappe
 from openlab_academy.infrastructure.tableaux_paiement_frappe import TableauxPaiementFrappe
 from openlab_academy.tests.http_simule import Reponse
+from openlab_academy.tests.sans_lancement import sans_phase_de_lancement
 from openlab_academy.tests.test_paiement_cinetpay_frappe import BASE, CLE, SECRET, SITE, CinetPaySimule
 from openlab_academy.tests.test_paiement_donnees_frappe import ELEVE, cours, tarif, utilisateur
 from openlab_academy.tests.test_paiement_inscription_frappe import cohorte, dossier_de, inscrire
@@ -39,6 +40,7 @@ def aujourd_hui() -> datetime.date:
 
 class Base(FrappeTestCase):
     def setUp(self):
+        sans_phase_de_lancement(self)
         utilisateur()
         self.cours = cours("Parcours virements")
         tarif(self.cours).insert(ignore_permissions=True)
@@ -250,6 +252,7 @@ class BaseLecture(FrappeTestCase):
     """Trois apprenants dans une même cohorte ; jeu à jour, en retard, soldé (dates relatives au jour du site)."""
 
     def setUp(self):
+        sans_phase_de_lancement(self)
         regler()
         self.cours = cours("Parcours lecture paiement")
         tarif(self.cours).insert(ignore_permissions=True)

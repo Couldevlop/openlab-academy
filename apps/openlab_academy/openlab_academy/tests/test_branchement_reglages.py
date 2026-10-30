@@ -7,13 +7,13 @@ import frappe
 import yaml
 from frappe.tests.utils import FrappeTestCase
 
-from openlab_academy.domain.reglages import TITRE_LANCEMENT
 from openlab_academy.entrypoints import cohorte, seed
 from openlab_academy.infrastructure import reglages_frappe, reglages_source_frappe
 from openlab_academy.tests.fabriques import parcours_brut
 from openlab_academy.tests.test_cohorte_frappe import supprimer_cohortes
 
 TITRE = "Parcours réglages test"
+FONDAMENTAUX = "Fondamentaux de la Data Science"  # parcours ordinaire : le parcours de lancement a une cohorte-fenêtre
 
 
 def regler(**valeurs):
@@ -65,7 +65,8 @@ class TestBranchementReglages(FrappeTestCase):
         self.assertEqual(self._publier(brut), {TITRE: "cree"})
 
     def test_cohorte_avec_un_rythme_ajoute_dans_l_ecran(self):
-        regler(rythmes=[{"code": "week-end", "libelle": "Week-end", "samedi": 5, "dimanche": 5}])
+        regler(parcours_pilote=FONDAMENTAUX,
+               rythmes=[{"code": "week-end", "libelle": "Week-end", "samedi": 5, "dimanche": 5}])
         seed.run(commit=False)
         resultat = cohorte.ouvrir_pilote(rythme="week-end", commit=False)
         b = frappe.get_doc("LMS Batch", resultat["cohorte"])
@@ -73,9 +74,9 @@ class TestBranchementReglages(FrappeTestCase):
         self.assertIn("5 h les samedi et dimanche", b.batch_details)
 
     def test_horaires_de_seance_regles(self):
-        regler(heure_debut="19:00:00", heure_fin="21:00:00")
+        regler(parcours_pilote=FONDAMENTAUX, heure_debut="19:00:00", heure_fin="21:00:00")
         seed.run(commit=False)
-        supprimer_cohortes({"title": ["like", f"Promo 1 — {TITRE_LANCEMENT}%"]})
+        supprimer_cohortes({"title": ["like", f"Promo 1 — {FONDAMENTAUX}%"]})
         b = frappe.get_doc("LMS Batch", cohorte.ouvrir_pilote(commit=False)["cohorte"])
         self.assertEqual((str(b.start_time), str(b.end_time)), ("19:00:00", "21:00:00"))
 

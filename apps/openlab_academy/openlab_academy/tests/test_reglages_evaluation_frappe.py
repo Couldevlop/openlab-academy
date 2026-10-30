@@ -11,7 +11,9 @@ from openlab_academy.domain.reglages_evaluation import (
 from openlab_academy.entrypoints import install
 from openlab_academy.infrastructure import delegations_frappe, journal_frappe
 from openlab_academy.infrastructure import reglages_evaluation_frappe as source
+from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
 from openlab_academy.patches import initialiser_reglages_evaluation, migrer_surcharges_partielles
+from openlab_academy.tests.sans_lancement import sans_phase_de_lancement
 from openlab_academy.tests.test_paiement_donnees_frappe import inscrire_sans_paiement
 
 REGLAGES = "Reglages Evaluation OpenLab"
@@ -35,7 +37,12 @@ def vider():
 
 
 def un_lot() -> str:
-    return frappe.get_all("LMS Batch", pluck="name", limit=1)[0]
+    """Une cohorte de parcours payant : le parcours de lancement du site est gratuit, aucun tarif ne s'y applique."""
+    for lot in frappe.get_all("LMS Batch", pluck="name"):
+        cours = frappe.get_all("Batch Course", {"parent": lot, "parenttype": "LMS Batch"}, pluck="course")
+        if cours and not any(frappe.db.get_value("LMS Course", c, CHAMP_GRATUIT) for c in cours):
+            return lot
+    raise AssertionError("aucune cohorte de parcours payant sur le site")
 
 
 def un_devoir() -> str:
@@ -546,6 +553,7 @@ class TestDelegations(FrappeTestCase):
     """Écran de la console : la règle commune du domaine, le journal et les notifications (comme l'API)."""
 
     def setUp(self):
+        sans_phase_de_lancement(self)
         utilisateur(RESP_DELEG, ROLE)
         utilisateur(CORRECTEUR_LMS, "Course Creator")
         utilisateur(ELEVE, "LMS Student")
