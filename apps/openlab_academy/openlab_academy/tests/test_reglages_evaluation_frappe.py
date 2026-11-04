@@ -14,7 +14,7 @@ from openlab_academy.infrastructure import reglages_evaluation_frappe as source
 from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
 from openlab_academy.patches import initialiser_reglages_evaluation, migrer_surcharges_partielles
 from openlab_academy.tests.sans_lancement import sans_phase_de_lancement
-from openlab_academy.tests.test_paiement_donnees_frappe import inscrire_sans_paiement
+from openlab_academy.tests.test_paiement_donnees_frappe import cours, inscrire_sans_paiement
 
 REGLAGES = "Reglages Evaluation OpenLab"
 SURCHARGE = "Surcharge Evaluation OpenLab"
@@ -39,10 +39,17 @@ def vider():
 def un_lot() -> str:
     """Une cohorte de parcours payant : le parcours de lancement du site est gratuit, aucun tarif ne s'y applique."""
     for lot in frappe.get_all("LMS Batch", pluck="name"):
-        cours = frappe.get_all("Batch Course", {"parent": lot, "parenttype": "LMS Batch"}, pluck="course")
-        if cours and not any(frappe.db.get_value("LMS Course", c, CHAMP_GRATUIT) for c in cours):
+        parcours = frappe.get_all("Batch Course", {"parent": lot, "parenttype": "LMS Batch"}, pluck="course")
+        if parcours and not any(frappe.db.get_value("LMS Course", c, CHAMP_GRATUIT) for c in parcours):
             return lot
-    raise AssertionError("aucune cohorte de parcours payant sur le site")
+    # site neuf (CI) : seule la cohorte du parcours de lancement existe
+    return frappe.get_doc({
+        "doctype": "LMS Batch", "title": "Cohorte réglages évaluation", "published": 1, "medium": "Online",
+        "start_date": "2026-11-02", "end_date": "2027-02-22", "start_time": "18:30:00", "end_time": "20:30:00",
+        "timezone": "Africa/Abidjan", "description": "d", "batch_details": "d",
+        "instructors": [{"instructor": "Administrator"}],
+        "courses": [{"course": cours("Parcours réglages évaluation test")}],
+    }).insert(ignore_permissions=True).name
 
 
 def un_devoir() -> str:
