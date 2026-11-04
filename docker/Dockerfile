@@ -12,7 +12,8 @@ RUN yarn config set network-timeout 600000 -g \
 WORKDIR /home/frappe/frappe-bench
 RUN bench get-app --skip-assets payments --branch version-15  && (cd apps/payments && git fetch --depth 1 upstream "$PAYMENTS_REF" && git checkout -q -f "$PAYMENTS_REF") \
  && bench get-app --skip-assets lms --branch main \
- && cd apps/lms && git fetch --depth 1 upstream "$LMS_REF" && git checkout -q -f "$LMS_REF"
+ && (cd apps/lms && git fetch --depth 1 upstream "$LMS_REF" && git checkout -q -f "$LMS_REF")  && ./env/bin/pip install -q -e apps/payments -e apps/lms
+# get-app installe les dépendances de la branche, pas celles du commit figé : on les réinstalle
 COPY --chown=frappe:frappe apps/openlab_academy apps/openlab_academy
 # écrans d'évaluation (Vue 3 + frappe-ui) : construits vers openlab_academy/public/espace, dépendances retirées
 RUN cd apps/openlab_academy/frontend \
