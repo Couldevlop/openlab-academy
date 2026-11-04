@@ -1,6 +1,7 @@
 import json
 import pathlib
 import tempfile
+from unittest import mock
 
 import frappe
 import yaml
@@ -181,3 +182,57 @@ class TestCommandeSeed(FrappeTestCase):
         """OWASP A01 : le seed n'est pas appelable via /api/method."""
         with self.assertRaises(frappe.PermissionError):
             frappe.is_whitelisted(seed.run)
+
+
+class TestPublicationConcurrente(FrappeTestCase):
+    """Une tâche planifiée du LMS (statistiques horaires) enregistre tous les parcours et valide sa transaction
+    pendant une republication. Transaction de la publication : instantané de lecture ancien, `modified` du parcours
+    plus récent en base."""
+
+    def setUp(self):
+        self.depot = DepotFrappe(commit=True)
+        self.p = parcours(title=TITRE)
+        self.autre = parcours(title=TITRE + " bis")
+
+    def tearDown(self):
+        frappe.db.rollback()
+        for titre in (TITRE, TITRE + " bis"):
+            nom = frappe.db.get_value("LMS Course", {"title": titre})
+            if nom:
+                DepotFrappe._purger(nom)
+                frappe.delete_doc("LMS Course", nom, force=True, ignore_permissions=True, delete_permanently=True)
+        frappe.db.commit()
+
+    @staticmethod
+    def _tache_planifiee(*titres):
+        """Autre connexion, transaction validée : touche `modified` des parcours, comme update_course_statistics."""
+        from frappe.database import get_db
+
+        autre = get_db(socket=frappe.conf.db_socket, host=frappe.conf.db_host, port=frappe.conf.db_port,
+                       user=frappe.conf.db_name, password=frappe.conf.db_password, cur_db_name=frappe.conf.db_name)
+        try:
+            for titre in titres:
+                autre.sql("update `tabLMS Course` set modified = %s where title = %s",
+                          (frappe.utils.add_to_date(frappe.utils.now_datetime(), seconds=1), titre))
+            autre.commit()
+        finally:
+            autre.close()
+
+    def _publier(self, *lot):
+        self.journal = []
+        return PublierParcours(self.depot, self.journal.append).executer(lot)
+
+    def test_tache_planifiee_pendant_la_republication(self):
+        self.assertEqual(self._publier(self.p, self.autre), {TITRE: Statut.CREE, TITRE + " bis": Statut.CREE})
+        purger = DepotFrappe._purger
+        appels = []
+
+        def purger_puis_tache(cours_id):
+            purger(cours_id)
+            if not appels:  # la tâche passe pendant le premier parcours seulement
+                appels.append(cours_id)
+                self._tache_planifiee(TITRE, TITRE + " bis")
+
+        with mock.patch.object(DepotFrappe, "_purger", staticmethod(purger_puis_tache)):
+            statuts = self._publier(self.p, self.autre)
+        self.assertEqual(statuts, {TITRE: Statut.MAJ, TITRE + " bis": Statut.MAJ}, self.journal)

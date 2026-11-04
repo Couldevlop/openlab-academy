@@ -38,7 +38,9 @@ class DepotFrappe:
     def remplacer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
         videos = self._videos(cours_id)
         self._purger(cours_id)
-        cours = frappe.get_doc("LMS Course", cours_id)
+        # lecture verrouillante : l'instantané de la transaction date d'avant la purge et ne voit pas le `modified`
+        # qu'une tâche planifiée du LMS (statistiques horaires) a validé entre-temps ; le verrou la fait attendre
+        cours = frappe.get_doc("LMS Course", cours_id, for_update=True)
         cours.update(self._champs(parcours))
         cours.set("chapters", [])
         cours.save(ignore_permissions=True)
