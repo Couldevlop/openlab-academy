@@ -1,0 +1,57 @@
+# Promotion de develop vers main : la PR est ouverte automatiquement, la fusion attend les contrôles.
+name: Promotion vers main
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+concurrency:
+  group: promotion
+  cancel-in-progress: false # ne jamais interrompre une promotion en cours
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promouvoir:
+    name: Ouvrir ou mettre à jour la PR develop → main
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Y a-t-il quelque chose à promouvoir ?
+        id: ecart
+        run: |
+          git fetch --quiet origin main
+          if [ -z "$(git log --oneline origin/main..HEAD)" ]; then
+            echo "promouvoir=false" >> "$GITHUB_OUTPUT"
+            echo "main est déjà à jour : rien à promouvoir."
+          else
+            echo "promouvoir=true" >> "$GITHUB_OUTPUT"
+            git log --reverse --pretty='- %s (%h)' origin/main..HEAD > /tmp/journal.md
+          fi
+
+      - name: Ouvrir ou mettre à jour la PR
+        if: steps.ecart.outputs.promouvoir == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existante=$(gh pr list --base main --head develop --state open --json number --jq '.[0].number')
+          corps=$(printf 'Promotion automatique de `develop` vers `main`.\n\nLa fusion est en attente : elle ne se fera que lorsque les contrôles de la CI (front, backend et couverture 99 %%, sécurité, gardien de flux) seront tous verts.\n\n## Commits promus\n\n%s\n' "$(cat /tmp/journal.md)")
+          if [ -n "$existante" ]; then
+            gh pr edit "$existante" --title 'Promotion vers main' --body "$corps"
+            numero="$existante"
+          else
+            numero=$(gh pr create --base main --head develop --title 'Promotion vers main' --body "$corps" \
+              | grep -oE '[0-9]+$')
+          fi
+          echo "PR #$numero"
+          # la fusion n'a lieu que si tous les contrôles requis passent ; sinon la PR reste ouverte
+          gh pr merge "$numero" --auto --merge || \
+            echo "::warning::Auto-merge indisponible (à activer dans les réglages du dépôt) ; PR laissée ouverte."
