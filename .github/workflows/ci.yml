@@ -1,5 +1,9 @@
 name: CI
 
+# Chaque arbre n'est validé qu'une fois : les trois jobs lourds tournent sur les PR vers develop et sur les
+# push de develop et de main. Une PR develop → main ne les rejoue pas — elle porte l'arbre que la CI de
+# develop vient de valider, et la promotion vérifie que la branche n'a pas bougé depuis. Seul le gardien de
+# flux s'y exécute ; la fusion dans main déclenche ensuite sa propre CI complète.
 on:
   push:
     branches: [main, develop]
@@ -28,6 +32,8 @@ jobs:
   frontend:
     name: Frontend — lint, type, tests, build
     runs-on: ubuntu-24.04
+    # une PR develop → main ne rejoue pas ce job : l'arbre vient d'être validé sur develop
+    if: github.base_ref != 'main'
 
     defaults:
       run:
@@ -73,6 +79,8 @@ jobs:
     name: Backend — tests Frappe et couverture
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    # une PR develop → main ne rejoue pas ce job : l'arbre vient d'être validé sur develop
+    if: github.base_ref != 'main'
 
     services:
       mariadb:
@@ -161,6 +169,8 @@ jobs:
     name: Sécurité — SAST, secrets, dépendances
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    # une PR develop → main ne rejoue pas ce job : l'arbre vient d'être validé sur develop
+    if: github.base_ref != 'main'
 
     steps:
       - uses: actions/checkout@v5
