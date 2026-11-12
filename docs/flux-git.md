@@ -22,9 +22,12 @@ git switch -c feat/mon-sujet
    - `securite` : Semgrep (Python, JavaScript, secrets), Gitleaks sur l'historique, `npm audit` des
      dépendances de production du front. Le backend n'a aucune dépendance Python propre ;
    - `gardien` : une PR vers `main` qui ne vient pas de `develop` est refusée.
-2. **`promotion.yml`** — à chaque push sur `develop` : ouvre, ou met à jour, la PR « Promotion vers main » et
-   active l'auto-merge. GitHub ne fusionne que lorsque les contrôles du point 1 sont tous verts ; aucun test
-   n'est court-circuité.
+2. **`promotion.yml`** — déclenché par la **réussite de la CI sur `develop`**, pas par le push : il vérifie que
+   `develop` n'a pas bougé depuis la validation, ouvre ou met à jour la PR « Promotion vers main », puis la
+   fusionne. Le commit promu est exactement celui que la CI vient de valider ; aucun test n'est court-circuité.
+   L'auto-merge de GitHub n'est pas utilisable ici : il exige des contrôles requis, donc une protection de
+   branche, indisponible sur ce plan. Un workflow `workflow_run` n'étant pris en compte que dans sa version
+   présente sur `main`, la **première** promotion se lance à la main (`workflow_dispatch`).
 3. **`release.yml`** — après la fusion dans `main` : étiquette `v<version>` lue dans
    `openlab_academy/__init__.py` (`__version__`) et publie la release, puis ouvre la PR de **réalignement de
    `develop` sur `main`**, sans laquelle les commits de fusion feraient diverger les deux branches.
@@ -47,7 +50,8 @@ assumé (`PUSH_DIRECT=1 git push …`) : sans plan payant, la règle est dissuas
 
 ## Réglages du dépôt exigés par la chaîne
 
-- **Allow auto-merge** : activé, sinon la PR de promotion reste ouverte sans fusionner.
 - **Allow GitHub Actions to create and approve pull requests** : activé, sinon `promotion.yml` ne peut pas
   ouvrir la PR.
+- **Allow auto-merge** : refusé par GitHub sur ce dépôt (`allow_auto_merge` reste à `false` après appel de
+  l'API) ; la promotion ne s'y appuie donc pas.
 - **Automatically delete head branches** : activé, confort seulement.
