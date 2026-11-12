@@ -1,0 +1,17 @@
+# Configuration Gitleaks : règles par défaut, plus une exception étroite et justifiée.
+[extend]
+useDefault = true
+
+# Les tests des canaux de rappel ont besoin d'identifiants d'opérateur pour vérifier qu'ils sont bien
+# transmis. Les valeurs sont inventées et n'ouvrent aucun compte ; les vrais secrets vivent dans
+# docker/secrets et les .env*, tous exclus du dépôt. L'exception exige les deux conditions : un fichier de
+# test de l'app ET exactement ces littéraux — tout autre secret, et tout secret ailleurs, reste détecté.
+[[allowlists]]
+description = "Identifiants factices des tests de canaux de rappel"
+condition = "AND"
+paths = ['''openlab_academy/tests/.*\.py$''']
+regexes = [
+  '''secret-orange-789''',
+  '''EAAG-jeton-wa-321''',
+  '''cle-cinetpay-123''',
+]
