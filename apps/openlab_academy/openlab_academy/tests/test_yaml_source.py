@@ -199,6 +199,13 @@ class TestGrilleEtCorrection(unittest.TestCase):
                          (None, None, None, None))
         self.assertEqual((p.portfolio[0].grille, p.capstone.correction), (None, None))
 
+    def test_travaux_pratiques_facultatifs_du_module(self):
+        self.assertEqual(depuis_dict(parcours_brut(), "t.yaml").blocs[0].modules[0].travaux_pratiques, "")
+        brut = parcours_brut()
+        brut["blocs"][0]["modules"][0]["travaux_pratiques"] = "Déroulé de la séance"
+        self.assertEqual(depuis_dict(brut, "t.yaml").blocs[0].modules[0].travaux_pratiques,
+                         "Déroulé de la séance")
+
     def test_grille_et_correction_d_un_module(self):
         brut = parcours_brut()
         m = brut["blocs"][0]["modules"][0]

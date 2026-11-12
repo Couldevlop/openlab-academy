@@ -25,6 +25,27 @@ class TestRenduModule(unittest.TestCase):
         self.assertEqual(b[1]["data"]["text"], "Le contenu")
         self.assertEqual(b[-1]["data"], {"assignment": "DEV-1"})
 
+    def test_travaux_pratiques_rendus_entre_le_contenu_et_le_livrable(self):
+        m = Module("01", "M", "Le contenu", "Le livrable", travaux_pratiques="Déroulé de la séance")
+        b = blocs(editorjs.lecon_module(m, "DEV-1", 3))
+        self.assertEqual([x["type"] for x in b],
+                         ["header", "paragraph", "paragraph", "header", "paragraph", "header", "paragraph",
+                          "assignment"])
+        self.assertEqual(b[3]["data"]["text"], "Travaux pratiques")
+        self.assertEqual(b[4]["data"]["text"], "Déroulé de la séance")
+        self.assertEqual(b[5]["data"]["text"], "Livrable")
+
+    def test_aucune_section_travaux_pratiques_sans_contenu(self):
+        rendu = texte(editorjs.lecon_module(Module("01", "M", "c", "l", travaux_pratiques="   "), "D", 3))
+        self.assertNotIn("Travaux pratiques", rendu)
+
+    def test_travaux_pratiques_echappes(self):
+        """OWASP A03 : le support de séance est une donnée, jamais du HTML actif."""
+        rendu = texte(editorjs.lecon_module(
+            Module("01", "M", "c", "l", travaux_pratiques="<script>alert(1)</script>"), "D", 3))
+        self.assertNotIn("<script>", rendu)
+        self.assertIn("&lt;script&gt;", rendu)
+
     def test_xss_neutralise(self):
         """OWASP A03 : aucun HTML actif issu des données."""
         rendu = editorjs.lecon_module(Module("01", "M", "<script>alert(1)</script>", '<img onerror="x">'), "D", 8)

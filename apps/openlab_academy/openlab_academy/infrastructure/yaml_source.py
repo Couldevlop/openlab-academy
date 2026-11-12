@@ -113,6 +113,7 @@ class _Lecteur:
         return Module(*(str(self.exiger(m, c, chemin)) for c in ("num", "title", "contenu", "livrable")),
                       quiz=tuple(self.question(q, f"{chemin}quiz[{i}].") for i, q in enumerate(quiz)),
                       mise_en_situation=str(m.get("mise_en_situation") or ""),
+                      travaux_pratiques=str(m.get("travaux_pratiques") or ""),
                       grille_cas=self.grille(m.get("grille_mise_en_situation"), f"{chemin}grille_mise_en_situation"),
                       correction_cas=self.correction(m.get("correction_mise_en_situation"),
                                                      f"{chemin}correction_mise_en_situation"),
