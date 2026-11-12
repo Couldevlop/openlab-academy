@@ -19,8 +19,11 @@ git switch -c feat/mon-sujet
 1. **`ci.yml`** — sur toute PR vers `develop` ou `main`, et sur push de ces branches :
    - `frontend` : ESLint, Prettier, `vue-tsc`, tests avec seuils de couverture, build ;
    - `backend` : site Frappe réel sur les références épinglées, suite complète, **couverture ≥ 99 %** ;
-   - `securite` : Semgrep (Python, JavaScript, secrets), Gitleaks sur l'historique, `npm audit` des
-     dépendances de production du front. Le backend n'a aucune dépendance Python propre ;
+   - `securite` : Semgrep (Python, JavaScript, secrets), Gitleaks sur l'historique — version figée, avec une
+     exception à deux conditions pour les identifiants inventés des tests de canaux (`.gitleaks.toml`) — et
+     `npm audit --omit=dev --audit-level=high` sur le front. Le backend n'a aucune dépendance Python propre.
+     Restent quatre avis **modérés** non bloquants, hérités de `frappe-ui` (XSS d'Apache ECharts) : aucun
+     correctif n'existe sans sortir de la version de `frappe-ui` qu'impose le LMS ;
    - `gardien` : une PR vers `main` qui ne vient pas de `develop` est refusée.
 2. **`promotion.yml`** — déclenché par la **réussite de la CI sur `develop`**, pas par le push : il vérifie que
    `develop` n'a pas bougé depuis la validation, ouvre ou met à jour la PR « Promotion vers main », puis la
