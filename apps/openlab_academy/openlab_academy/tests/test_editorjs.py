@@ -35,6 +35,15 @@ class TestRenduModule(unittest.TestCase):
         self.assertEqual(b[4]["data"]["text"], "Déroulé de la séance")
         self.assertEqual(b[5]["data"]["text"], "Livrable")
 
+    def test_travaux_pratiques_decoupes_en_paragraphes(self):
+        m = Module("01", "M", "c", "l",
+                   travaux_pratiques="Déroulé.\nDéfi : agir.\n\nIndices : lire.")
+        b = blocs(editorjs.lecon_module(m, "D", 3))
+        self.assertEqual([x["type"] for x in b],
+                         ["header", "paragraph", "paragraph", "header", "paragraph", "paragraph", "paragraph",
+                          "header", "paragraph", "assignment"])
+        self.assertEqual([x["data"]["text"] for x in b[4:7]], ["Déroulé.", "Défi : agir.", "Indices : lire."])
+
     def test_aucune_section_travaux_pratiques_sans_contenu(self):
         rendu = texte(editorjs.lecon_module(Module("01", "M", "c", "l", travaux_pratiques="   "), "D", 3))
         self.assertNotIn("Travaux pratiques", rendu)

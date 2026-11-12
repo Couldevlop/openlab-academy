@@ -67,12 +67,15 @@ blocs:
           chatbot, RAG, workflow, agent — puis reprenez l'anatomie d'un agent et sa boucle percevoir, raisonner, agir,
           observer, avec ses conditions d'arrêt. Classez sept actions du cas métier du moins au plus risqué et placez la
           frontière d'autonomie acceptable. Terminez par le cadrage écrit de votre agent : mission, sources de données,
-          actions autorisées, actions interdites, critères de réussite. Défi : dessinez le flux de l'agent avec son point
-          de validation humaine ; écrivez les règles métier sous forme de phrases vérifiables, une règle valant un test
-          possible ; nommez un cas où un simple workflow rendrait l'agent inutile. Relisez enfin votre cadrage en
-          cherchant l'action irréversible que vous auriez laissée automatique. Indices, à n'ouvrir qu'après quinze minutes
-          de blocage : une action est irréversible si son annulation demande un geste humain hors du système ; « exclure
-          les litiges » n'est pas une consigne au modèle, c'est une règle de code.
+          actions autorisées, actions interdites, critères de réussite.
+
+          Défi : dessinez le flux de l'agent avec son point de validation humaine ; écrivez les règles métier sous forme
+          de phrases vérifiables, une règle valant un test possible ; nommez un cas où un simple workflow rendrait l'agent
+          inutile. Relisez enfin votre cadrage en cherchant l'action irréversible que vous auriez laissée automatique.
+
+          Indices, à n'ouvrir qu'après quinze minutes de blocage : une action est irréversible si son annulation demande
+          un geste humain hors du système ; « exclure les litiges » n'est pas une consigne au modèle, c'est une règle de
+          code.
         quiz:
           - question: "Qu'est-ce qui caractérise d'abord un agent IA ?"
             options: ["Il répond en langage naturel", "Il décide lui-même des actions à mener dans une boucle jusqu'à atteindre un objectif", "Il s'appuie sur un modèle entraîné spécialement", "Il interroge une base de documents"]
@@ -117,12 +120,15 @@ blocs:
           registre d'outils et les contrats de validation, puis tracez un appel de recherche et son observation du départ
           jusqu'au retour. Ajoutez un filtre de montant minimal à l'outil de recherche, écrivez des tests nominaux et des
           cas invalides, éprouvez un outil absent de la liste blanche et le plafond d'étapes, et terminez par la lecture
-          de la validation humaine et de l'idempotence. Défi : ajoutez le filtre, mettez à jour le contrat JSON et le
-          modèle de validation, écrivez au moins trois tests — cas nominal, montant négatif, argument supplémentaire — et
-          montrez qu'une note malveillante du jeu de données ne peut pas modifier les règles. Indices : un argument
-          inconnu doit produire une erreur d'arguments et non une exception ; un montant négatif se refuse dans le
-          contrat, pas dans le corps de l'outil ; vérifiez ce qui sort de l'outil, pas ce qui est dans le fichier de
-          données.
+          de la validation humaine et de l'idempotence.
+
+          Défi : ajoutez le filtre, mettez à jour le contrat JSON et le modèle de validation, écrivez au moins trois tests
+          — cas nominal, montant négatif, argument supplémentaire — et montrez qu'une note malveillante du jeu de données
+          ne peut pas modifier les règles.
+
+          Indices : un argument inconnu doit produire une erreur d'arguments et non une exception ; un montant négatif se
+          refuse dans le contrat, pas dans le corps de l'outil ; vérifiez ce qui sort de l'outil, pas ce qui est dans le
+          fichier de données.
         quiz:
           - question: "À quoi sert le schéma JSON d'un outil ?"
             options: ["À décrire au modèle les paramètres attendus et leurs types", "À exécuter l'outil plus vite", "À chiffrer les arguments", "À stocker le résultat de l'outil"]
@@ -167,11 +173,14 @@ blocs:
           recherche, routage et calcul sans aucune liberté de décision, puis le même traitement confié à la boucle d'agent
           sous plafond d'étapes. Ajoutez le routage par segment selon l'âge du retard, le statut de litige et le montant,
           puis mesurez les deux versions : nombre d'étapes, appels d'outils, stabilité du résultat sur trois exécutions.
+
           Défi : écrivez la fonction de routage avec les litiges exclus, produisez les deux implémentations sur les douze
           factures, prouvez par un test qu'elles donnent la même exposition totale, puis rédigez une note de décision
-          d'une demi-page. Indices : le routage est une règle métier, donc testable sans agent ; un workflow fixe n'est
-          qu'un plan que personne ne peut modifier ; si les deux versions donnent le même résultat pour un coût moindre,
-          la bonne réponse est « pas d'agent ici » — et il faut l'écrire.
+          d'une demi-page.
+
+          Indices : le routage est une règle métier, donc testable sans agent ; un workflow fixe n'est qu'un plan que
+          personne ne peut modifier ; si les deux versions donnent le même résultat pour un coût moindre, la bonne réponse
+          est « pas d'agent ici » — et il faut l'écrire.
         quiz:
           - question: "Quel pattern oriente une demande vers un traitement spécialisé selon sa nature ?"
             options: ["Le chaînage", "La parallélisation", "Le routage", "L'évaluateur-optimiseur"]
@@ -218,11 +227,14 @@ blocs:
           processus juste après la demande de validation, rouvrez le même fichier d'état et constatez que la demande en
           attente est retrouvée et non dupliquée. Rejouez ensuite le même enregistrement avec la même clé d'idempotence,
           puis avec cette clé sur un autre brouillon, et expliquez les deux réponses. Comprenez enfin pourquoi
-          l'approbation n'est pas exposée dans le registre des outils de l'agent. Défi : écrivez trois tests — reprise
-          après interruption sans doublon, rejeu d'une clé d'idempotence, enregistrement refusé sans approbation — puis
-          ajoutez un compteur de reprises au journal sans casser les tests existants. Indices : la reprise se simule en
-          rouvrant un second service sur le même fichier d'état, aucun processus à tuer ; une clé réutilisée pour un autre
-          brouillon doit échouer, pas renvoyer l'enregistrement existant.
+          l'approbation n'est pas exposée dans le registre des outils de l'agent.
+
+          Défi : écrivez trois tests — reprise après interruption sans doublon, rejeu d'une clé d'idempotence,
+          enregistrement refusé sans approbation — puis ajoutez un compteur de reprises au journal sans casser les tests
+          existants.
+
+          Indices : la reprise se simule en rouvrant un second service sur le même fichier d'état, aucun processus à tuer
+          ; une clé réutilisée pour un autre brouillon doit échouer, pas renvoyer l'enregistrement existant.
         quiz:
           - question: "À quoi sert un checkpoint dans une exécution d'agent ?"
             options: ["À accélérer le modèle", "À enregistrer l'état pour reprendre l'exécution là où elle s'est arrêtée", "À vérifier l'orthographe de la réponse", "À limiter le nombre d'outils"]
@@ -271,11 +283,15 @@ blocs:
           leur découverte depuis un client. Branchez ensuite la boucle du dépôt sur ce serveur et retrouvez un résultat
           métier identique à l'appel direct. Appliquez le moindre privilège et démontrez qu'un client MCP ne peut pas
           déclencher l'action finale. Terminez par A2A sur le papier : la fiche d'un agent conformité à qui vous
-          délégueriez l'examen d'une facture en litige. Défi : serveur démarrable par une commande documentée, preuve de
-          découverte des deux outils et de leurs schémas, test vérifiant qu'un troisième outil n'est pas exposé, et fiche
-          d'Agent Card comportant au moins une limite explicite. Indices : les schémas MCP se dérivent des contrats
-          existants, ne les réécrivez pas ; le serveur expose un sous-ensemble de la liste blanche, jamais un sur-ensemble
-          ; si l'on peut enregistrer une relance depuis le client, le moindre privilège est raté.
+          délégueriez l'examen d'une facture en litige.
+
+          Défi : serveur démarrable par une commande documentée, preuve de découverte des deux outils et de leurs schémas,
+          test vérifiant qu'un troisième outil n'est pas exposé, et fiche d'Agent Card comportant au moins une limite
+          explicite.
+
+          Indices : les schémas MCP se dérivent des contrats existants, ne les réécrivez pas ; le serveur expose un
+          sous-ensemble de la liste blanche, jamais un sur-ensemble ; si l'on peut enregistrer une relance depuis le
+          client, le moindre privilège est raté.
         quiz:
           - question: "Quelles sont les trois primitives qu'un serveur MCP peut exposer ?"
             options: ["Modèles, jeux de données et métriques", "Agents, tâches et artefacts", "Outils, ressources et prompts", "Requêtes, réponses et sessions"]
@@ -321,10 +337,13 @@ blocs:
           un agrégateur qui réconcilie. Implémentez les analystes comme fonctions bornées, avec leur propre plafond
           d'étapes, puis l'orchestrateur et l'agrégation. Instrumentez les deux architectures : étapes, appels d'outils,
           durée de bout en bout, taille du contexte transmis. Décidez enfin ce que vous faites lorsque deux analystes
-          classent la même facture différemment. Défi : segments strictement disjoints, test d'invariant montrant que la
-          somme des expositions par segment égale celle de l'agent unique, tableau de mesures reproductible et
-          recommandation explicite. Indices : des segments disjoints se prouvent par un test d'ensemble, pas par relecture
-          ; il est parfaitement admis de conclure que le multi-agent ne se justifie pas ici, si vos mesures le disent.
+          classent la même facture différemment.
+
+          Défi : segments strictement disjoints, test d'invariant montrant que la somme des expositions par segment égale
+          celle de l'agent unique, tableau de mesures reproductible et recommandation explicite.
+
+          Indices : des segments disjoints se prouvent par un test d'ensemble, pas par relecture ; il est parfaitement
+          admis de conclure que le multi-agent ne se justifie pas ici, si vos mesures le disent.
         quiz:
           - question: "Dans une architecture à superviseur :"
             options: ["tous les agents se parlent librement", "chaque agent travaille sans connaître les autres", "un agent coordinateur décide quel agent spécialisé intervient et rassemble les résultats", "l'utilisateur choisit l'agent à chaque message"]
@@ -372,11 +391,15 @@ blocs:
           Exécutez les douze critères d'acceptation l'un après l'autre en notant leur criticité, puis produisez la trace
           d'une exécution — étape, outil, arguments, résultat, durée — et listez ce qu'il est interdit d'y écrire.
           Terminez par votre registre des risques résiduels, trois risques au minimum, avec leur atténuation et ce qui
-          reste accepté. Défi : un cas d'évaluation qui échouerait si la note malveillante influençait le brouillon, un
-          cas qui échouerait si un outil hors liste blanche s'exécutait sans être journalisé, la trace d'une exécution
-          complète lisible par un tiers, et le registre des risques. Indices : pour prouver qu'une note n'influence rien,
-          comparez le brouillon produit avec et sans cette note dans un jeu de données de test, le texte doit être
-          identique ; un test de journalisation lit l'état enregistré, pas la sortie console.
+          reste accepté.
+
+          Défi : un cas d'évaluation qui échouerait si la note malveillante influençait le brouillon, un cas qui
+          échouerait si un outil hors liste blanche s'exécutait sans être journalisé, la trace d'une exécution complète
+          lisible par un tiers, et le registre des risques.
+
+          Indices : pour prouver qu'une note n'influence rien, comparez le brouillon produit avec et sans cette note dans
+          un jeu de données de test, le texte doit être identique ; un test de journalisation lit l'état enregistré, pas
+          la sortie console.
         quiz:
           - question: "Une injection de prompt indirecte provient :"
             options: ["d'un contenu lu par l'agent, comme un document, une page web ou un résultat d'outil", "d'une erreur de syntaxe dans le prompt système", "d'un utilisateur qui écrit lui-même la consigne malveillante", "d'une température trop élevée"]
