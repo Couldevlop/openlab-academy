@@ -1,0 +1,26 @@
+#!/usr/bin/env sh
+# Refuse un push direct sur main ou develop : ces deux branches ne se nourrissent que de PR.
+# Installation (une fois par clone) : git config core.hooksPath .githooks
+# Contournement assumé et tracé : PUSH_DIRECT=1 git push …
+
+protegees='main develop'
+etat=0
+
+while read -r _locale _sha_local distante _sha_distant; do
+  branche=${distante#refs/heads/}
+  [ "$branche" = "$distante" ] && continue
+  for p in $protegees; do
+    if [ "$branche" = "$p" ]; then
+      if [ "${PUSH_DIRECT:-0}" = "1" ]; then
+        echo "pre-push : push direct sur '$p' forcé par PUSH_DIRECT=1." >&2
+      else
+        echo "pre-push : push direct sur '$p' refusé." >&2
+        echo "  Ouvrez une PR : toute branche part de develop et y retourne ; main est servi par la" >&2
+        echo "  promotion automatique (.github/workflows/promotion.yml)." >&2
+        etat=1
+      fi
+    fi
+  done
+done
+
+exit $etat

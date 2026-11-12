@@ -9,7 +9,7 @@ from openlab_academy.domain.grilles_derivees import grille_par_defaut
 from openlab_academy.domain.parcours import Annonce, Chapitre, Module, Parcours, Question
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.domain.reglages_evaluation import Chaine, ReglagesEvaluation, TypeExercice
-from openlab_academy.infrastructure import depot_copies_frappe, editorjs
+from openlab_academy.infrastructure import depot_copies_frappe, editorjs, ressources_frappe
 from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
 from openlab_academy.infrastructure.visibilite_frappe import CHAMP_LIMITE, CHAMP_VIDEO
 
@@ -189,14 +189,19 @@ class DepotFrappe:
         titre = f"{m.num} · {m.title}"
         lecon = self._nouvelle_lecon(cours_id, chapitre, titre, editorjs.lecon_module(m, devoir, heures),
                                      evaluations, videos.get(titre, ""))
+        # l'archive ne peut être jointe qu'à une leçon existante : le contenu qui la cite est écrit ensuite
+        url = ressources_frappe.joindre(lecon.name, m.archive) if m.archive else None
         if m.quiz:
             quiz = self._quiz(cours_id, lecon.name, m)
             cas = self._devoir(cours_id, f"Mise en situation {m.num} — {m.title}", editorjs.consigne_cas(m),
                                TypeExercice.MISE_EN_SITUATION, grille=m.grille_cas, chaine=m.correction_cas,
                                type_="Text")
-            lecon.content = editorjs.lecon_module(m, devoir, heures, quiz, cas, self._reglages)
+            lecon.content = editorjs.lecon_module(m, devoir, heures, quiz, cas, self._reglages, url)
             lecon.set("assessments", evaluations + [{"assessment_type": "LMS Quiz", "assessment_name": quiz},
                                                     {"assessment_type": "LMS Assignment", "assessment_name": cas}])
+            lecon.save(ignore_permissions=True)
+        elif url:
+            lecon.content = editorjs.lecon_module(m, devoir, heures, archive_url=url)
             lecon.save(ignore_permissions=True)
         return lecon.name
 

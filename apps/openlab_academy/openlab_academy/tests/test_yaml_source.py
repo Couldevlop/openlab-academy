@@ -199,6 +199,28 @@ class TestGrilleEtCorrection(unittest.TestCase):
                          (None, None, None, None))
         self.assertEqual((p.portfolio[0].grille, p.capstone.correction), (None, None))
 
+    def test_travaux_pratiques_facultatifs_du_module(self):
+        self.assertEqual(depuis_dict(parcours_brut(), "t.yaml").blocs[0].modules[0].travaux_pratiques, "")
+        brut = parcours_brut()
+        brut["blocs"][0]["modules"][0]["travaux_pratiques"] = "Déroulé de la séance"
+        self.assertEqual(depuis_dict(brut, "t.yaml").blocs[0].modules[0].travaux_pratiques,
+                         "Déroulé de la séance")
+
+    def test_archive_facultative_du_module(self):
+        self.assertEqual(depuis_dict(parcours_brut(), "t.yaml").blocs[0].modules[0].archive, "")
+        brut = parcours_brut()
+        brut["blocs"][0]["modules"][0]["archive"] = "socle-ia-agentique-v0.2.1.zip"
+        self.assertEqual(depuis_dict(brut, "t.yaml").blocs[0].modules[0].archive,
+                         "socle-ia-agentique-v0.2.1.zip")
+
+    def test_archive_hors_nom_de_fichier_refusee(self):
+        """OWASP A01 : le nom vient du fichier de parcours, jamais un chemin."""
+        for nom in ("../secrets.zip", "dossier/socle.zip", "socle.zip\n", "socle.exe"):
+            brut = parcours_brut()
+            brut["blocs"][0]["modules"][0]["archive"] = nom
+            with self.subTest(nom), self.assertRaisesRegex(FormatInvalide, r"archive"):
+                depuis_dict(brut, "t.yaml")
+
     def test_grille_et_correction_d_un_module(self):
         brut = parcours_brut()
         m = brut["blocs"][0]["modules"][0]

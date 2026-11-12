@@ -1,0 +1,80 @@
+# Promotion de develop vers main.
+#
+# L'auto-merge de GitHub n'est pas disponible ici : il exige des contrôles requis, donc une protection de
+# branche, refusée aux dépôts privés en plan gratuit (voir docs/flux-git.md). La promotion est donc déclenchée
+# par la *réussite* de la CI sur develop : le commit promu est exactement celui que la CI vient de valider.
+#
+# Rappel : un workflow `workflow_run` n'est pris en compte que dans sa version présente sur la branche par
+# défaut (main). La première promotion doit donc être lancée à la main (`workflow_dispatch`).
+name: Promotion vers main
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [develop]
+  workflow_dispatch:
+
+concurrency:
+  group: promotion
+  cancel-in-progress: false # ne jamais interrompre une promotion en cours
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promouvoir:
+    name: Promouvoir develop dans main
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # une CI en échec, ou annulée, ne promeut rien
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Vérifier que la CI a validé ce commit de develop
+        env:
+          VALIDE: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          tete=$(git rev-parse HEAD)
+          if [ -n "$VALIDE" ] && [ "$VALIDE" != "$tete" ]; then
+            echo "::notice::develop a avancé depuis la CI validée ($VALIDE) ; la promotion attendra sa propre CI."
+            exit 1
+          fi
+          echo "Commit promu : $tete"
+
+      - name: Y a-t-il quelque chose à promouvoir ?
+        id: ecart
+        run: |
+          git fetch --quiet origin main
+          if [ -z "$(git log --oneline origin/main..HEAD)" ]; then
+            echo "promouvoir=false" >> "$GITHUB_OUTPUT"
+            echo "main est déjà à jour : rien à promouvoir."
+          else
+            echo "promouvoir=true" >> "$GITHUB_OUTPUT"
+            git log --reverse --pretty='- %s (%h)' origin/main..HEAD > /tmp/journal.md
+          fi
+
+      - name: Ouvrir la PR puis fusionner
+        if: steps.ecart.outputs.promouvoir == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          corps=$(printf 'Promotion automatique de `develop` vers `main`, déclenchée par la réussite de la CI sur ce commit (front, backend et couverture 99 %%, sécurité, architecture).\n\n## Commits promus\n\n%s\n' "$(cat /tmp/journal.md)")
+          numero=$(gh pr list --base main --head develop --state open --json number --jq '.[0].number')
+          if [ -n "$numero" ]; then
+            gh pr edit "$numero" --title 'Promotion vers main' --body "$corps"
+          else
+            numero=$(gh pr create --base main --head develop --title 'Promotion vers main' --body "$corps" \
+              | grep -oE '[0-9]+$')
+          fi
+          echo "PR #$numero"
+          # la PR porte le commit que la CI vient de valider : fusion sans écraser l'historique
+          gh pr merge "$numero" --merge

@@ -1,0 +1,81 @@
+# Après une fusion dans main : étiqueter la version livrée, puis ramener main dans develop.
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  etiqueter:
+    name: Étiqueter la version et publier la release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # version lue dans l'app : la source de vérité reste le code, pas un numéro saisi à la main
+      - name: Déterminer la version
+        id: version
+        run: |
+          version=$(sed -nE 's/^__version__ = "([^"]+)".*/\1/p' \
+            apps/openlab_academy/openlab_academy/__init__.py | head -1)
+          if [ -z "$version" ]; then
+            echo "::error::Version absente de openlab_academy/__init__.py (__version__)."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Version : $version"
+
+      - name: Étiqueter si la version est nouvelle
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "::notice::v$VERSION existe déjà : rien à publier. Incrémentez __version__ pour une livraison."
+            exit 0
+          fi
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --generate-notes
+
+  realigner:
+    name: Ramener main dans develop
+    runs-on: ubuntu-24.04
+    needs: etiqueter
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # main porte les commits de fusion : sans ce retour, develop divergerait livraison après livraison
+      - name: Ouvrir la PR de réalignement si nécessaire
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git fetch --quiet origin develop
+          if [ -z "$(git log --oneline origin/develop..HEAD)" ]; then
+            echo "develop contient déjà main : aucun réalignement nécessaire."
+            exit 0
+          fi
+          existante=$(gh pr list --base develop --head main --state open --json number --jq '.[0].number')
+          if [ -n "$existante" ]; then
+            echo "PR de réalignement déjà ouverte : #$existante"
+            exit 0
+          fi
+          gh pr create --base develop --head main --title 'Réalignement de develop sur main' \
+            --body 'Retour automatique des commits de fusion de `main` dans `develop`, pour que les deux branches ne divergent pas.'
