@@ -123,13 +123,22 @@ partir du socle versionné, et l'apprenant démarre son propre dépôt, dont la 
 Le porteur du projet a retenu un **téléchargement contrôlé** : l'archive ne doit pas être servie en ressource
 publique de l'application.
 
-- [ ] Test rouge : un visiteur, et un utilisateur non inscrit, ne peuvent pas télécharger l'archive.
-- [ ] Test rouge : un inscrit ne peut pas la télécharger hors de la fenêtre de sa cohorte (refus `FERME`).
-- [ ] Test rouge : un inscrit la télécharge pendant la fenêtre ; rôles non bloqués servis sans condition.
-- [ ] Point d'entrée de téléchargement appuyé sur `application/visibilite.py` et les rôles non bloqués de
-      `entrypoints/lms.py`, nom de fichier jamais construit depuis une entrée du client (OWASP A01, A03).
-- [ ] Lien dans la leçon de la séance 2 et mention de la version de l'archive.
-- [ ] Remplacer dans les supports « l'archive fournie par le formateur » par le chemin réel de téléchargement.
+Mise en œuvre retenue : l'archive est **jointe en fichier privé** à la première leçon du parcours, par
+`infrastructure/ressources_frappe.py`, appelé à la publication (`depot_frappe._lecon_module`). Aucun nouveau point
+d'entrée n'a été écrit : `entrypoints/lms.py: serve_resource` et `_refuser_ressource` protègent déjà les fichiers
+privés d'une leçon — parcours ni fermé, ni caché, ni bloqué, puis `can_access_lesson`. Un fichier privé Frappe n'est
+jamais servi par l'URL publique des ressources, et le nom de l'archive ne vient pas du client : il est lu dans le
+YAML du parcours et contraint par `_NOM_ARCHIVE`, le rendu n'acceptant qu'une adresse `/private/files/<nom>.zip`
+(OWASP A01, A03).
+
+- [x] Archive déterministe produite par `docs/Ressources/construire_archive_socle.py` : 22 fichiers, 23 293 octets,
+      sha256 `39eb808017fa62e74d66a0dd476280299f4ab0f42c6f793ee9ddcc3d6eeec38a`, supports formateur exclus.
+- [x] Clé `archive:` du module en domaine, lue et validée en infrastructure, refusée si le nom n'est pas conforme.
+- [x] Test rouge puis vert : l'archive est jointe en fichier privé et citée par la leçon ; aucune adresse autre que
+      `/private/files/<nom>.zip` n'est acceptée par le rendu.
+- [x] Lien dans la première leçon du parcours, avec la version de l'archive.
+- [x] Dans les supports, « l'archive fournie par le formateur » remplacée par le téléchargement depuis la leçon.
+- [ ] Recette navigateur : télécharger l'archive en tant qu'inscrit, puis vérifier le refus hors inscription.
 
 ## Hors périmètre, à décider par le porteur du projet
 - **Adaptateur de modèle local** (interface `ModelClient` + adaptateur Ollama), désigné prochaine étape technique

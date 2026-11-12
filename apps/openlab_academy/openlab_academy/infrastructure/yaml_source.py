@@ -1,5 +1,6 @@
 """Adaptateur d'entrée : fichiers YAML de parcours -> entités du domaine."""
 import pathlib
+import re
 
 import yaml
 
@@ -10,6 +11,7 @@ from openlab_academy.domain.reglages import Reglages, ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import Chaine
 
 PARCOURS_DIR = pathlib.Path(__file__).parents[1] / "data" / "parcours"
+_NOM_ARCHIVE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.zip")
 _LISTES_PROJET = ("objectifs", "fonctionnalites", "stack", "criteres_acceptation", "livrables")
 # Paramètres qu'un parcours peut surcharger : clé YAML -> champ du domaine Parcours
 _PARAMETRES = {"projets_par_portfolio": "projets_attendus", "heures_par_module": "heures_par_module"}
@@ -106,6 +108,16 @@ class _Lecteur:
         except ReglagesInvalides as e:
             raise FormatInvalide(f"{self.source}: {chemin} invalide : {e}") from None
 
+    def archive(self, brut, chemin: str) -> str:
+        """Clé facultative `archive:` : nom de fichier seul d'une archive à joindre à la leçon. Jamais un chemin
+        (OWASP A01 : le fichier est lu dans le dossier des ressources de l'application, pas où le texte l'indique)."""
+        if brut is None:
+            return ""
+        nom = str(brut)
+        if not _NOM_ARCHIVE.fullmatch(nom):
+            raise FormatInvalide(f"{self.source}: {chemin} doit être un nom de fichier .zip sans chemin")
+        return nom
+
     def module(self, m: dict, chemin: str) -> Module:
         quiz = m.get("quiz") or []
         if not isinstance(quiz, list):
@@ -114,6 +126,7 @@ class _Lecteur:
                       quiz=tuple(self.question(q, f"{chemin}quiz[{i}].") for i, q in enumerate(quiz)),
                       mise_en_situation=str(m.get("mise_en_situation") or ""),
                       travaux_pratiques=str(m.get("travaux_pratiques") or ""),
+                      archive=self.archive(m.get("archive"), f"{chemin}archive"),
                       grille_cas=self.grille(m.get("grille_mise_en_situation"), f"{chemin}grille_mise_en_situation"),
                       correction_cas=self.correction(m.get("correction_mise_en_situation"),
                                                      f"{chemin}correction_mise_en_situation"),

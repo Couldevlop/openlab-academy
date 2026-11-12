@@ -59,6 +59,10 @@ class TestInvariantsParcours(unittest.TestCase):
         self.assertEqual(Module("01", "Un", "c", "l").travaux_pratiques, "")
         self.assertEqual(Module("01", "Un", "c", "l", travaux_pratiques="TP").travaux_pratiques, "TP")
 
+    def test_archive_facultative(self):
+        self.assertEqual(Module("01", "Un", "c", "l").archive, "")
+        self.assertEqual(Module("01", "Un", "c", "l", archive="socle.zip").archive, "socle.zip")
+
     def test_entites_immuables(self):
         with self.assertRaises(dataclasses.FrozenInstanceError):
             parcours().title = "autre"

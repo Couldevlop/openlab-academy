@@ -44,6 +44,26 @@ class TestRenduModule(unittest.TestCase):
                           "header", "paragraph", "assignment"])
         self.assertEqual([x["data"]["text"] for x in b[4:7]], ["Déroulé.", "Défi : agir.", "Indices : lire."])
 
+    def test_lien_de_l_archive_en_fin_de_travaux_pratiques(self):
+        m = Module("01", "M", "c", "l", travaux_pratiques="Déroulé.", archive="socle.zip")
+        b = blocs(editorjs.lecon_module(m, "D", 3, archive_url="/private/files/socle.zip"))
+        self.assertEqual([x["type"] for x in b],
+                         ["header", "paragraph", "paragraph", "header", "paragraph", "paragraph", "header",
+                          "paragraph", "assignment"])
+        self.assertIn('<a href="/private/files/socle.zip">socle.zip</a>', b[5]["data"]["text"])
+
+    def test_aucun_lien_sans_adresse_servie(self):
+        m = Module("01", "M", "c", "l", travaux_pratiques="Déroulé.", archive="socle.zip")
+        self.assertNotIn("socle.zip", texte(editorjs.lecon_module(m, "D", 3)))
+
+    def test_adresse_d_archive_non_servie_refusee(self):
+        """OWASP A03 : seule une adresse de fichier privé du site est transformée en lien."""
+        m = Module("01", "M", "c", "l", travaux_pratiques="Déroulé.", archive="socle.zip")
+        for url in ("javascript:alert(1)", "https://ailleurs.example/socle.zip", "/private/files/../secrets.zip",
+                    "/files/socle.zip"):
+            with self.subTest(url), self.assertRaises(ValueError):
+                editorjs.lecon_module(m, "D", 3, archive_url=url)
+
     def test_aucune_section_travaux_pratiques_sans_contenu(self):
         rendu = texte(editorjs.lecon_module(Module("01", "M", "c", "l", travaux_pratiques="   "), "D", 3))
         self.assertNotIn("Travaux pratiques", rendu)

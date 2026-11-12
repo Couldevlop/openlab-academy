@@ -10,7 +10,7 @@ l'action finale reste simulée — présente une démonstration de sept minutes 
 
 ## Déroulé indicatif — 3 heures
 1. 0–15 min : rappel du barème (`docs/grille_jury.md`), des cinq conditions éliminatoires et du format de passage.
-2. 15–35 min : dernière vérification d'environnement, en salle : installation à blanc depuis l'archive, tests,
+2. 15–35 min : dernière vérification d'environnement, en salle : installation à blanc depuis l'archive de la première leçon, tests,
    démonstration. Un dépôt qui ne s'installe pas ne peut pas être évalué.
 3. 35–140 min : passages. Sept minutes de démonstration et huit minutes de questions par apprenant ou binôme.
 4. 140–150 min : pause.

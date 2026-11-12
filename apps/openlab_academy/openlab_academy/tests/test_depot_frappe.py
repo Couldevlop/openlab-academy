@@ -10,10 +10,13 @@ from frappe.tests.utils import FrappeTestCase
 from openlab_academy.application.publier_parcours import PublierParcours, Statut
 from openlab_academy.domain.parcours import Annonce, Bloc, Module
 from openlab_academy.entrypoints import install, seed
+from openlab_academy.infrastructure import contenus_parcours_frappe as contenus
+from openlab_academy.infrastructure import ressources_frappe
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
 from openlab_academy.tests.fabriques import parcours, parcours_brut, projet
 
 TITRE = "Parcours de test seed"
+ARCHIVE = "socle-ia-agentique-v0.2.0.zip"
 
 
 def compter(cours):
@@ -93,6 +96,39 @@ class TestDepotFrappe(FrappeTestCase):
         nom = self.depot.creer(Annonce(TITRE, "s", "d", ("x",), "Blue"))
         self.assertEqual(frappe.db.get_value("LMS Course", nom, ["parcours_gratuit", "acces_limite_cohorte", "featured"]),
                          (0, 0, 0))
+
+    def test_archive_jointe_en_fichier_prive_et_citee_par_la_lecon(self):
+        """L'archive est un fichier privé attaché à la leçon : seul le contrôle des médias du LMS la sert, donc
+        seul un membre dont le parcours est ouvert et la leçon accessible peut la télécharger."""
+        module = Module("01", "Un", "c", "l", travaux_pratiques="Déroulé.", archive=ARCHIVE)
+        nom = self.depot.creer(parcours(title=TITRE, blocs=(Bloc("B1", (module,)),)))
+        la_lecon = lecon(nom, "01 ")
+        fichier = frappe.get_doc("File", {"attached_to_doctype": "Course Lesson",
+                                          "attached_to_name": la_lecon.name, "file_name": ARCHIVE})
+        self.assertEqual((fichier.is_private, fichier.attached_to_field), (1, "content"))
+        liens = [b["data"]["text"] for b in json.loads(la_lecon.content)["blocks"] if b["type"] == "paragraph"]
+        self.assertIn(f'Archive de départ : <a href="{fichier.file_url}">{ARCHIVE}</a>', liens)
+        # cette leçon avoue l'archive, et aucune référence ne la réserve aux instructeurs : l'apprenant du
+        # parcours ouvert y a droit. Les mêmes octets servent plusieurs parcours (le socle du parcours livré) :
+        # les autres leçons qui la citent sont donc attendues, seule la réserve aux instructeurs est interdite.
+        references = contenus.references_avouees(fichier.file_url)
+        self.assertIn((la_lecon.name, False, nom), references)
+        self.assertFalse([r for r in references if r[1]], references)
+
+    def test_archive_deja_jointe_reutilisee(self):
+        """Une archive jointe deux fois à la même leçon ne crée pas un second fichier."""
+        module = Module("01", "Un", "c", "l", travaux_pratiques="Déroulé.", archive=ARCHIVE)
+        nom = self.depot.creer(parcours(title=TITRE, blocs=(Bloc("B1", (module,)),)))
+        la_lecon = lecon(nom, "01 ")
+        url = frappe.db.get_value("File", {"attached_to_name": la_lecon.name, "file_name": ARCHIVE}, "file_url")
+        self.assertEqual(ressources_frappe.joindre(la_lecon.name, ARCHIVE), url)
+        self.assertEqual(frappe.db.count("File", {"attached_to_name": la_lecon.name, "file_name": ARCHIVE}), 1)
+
+    def test_archive_absente_des_ressources_refusee(self):
+        """Échec fermé : aucune leçon ne cite une archive que l'application ne livre pas."""
+        module = Module("01", "Un", "c", "l", travaux_pratiques="D", archive="inexistante.zip")
+        with self.assertRaises(ressources_frappe.RessourceInconnue):
+            self.depot.creer(parcours(title=TITRE, blocs=(Bloc("B1", (module,)),)))
 
     def test_video_preservee_a_la_republication(self):
         video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"

@@ -7,8 +7,8 @@ classification de ses actions par risque.
 
 ## Prérequis
 - Poste avec Python 3.11, 3.12 ou 3.13 et un terminal.
-- Archive du socle fournie par le formateur, décompressée, **non encore installée** (l'installation est l'objet de
-  la séance 2).
+- Archive du socle téléchargée depuis la première leçon du parcours et décompressée, **non encore installée**
+  (l'installation est l'objet de la séance 2).
 - Avoir lu `docs/brief_apprenant.md`.
 
 ## Déroulé indicatif — 3 heures

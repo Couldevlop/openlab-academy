@@ -21,6 +21,9 @@ Documents de cadrage associés : [progression_8_seances.md](progression_8_seance
 ## Prérequis matériel et logiciel
 
 - Un poste par apprenant, droits d'installation locale, 8 Go de mémoire au minimum.
+- L'archive du socle est distribuée par la plateforme : elle est jointe en fichier privé à la première leçon du
+  parcours et n'est téléchargeable que par un inscrit, pendant la fenêtre de sa cohorte. Les supports de séance de
+  ce dossier, eux, ne sont pas distribués aux apprenants.
 - Python 3.11, 3.12 ou 3.13 ; 3.12 et 3.13 sont vérifiés, 3.11 est la borne basse déclarée du socle.
 - Terminal, éditeur de code, navigateur récent, connexion internet stable.
 - Aucun compte chez un fournisseur de modèle n'est nécessaire pour les séances 1 à 8 : la boucle du socle est
@@ -30,7 +33,7 @@ Documents de cadrage associés : [progression_8_seances.md](progression_8_seance
 
 | Entrée en séance | État exigé |
 |---|---|
-| 1 | Archive décompressée, rien d'installé |
+| 1 | Archive téléchargée depuis la première leçon et décompressée, rien d'installé |
 | 2 | Cadrage de la séance 1 rendu |
 | 3 | `pytest -q` vert, filtre `montant_min_eur` et ses tests |
 | 4 | Fonction de routage par segment et test d'équivalence |

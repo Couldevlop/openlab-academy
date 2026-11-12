@@ -46,6 +46,7 @@ blocs:
     modules:
       - num: "01"
         title: Anatomie d'un agent IA
+        archive: socle-ia-agentique-v0.2.0.zip
         contenu: >-
           La boucle percevoir, raisonner, agir : le modèle lit le contexte, décide d'une action, observe son
           résultat et recommence jusqu'à atteindre l'objectif ou une condition d'arrêt. Les quatre composants d'un

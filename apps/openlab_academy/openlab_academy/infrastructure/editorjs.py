@@ -31,8 +31,20 @@ def _doc(blocks: list[dict]) -> str:
     return json.dumps({"time": 0, "blocks": blocks, "version": "2.29.0"}, ensure_ascii=False)
 
 
+_ARCHIVE_PRIVEE = re.compile(r"/private/files/[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.zip")
+
+
+def _lien_archive(nom: str, url: str) -> dict:
+    """Lien vers l'archive de départ. L'adresse doit être celle d'un fichier privé du site, servi par le contrôle
+    d'accès des médias de leçon ; toute autre adresse est refusée (OWASP A03, échec fermé)."""
+    if not isinstance(url, str) or not _ARCHIVE_PRIVEE.fullmatch(url):
+        raise ValueError(f"adresse d'archive non servie par le site : {url!r}")
+    return _bloc("paragraph", text=f'Archive de départ : <a href="{url}">{_e(nom)}</a>')
+
+
 def lecon_module(module: Module, devoir: str, heures: int, quiz: str | None = None,
-                 devoir_cas: str | None = None, reglages: Reglages | None = None) -> str:
+                 devoir_cas: str | None = None, reglages: Reglages | None = None,
+                 archive_url: str | None = None) -> str:
     blocs = [
         _titre("Contenu du module"),
         _bloc("paragraph", text=_e(module.contenu)),
@@ -42,6 +54,8 @@ def lecon_module(module: Module, devoir: str, heures: int, quiz: str | None = No
         blocs.append(_titre("Travaux pratiques"))
         blocs += [_bloc("paragraph", text=_e(paragraphe.strip()))
                   for paragraphe in re.split(r"\n+", module.travaux_pratiques) if paragraphe.strip()]
+        if archive_url is not None:
+            blocs.append(_lien_archive(module.archive, archive_url))
     blocs += [
         _titre("Livrable"),
         _bloc("paragraph", text=f"<b>{_e(module.livrable)}</b>"),
