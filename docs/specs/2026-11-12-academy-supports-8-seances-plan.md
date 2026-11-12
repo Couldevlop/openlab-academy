@@ -56,7 +56,7 @@ La structure du parcours ne change donc pas : **7 modules × 3 h + capstone 3 h 
 - [x] `python -m agentic_lab` → 5 factures éligibles, exposition 7 730,00 EUR, aucune relance.
 - [x] `ruff check .` → 8 écarts corrigés automatiquement (tri des imports, `collections.abc.Callable`,
       `datetime.UTC`) et `BLE001` de la frontière d'outil documenté par un `noqa` commenté. **All checks passed.**
-- [ ] Journaliser ces résultats dans `docs/Ressources/openlab-academy-agentic-starter/docs/RAPPORT_VALIDATION_TECHNIQUE.md`
+- [x] Journaliser ces résultats dans `docs/Ressources/openlab-academy-agentic-starter/docs/RAPPORT_VALIDATION_TECHNIQUE.md`
       (section « Validation sur poste formateur, 12 novembre 2026 »).
 
 ### T2 — Champ `travaux_pratiques` du module (plateforme)
@@ -64,55 +64,76 @@ La structure du parcours ne change donc pas : **7 modules × 3 h + capstone 3 h 
 Les supports de séance doivent être visibles par l'apprenant dans le LMS ; le modèle de module n'a aujourd'hui que
 `contenu`, `livrable`, `quiz` et `mise_en_situation`.
 
-- [ ] Test rouge `domain/` : un `Module` accepte `travaux_pratiques` facultatif, vide par défaut.
-- [ ] Test rouge `infrastructure/yaml_source.py` : la clé facultative `travaux_pratiques:` est lue.
-- [ ] Test rouge `infrastructure/editorjs.py` : `lecon_module` insère une section « Travaux pratiques » après le
+- [x] Test rouge `domain/` : un `Module` accepte `travaux_pratiques` facultatif, vide par défaut.
+- [x] Test rouge `infrastructure/yaml_source.py` : la clé facultative `travaux_pratiques:` est lue.
+- [x] Test rouge `infrastructure/editorjs.py` : `lecon_module` insère une section « Travaux pratiques » après le
       livrable quand le champ est rempli, et n'insère rien quand il est vide.
-- [ ] Implémenter les trois, vert, sans régression des tests de publication existants.
+- [x] Implémenter les trois, vert, sans régression des tests de publication existants.
 
 ### T3 — Supports formateur des 8 séances (dépôt socle)
 
-- [ ] Renommer `TP_SEANCE_2.md` en `docs/TP_SEANCE_2.md` et aligner son format sur les sept autres.
-- [ ] Rédiger `docs/TP_SEANCE_1.md` à `docs/TP_SEANCE_8.md` sur le modèle existant : objectif, déroulé minuté sur
+- [x] Renommer `TP_SEANCE_2.md` en `docs/TP_SEANCE_2.md` et aligner son format sur les sept autres.
+- [x] Rédiger `docs/TP_SEANCE_1.md` à `docs/TP_SEANCE_8.md` sur le modèle existant : objectif, déroulé minuté sur
       3 h, défi apprenant, livrables vérifiables, indices graduels (la règle pédagogique du socle interdit de donner
       la correction complète au début).
-- [ ] Séance 8 : déroulé de la démonstration de 7 minutes et du dossier de preuves, adossé à `docs/grille_jury.md`.
-- [ ] Index `docs/SUPPORTS.md` : table des huit séances, prérequis matériel, état de l'environnement attendu à
+- [x] Séance 8 : déroulé de la démonstration de 7 minutes et du dossier de preuves, adossé à `docs/grille_jury.md`.
+- [x] Index `docs/SUPPORTS.md` : table des huit séances, prérequis matériel, état de l'environnement attendu à
       l'entrée de chaque séance.
 
 ### T4 — Fil rouge du parcours publié (modules 01 à 07)
 
-- [ ] Réécrire les sept `livrable:` en étapes du socle (étape n = capacité ajoutée au même dépôt).
-- [ ] Réécrire les sept `mise_en_situation:` sur le cas du recouvrement, en gardant une mise en situation ancrée en
+- [x] Réécrire les sept `livrable:` en étapes du socle (étape n = capacité ajoutée au même dépôt).
+- [x] Réécrire les sept `mise_en_situation:` sur le cas du recouvrement, en gardant une mise en situation ancrée en
       Côte d'Ivoire quand c'est naturel.
-- [ ] Reprendre `description:` : fil rouge, dépôt fourni, prérequis Python 3.11–3.13, mention explicite « données
+- [x] Reprendre `description:` : fil rouge, dépôt fourni, prérequis Python 3.11–3.13, mention explicite « données
       fictives, aucun envoi réel, aucun SI connecté ».
-- [ ] Remplir `travaux_pratiques:` de chaque module depuis le support de séance correspondant (T3).
-- [ ] Relire les 35 questions de quiz : conserver celles qui restent justes, réécrire celles qui s'appuient sur le
+- [x] Remplir `travaux_pratiques:` de chaque module depuis le support de séance correspondant (T3).
+- [x] Relire les 35 questions de quiz : conserver celles qui restent justes, réécrire celles qui s'appuient sur le
       fil rouge documentaire.
 
 ### T5 — Capstone = séance 8
 
-- [ ] `contexte`, `objectifs`, `fonctionnalites`, `stack`, `criteres_acceptation`, `livrables` passés au recouvrement.
-- [ ] Conditions éliminatoires de `docs/grille_jury.md` portées en `exigences_specifiques` (litige relancé, action
+- [x] `contexte`, `objectifs`, `fonctionnalites`, `stack`, `criteres_acceptation`, `livrables` passés au recouvrement.
+- [x] Conditions éliminatoires de `docs/grille_jury.md` portées en `exigences_specifiques` (litige relancé, action
       enregistrée sans validation, contenu libre qui remplace les règles, outil non autorisé exécuté, envoi réel).
-- [ ] `livrables` = dépôt documenté, diagrammes, jeu de tests et résultats, traces, mesures, registre des risques,
+- [x] `livrables` = dépôt documenté, diagrammes, jeu de tests et résultats, traces, mesures, registre des risques,
       démonstration de 7 minutes.
 
 ### T6 — Vérification
 
-- [ ] `bash docker/dev-test.sh` : suite complète verte, couverture maintenue.
+- [x] Tests ciblés hors Docker : `test_domaine`, `test_yaml_source`, `test_editorjs`,
+      `test_parcours_ia_agentique` — 70 verts.
+- [ ] `bash docker/dev-test.sh` : suite complète verte, couverture maintenue. **Bloqué le 12/11 :** le banc dev
+      a dû être reconstruit (le conteneur `frappe` de `poc/docker-compose.yml` ne monte aucun volume pour
+      `frappe-bench` : recréer le conteneur détruit le bench, les apps et le site). `poc/init.sh` épingle
+      désormais l'interpréteur sur Python 3.12.15, l'image proposant par défaut un Python 3.14 que Frappe v15 ne
+      prend pas en charge.
 - [ ] Publication du parcours sur le banc de démonstration, puis recette Chrome : leçon d'un module (section
       travaux pratiques présente, quiz, mise en situation), page du capstone, grille de correction.
 - [ ] Vérifier l'affichage 375 px (point resté ouvert de la session précédente).
 - [ ] Commits en français, un par tâche.
 
-## Hors périmètre, à décider par le porteur du projet
+### T7 — Distribution du socle aux apprenants (décidée le 12 novembre 2026)
 
-- **Distribution du socle aux apprenants** : le dépôt vit aujourd'hui dans `docs/Ressources/`. Le rendre
-  téléchargeable depuis la leçon (archive servie par la plateforme) ou le publier comme dépôt Git séparé reste à
-  trancher ; les supports renvoient pour l'instant à « l'archive fournie par le formateur ».
+Le socle est distribué en **archive téléchargeable depuis la leçon**, et non par un dépôt Git : un dépôt imposerait
+un compte et la maîtrise de `clone` dès la séance 2, au-delà des prérequis annoncés ; un dépôt public exposerait le
+matériel hors cohorte et un dépôt privé obligerait à inviter chaque inscrit. L'archive est un artefact produit à
+partir du socle versionné, et l'apprenant démarre son propre dépôt, dont la grille évalue l'historique.
+
+Le porteur du projet a retenu un **téléchargement contrôlé** : l'archive ne doit pas être servie en ressource
+publique de l'application.
+
+- [ ] Test rouge : un visiteur, et un utilisateur non inscrit, ne peuvent pas télécharger l'archive.
+- [ ] Test rouge : un inscrit ne peut pas la télécharger hors de la fenêtre de sa cohorte (refus `FERME`).
+- [ ] Test rouge : un inscrit la télécharge pendant la fenêtre ; rôles non bloqués servis sans condition.
+- [ ] Point d'entrée de téléchargement appuyé sur `application/visibilite.py` et les rôles non bloqués de
+      `entrypoints/lms.py`, nom de fichier jamais construit depuis une entrée du client (OWASP A01, A03).
+- [ ] Lien dans la leçon de la séance 2 et mention de la version de l'archive.
+- [ ] Remplacer dans les supports « l'archive fournie par le formateur » par le chemin réel de téléchargement.
+
+## Hors périmètre, à décider par le porteur du projet
 - **Adaptateur de modèle local** (interface `ModelClient` + adaptateur Ollama), désigné prochaine étape technique
   prioritaire par le compte rendu n° 3 : hors de ce plan, à traiter après les supports.
-- **Décisions commerciales en attente** : tarif, dates précises des huit séances, capacité maximale de la cohorte.
-  Le parcours reste publié en gratuit, à votre rythme, tant qu'elles ne sont pas prises.
+- **Gratuité : décidée, pas en attente.** Ce parcours est gratuit (clé `gratuit: true`, aucun tarif, aucun
+  échéancier, aucun blocage pour paiement) ; la question tarifaire du compte rendu n° 3 ne le concerne pas. Restent
+  à fixer les dates précises des huit séances et la capacité maximale de la cohorte.
