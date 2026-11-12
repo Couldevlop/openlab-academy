@@ -16,7 +16,10 @@ git switch -c feat/mon-sujet
 
 ## Chaîne d'intégration
 
-1. **`ci.yml`** — sur toute PR vers `develop` ou `main`, et sur push de ces branches :
+1. **`ci.yml`** — sur les PR vers `develop` et sur les push de `develop` et de `main`. Une PR
+   `develop` → `main` ne rejoue pas les jobs lourds : elle porte l'arbre que la CI de `develop` vient de
+   valider, seul le gardien de flux s'y exécute, et la fusion dans `main` déclenche sa propre CI
+   complète. Jobs :
    - `frontend` : ESLint, Prettier, `vue-tsc`, tests avec seuils de couverture, build ;
    - `backend` : site Frappe réel sur les références épinglées, suite complète, **couverture ≥ 99 %** ;
    - `securite` : Semgrep (Python, JavaScript, secrets), Gitleaks sur l'historique — version figée, avec une
