@@ -458,7 +458,7 @@ h1 {
   margin: 0 0 20px;
   font-size: 24px;
   line-height: 1.2;
-  font-weight: 700;
+  font-weight: 600;
 }
 .consigne {
   margin-bottom: 20px;
@@ -527,7 +527,7 @@ h1 {
 .diff .signe {
   flex: none;
   width: 1ch;
-  font-weight: 700;
+  font-weight: 600;
 }
 .diff .ajout {
   background: var(--es-succes-fond);
@@ -567,13 +567,13 @@ h1 {
 .grille-tete h2 {
   margin: 0;
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .note {
   margin: 0;
   font-family: var(--ol-font-display);
   font-size: 34px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ol-navy);
 }
 .note span {

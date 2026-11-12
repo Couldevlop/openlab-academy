@@ -21,12 +21,30 @@ def cours_de_l_evaluation(doctype: str, nom: str) -> set[str]:
     return {c for c in cours if c}
 
 
+def references_avouees(file_url: str) -> list[tuple[str, bool, str]]:
+    """Références avouées du fichier privé (leçon, réservée aux instructeurs, parcours), avec le même repérage et le
+    même aveu que le service des médias du LMS. Vide si aucune leçon avouée ne le cite."""
+    from lms.lms.doctype.course_lesson import course_lesson
+
+    references = course_lesson._resolve_lesson_references(file_url)
+    avouees = course_lesson._references_vouched_by_owner(references) if references else []
+    if not avouees:
+        return []
+    cours = dict(frappe.get_all("Course Lesson", {"name": ["in", list({lecon for lecon, _ in avouees})]},
+                                ["name", "course"], as_list=True))
+    return [(lecon, reservee, cours[lecon]) for lecon, reservee in avouees if cours.get(lecon)]
+
+
 def _liste(cours: tuple[str, ...]) -> str:
     return ", ".join(frappe.db.escape(c) for c in cours)
 
 
 def condition_lecons(cours: tuple[str, ...]) -> str:
     return f"ifnull(`tabCourse Lesson`.course, '') not in ({_liste(cours)})" if cours else ""
+
+
+def condition_chapitres(cours: tuple[str, ...]) -> str:
+    return f"ifnull(`tabCourse Chapter`.course, '') not in ({_liste(cours)})" if cours else ""
 
 
 def condition_evaluations(doctype: str, cours: tuple[str, ...], champ_cours: bool, champ_lecon: bool) -> str:

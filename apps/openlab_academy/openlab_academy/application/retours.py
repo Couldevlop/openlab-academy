@@ -11,13 +11,14 @@ from openlab_academy.application.corriger import (
     Acces, AccesRefuse, CorrectionRefusee, GENERAL, note_masquee, synthese, valider_niveaux)
 from openlab_academy.application.pairs import DepotRelectures, Relecture, StatutRelecture
 from openlab_academy.application.soumettre_copie import Contenu, Exercice
-from openlab_academy.domain.copie import Copie, Etat, Proposition, Statut
+from openlab_academy.domain.copie import Copie, Etat, Proposition, Source, Statut
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.reglages_evaluation import Chaine
 
 EN_COURS = "Votre copie est en cours de correction."
 MASQUEE = "Votre note sera visible dès que vous aurez terminé vos relectures."
 PROVISOIRE = "Note provisoire, en attente de validation par le formateur."
+RENVOYEE = "Votre rendu vous est renvoyé : {motifs}. Corrigez-le puis rendez-le à nouveau."
 REMPLACEE = "Cette version a été remplacée par votre nouveau rendu : seule la dernière version est corrigée."
 VISIBLES = (StatutRelecture.A_FAIRE, StatutRelecture.FAITE)
 
@@ -47,6 +48,10 @@ class ConsulterRetour:
                 "reussite": None, "criteres": [], "commentaire_general": "", "message": EN_COURS}
         if copie.statut == Statut.REMPLACEE:
             return {**base, "message": REMPLACEE}
+        if copie.statut == Statut.RENVOYEE:
+            motifs = [m for p in self._depot.propositions(copie_id) if p.source == Source.CONTROLES
+                      for m in p.commentaires.values()]
+            return {**base, "message": RENVOYEE.format(motifs=" ; ".join(motifs))}
         if copie.statut not in (Statut.PUBLIEE, Statut.PROVISOIRE):
             return base
         chaine = self._chaine(copie)

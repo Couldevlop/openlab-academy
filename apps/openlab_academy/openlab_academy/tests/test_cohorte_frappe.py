@@ -4,7 +4,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy.domain.cohorte import Cohorte
-from openlab_academy.domain.reglages import Reglages
+from openlab_academy.domain.reglages import TITRE_LANCEMENT, Reglages
 from openlab_academy.entrypoints import cohorte as commande
 from openlab_academy.entrypoints import seed
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
@@ -13,7 +13,8 @@ from openlab_academy.tests.fabriques import parcours
 
 LUNDI = datetime.date(2026, 11, 2)
 STANDARD = Reglages().rythme("standard")
-TITRE_PILOTE = "Promo 1 — Fondamentaux de la Data Science · Standard 12 h"
+TITRE_PILOTE = f"Promo 1 — {TITRE_LANCEMENT}"
+FONDAMENTAUX = "Fondamentaux de la Data Science"
 
 
 def supprimer_cohortes(filtre: dict) -> None:
@@ -56,6 +57,21 @@ class TestDepotCohortesFrappe(FrappeTestCase):
         self.assertIn("Séances de 19 h à 21 h", b.batch_details)
         self.assertNotIn("18 h 30", b.batch_details)
 
+    def test_lot_fenetre_cree(self):
+        p = parcours(title="Parcours fenêtre test", acces_limite_a_la_cohorte=True)
+        cours = DepotFrappe(commit=False).creer(p)
+        depot = DepotCohortesFrappe()
+        nom = depot.creer(Cohorte.fenetre(p, LUNDI, Reglages()))
+        self.assertEqual(depot.trouver("Promo 1 — Parcours fenêtre test"), nom)
+        b = frappe.get_doc("LMS Batch", nom)
+        self.assertEqual([c.course for c in b.courses], [cours])
+        self.assertEqual((str(b.start_date), str(b.end_date)), ("2026-11-02", "2026-12-02"))
+        self.assertEqual((str(b.start_time).zfill(8), str(b.end_time)), ("00:00:00", "23:59:00"))
+        self.assertEqual((b.allow_self_enrollment, b.seat_count, b.published), (1, 10_000, 1))
+        self.assertEqual(b.description, "Parcours en vidéo, à votre rythme : quiz, exercices et projet final "
+                                        "corrigé sur la plateforme.")
+        self.assertEqual(b.batch_details, "<p>Ouvert du 02/11/2026 au 02/12/2026 inclus, à toute heure.</p>")
+
     def test_cours_absent_refuse(self):
         with self.assertRaisesRegex(ValueError, "cours « Inconnu » introuvable"):
             DepotCohortesFrappe().creer(Cohorte.pilote(parcours(title="Inconnu"), LUNDI, STANDARD, Reglages()))
@@ -70,6 +86,7 @@ class TestCommandeCohorte(FrappeTestCase):
 
     def test_ouvrir_pilote_idempotent(self):
         seed.run(commit=False)
+        frappe.db.set_single_value("Reglages OpenLab Academy", "parcours_pilote", TITRE_LANCEMENT)
         supprimer_cohortes({"title": TITRE_PILOTE})
         premiere = commande.ouvrir_pilote(commit=False)
         self.assertTrue(premiere["creee"])
@@ -79,6 +96,7 @@ class TestCommandeCohorte(FrappeTestCase):
     def test_ouvrir_pilote_intensif(self):
         seed.run(commit=False)
         supprimer_cohortes({"title": ("like", "%· Intensif 16 h")})
+        frappe.db.set_single_value("Reglages OpenLab Academy", "parcours_pilote", FONDAMENTAUX)
         resultat = commande.ouvrir_pilote(rythme="intensif", commit=False)
         b = frappe.get_doc("LMS Batch", resultat["cohorte"])
         self.assertTrue(b.title.endswith("· Intensif 16 h"))
@@ -90,6 +108,7 @@ class TestCommandeCohorte(FrappeTestCase):
 
     def test_ouverture_validee_en_base(self):
         seed.run(commit=False)
+        frappe.db.set_single_value("Reglages OpenLab Academy", "parcours_pilote", TITRE_LANCEMENT)
         supprimer_cohortes({"title": TITRE_PILOTE})
         nom = commande.ouvrir_pilote(commit=True)["cohorte"]
         frappe.db.rollback()

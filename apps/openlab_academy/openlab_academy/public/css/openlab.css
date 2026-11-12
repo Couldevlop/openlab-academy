@@ -1,7 +1,8 @@
-/* Charte OpenLab Academy (docs/charte-graphique.md) : couleurs relevées sur le logo, Montserrat.
+/* Charte OpenLab Academy (docs/charte-graphique.md) : couleurs relevées sur le logo, Montserrat pour les titres,
+   Nunito Sans (humaniste, plus douce et plus compacte) pour le texte courant.
    Bleu nuit pour les actions principales et les titres, orange réservé aux accents, bleu royal pour les liens.
    Contraste AA : aucun texte orange courant (#C25A12 sur blanc = 4,4:1) ; texte blanc seulement sur #B35210. */
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Nunito+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap");
 
 :root {
   --ol-orange: #ec7623;
@@ -19,7 +20,7 @@
   --ol-graphite: #1a1d24;
   --ol-slate: #6b7590;
   --ol-font-display: "Montserrat", "Segoe UI", system-ui, sans-serif;
-  --ol-font-body: "Montserrat", "Segoe UI", system-ui, sans-serif;
+  --ol-font-body: "Nunito Sans", "Segoe UI", system-ui, sans-serif;
   --ol-font-mono: "JetBrains Mono", ui-monospace, monospace;
   /* filet quatre couleurs du logo : bleu royal, bleu ciel, orange, jaune */
   --ol-filet: linear-gradient(90deg, var(--ol-navy-soft) 0 34%, var(--ol-sky) 34% 50%, var(--ol-orange) 50% 84%,
@@ -56,8 +57,8 @@ body,
 h1, h2, h3,
 .text-2xl, .text-3xl, .text-4xl {
   font-family: var(--ol-font-display);
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  letter-spacing: -0.005em;
 }
 
 code, pre, kbd {
@@ -68,3 +69,12 @@ code, pre, kbd {
 a:hover { color: var(--ol-lien-survol); }
 [role="progressbar"] > div { background-color: var(--ol-orange); }
 :focus-visible { outline: 2px solid var(--ol-focus); outline-offset: 2px; }
+
+/* Page publique « Parcours fermé » */
+.ol-parcours-ferme { max-width: 40rem; margin: 3rem auto; padding: 0 1rem; }
+.ol-parcours-ferme .ol-filet { height: 4px; background: var(--ol-filet); margin-bottom: 1.5rem; }
+.ol-parcours-ferme h1 { font-size: 1.75rem; line-height: 1.25; color: var(--ol-navy-soft); }
+.ol-parcours-ferme p { font-size: 1.0625rem; line-height: 1.6; overflow-wrap: anywhere; }
+.ol-parcours-ferme .ol-bouton { display: inline-block; margin-top: 0.5rem; padding: 0.75rem 1.25rem;
+  background: var(--ol-orange-deep); color: #fff; border-radius: 6px; font-weight: 600; text-decoration: none; }
+.ol-parcours-ferme .ol-bouton:hover { background: var(--ol-orange-deeper); color: #fff; }

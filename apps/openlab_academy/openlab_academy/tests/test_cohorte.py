@@ -2,7 +2,8 @@ import datetime
 import unittest
 
 from openlab_academy.application.ouvrir_cohorte import OuvrirCohorte
-from openlab_academy.domain.cohorte import Cohorte, CohorteInvalide
+from openlab_academy.domain.cohorte import PLACES_FENETRE, Cohorte, CohorteInvalide
+from openlab_academy.domain.fenetre import un_mois_apres
 from openlab_academy.domain.parcours import Bloc, Module
 from openlab_academy.domain.reglages import Reglages, Rythme
 from openlab_academy.tests.fabriques import parcours, projet
@@ -77,6 +78,26 @@ class TestCohortePilote(unittest.TestCase):
             Cohorte("T", "C", LUNDI, LUNDI + datetime.timedelta(days=1), "20:30", "18:30", "Africa/Abidjan", STANDARD)
 
 
+class TestCohorteFenetre(unittest.TestCase):
+    def test_cohorte_fenetre(self):
+        c = Cohorte.fenetre(parcours(title="IA"), LUNDI, REGLAGES)
+        self.assertEqual(c.titre, "Promo 1 — IA")
+        self.assertEqual((c.cours, c.debut, c.fin), ("IA", LUNDI, datetime.date(2026, 12, 2)))
+        self.assertEqual((c.heure_debut, c.heure_fin, c.fuseau), ("00:00", "23:59", "Africa/Abidjan"))
+        self.assertIsNone(c.rythme)
+        self.assertEqual((c.places, PLACES_FENETRE), (10_000, 10_000))
+        self.assertEqual(c.seances, "Accès libre, à toute heure.")
+
+    def test_fenetre_fin_de_mois(self):
+        c = Cohorte.fenetre(parcours(title="IA"), datetime.date(2027, 1, 31), REGLAGES)
+        self.assertEqual(c.fin, un_mois_apres(datetime.date(2027, 1, 31)))
+        self.assertEqual(c.fin, datetime.date(2027, 2, 28))
+
+    def test_fuseau_des_reglages(self):
+        c = Cohorte.fenetre(parcours(title="IA"), LUNDI, Reglages(fuseau="Africa/Dakar"))
+        self.assertEqual(c.fuseau, "Africa/Dakar")
+
+
 class DepotCohortesEnMemoire:
     def __init__(self):
         self.cohortes = {}
@@ -117,6 +138,40 @@ class TestOuvrirCohorte(unittest.TestCase):
         OuvrirCohorte(depot, samedi_dans_une_semaine, aujourd_hui=lambda: jeudi).executer(parcours(title="P0"))
         debut = depot.cohortes["Promo 1 — P0 · Standard 12 h"].debut
         self.assertEqual((debut, debut.weekday()), (datetime.date(2026, 10, 24), 5))
+
+
+class TestOuvrirParcoursLimite(unittest.TestCase):
+    AUJOURD_HUI = datetime.date(2026, 11, 2)
+
+    def ouvrir(self, reglages, depot=None, debut=None):
+        depot = depot if depot is not None else DepotCohortesEnMemoire()
+        cas = OuvrirCohorte(depot, reglages, aujourd_hui=lambda: self.AUJOURD_HUI)
+        return cas.executer(parcours(title="IA", acces_limite_a_la_cohorte=True), debut), depot
+
+    def test_ouvrir_parcours_limite_date_du_reglage(self):
+        reglee = datetime.date(2026, 11, 16)
+        resultat, depot = self.ouvrir(Reglages(ouverture_lancement=reglee))
+        self.assertEqual(resultat, ("Promo 1 — IA", True))
+        c = depot.cohortes["Promo 1 — IA"]
+        self.assertEqual((c.debut, c.fin, c.rythme), (reglee, datetime.date(2026, 12, 16), None))
+
+    def test_debut_explicite_prime(self):
+        _, depot = self.ouvrir(Reglages(ouverture_lancement=datetime.date(2026, 11, 16)),
+                               debut=datetime.date(2026, 12, 1))
+        self.assertEqual(depot.cohortes["Promo 1 — IA"].debut, datetime.date(2026, 12, 1))
+
+    def test_ouverture_passee_ou_vide_aujourd_hui(self):
+        for reglee in (None, datetime.date(2026, 10, 1)):
+            with self.subTest(reglee=reglee):
+                _, depot = self.ouvrir(Reglages(ouverture_lancement=reglee))
+                c = depot.cohortes["Promo 1 — IA"]
+                self.assertEqual((c.debut, c.fin), (self.AUJOURD_HUI, datetime.date(2026, 12, 2)))
+
+    def test_cohorte_existante_jamais_deplacee(self):
+        _, depot = self.ouvrir(Reglages())
+        resultat, _ = self.ouvrir(Reglages(ouverture_lancement=datetime.date(2027, 3, 1)), depot)
+        self.assertEqual(resultat, ("Promo 1 — IA", False))
+        self.assertEqual(depot.cohortes["Promo 1 — IA"].debut, self.AUJOURD_HUI)
 
 
 class TestParcoursParametre(unittest.TestCase):

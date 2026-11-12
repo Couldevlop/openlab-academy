@@ -14,6 +14,7 @@ from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFr
 from openlab_academy.infrastructure.depot_dossiers_frappe import DepotDossiersFrappe, ReglagesPaiementFrappe, TarifsFrappe
 from openlab_academy.infrastructure.journal_paiement_frappe import journaliser
 from openlab_academy.tests.fabriques import parcours
+from openlab_academy.tests.sans_lancement import sans_phase_de_lancement
 from openlab_academy.tests.test_paiement_donnees_frappe import ELEVE, cours, tarif, utilisateur
 
 DOSSIER = "Dossier Paiement OpenLab"
@@ -37,6 +38,7 @@ def dossier_de(c, membre=ELEVE):
 
 class Base(FrappeTestCase):
     def setUp(self):
+        sans_phase_de_lancement(self)
         self.cours = cours("Parcours inscription paiement")
         utilisateur()
 

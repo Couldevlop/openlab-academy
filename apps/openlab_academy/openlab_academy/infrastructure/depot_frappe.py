@@ -9,7 +9,10 @@ from openlab_academy.domain.grilles_derivees import grille_par_defaut
 from openlab_academy.domain.parcours import Annonce, Chapitre, Module, Parcours, Question
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.domain.reglages_evaluation import Chaine, ReglagesEvaluation, TypeExercice
-from openlab_academy.infrastructure import depot_copies_frappe, editorjs
+from openlab_academy.infrastructure import depot_copies_frappe, editorjs, ressources_frappe
+from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
+from openlab_academy.infrastructure.visibilite_frappe import CHAMP_LIMITE, CHAMP_VIDEO
+
 
 class DepotFrappe:
     def __init__(self, commit: bool = True, reglages: Reglages | None = None,
@@ -33,13 +36,16 @@ class DepotFrappe:
         return cours.name
 
     def remplacer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
+        videos = self._videos(cours_id)
         self._purger(cours_id)
-        cours = frappe.get_doc("LMS Course", cours_id)
+        # lecture verrouillante : l'instantané de la transaction date d'avant la purge et ne voit pas le `modified`
+        # qu'une tâche planifiée du LMS (statistiques horaires) a validé entre-temps ; le verrou la fait attendre
+        cours = frappe.get_doc("LMS Course", cours_id, for_update=True)
         cours.update(self._champs(parcours))
         cours.set("chapters", [])
         cours.save(ignore_permissions=True)
         if isinstance(parcours, Parcours):
-            self._ecrire_chapitres(cours_id, parcours)
+            self._ecrire_chapitres(cours_id, parcours, videos)
 
     @contextlib.contextmanager
     def unite_de_travail(self):
@@ -55,9 +61,29 @@ class DepotFrappe:
     # --- détails -------------------------------------------------------------
     @staticmethod
     def _champs(p: Parcours | Annonce) -> dict:
-        return {"title": p.title, "short_introduction": p.short_introduction, "description": p.description,
-                "tags": ",".join(p.tags), "card_gradient": p.card_gradient,
-                "published": 1, "enable_certification": 1, "upcoming": int(isinstance(p, Annonce))}
+        champs = {"title": p.title, "short_introduction": p.short_introduction, "description": p.description,
+                  "tags": ",".join(p.tags), "card_gradient": p.card_gradient,
+                  "published": 1, "enable_certification": 1, "upcoming": int(isinstance(p, Annonce))}
+        if isinstance(p, Parcours):
+            champs.update(DepotFrappe._drapeaux(p))
+        return champs
+
+    @staticmethod
+    def _drapeaux(p: Parcours) -> dict:
+        """Accès limité toujours écrit ; gratuit et mise en avant seulement s'ils sont demandés : absents, la
+        décision de l'administrateur n'est pas écrasée."""
+        drapeaux = {CHAMP_LIMITE: int(p.acces_limite_a_la_cohorte)}
+        if p.gratuit:
+            drapeaux[CHAMP_GRATUIT] = 1
+        if p.mise_en_avant:
+            drapeaux["featured"] = 1
+        return drapeaux
+
+    @staticmethod
+    def _videos(cours_id: str) -> dict[str, str]:
+        """{titre de leçon: vidéo} des leçons du parcours, relevé avant leur suppression."""
+        lecons = frappe.get_all("Course Lesson", {"course": cours_id}, ["title", CHAMP_VIDEO])
+        return {l.title: l[CHAMP_VIDEO] for l in lecons if l[CHAMP_VIDEO]}
 
     @staticmethod
     def _purger(cours_id: str) -> None:
@@ -79,19 +105,20 @@ class DepotFrappe:
         for devoir in frappe.get_all("LMS Assignment", {"course": cours_id}, pluck="name"):
             supprimer("LMS Assignment", devoir)
 
-    def _ecrire_chapitres(self, cours_id: str, parcours: Parcours) -> None:
-        noms = [self._chapitre(cours_id, c, parcours.heures_par_module) for c in parcours.chapitres()]
+    def _ecrire_chapitres(self, cours_id: str, parcours: Parcours, videos: dict[str, str] | None = None) -> None:
+        videos = videos or {}
+        noms = [self._chapitre(cours_id, c, parcours.heures_par_module, videos) for c in parcours.chapitres()]
         cours = frappe.get_doc("LMS Course", cours_id)
         cours.set("chapters", [{"chapter": n} for n in noms])
         cours.save(ignore_permissions=True)
 
-    def _chapitre(self, cours_id: str, chapitre: Chapitre, heures_module: int) -> str:
+    def _chapitre(self, cours_id: str, chapitre: Chapitre, heures_module: int, videos: dict[str, str]) -> str:
         doc = frappe.get_doc({"doctype": "Course Chapter", "course": cours_id, "title": chapitre.titre}).insert(
             ignore_permissions=True)
         if chapitre.projet is None:
-            noms = [self._lecon_module(cours_id, doc.name, m, heures_module) for m in chapitre.modules]
+            noms = [self._lecon_module(cours_id, doc.name, m, heures_module, videos) for m in chapitre.modules]
         else:
-            noms = [self._lecon_projet(cours_id, doc.name, chapitre)]
+            noms = [self._lecon_projet(cours_id, doc.name, chapitre, videos)]
         doc.reload()
         doc.set("lessons", [{"lesson": n} for n in noms])
         doc.save(ignore_permissions=True)
@@ -112,9 +139,11 @@ class DepotFrappe:
         depot_copies_frappe.enregistrer_grille_exercice(nom, type_exercice, grille, chaine)
 
     def completer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
-        """Cours conservé tel quel (inscrits) : crée seulement les grilles manquantes de ses devoirs, par titre."""
+        """Cours conservé tel quel (inscrits) : applique les drapeaux de lancement et crée seulement les grilles
+        manquantes de ses devoirs, par titre."""
         if isinstance(parcours, Annonce):
             return
+        frappe.db.set_value("LMS Course", cours_id, self._drapeaux(parcours))
         for titre, type_exercice, projet, grille, chaine in self._exercices(parcours):
             nom = frappe.db.get_value("LMS Assignment", {"course": cours_id, "title": titre})
             if nom and not depot_copies_frappe.a_une_grille(nom):
@@ -137,34 +166,42 @@ class DepotFrappe:
                            m.grille_cas, m.correction_cas)
 
     @staticmethod
-    def _nouvelle_lecon(cours_id: str, chapitre: str, titre: str, contenu: str, evaluations: list[dict]):
+    def _nouvelle_lecon(cours_id: str, chapitre: str, titre: str, contenu: str, evaluations: list[dict],
+                        video: str = ""):
         return frappe.get_doc({
             "doctype": "Course Lesson", "course": cours_id, "chapter": chapitre,
-            "title": titre, "content": contenu, "assessments": evaluations,
+            "title": titre, "content": contenu, "assessments": evaluations, CHAMP_VIDEO: video,
         }).insert(ignore_permissions=True)
 
-    def _lecon_projet(self, cours_id: str, chapitre: str, ch: Chapitre) -> str:
+    def _lecon_projet(self, cours_id: str, chapitre: str, ch: Chapitre, videos: dict[str, str]) -> str:
         type_exercice = self._type_projet(ch.projet)
         devoir = self._devoir(cours_id, ch.titre, editorjs.consigne_projet(ch.projet), type_exercice, ch.projet,
                               ch.projet.grille, ch.projet.correction)
-        return self._nouvelle_lecon(cours_id, chapitre, f"Énoncé — {ch.projet.titre}",
-                                    editorjs.lecon_projet(ch.projet, devoir, self._reglages),
-                                    [{"assessment_type": "LMS Assignment", "assessment_name": devoir}]).name
+        titre = f"Énoncé — {ch.projet.titre}"
+        return self._nouvelle_lecon(cours_id, chapitre, titre, editorjs.lecon_projet(ch.projet, devoir, self._reglages),
+                                    [{"assessment_type": "LMS Assignment", "assessment_name": devoir}],
+                                    videos.get(titre, "")).name
 
-    def _lecon_module(self, cours_id: str, chapitre: str, m: Module, heures: int) -> str:
+    def _lecon_module(self, cours_id: str, chapitre: str, m: Module, heures: int, videos: dict[str, str]) -> str:
         devoir = self._devoir(cours_id, f"Livrable {m.num} — {m.title}", editorjs.consigne_module(m),
                               TypeExercice.LIVRABLE, grille=m.grille_livrable, chaine=m.correction_livrable)
         evaluations = [{"assessment_type": "LMS Assignment", "assessment_name": devoir}]
-        lecon = self._nouvelle_lecon(cours_id, chapitre, f"{m.num} · {m.title}",
-                                     editorjs.lecon_module(m, devoir, heures), evaluations)
+        titre = f"{m.num} · {m.title}"
+        lecon = self._nouvelle_lecon(cours_id, chapitre, titre, editorjs.lecon_module(m, devoir, heures),
+                                     evaluations, videos.get(titre, ""))
+        # l'archive ne peut être jointe qu'à une leçon existante : le contenu qui la cite est écrit ensuite
+        url = ressources_frappe.joindre(lecon.name, m.archive) if m.archive else None
         if m.quiz:
             quiz = self._quiz(cours_id, lecon.name, m)
             cas = self._devoir(cours_id, f"Mise en situation {m.num} — {m.title}", editorjs.consigne_cas(m),
                                TypeExercice.MISE_EN_SITUATION, grille=m.grille_cas, chaine=m.correction_cas,
                                type_="Text")
-            lecon.content = editorjs.lecon_module(m, devoir, heures, quiz, cas, self._reglages)
+            lecon.content = editorjs.lecon_module(m, devoir, heures, quiz, cas, self._reglages, url)
             lecon.set("assessments", evaluations + [{"assessment_type": "LMS Quiz", "assessment_name": quiz},
                                                     {"assessment_type": "LMS Assignment", "assessment_name": cas}])
+            lecon.save(ignore_permissions=True)
+        elif url:
+            lecon.content = editorjs.lecon_module(m, devoir, heures, archive_url=url)
             lecon.save(ignore_permissions=True)
         return lecon.name
 

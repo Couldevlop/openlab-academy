@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from openlab_academy.application.corriger import Acces, AccesRefuse, CorrectionRefusee
 from openlab_academy.application.pairs import StatutRelecture
 from openlab_academy.application.retours import (
-    EN_COURS, MASQUEE, PROVISOIRE, REMPLACEE, AutoEvaluer, ConsulterAccuseDepot, ConsulterRelectures,
+    EN_COURS, MASQUEE, PROVISOIRE, REMPLACEE, RENVOYEE, AutoEvaluer, ConsulterAccuseDepot, ConsulterRelectures,
     ConsulterRetour)
 from openlab_academy.application.soumettre_copie import Contenu
 from openlab_academy.domain.copie import EtatInstantane, Proposition, Source, Statut
@@ -116,6 +116,15 @@ class TestConsulterRetour(Cas):
         retour = self.retour.executer(A, self.a)
         self.assertEqual((retour["statut"], retour["provisoire"], retour["note"], retour["criteres"], retour["message"]),
                          ("remplacee", False, None, [], REMPLACEE))
+
+    def test_copie_renvoyee_donne_les_motifs(self):
+        self.monter()
+        self.m.ajouter_proposition(self.a, Proposition(Source.CONTROLES, "systeme", {},
+                                                       {"motif_1": "dépôt injoignable", "motif_2": "README absent"}))
+        self.m.changer_statut(self.a, Statut.RENVOYEE, "", None)
+        retour = self.retour.executer(A, self.a)
+        self.assertEqual((retour["statut"], retour["note"], retour["criteres"], retour["message"]),
+                         ("renvoyee", None, [], RENVOYEE.format(motifs="dépôt injoignable ; README absent")))
 
     def test_note_provisoire_affichee_provisoire(self):
         self.monter()

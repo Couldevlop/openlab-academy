@@ -46,6 +46,10 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites:ro
       - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    # socketio vérifie la session en rappelant l'origine de la page (http://SITE_NAME:PORT) : ce nom doit mener à nginx
+    networks:
+      default:
+        aliases: ["${SITE_NAME}"]
     restart: unless-stopped
 
 secrets:

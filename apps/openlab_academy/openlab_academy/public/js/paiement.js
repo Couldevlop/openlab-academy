@@ -1,22 +1,32 @@
-/* Parcours bloqué : une réponse d'API « ParcoursBloque » renvoie vers la page de paiement du parcours.
+/* Parcours bloqué, fermé ou caché : une réponse d'API « ParcoursBloque » renvoie vers la page de paiement du
+   parcours, « ParcoursFerme » vers sa page /parcours-ferme/, « ParcoursCache » vers le catalogue.
    Le serveur refuse de toute façon ; ce script ne fait que la redirection pendant la navigation dans l'interface. */
 (function () {
   'use strict'
   var w = window
-  var PREFIXE = '/espace/paiement/'
+  // type d'erreur -> destination admise : un préfixe (nom de parcours à la suite) ou un chemin exact
+  var DESTINATIONS = {
+    ParcoursBloque: { prefixe: '/espace/paiement/' },
+    ParcoursFerme: { prefixe: '/parcours-ferme/' },
+    ParcoursCache: { exact: '/lms/courses' },
+  }
   if (typeof w.fetch !== 'function' || w.fetch.openlabPaiement) return
   var origine = w.fetch
 
-  // seul un chemin du même site sous /espace/paiement/ est suivi (jamais une URL fournie ailleurs)
+  // seul un chemin du même site, dans la destination admise pour ce type d'erreur, est suivi (jamais une URL
+  // fournie ailleurs)
   function cible(corps) {
-    if (!corps || corps.exc_type !== 'ParcoursBloque' || typeof corps.redirection !== 'string') return null
+    if (!corps || typeof corps.redirection !== 'string') return null
+    var dest = Object.prototype.hasOwnProperty.call(DESTINATIONS, corps.exc_type) ? DESTINATIONS[corps.exc_type] : null
+    if (!dest) return null
     var url
     try {
       url = new URL(corps.redirection, w.location.origin)
     } catch (e) {
       return null
     }
-    if (url.origin !== w.location.origin || url.pathname.indexOf(PREFIXE) !== 0) return null
+    if (url.origin !== w.location.origin) return null
+    if (dest.exact ? url.pathname !== dest.exact : url.pathname.indexOf(dest.prefixe) !== 0) return null
     return url.pathname
   }
 

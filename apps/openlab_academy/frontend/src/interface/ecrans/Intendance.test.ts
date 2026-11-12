@@ -402,7 +402,7 @@ describe('Fiche d’un dossier', () => {
     await form.trigger('submit')
     await flushPromises()
     expect(ports.intendance.accorderDelai).toHaveBeenCalledWith('DP-0001', '2026-11-20', 'Accord avec la famille')
-    expect(w.find('[role="status"].succes').text()).toBe('Délai accordé jusqu’au 20 novembre 2026.')
+    expect(w.find('[role="status"].succes').text()).toBe('Délai enregistré.')
   })
 
   it('dossier soldé : rien à décaler ; fiche introuvable : message', async () => {

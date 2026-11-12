@@ -5,7 +5,7 @@ import unittest
 import yaml
 
 from openlab_academy.domain.parcours import Annonce, Niveau, Parcours
-from openlab_academy.domain.reglages import Reglages
+from openlab_academy.domain.reglages import TITRE_LANCEMENT, Reglages
 from openlab_academy.infrastructure.yaml_source import PARCOURS_DIR, FormatInvalide, charger_dossier, depuis_dict
 from openlab_academy.tests.fabriques import parcours_brut
 
@@ -46,6 +46,38 @@ class TestConversion(unittest.TestCase):
         brut = parcours_brut()
         brut["parametres"] = ["heures_par_module"]
         with self.assertRaisesRegex(FormatInvalide, r"parametres doit être un dictionnaire"):
+            depuis_dict(brut, "t.yaml")
+
+    def test_cles_de_lancement_lues(self):
+        brut = parcours_brut()
+        brut.update(gratuit=True, acces_limite_a_la_cohorte=True, mise_en_avant=True)
+        p = depuis_dict(brut, "t.yaml")
+        self.assertEqual((p.gratuit, p.acces_limite_a_la_cohorte, p.mise_en_avant), (True, True, True))
+
+    def test_cles_de_lancement_absentes_valent_faux(self):
+        p = depuis_dict(parcours_brut(), "t.yaml")
+        self.assertEqual((p.gratuit, p.acces_limite_a_la_cohorte, p.mise_en_avant), (False, False, False))
+
+    def test_cle_de_lancement_non_booleenne_refusee(self):
+        for valeur in (1, "oui"):
+            brut = parcours_brut()
+            brut["gratuit"] = valeur
+            with self.subTest(valeur), self.assertRaisesRegex(FormatInvalide, "gratuit doit être un booléen"):
+                depuis_dict(brut, "t.yaml")
+
+    def test_sans_portfolio_si_zero_projet(self):
+        brut = parcours_brut()
+        brut["parametres"] = {"projets_par_portfolio": 0, "heures_par_module": 3}
+        del brut["portfolio"]
+        p = depuis_dict(brut, "t.yaml")
+        modules = sum(len(b.modules) for b in p.blocs)
+        self.assertEqual(p.portfolio, ())
+        self.assertEqual(p.charge_horaire(), modules * 3 + p.capstone.duree_h)
+
+    def test_portfolio_vide_refuse_si_projets_attendus(self):
+        brut = parcours_brut()
+        brut["portfolio"] = []
+        with self.assertRaisesRegex(FormatInvalide, "portfolio manquant"):
             depuis_dict(brut, "t.yaml")
 
     def test_numero_de_module_numerique_normalise(self):
@@ -142,9 +174,10 @@ class TestChargementDossier(unittest.TestCase):
         lot = charger_dossier(PARCOURS_DIR)
         self.assertTrue(lot)
         complets = [p for p in lot if isinstance(p, Parcours)]
-        self.assertEqual(len(complets), 4)
+        self.assertEqual(len(complets), 5)
         for p in complets:
-            self.assertEqual(len(p.portfolio), 10)
+            attendus = 0 if p.title == TITRE_LANCEMENT else 10
+            self.assertEqual(len(p.portfolio), attendus, p.title)
         self.assertEqual(sorted(p.title for p in lot if isinstance(p, Annonce)),
                          ["Ingénieur Cybersécurité I", "Ingénieur Cybersécurité II"])
 
@@ -165,6 +198,28 @@ class TestGrilleEtCorrection(unittest.TestCase):
         self.assertEqual((m.grille_cas, m.correction_cas, m.grille_livrable, m.correction_livrable),
                          (None, None, None, None))
         self.assertEqual((p.portfolio[0].grille, p.capstone.correction), (None, None))
+
+    def test_travaux_pratiques_facultatifs_du_module(self):
+        self.assertEqual(depuis_dict(parcours_brut(), "t.yaml").blocs[0].modules[0].travaux_pratiques, "")
+        brut = parcours_brut()
+        brut["blocs"][0]["modules"][0]["travaux_pratiques"] = "Déroulé de la séance"
+        self.assertEqual(depuis_dict(brut, "t.yaml").blocs[0].modules[0].travaux_pratiques,
+                         "Déroulé de la séance")
+
+    def test_archive_facultative_du_module(self):
+        self.assertEqual(depuis_dict(parcours_brut(), "t.yaml").blocs[0].modules[0].archive, "")
+        brut = parcours_brut()
+        brut["blocs"][0]["modules"][0]["archive"] = "socle-ia-agentique-v0.2.1.zip"
+        self.assertEqual(depuis_dict(brut, "t.yaml").blocs[0].modules[0].archive,
+                         "socle-ia-agentique-v0.2.1.zip")
+
+    def test_archive_hors_nom_de_fichier_refusee(self):
+        """OWASP A01 : le nom vient du fichier de parcours, jamais un chemin."""
+        for nom in ("../secrets.zip", "dossier/socle.zip", "socle.zip\n", "socle.exe"):
+            brut = parcours_brut()
+            brut["blocs"][0]["modules"][0]["archive"] = nom
+            with self.subTest(nom), self.assertRaisesRegex(FormatInvalide, r"archive"):
+                depuis_dict(brut, "t.yaml")
 
     def test_grille_et_correction_d_un_module(self):
         brut = parcours_brut()

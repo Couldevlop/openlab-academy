@@ -14,6 +14,7 @@ from openlab_academy.entrypoints import paiement, paiement_api
 from openlab_academy.infrastructure.cinetpay import CHAMPS_JETON
 from openlab_academy.infrastructure.depot_dossiers_frappe import DepotDossiersFrappe
 from openlab_academy.tests.http_simule import Reponse
+from openlab_academy.tests.sans_lancement import sans_phase_de_lancement
 from openlab_academy.tests.test_paiement_donnees_frappe import ELEVE, cours, tarif, utilisateur
 from openlab_academy.tests.test_paiement_inscription_frappe import cohorte, dossier_de, inscrire
 
@@ -51,6 +52,7 @@ class CinetPaySimule:
 
 class Base(FrappeTestCase):
     def setUp(self):
+        sans_phase_de_lancement(self)
         self.cours = cours("Parcours CinetPay")
         frappe.db.set_value("User", utilisateur(), "last_name", "Kouassi")
         tarif(self.cours).insert(ignore_permissions=True)

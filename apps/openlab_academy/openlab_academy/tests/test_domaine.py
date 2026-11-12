@@ -9,6 +9,10 @@ class TestInvariantsParcours(unittest.TestCase):
     def test_parcours_valide(self):
         self.assertEqual(parcours().title, "T")
 
+    def test_drapeaux_par_defaut_faux(self):
+        p = parcours()
+        self.assertEqual((p.gratuit, p.acces_limite_a_la_cohorte, p.mise_en_avant), (False, False, False))
+
     def test_portfolio_doit_compter_10_projets(self):
         with self.assertRaisesRegex(ParcoursInvalide, r"portfolio: 10 projets attendus, 9 trouvés"):
             parcours(portfolio=tuple(projet() for _ in range(9)))
@@ -50,6 +54,14 @@ class TestInvariantsParcours(unittest.TestCase):
             with self.subTest(), self.assertRaisesRegex(ParcoursInvalide, r"titre trop long \(121 > 120\)"):
                 fabrique()
         self.assertEqual(projet(titre="x" * 120).titre, "x" * 120)
+
+    def test_travaux_pratiques_facultatifs(self):
+        self.assertEqual(Module("01", "Un", "c", "l").travaux_pratiques, "")
+        self.assertEqual(Module("01", "Un", "c", "l", travaux_pratiques="TP").travaux_pratiques, "TP")
+
+    def test_archive_facultative(self):
+        self.assertEqual(Module("01", "Un", "c", "l").archive, "")
+        self.assertEqual(Module("01", "Un", "c", "l", archive="socle.zip").archive, "socle.zip")
 
     def test_entites_immuables(self):
         with self.assertRaises(dataclasses.FrozenInstanceError):

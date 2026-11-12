@@ -12,6 +12,7 @@ from openlab_academy.entrypoints import lms
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
 from openlab_academy.infrastructure.depot_ouvertures_frappe import DepotOuverturesFrappe
 from openlab_academy.tests.fabriques import parcours
+from openlab_academy.tests.test_blocage_frappe import sans_phase_de_lancement
 from openlab_academy.tests.test_exercices_frappe import module
 
 ELEVE = "eleve.verrou@example.ci"
@@ -20,6 +21,8 @@ NOTE = {"score": 5, "score_out_of": 5, "percentage": 100, "passing_percentage": 
 
 class TestVerrouExercices(FrappeTestCase):
     def setUp(self):
+        sans_phase_de_lancement(self)
+        lms.vider_cache()
         if not frappe.db.exists("User", ELEVE):
             frappe.get_doc({"doctype": "User", "email": ELEVE, "first_name": "Aya", "send_welcome_email": 0,
                             "roles": [{"role": "LMS Student"}]}).insert(ignore_permissions=True)

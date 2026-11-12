@@ -23,6 +23,7 @@ from openlab_academy.infrastructure.depot_dossiers_frappe import DepotDossiersFr
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
 from openlab_academy.tests.fabriques import parcours
 from openlab_academy.tests.test_exercices_frappe import module
+from openlab_academy.tests.sans_lancement import inscription_libre, sans_phase_de_lancement
 from openlab_academy.tests.test_paiement_donnees_frappe import tarif
 from openlab_academy.tests.test_paiement_inscription_frappe import cohorte, inscrire
 
@@ -42,8 +43,9 @@ def utilisateur(email, *roles):
 
 def suivre(cours, membre):
     if not frappe.db.exists("LMS Enrollment", {"course": cours, "member": membre}):
-        frappe.get_doc({"doctype": "LMS Enrollment", "course": cours, "member": membre,
-                        "member_type": "Student"}).insert(ignore_permissions=True)
+        with inscription_libre():
+            frappe.get_doc({"doctype": "LMS Enrollment", "course": cours, "member": membre,
+                            "member_type": "Student"}).insert(ignore_permissions=True)
 
 
 def requete(chemin, methode="GET", entetes=None):
@@ -55,6 +57,7 @@ class Base(FrappeTestCase):
 
     def setUp(self):
         self.requete_initiale = getattr(frappe.local, "request", None)
+        sans_phase_de_lancement(self)
         lms.vider_cache()
         depot = DepotFrappe(commit=False, reglages=Reglages())
         self.a = depot.creer(parcours(title="Parcours bloqué test", questions_par_quiz=5,
@@ -179,6 +182,7 @@ class TestLecon(Base):
         self.assertTrue(lms.bloque_pour(ELEVE, self.a))
 
     def test_resultat_mis_en_cache_pour_la_requete(self):
+        lms.vider_cache()  # les inscriptions de setUp ont déjà rangé la source de visibilité dans le cache
         with mock.patch.object(lms, "parcours_bloque", return_value=True) as calcul:
             self.assertTrue(lms.bloque_pour(ELEVE, self.a))
             self.assertTrue(lms.bloque_pour(ELEVE, self.a))
@@ -460,13 +464,19 @@ class TestRedirectionDesPages(Base):
 class TestHooks(FrappeTestCase):
     def test_declares(self):
         self.assertEqual(hooks.before_request, ["openlab_academy.entrypoints.http.before_request"])
-        self.assertEqual(hooks.override_whitelisted_methods, {
+        hors_catalogue = {k: v for k, v in hooks.override_whitelisted_methods.items()
+                          if not v.startswith("openlab_academy.entrypoints.catalogue.")}  # voir test_catalogue_frappe
+        self.assertEqual(hors_catalogue, {
+            "lms.lms.api.get_translations": "openlab_academy.entrypoints.langue.get_translations",
             "lms.lms.utils.get_lesson": "openlab_academy.entrypoints.lms.get_lesson",
             "lms.lms.utils.get_course_details": "openlab_academy.entrypoints.lms.get_course_details",
+            "lms.lms.utils.get_course_outline": "openlab_academy.entrypoints.lms.get_course_outline",
             "lms.lms.utils.get_quiz_with_questions": "openlab_academy.entrypoints.lms.get_quiz_with_questions",
             "lms.lms.doctype.lms_quiz.lms_quiz.check_answer": "openlab_academy.entrypoints.lms.check_answer",
             "lms.lms.api.mark_lesson_progress": "openlab_academy.entrypoints.lms.mark_lesson_progress",
             "lms.lms.doctype.course_lesson.course_lesson.save_progress": "openlab_academy.entrypoints.lms.save_progress",
+            "lms.lms.doctype.course_lesson.course_lesson.serve_resource":
+                "openlab_academy.entrypoints.lms.serve_resource",
             "lms.lms.doctype.lms_certificate.lms_certificate.create_certificate":
                 "openlab_academy.entrypoints.lms.create_certificate",
         })
@@ -476,6 +486,7 @@ class TestHooks(FrappeTestCase):
             self.assertEqual(hooks.has_permission[doctype], "openlab_academy.entrypoints.lms.lecture_permise")
         self.assertEqual(hooks.permission_query_conditions, {
             "Course Lesson": "openlab_academy.entrypoints.lms.conditions_lecons",
+            "Course Chapter": "openlab_academy.entrypoints.lms.conditions_chapitres",
             "LMS Quiz": "openlab_academy.entrypoints.lms.conditions_quiz",
             "LMS Assignment": "openlab_academy.entrypoints.lms.conditions_devoirs",
             "LMS Programming Exercise": "openlab_academy.entrypoints.lms.conditions_exercices",

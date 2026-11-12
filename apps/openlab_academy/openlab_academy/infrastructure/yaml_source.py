@@ -1,5 +1,6 @@
 """Adaptateur d'entrée : fichiers YAML de parcours -> entités du domaine."""
 import pathlib
+import re
 
 import yaml
 
@@ -10,6 +11,7 @@ from openlab_academy.domain.reglages import Reglages, ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import Chaine
 
 PARCOURS_DIR = pathlib.Path(__file__).parents[1] / "data" / "parcours"
+_NOM_ARCHIVE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.zip")
 _LISTES_PROJET = ("objectifs", "fonctionnalites", "stack", "criteres_acceptation", "livrables")
 # Paramètres qu'un parcours peut surcharger : clé YAML -> champ du domaine Parcours
 _PARAMETRES = {"projets_par_portfolio": "projets_attendus", "heures_par_module": "heures_par_module"}
@@ -42,6 +44,12 @@ class _Lecteur:
                 raise FormatInvalide(f"{self.source}: parametres.{cle} doit être un entier")
             valeurs[_PARAMETRES[cle]] = valeur
         return valeurs
+
+    def booleen(self, d: dict, cle: str) -> bool:
+        valeur = d.get(cle, False)
+        if not isinstance(valeur, bool):
+            raise FormatInvalide(f"{self.source}: {cle} doit être un booléen")
+        return valeur
 
     def exiger(self, obj: dict, champ: str, chemin: str):
         valeur = obj.get(champ)
@@ -100,6 +108,16 @@ class _Lecteur:
         except ReglagesInvalides as e:
             raise FormatInvalide(f"{self.source}: {chemin} invalide : {e}") from None
 
+    def archive(self, brut, chemin: str) -> str:
+        """Clé facultative `archive:` : nom de fichier seul d'une archive à joindre à la leçon. Jamais un chemin
+        (OWASP A01 : le fichier est lu dans le dossier des ressources de l'application, pas où le texte l'indique)."""
+        if brut is None:
+            return ""
+        nom = str(brut)
+        if not _NOM_ARCHIVE.fullmatch(nom):
+            raise FormatInvalide(f"{self.source}: {chemin} doit être un nom de fichier .zip sans chemin")
+        return nom
+
     def module(self, m: dict, chemin: str) -> Module:
         quiz = m.get("quiz") or []
         if not isinstance(quiz, list):
@@ -107,6 +125,8 @@ class _Lecteur:
         return Module(*(str(self.exiger(m, c, chemin)) for c in ("num", "title", "contenu", "livrable")),
                       quiz=tuple(self.question(q, f"{chemin}quiz[{i}].") for i, q in enumerate(quiz)),
                       mise_en_situation=str(m.get("mise_en_situation") or ""),
+                      travaux_pratiques=str(m.get("travaux_pratiques") or ""),
+                      archive=self.archive(m.get("archive"), f"{chemin}archive"),
                       grille_cas=self.grille(m.get("grille_mise_en_situation"), f"{chemin}grille_mise_en_situation"),
                       correction_cas=self.correction(m.get("correction_mise_en_situation"),
                                                      f"{chemin}correction_mise_en_situation"),
@@ -160,8 +180,9 @@ class _Lecteur:
                  tuple(self.module(m, f"blocs[{i}].modules[{j}].")
                        for j, m in enumerate(self.exiger(b, "modules", f"blocs[{i}]."))))
             for i, b in enumerate(self.exiger(d, "blocs", "")))
-        portfolio = tuple(self.projet(p, f"portfolio[{k}].", True)
-                          for k, p in enumerate(self.exiger(d, "portfolio", "")))
+        parametres = self.parametres(d)
+        projets = self.exiger(d, "portfolio", "") if parametres["projets_attendus"] > 0 else d.get("portfolio") or ()
+        portfolio = tuple(self.projet(p, f"portfolio[{k}].", True) for k, p in enumerate(projets))
         return Parcours(
             title=str(self.exiger(d, "title", "")),
             short_introduction=str(self.exiger(d, "short_introduction", "")),
@@ -169,7 +190,10 @@ class _Lecteur:
             tags=self.textes(d.get("tags") or (), "tags"), card_gradient=str(d.get("card_gradient", "Blue")),
             blocs=blocs, portfolio=portfolio,
             capstone=self.projet(self.exiger(d, "capstone", ""), "capstone.", False),
-            **self.parametres(d),
+            gratuit=self.booleen(d, "gratuit"),
+            acces_limite_a_la_cohorte=self.booleen(d, "acces_limite_a_la_cohorte"),
+            mise_en_avant=self.booleen(d, "mise_en_avant"),
+            **parametres,
         )
 
 

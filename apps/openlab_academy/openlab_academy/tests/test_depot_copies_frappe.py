@@ -12,11 +12,12 @@ from openlab_academy.application.publier_parcours import PublierParcours, Statut
 from openlab_academy.domain.cohorte import Cohorte
 from openlab_academy.domain.copie import Proposition, Source, Statut
 from openlab_academy.domain.grille import Grille
+from openlab_academy.domain.lancement import PhaseLancement
 from openlab_academy.domain.parcours import Annonce, Bloc
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.domain.reglages_evaluation import TypeExercice
 from openlab_academy.entrypoints import evaluation
-from openlab_academy.infrastructure import depot_copies_frappe
+from openlab_academy.infrastructure import depot_copies_frappe, reglages_source_frappe
 from openlab_academy.infrastructure.depot_cohortes_frappe import DepotCohortesFrappe
 from openlab_academy.infrastructure.depot_copies_frappe import DepotCopiesFrappe
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
@@ -51,6 +52,8 @@ class Base(FrappeTestCase):
         self.depot = DepotCopiesFrappe()
         # jamais de réseau : l'hébergeur est injoignable sauf simulation explicite
         self.http = mock.patch("requests.get", side_effect=requests.ConnectionError("hors ligne")).start()
+        # la phase de lancement du site cacherait ces parcours de test aux dépôts des apprenants
+        mock.patch.object(reglages_source_frappe, "phase_lancement", return_value=PhaseLancement(False)).start()
         self.addCleanup(mock.patch.stopall)
 
     def tearDown(self):

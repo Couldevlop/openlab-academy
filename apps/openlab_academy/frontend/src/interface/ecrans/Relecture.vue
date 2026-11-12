@@ -105,6 +105,7 @@ async function envoyer() {
 <template>
   <div class="ecran">
     <EnTete compact>
+      <RouterLink class="lien-espace" :to="{ name: 'accueil' }">Mon espace</RouterLink>
       <span class="espace" />
       <span v-if="vue" class="position">Relecture {{ vue.rang }} sur {{ vue.total }}</span>
     </EnTete>
@@ -252,7 +253,7 @@ h1 {
   margin: 0;
   font-size: 23px;
   line-height: 1.2;
-  font-weight: 700;
+  font-weight: 600;
 }
 .consigne {
   padding: 12px 16px;

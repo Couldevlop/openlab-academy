@@ -8,6 +8,7 @@ const route = useRoute()
 
 <template>
   <nav class="onglets" aria-label="Correction">
+    <RouterLink :to="{ name: 'accueil' }" class="espace">Mon espace</RouterLink>
     <RouterLink :to="{ name: 'correcteur', query: route.query }">À corriger</RouterLink>
     <RouterLink :to="{ name: 'lots', query: route.query }"
       >Lots<template v-if="nbLots"> ({{ nbLots }})</template></RouterLink
@@ -16,6 +17,9 @@ const route = useRoute()
 </template>
 
 <style scoped>
+.onglets .espace {
+  margin-right: 8px;
+}
 .onglets {
   display: flex;
   gap: 16px;

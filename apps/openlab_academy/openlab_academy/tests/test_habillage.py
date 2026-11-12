@@ -88,6 +88,25 @@ class TestHookAfterRequest(unittest.TestCase):
         self.assertEqual(corps, injecter(PAGE))
 
 
+class TestCacheNavigateurVideAuChangementDUtilisateur(unittest.TestCase):
+    """Le LMS garde ses documents dans le stockage du navigateur : sur un poste partagé, l'apprenant suivant verrait
+    (et croirait modifier) le rendu du précédent. Connexion et déconnexion vident ce stockage."""
+
+    def test_connexion_et_deconnexion_vident_le_stockage(self):
+        for chemin in ("/api/method/login", "/api/method/logout", "/?cmd=web_logout"):
+            with self.subTest(chemin=chemin):
+                r = Response("{}", mimetype="application/json")
+                http.after_request(r, requete(chemin))
+                self.assertEqual(r.headers.get("Clear-Site-Data"), '"storage"')
+
+    def test_autres_requetes_intactes(self):
+        for chemin in ("/api/method/frappe.auth.get_logged_user", "/lms", "/?cmd=autre", "/login"):
+            with self.subTest(chemin=chemin):
+                r = Response("{}", mimetype="application/json")
+                http.after_request(r, requete(chemin))
+                self.assertNotIn("Clear-Site-Data", r.headers)
+
+
 class TestHooksDeclares(unittest.TestCase):
     def test_hooks(self):
         self.assertEqual(hooks.after_request, ["openlab_academy.entrypoints.http.after_request"])
@@ -100,9 +119,11 @@ class TestHooksDeclares(unittest.TestCase):
 class TestScriptDePaiement(unittest.TestCase):
     def test_present_et_sans_dependance(self):
         js = (pathlib.Path(__file__).parents[1] / "public" / "js" / "paiement.js").read_text(encoding="utf-8")
-        for jeton in ("ParcoursBloque", "/espace/paiement/", "clone()", "location.assign"):
+        for jeton in ("ParcoursBloque", "/espace/paiement/", "clone()", "location.assign",
+                      "ParcoursFerme", "/parcours-ferme/", "ParcoursCache", "/lms/courses"):
             self.assertIn(jeton, js)
         self.assertNotIn("import ", js)
+        self.assertNotIn("innerHTML", js)
 
 
 class TestFeuilleDeStyle(unittest.TestCase):
@@ -110,7 +131,7 @@ class TestFeuilleDeStyle(unittest.TestCase):
         css = CSS.read_text(encoding="utf-8")
         for jeton in ("--ol-orange: #ec7623", "--ol-orange-dark: #c25a12", "--ol-orange-light: #f39a5b",
                       "--ol-navy: #001e48", "--ol-navy-soft: #244498", "--ol-sky: #2890c8", "--ol-sun: #fcd80f",
-                      "--ol-ivory: #faf8f5", "--ol-mist: #eef1f6", "--ol-orange-deep: #b35210", "family=Montserrat", "JetBrains Mono"):
+                      "--ol-ivory: #faf8f5", "--ol-mist: #eef1f6", "--ol-orange-deep: #b35210", "family=Montserrat", "family=Nunito+Sans", "JetBrains Mono"):
             self.assertIn(jeton, css)
         for ancien in ("Geist", "Bricolage", "#ff5a00", "#0b1b3d"):
             self.assertNotIn(ancien, css)

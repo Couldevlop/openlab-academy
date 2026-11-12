@@ -40,7 +40,12 @@
   "logo",
   "col_plateforme",
   "langue",
-  "devise"
+  "devise",
+  "section_lancement",
+  "phase_lancement",
+  "parcours_lancement",
+  "ouverture_lancement",
+  "lancement_initialise"
  ],
  "fields": [
   {
@@ -187,7 +192,7 @@
    "fieldname": "parcours_pilote",
    "fieldtype": "Data",
    "label": "Titre du parcours pilote",
-   "default": "Fondamentaux de la Data Science"
+   "default": "IA agentique : comprendre, concevoir et maîtriser les agents IA"
   },
   {
    "fieldname": "formateur",
@@ -238,6 +243,36 @@
    "label": "Devise",
    "options": "Currency",
    "default": "XOF"
+  },
+  {
+   "fieldname": "section_lancement",
+   "fieldtype": "Section Break",
+   "label": "Lancement"
+  },
+  {
+   "fieldname": "phase_lancement",
+   "fieldtype": "Check",
+   "label": "Phase de lancement",
+   "default": "1",
+   "description": "Cochée : seuls les parcours ci-dessous sont visibles des apprenants et des visiteurs."
+  },
+  {
+   "fieldname": "parcours_lancement",
+   "fieldtype": "Table MultiSelect",
+   "label": "Parcours visibles pendant le lancement",
+   "options": "Parcours Lancement OpenLab"
+  },
+  {
+   "fieldname": "ouverture_lancement",
+   "fieldtype": "Date",
+   "label": "Date d'ouverture du parcours de lancement"
+  },
+  {
+   "fieldname": "lancement_initialise",
+   "fieldtype": "Check",
+   "label": "Lancement initialisé",
+   "hidden": 1,
+   "read_only": 1
   }
  ],
  "permissions": [

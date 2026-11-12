@@ -60,7 +60,9 @@ watch(() => route.params.copie, charger)
 
 <template>
   <div class="ecran">
-    <EnTete compact />
+    <EnTete compact>
+      <RouterLink class="lien-espace" :to="{ name: 'accueil' }">Mon espace</RouterLink>
+    </EnTete>
     <main class="contenu">
       <p v-if="chargement" class="discret" role="status">Chargement…</p>
       <p v-else-if="erreur" class="bandeau bandeau-erreur" role="alert">{{ erreur }}</p>
@@ -188,7 +190,7 @@ h1 {
   margin: 0 0 14px;
   font-size: 23px;
   line-height: 1.2;
-  font-weight: 700;
+  font-weight: 600;
 }
 .note {
   display: flex;
@@ -200,7 +202,7 @@ h1 {
   font-family: var(--ol-font-display);
   font-size: 64px;
   line-height: 0.9;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ol-navy);
 }
 .sur {

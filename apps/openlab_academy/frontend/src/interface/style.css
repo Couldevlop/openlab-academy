@@ -40,6 +40,15 @@ body {
 a {
   color: var(--ol-navy);
 }
+/* lien de retour à l'accueil /espace dans l'en-tête des écrans sans navigation d'agent */
+.lien-espace {
+  color: var(--es-entete-doux);
+  font-size: 14px;
+  text-decoration: none;
+}
+.lien-espace:hover {
+  color: var(--ol-navy-soft);
+}
 a:hover {
   color: var(--ol-lien-survol, #244498);
 }
@@ -107,7 +116,7 @@ h3 {
   border-radius: 999px;
   padding: 0 24px;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   background: var(--ol-orange-deep, #b35210);
   color: var(--es-sur-sombre);
   box-shadow: 0 6px 16px rgba(0, 30, 72, 0.12);

@@ -13,6 +13,7 @@ from openlab_academy.tests.fabriques import parcours_brut
 from openlab_academy.tests.test_cohorte_frappe import supprimer_cohortes
 
 TITRE = "Parcours réglages test"
+FONDAMENTAUX = "Fondamentaux de la Data Science"  # parcours ordinaire : le parcours de lancement a une cohorte-fenêtre
 
 
 def regler(**valeurs):
@@ -64,7 +65,8 @@ class TestBranchementReglages(FrappeTestCase):
         self.assertEqual(self._publier(brut), {TITRE: "cree"})
 
     def test_cohorte_avec_un_rythme_ajoute_dans_l_ecran(self):
-        regler(rythmes=[{"code": "week-end", "libelle": "Week-end", "samedi": 5, "dimanche": 5}])
+        regler(parcours_pilote=FONDAMENTAUX,
+               rythmes=[{"code": "week-end", "libelle": "Week-end", "samedi": 5, "dimanche": 5}])
         seed.run(commit=False)
         resultat = cohorte.ouvrir_pilote(rythme="week-end", commit=False)
         b = frappe.get_doc("LMS Batch", resultat["cohorte"])
@@ -72,9 +74,9 @@ class TestBranchementReglages(FrappeTestCase):
         self.assertIn("5 h les samedi et dimanche", b.batch_details)
 
     def test_horaires_de_seance_regles(self):
-        regler(heure_debut="19:00:00", heure_fin="21:00:00")
+        regler(parcours_pilote=FONDAMENTAUX, heure_debut="19:00:00", heure_fin="21:00:00")
         seed.run(commit=False)
-        supprimer_cohortes({"title": ["like", "Promo 1 — Fondamentaux%"]})
+        supprimer_cohortes({"title": ["like", f"Promo 1 — {FONDAMENTAUX}%"]})
         b = frappe.get_doc("LMS Batch", cohorte.ouvrir_pilote(commit=False)["cohorte"])
         self.assertEqual((str(b.start_time), str(b.end_time)), ("19:00:00", "21:00:00"))
 
@@ -88,6 +90,26 @@ class TestBranchementReglages(FrappeTestCase):
         reglages_frappe.appliquer()
         self.assertEqual(frappe.db.get_single_value("System Settings", "currency"), "EUR")
         self.assertEqual(frappe.db.get_value("Currency", "EUR", "enabled"), 1)
+
+    def test_assistant_d_installation_marque_termine(self):
+        """Langue, fuseau et devise sont réglés ici : l'assistant Frappe ne doit plus bloquer le bureau (/app)."""
+        for app in frappe.get_all("Installed Application", pluck="name"):
+            frappe.db.set_value("Installed Application", app, "is_setup_complete", 0)
+        frappe.db.set_single_value("System Settings", "setup_complete", 0)
+        reglages_frappe.appliquer()
+        self.assertEqual(set(frappe.get_all("Installed Application", pluck="is_setup_complete")), {1})
+        self.assertEqual(frappe.db.get_single_value("System Settings", "setup_complete"), 1)
+
+    def test_logo_de_la_barre_laterale_du_lms(self):
+        """Le LMS affiche Website Settings.banner_image, résolu par une fiche File ; sans elle, son logo par défaut."""
+        from lms.lms.api import get_branding
+
+        frappe.db.set_single_value("Website Settings", "banner_image", "")
+        reglages_frappe.appliquer()
+        reglages_frappe.appliquer()  # idempotent : une seule fiche File
+        url = frappe.db.get_single_value("Website Settings", "banner_image")
+        self.assertEqual(frappe.db.count("File", {"file_url": url}), 1)
+        self.assertEqual(get_branding().banner_image["file_url"], url)
 
     def test_marque_de_la_plateforme_reglee(self):
         regler(nom_plateforme="Académie Test", devise="XOF", langue="fr")

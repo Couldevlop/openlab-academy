@@ -73,6 +73,8 @@ class Module:
     livrable: str
     quiz: tuple[Question, ...] = ()
     mise_en_situation: str = ""
+    travaux_pratiques: str = ""  # support de la séance : déroulé et défi, affiché dans la leçon
+    archive: str = ""  # nom de fichier de l'archive de départ, jointe à la leçon et citée par elle
     grille_cas: Grille | None = None  # grille propre à la mise en situation (sinon grille générique)
     correction_cas: Chaine | None = None
     grille_livrable: Grille | None = None
@@ -152,6 +154,9 @@ class Parcours:
     projets_attendus: int = 10
     heures_par_module: int = 8
     questions_par_quiz: int = 0  # 0 = exercices de fin de leçon non exigés
+    gratuit: bool = False  # parcours MOOC : aucun tarif ni blocage pour paiement
+    acces_limite_a_la_cohorte: bool = False  # ouvert seulement entre les dates de sa cohorte
+    mise_en_avant: bool = False  # « featured » du LMS
 
     def __post_init__(self):
         if self.heures_par_module <= 0:

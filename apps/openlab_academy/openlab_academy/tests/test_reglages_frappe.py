@@ -1,6 +1,11 @@
+import datetime
+import json
+import os
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
+from openlab_academy.domain.lancement import PhaseLancement
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.infrastructure import reglages_source_frappe as source
 from openlab_academy.patches import completer_places_cohortes, completer_reglages_exercices, initialiser_reglages
@@ -76,6 +81,86 @@ class TestSourceReglagesFrappe(FrappeTestCase):
         vider()
         initialiser_reglages.execute()
         self.assertEqual(len(frappe.get_single(DOCTYPE).rythmes), 2)
+
+
+class TestLancementFrappe(FrappeTestCase):
+    def tearDown(self):
+        frappe.set_user("Administrator")
+        frappe.db.rollback()
+
+    def cours(self, titre):
+        return frappe.get_doc({"doctype": "LMS Course", "title": titre, "short_introduction": "i",
+                               "description": "d", "instructors": [{"instructor": "Administrator"}]}
+                              ).insert(ignore_permissions=True).name
+
+    def test_phase_lancement_lue(self):
+        nom = self.cours("Lancement réglages")
+        doc = frappe.get_single(DOCTYPE)
+        doc.phase_lancement = 1
+        doc.set("parcours_lancement", [{"cours": nom}])
+        doc.save(ignore_permissions=True)
+        self.assertEqual(source.phase_lancement(), PhaseLancement(True, frozenset({nom})))
+
+    def test_phase_decochee(self):
+        nom = self.cours("Lancement décoché")
+        doc = frappe.get_single(DOCTYPE)
+        doc.phase_lancement = 0
+        doc.set("parcours_lancement", [{"cours": nom}])
+        doc.save(ignore_permissions=True)
+        self.assertEqual(source.phase_lancement(), PhaseLancement(False, frozenset({nom})))
+
+    def test_case_changee_vue_par_la_requete_suivante(self):
+        """Le single est lu en cache : l'enregistrement doit l'invalider."""
+        frappe.db.set_single_value(DOCTYPE, "phase_lancement", 1)
+        frappe.clear_document_cache(DOCTYPE, DOCTYPE)
+        self.assertTrue(source.phase_lancement().active)
+        doc = frappe.get_single(DOCTYPE)
+        doc.phase_lancement = 0
+        doc.save(ignore_permissions=True)
+        self.assertFalse(source.phase_lancement().active)
+        doc.phase_lancement = 1
+        doc.save(ignore_permissions=True)
+        self.assertTrue(source.phase_lancement().active)
+
+    def test_initialiser_coche_la_phase(self):
+        vider()
+        frappe.db.set_single_value(DOCTYPE, "phase_lancement", 0)
+        source.initialiser()
+        self.assertEqual(frappe.db.get_single_value(DOCTYPE, "phase_lancement"), 1)
+        self.assertTrue(source.phase_lancement().active)
+
+    def test_ouverture_lancement_vers_domaine(self):
+        vider()
+        source.initialiser()
+        self.assertIsNone(source.charger().ouverture_lancement)
+        doc = frappe.get_single(DOCTYPE)
+        doc.ouverture_lancement = "2026-11-16"
+        doc.save(ignore_permissions=True)
+        self.assertEqual(source.charger().ouverture_lancement, datetime.date(2026, 11, 16))
+
+    def test_ecran_reserve_a_l_administrateur(self):
+        mail = "moderateur.reglages@example.ci"
+        if not frappe.db.exists("User", mail):
+            frappe.get_doc({"doctype": "User", "email": mail, "first_name": "Modo", "send_welcome_email": 0,
+                            "roles": [{"role": "Moderator"}]}).insert(ignore_permissions=True)
+        frappe.set_user(mail)
+        doc = frappe.get_doc(DOCTYPE)
+        doc.phase_lancement = 0
+        with self.assertRaises(frappe.PermissionError):
+            doc.save()
+
+    def test_ecran_sans_acces_pour_apprenant_et_formateur(self):
+        for mail, role in ((ELEVE, "LMS Student"), ("formateur.reglages@example.ci", "Course Creator")):
+            if not frappe.db.exists("User", mail):
+                frappe.get_doc({"doctype": "User", "email": mail, "first_name": "Test", "send_welcome_email": 0,
+                                "roles": [{"role": role}]}).insert(ignore_permissions=True)
+            with self.subTest(role=role):
+                for droit in ("read", "write"):
+                    self.assertFalse(frappe.has_permission(DOCTYPE, droit, user=mail))
+        chemin = os.path.join(os.path.dirname(__file__), "..", "openlab_academy", "doctype",
+                              "reglages_openlab_academy", "reglages_openlab_academy.json")
+        with open(chemin, encoding="utf-8") as f:
+            self.assertEqual({p["role"] for p in json.load(f)["permissions"]}, {"System Manager"})
 
 
 class TestPatchExercices(FrappeTestCase):

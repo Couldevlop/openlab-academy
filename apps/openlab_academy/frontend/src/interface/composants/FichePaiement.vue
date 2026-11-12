@@ -189,10 +189,9 @@ async function accorderDelai() {
   erreursDelai.value = validerDelai(delai, aujourdhui.value)
   if (Object.keys(erreursDelai.value).length) return premierChampEnErreur('delai', erreursDelai.value)
   envoi.value = true
-  const jusquau = delai.jusquau
   try {
     await cas.accorderDelai.executer(fiche.value.dossier, { ...delai })
-    await apresSucces(`Délai accordé jusqu’au ${formaterJour(jusquau)}.`)
+    await apresSucces('Délai enregistré.')
   } catch (e) {
     erreurServeur.value = messageErreur(e)
   } finally {
@@ -531,7 +530,7 @@ const decrit = (prefixe: string, champ: string, erreurs: Partial<Record<string, 
 .surtitre {
   margin: 0;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   opacity: 0.85;
@@ -603,7 +602,7 @@ dl div {
 }
 dt {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--es-gris);
 }
 dd {
@@ -737,16 +736,16 @@ dd {
   gap: 0 8px;
 }
 .echeancier .date {
-  font-weight: 700;
+  font-weight: 600;
 }
 .echeancier .montant {
   text-align: right;
-  font-weight: 700;
+  font-weight: 600;
 }
 .echeancier .etat {
   text-align: right;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .echeancier .libelle {
   color: var(--es-gris);

@@ -46,7 +46,7 @@ describe('adaptateurs', () => {
         method: 'GET',
       }),
     )
-    expect(ports.session.droits()).toEqual({ intendance: true, finances: false, pilotage: false })
+    expect(ports.session.droits()).toEqual({ intendance: true, finances: false, pilotage: false, paiements: [] })
     ports.navigateur.aller('https://checkout.cinetpay.com/payment/abc')
     expect(lieu.assign).toHaveBeenCalledWith('https://checkout.cinetpay.com/payment/abc')
   })
@@ -61,8 +61,9 @@ describe('droits de la session', () => {
         () => ({ assign: vi.fn() }),
         () => valeur,
       )
-    const tous = { intendance: true, finances: true, pilotage: true }
+    const tous = { intendance: true, finances: true, pilotage: true, paiements: [{ cours: 'c', titre: 'C' }] }
     expect(droits(tous).session.droits()).toEqual(tous)
+    expect(droits({ intendance: true, finances: true, pilotage: true }).session.droits().paiements).toEqual([])
     const malformes = [
       undefined,
       null,
@@ -70,9 +71,10 @@ describe('droits de la session', () => {
       { intendance: 'true', finances: false, pilotage: false },
       { intendance: true },
       { intendance: true, finances: true },
+      { intendance: true, finances: true, pilotage: true, paiements: [{ cours: 1 }] },
     ]
     for (const v of malformes) {
-      expect(droits(v).session.droits()).toEqual({ intendance: false, finances: false, pilotage: false })
+      expect(droits(v).session.droits()).toEqual({ intendance: false, finances: false, pilotage: false, paiements: [] })
     }
   })
 })

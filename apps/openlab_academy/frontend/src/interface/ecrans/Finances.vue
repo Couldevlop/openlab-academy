@@ -196,7 +196,7 @@ onMounted(() => {
 .surtitre {
   margin: 0;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--es-gris);
@@ -204,7 +204,7 @@ onMounted(() => {
 h1 {
   margin: 0;
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 700;
 }
 h2 {
   margin: 0 0 12px;
@@ -265,7 +265,7 @@ h2 {
 .par-parcours tfoot th {
   grid-column: 1 / -1;
   text-align: left;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ol-navy);
   overflow-wrap: anywhere;
 }
@@ -278,7 +278,7 @@ h2 {
 .par-parcours td::before {
   content: attr(data-label);
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--es-gris);
@@ -325,7 +325,7 @@ h2 {
   .par-parcours tfoot td {
     border-top: 2px solid var(--ol-navy);
     border-bottom: 0;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--ol-navy);
   }
 }

@@ -1,0 +1,12 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("Ce parcours est fermé") }}{% endblock %}
+
+{% block page_content %}
+<main class="ol-parcours-ferme">
+  <div class="ol-filet"></div>
+  <h1 class="text-3xl">{{ _("Ce parcours est fermé") }}</h1>
+  {% if message %}<p>{{ message | e }}</p>{% endif %}
+  <p><a class="ol-bouton" href="{{ catalogue }}">{{ _("Voir le catalogue") }}</a></p>
+</main>
+{% endblock %}

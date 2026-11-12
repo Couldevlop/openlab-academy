@@ -10,6 +10,7 @@ from openlab_academy.entrypoints import install
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
 from openlab_academy.patches import dispenser_inscriptions_existantes
 from openlab_academy.tests.fabriques import parcours
+from openlab_academy.tests.sans_lancement import sans_phase_de_lancement
 
 ELEVE = "eleve.paiement@example.ci"
 
@@ -56,6 +57,7 @@ def dossier(c, **autres):
 
 class TestTarif(FrappeTestCase):
     def setUp(self):
+        sans_phase_de_lancement(self)
         self.cours = cours()
 
     def tearDown(self):
@@ -117,6 +119,7 @@ class TestReglagesPaiement(FrappeTestCase):
 
 class TestDossier(FrappeTestCase):
     def setUp(self):
+        sans_phase_de_lancement(self)
         self.cours = cours()
 
     def tearDown(self):
@@ -153,6 +156,7 @@ class TestDossier(FrappeTestCase):
 
 class TestPaiement(FrappeTestCase):
     def setUp(self):
+        sans_phase_de_lancement(self)
         self.dossier = dossier(cours()).insert(ignore_permissions=True).name
 
     def tearDown(self):
@@ -176,6 +180,7 @@ class TestPaiement(FrappeTestCase):
 
 class TestJournal(FrappeTestCase):
     def setUp(self):
+        sans_phase_de_lancement(self)
         self.dossier = dossier(cours()).insert(ignore_permissions=True).name
         self.entree = frappe.get_doc({"doctype": "Journal Paiement OpenLab", "dossier": self.dossier,
                                       "acteur": "Administrator", "action": "dispense", "motif": "test"}
@@ -199,6 +204,7 @@ class TestJournal(FrappeTestCase):
 
 class TestRappel(FrappeTestCase):
     def setUp(self):
+        sans_phase_de_lancement(self)
         self.dossier = dossier(cours()).insert(ignore_permissions=True).name
 
     def tearDown(self):
@@ -269,6 +275,7 @@ class TestRoleIntendant(FrappeTestCase):
 
 class TestPatchDispense(FrappeTestCase):
     def setUp(self):
+        sans_phase_de_lancement(self)
         self.cours = cours()
         self.eleve = utilisateur()
         self.cohorte = frappe.get_doc({
