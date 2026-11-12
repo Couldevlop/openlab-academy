@@ -53,7 +53,8 @@ jobs:
       - name: Y a-t-il quelque chose à promouvoir ?
         id: ecart
         run: |
-          git fetch --quiet origin main
+          # checkout ne configure le refspec que de la branche extraite : viser la reference explicitement
+          git fetch --quiet origin +refs/heads/main:refs/remotes/origin/main
           if [ -z "$(git log --oneline origin/main..HEAD)" ]; then
             echo "promouvoir=false" >> "$GITHUB_OUTPUT"
             echo "main est déjà à jour : rien à promouvoir."
