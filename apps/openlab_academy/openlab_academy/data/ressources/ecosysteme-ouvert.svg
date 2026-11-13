@@ -50,29 +50,29 @@ rect[class^='b-']{stroke-width:1.5}
 </style>
 <rect width="920" height="440" fill="var(--surface)"/>
 <rect x="26" y="104" width="196" height="180" rx="8" class="b-s1" fill="var(--surface)"/>
-<text x="124" y="134" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Donnees metier</text>
+<text x="124" y="134" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Données métier</text>
 <text x="124" y="166" text-anchor="middle" font-size="12" fill="var(--encre2)">Odoo</text>
 <text x="124" y="192" text-anchor="middle" font-size="12" fill="var(--encre2)">Dolibarr</text>
 <text x="124" y="218" text-anchor="middle" font-size="12" fill="var(--encre2)">ERPNext</text>
-<text x="124" y="262" text-anchor="middle" font-size="10" fill="var(--encre2)">d&#x27;ou viennent les factures</text>
+<text x="124" y="262" text-anchor="middle" font-size="10" fill="var(--encre2)">d&#x27;où viennent les factures</text>
 <rect x="248" y="104" width="196" height="180" rx="8" class="b-s3" fill="var(--surface)"/>
 <text x="346" y="134" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Documents</text>
 <text x="346" y="166" text-anchor="middle" font-size="12" fill="var(--encre2)">Nextcloud</text>
 <text x="346" y="262" text-anchor="middle" font-size="10" fill="var(--encre2)">les justificatifs, par WebDAV</text>
 <rect x="470" y="104" width="196" height="180" rx="8" class="b-s2" fill="var(--surface)"/>
-<text x="568" y="134" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Identite</text>
+<text x="568" y="134" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Identité</text>
 <text x="568" y="166" text-anchor="middle" font-size="12" fill="var(--encre2)">Keycloak</text>
-<text x="568" y="262" text-anchor="middle" font-size="10" fill="var(--encre2)">qui a valide, de maniere opposable</text>
+<text x="568" y="262" text-anchor="middle" font-size="10" fill="var(--encre2)">qui a validé, de manière opposable</text>
 <rect x="692" y="104" width="196" height="180" rx="8" class="b-s3" fill="var(--surface)"/>
 <text x="790" y="134" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Pilotage</text>
 <text x="790" y="166" text-anchor="middle" font-size="12" fill="var(--encre2)">Metabase</text>
 <text x="790" y="192" text-anchor="middle" font-size="12" fill="var(--encre2)">n8n</text>
 <text x="790" y="218" text-anchor="middle" font-size="12" fill="var(--encre2)">Grafana</text>
-<text x="790" y="262" text-anchor="middle" font-size="10" fill="var(--encre2)">mesurer, declencher, surveiller</text>
-<text x="460" y="44" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Un agent utile vit dans un systeme d&#x27;information, pas tout seul.</text>
-<text x="460" y="68" text-anchor="middle" font-size="12" fill="var(--encre2)">Chaque brique ajoute une dependance : on ne l&#x27;ajoute que contre un besoin nomme.</text>
+<text x="790" y="262" text-anchor="middle" font-size="10" fill="var(--encre2)">mesurer, déclencher, surveiller</text>
+<text x="460" y="44" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Un agent utile vit dans un système d&#x27;information, pas tout seul.</text>
+<text x="460" y="68" text-anchor="middle" font-size="12" fill="var(--encre2)">Chaque brique ajoute une dépendance : on ne l&#x27;ajoute que contre un besoin nommé.</text>
 <rect x="120" y="322" width="680" height="76" rx="8" class="b-trait" fill="var(--surface)" stroke-dasharray="5 4"/>
-<text x="460" y="348" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">La question a poser avant chaque branchement</text>
+<text x="460" y="348" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">La question à poser avant chaque branchement</text>
 <text x="460" y="372" text-anchor="middle" font-size="11" fill="var(--encre2)">que se passe-t-il quand ce service est indisponible, lent, ou renvoie faux ?</text>
-<text x="460" y="426" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Pas de reponse ecrite a cette question : pas de branchement.</text>
+<text x="460" y="426" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Pas de réponse écrite à cette question : pas de branchement.</text>
 </svg>

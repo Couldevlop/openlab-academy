@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 460" width="940" height="460" role="img" aria-label="Un port, plusieurs systemes, un seul metier">
-<title>Un port, plusieurs systemes, un seul metier</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 460" width="940" height="460" role="img" aria-label="Un port, plusieurs systèmes, un seul métier">
+<title>Un port, plusieurs systèmes, un seul métier</title>
 <defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
 <style>
 svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
@@ -51,7 +51,7 @@ rect[class^='b-']{stroke-width:1.5}
 <rect width="940" height="460" fill="var(--surface)"/>
 <rect x="360" y="86" width="220" height="64" rx="8" class="b-s1" fill="var(--surface)"/>
 <text x="470" y="112" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Votre domaine</text>
-<text x="470" y="134" text-anchor="middle" font-size="10" fill="var(--encre2)">regles et decisions</text>
+<text x="470" y="134" text-anchor="middle" font-size="10" fill="var(--encre2)">règles et décisions</text>
 <rect x="330" y="184" width="280" height="60" rx="8" class="b-s3" fill="var(--surface)" stroke-dasharray="5 4"/>
 <text x="470" y="208" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">PorteSI</text>
 <text x="470" y="230" text-anchor="middle" font-size="10" fill="var(--encre2)">factures, paiements, note interne</text>
@@ -62,7 +62,7 @@ rect[class^='b-']{stroke-width:1.5}
 <path d="M 470 244 L 136 296" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
 <rect x="264" y="300" width="200" height="76" rx="8" class="b-s2" fill="var(--surface)"/>
 <text x="364" y="328" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Dolibarr</text>
-<text x="364" y="352" text-anchor="middle" font-size="10" fill="var(--encre2)">REST + cle</text>
+<text x="364" y="352" text-anchor="middle" font-size="10" fill="var(--encre2)">REST + clé</text>
 <path d="M 470 244 L 364 296" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
 <rect x="492" y="300" width="200" height="76" rx="8" class="b-s2" fill="var(--surface)"/>
 <text x="592" y="328" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">ERPNext</text>
@@ -72,8 +72,8 @@ rect[class^='b-']{stroke-width:1.5}
 <text x="820" y="328" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Fichier</text>
 <text x="820" y="352" text-anchor="middle" font-size="10" fill="var(--encre2)">CSV de secours</text>
 <path d="M 470 244 L 820 296" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
-<text x="470" y="44" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Le domaine ne connait aucun ERP. Il connait un port.</text>
-<text x="470" y="66" text-anchor="middle" font-size="12" fill="var(--encre2)">Changer d&#x27;ERP devient un fichier a ecrire, jamais une refonte.</text>
-<text x="470" y="420" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Lecture seule par defaut. L&#x27;ecriture est une note interne, apres validation humaine.</text>
-<text x="470" y="446" text-anchor="middle" font-size="11" fill="var(--encre2)">Les identifiants viennent du gestionnaire de secrets, jamais du depot.</text>
+<text x="470" y="44" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Le domaine ne connaît aucun ERP. Il connaît un port.</text>
+<text x="470" y="66" text-anchor="middle" font-size="12" fill="var(--encre2)">Changer d&#x27;ERP devient un fichier à écrire, jamais une refonte.</text>
+<text x="470" y="420" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Lecture seule par défaut. L&#x27;écriture est une note interne, après validation humaine.</text>
+<text x="470" y="446" text-anchor="middle" font-size="11" fill="var(--encre2)">Les identifiants viennent du gestionnaire de secrets, jamais du dépôt.</text>
 </svg>
