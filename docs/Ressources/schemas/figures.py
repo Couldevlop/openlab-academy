@@ -739,9 +739,78 @@ def cinq_implementations() -> Dessin:
     d.texte(460, 406, "Un cadre se choisit sur ce qu'il vous économise, jamais sur sa popularité.",
             taille=12, gras=True, couleur="encre2")
     return d
+def pipeline_deploiement() -> Dessin:
+    """Séance 15 : du commit à la production, les étapes et ce qui bloque à chacune."""
+    d = Dessin(940, 420, "Du commit à la production, sans geste manuel")
+    etapes = [
+        ("commit", "s1", "branche de travail"),
+        ("tests", "s3", "unitaires et critères"),
+        ("image", "s2", "conteneur épinglé"),
+        ("recette", "s3", "scénario complet"),
+        ("production", "s1", "après approbation"),
+    ]
+    for i, (nom, teinte, sous) in enumerate(etapes):
+        x = 28 + i * 180
+        d.boite(x, 118, 150, 84, teinte=teinte)
+        d.texte(x + 75, 150, nom, taille=15, gras=True)
+        d.texte(x + 75, 176, sous, taille=10, couleur="encre2")
+        if i < 4:
+            d.fleche(x + 150, 160, x + 178, 160, teinte="attenue")
+    d.texte(470, 42, "Chaque étape peut refuser de passer la suivante.", taille=15, gras=True)
+    d.texte(470, 66, "Un déploiement manuel est un déploiement que personne ne sait rejouer.",
+            taille=12, couleur="encre2")
+    d.boite(28, 236, 330, 96, teinte="trait", tirets=True)
+    d.texte(193, 262, "Ce qui bloque le passage", taille=13, gras=True)
+    d.texte(193, 286, "un test rouge, un critère d'acceptation", taille=11, couleur="encre2")
+    d.texte(193, 306, "échoué, un secret absent, une image", taille=11, couleur="encre2")
+    d.texte(193, 326, "non reproductible.", taille=11, couleur="encre2")
+    d.boite(392, 236, 330, 96, teinte="trait", tirets=True)
+    d.texte(557, 262, "Ce qui ne voyage jamais dans l'image", taille=13, gras=True)
+    d.texte(557, 286, "les clés d'API, la base de données,", taille=11, couleur="encre2")
+    d.texte(557, 306, "les traces, le fichier d'état : tout cela", taille=11, couleur="encre2")
+    d.texte(557, 326, "vient de l'extérieur, au démarrage.", taille=11, couleur="encre2")
+    d.boite(756, 236, 156, 96, teinte="s2")
+    d.texte(834, 262, "Retour arrière", taille=13, gras=True)
+    d.texte(834, 288, "l'image précédente", taille=11, couleur="encre2")
+    d.texte(834, 308, "reste déployable", taille=11, couleur="encre2")
+    d.texte(834, 328, "en une commande.", taille=11, couleur="encre2")
+    d.texte(470, 392, "Un agent se déploie comme un service : versionné, reproductible, réversible.",
+            taille=12, gras=True, couleur="encre2")
+    return d
+
+
+def exploitation_agent() -> Dessin:
+    """Séance 16 : ce qu'on surveille une fois l'agent en service."""
+    d = Dessin(900, 440, "Ce qu'on surveille, et ce qu'on fait quand ça sonne")
+    familles = [
+        ("Santé", "s1", ["le service répond", "le modèle répond", "les outils répondent"]),
+        ("Qualité", "s3", ["taux de réussite", "litiges relancés : zéro", "brouillons rejetés"]),
+        ("Coût", "s2", ["jetons par exécution", "francs CFA par jour", "tours par exécution"]),
+        ("Humain", "s3", ["délai de validation", "file d'attente", "taux d'approbation"]),
+    ]
+    for i, (nom, teinte, lignes) in enumerate(familles):
+        x = 30 + i * 215
+        d.boite(x, 96, 190, 146, teinte=teinte)
+        d.texte(x + 95, 126, nom, taille=15, gras=True)
+        for j, ligne in enumerate(lignes):
+            d.texte(x + 95, 160 + j * 26, ligne, taille=11, couleur="encre2")
+    d.texte(450, 42, "Quatre familles de mesures, et une seule question par famille.",
+            taille=15, gras=True)
+    d.texte(450, 66, "Une alerte qui ne dit pas quoi faire finit par être ignorée.",
+            taille=12, couleur="encre2")
+    d.boite(90, 282, 720, 108, teinte="trait", tirets=True)
+    d.texte(450, 308, "Quand une alerte sonne, dans cet ordre", taille=13, gras=True)
+    d.texte(450, 332, "1. arrêter la casse : couper l'agent ou revenir à l'image précédente.", taille=11, couleur="encre2")
+    d.texte(450, 354, "2. comprendre : relire la trace de l'exécution fautive, pas les suppositions.", taille=11, couleur="encre2")
+    d.texte(450, 376, "3. empêcher le retour : un test qui aurait échoué avant l'incident.", taille=11, couleur="encre2")
+    d.texte(450, 424, "L'incident se termine par un test ajouté, jamais par une explication seule.",
+            taille=12, gras=True, couleur="encre2")
+    return d
 
 
 FIGURES = {
+    "pipeline-deploiement.svg": pipeline_deploiement,
+    "exploitation-agent.svg": exploitation_agent,
     "cinq-implementations.svg": cinq_implementations,
     "graphe-langgraph.svg": graphe_langgraph,
     "trois-memoires.svg": trois_memoires,

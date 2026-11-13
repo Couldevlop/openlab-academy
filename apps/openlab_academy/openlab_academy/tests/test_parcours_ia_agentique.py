@@ -21,6 +21,8 @@ MODULES = [
     ("12", "MCP et interopérabilité"),
     ("13", "Architectures multi-agents et A2A"),
     ("14", "Sécurité, évaluation et observabilité"),
+    ("15", "Empaqueter et déployer par pipeline"),
+    ("16", "Exploiter l'agent en production"),
 ]
 
 
