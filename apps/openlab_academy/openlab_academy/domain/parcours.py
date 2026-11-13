@@ -12,6 +12,9 @@ from openlab_academy.domain.reglages_evaluation import Chaine
 
 TITRE_MAX = 120  # laisse la place aux préfixes (« Projet 10 — ») sous la limite LMS de 140
 _SALAIRE = re.compile(r"\d+\s*k\s*€", re.IGNORECASE)
+_NOM_FIGURE = re.compile(r"[a-z0-9][a-z0-9-]{0,79}\.svg")
+# langages colorés par le bloc codeBox du LMS ; au-delà, le bloc s'affiche sans coloration et sans alerte
+LANGAGES = frozenset({"python", "json", "yaml", "bash", "sql", "text"})
 
 
 class ParcoursInvalide(ValueError):
@@ -66,6 +69,63 @@ class Question:
 
 
 @dataclass(frozen=True)
+class Figure:
+    """Schéma d'une leçon. Le nom désigne un SVG construit par le dépôt et déposé en fichier privé du site :
+    la figure suit donc le contrôle d'accès de la leçon, comme l'archive de départ. Le nom est contraint pour
+    qu'aucune valeur de parcours ne puisse désigner un fichier hors du dossier des ressources."""
+
+    nom: str
+    legende: str
+
+    def __post_init__(self):
+        if not _NOM_FIGURE.fullmatch(self.nom or ""):
+            raise ParcoursInvalide(f"nom de figure invalide : {self.nom!r} (attendu « quelque-chose.svg »)")
+        if not self.legende.strip():
+            raise ParcoursInvalide(f"figure « {self.nom} » : légende obligatoire")
+
+
+@dataclass(frozen=True)
+class Tableau:
+    """Tableau de comparaison ou de décision. Le rectangle est vérifié ici : une ligne trop courte produirait
+    des cellules vides à l'écran sans que personne ne s'en aperçoive avant la relecture."""
+
+    titre: str
+    entetes: tuple[str, ...]
+    lignes: tuple[tuple[str, ...], ...]
+
+    def __post_init__(self):
+        if not self.entetes:
+            raise ParcoursInvalide(f"tableau « {self.titre} » : en-têtes obligatoires")
+        if not self.lignes:
+            raise ParcoursInvalide(f"tableau « {self.titre} » : au moins une ligne")
+        for numero, ligne in enumerate(self.lignes, start=1):
+            if len(ligne) != len(self.entetes):
+                raise ParcoursInvalide(f"tableau « {self.titre} » : ligne {numero} a {len(ligne)} cellules "
+                                       f"pour {len(self.entetes)} colonnes")
+
+    @property
+    def largeur(self) -> int:
+        return len(self.entetes)
+
+
+@dataclass(frozen=True)
+class Extrait:
+    """Extrait de code commenté. Le langage est restreint à ceux que la coloration du LMS connaît : un nom
+    fantaisiste donnerait un bloc sans coloration, sans message d'erreur."""
+
+    titre: str
+    langage: str
+    code: str
+
+    def __post_init__(self):
+        if self.langage not in LANGAGES:
+            raise ParcoursInvalide(f"extrait « {self.titre} » : langage {self.langage!r} inconnu "
+                                   f"({', '.join(sorted(LANGAGES))})")
+        if not self.code.strip():
+            raise ParcoursInvalide(f"extrait « {self.titre} » : code vide")
+
+
+@dataclass(frozen=True)
 class Module:
     num: str
     title: str
@@ -75,6 +135,9 @@ class Module:
     mise_en_situation: str = ""
     travaux_pratiques: str = ""  # support de la séance : déroulé et défi, affiché dans la leçon
     archive: str = ""  # nom de fichier de l'archive de départ, jointe à la leçon et citée par elle
+    figures: tuple[Figure, ...] = ()  # schémas de la séance, servis comme l'archive
+    tableaux: tuple[Tableau, ...] = ()
+    extraits: tuple[Extrait, ...] = ()
     grille_cas: Grille | None = None  # grille propre à la mise en situation (sinon grille générique)
     correction_cas: Chaine | None = None
     grille_livrable: Grille | None = None

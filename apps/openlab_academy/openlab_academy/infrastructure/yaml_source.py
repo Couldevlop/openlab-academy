@@ -5,8 +5,8 @@ import re
 import yaml
 
 from openlab_academy.domain.grille import Grille, GrilleInvalide
-from openlab_academy.domain.parcours import (Annonce, Bloc, Module, Niveau, Parcours, ParcoursInvalide, Projet,
-                                             Question)
+from openlab_academy.domain.parcours import (Annonce, Bloc, Extrait, Figure, Module, Niveau, Parcours,
+                                             ParcoursInvalide, Projet, Question, Tableau)
 from openlab_academy.domain.reglages import Reglages, ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import Chaine
 
@@ -118,6 +118,46 @@ class _Lecteur:
             raise FormatInvalide(f"{self.source}: {chemin} doit être un nom de fichier .zip sans chemin")
         return nom
 
+    def _entrees(self, brut, chemin: str) -> list[dict]:
+        """Une liste de dictionnaires, ou rien. Le message nomme la clé pour qu'un fichier de contenu se
+        corrige sans ouvrir le code."""
+        if brut is None:
+            return []
+        if not isinstance(brut, list) or any(not isinstance(e, dict) for e in brut):
+            raise FormatInvalide(f"{self.source}: {chemin} doit être une liste de dictionnaires")
+        return brut
+
+    def _construire(self, fabrique, chemin: str, **champs):
+        """Les invariants restent dans le domaine ; le lecteur se borne à situer l'erreur dans le fichier."""
+        try:
+            return fabrique(**champs)
+        except ParcoursInvalide as e:
+            raise FormatInvalide(f"{self.source}: {chemin} invalide : {e}") from None
+
+    def figures(self, brut, chemin: str) -> tuple[Figure, ...]:
+        return tuple(
+            self._construire(Figure, f"{chemin}[{i}]", nom=str(f.get("nom") or ""),
+                             legende=str(f.get("legende") or ""))
+            for i, f in enumerate(self._entrees(brut, chemin)))
+
+    def tableaux(self, brut, chemin: str) -> tuple[Tableau, ...]:
+        resultat = []
+        for i, t in enumerate(self._entrees(brut, chemin)):
+            lignes = t.get("lignes")
+            if not isinstance(lignes, list) or any(not isinstance(l, list) for l in lignes):
+                raise FormatInvalide(f"{self.source}: {chemin}[{i}].lignes doit être une liste de listes")
+            resultat.append(self._construire(
+                Tableau, f"{chemin}[{i}]", titre=str(t.get("titre") or ""),
+                entetes=tuple(str(c) for c in (t.get("entetes") or ())),
+                lignes=tuple(tuple(str(c) for c in ligne) for ligne in lignes)))
+        return tuple(resultat)
+
+    def extraits(self, brut, chemin: str) -> tuple[Extrait, ...]:
+        return tuple(
+            self._construire(Extrait, f"{chemin}[{i}]", titre=str(e.get("titre") or ""),
+                             langage=str(e.get("langage") or ""), code=str(e.get("source") or ""))
+            for i, e in enumerate(self._entrees(brut, chemin)))
+
     def module(self, m: dict, chemin: str) -> Module:
         quiz = m.get("quiz") or []
         if not isinstance(quiz, list):
@@ -127,6 +167,9 @@ class _Lecteur:
                       mise_en_situation=str(m.get("mise_en_situation") or ""),
                       travaux_pratiques=str(m.get("travaux_pratiques") or ""),
                       archive=self.archive(m.get("archive"), f"{chemin}archive"),
+                      figures=self.figures(m.get("figures"), f"{chemin}figures"),
+                      tableaux=self.tableaux(m.get("tableaux"), f"{chemin}tableaux"),
+                      extraits=self.extraits(m.get("code"), f"{chemin}code"),
                       grille_cas=self.grille(m.get("grille_mise_en_situation"), f"{chemin}grille_mise_en_situation"),
                       correction_cas=self.correction(m.get("correction_mise_en_situation"),
                                                      f"{chemin}correction_mise_en_situation"),

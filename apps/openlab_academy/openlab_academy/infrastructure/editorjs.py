@@ -7,7 +7,7 @@ import json
 import re
 from urllib.parse import parse_qs, urlsplit
 
-from openlab_academy.domain.parcours import Module, Projet
+from openlab_academy.domain.parcours import Extrait, Figure, Module, Projet, Tableau
 from openlab_academy.domain.reglages import Reglages
 
 
@@ -45,14 +45,52 @@ def _lien_archive(nom: str, url: str) -> dict:
     return _bloc("paragraph", text=f'Archive de départ : <a href="{url}">{_e(nom)}</a>')
 
 
+_FIGURE_PRIVEE = re.compile(r"/private/files/[a-z0-9][a-z0-9-]{0,79}\.svg")
+
+
+def _image(figure: Figure, urls: dict[str, str]) -> dict:
+    """Schéma de la leçon. Comme l'archive, un SVG est un média privé servi par le contrôle d'accès : une
+    adresse absente du dossier des ressources, ou hors des fichiers privés, est refusée (OWASP A03)."""
+    url = urls.get(figure.nom)
+    if url is None:
+        raise ValueError(f"figure non déposée sur le site : {figure.nom!r}")
+    if not _FIGURE_PRIVEE.fullmatch(url):
+        raise ValueError(f"adresse de figure non servie par le site : {url!r}")
+    return _bloc("image", url=url, caption=_e(figure.legende),
+                 withBorder=False, withBackground=False, stretched=False)
+
+
+def _tableau(tableau: Tableau) -> list[dict]:
+    contenu = [[_e(c) for c in tableau.entetes]] + [[_e(c) for c in ligne] for ligne in tableau.lignes]
+    return [_bloc("paragraph", text=f"<b>{_e(tableau.titre)}</b>"),
+            _bloc("table", withHeadings=True, content=contenu)]
+
+
+def _extrait(extrait: Extrait) -> list[dict]:
+    return [_bloc("paragraph", text=f"<b>{_e(extrait.titre)}</b>"),
+            _bloc("codeBox", code=_e(extrait.code), language=extrait.langage)]
+
+
+def _supports(module: Module, figures_urls: dict[str, str]) -> list[dict]:
+    """La figure ouvre, le tableau tranche, le code montre. Un lecteur qui survole la page doit comprendre la
+    séance avant d'en lire une phrase."""
+    blocs = [_image(f, figures_urls) for f in module.figures]
+    for tableau in module.tableaux:
+        blocs += _tableau(tableau)
+    for extrait in module.extraits:
+        blocs += _extrait(extrait)
+    return blocs
+
+
 def lecon_module(module: Module, devoir: str, heures: int, quiz: str | None = None,
                  devoir_cas: str | None = None, reglages: Reglages | None = None,
-                 archive_url: str | None = None) -> str:
+                 archive_url: str | None = None, figures_urls: dict[str, str] | None = None) -> str:
     blocs = [
         _titre("Contenu du module"),
         _bloc("paragraph", text=_e(module.contenu)),
         _bloc("paragraph", text=f"Format : ~{heures} h, 40 % de théorie et 60 % de pratique."),
     ]
+    blocs += _supports(module, figures_urls or {})
     if module.travaux_pratiques.strip():
         blocs.append(_titre("Travaux pratiques"))
         blocs += [_bloc("paragraph", text=_e(paragraphe.strip()))
