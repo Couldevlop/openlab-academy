@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 300" width="780" height="300" role="img" aria-label="La chaîne MCP, du client au serveur d&#x27;outils">
+<title>La chaîne MCP, du client au serveur d&#x27;outils</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="780" height="300" fill="var(--surface)"/>
+<rect x="26" y="90" width="164" height="96" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="108" y="118" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Agent</text>
+<text x="108" y="140" text-anchor="middle" font-size="11" fill="var(--encre2)">décide d&#x27;appeler</text>
+<text x="108" y="155" text-anchor="middle" font-size="11" fill="var(--encre2)">un outil</text>
+<rect x="214" y="90" width="164" height="96" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="296" y="118" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Client MCP</text>
+<text x="296" y="140" text-anchor="middle" font-size="11" fill="var(--encre2)">découvre les outils</text>
+<text x="296" y="155" text-anchor="middle" font-size="11" fill="var(--encre2)">et leurs schémas</text>
+<rect x="402" y="90" width="164" height="96" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="484" y="118" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Serveur MCP</text>
+<text x="484" y="140" text-anchor="middle" font-size="11" fill="var(--encre2)">expose les outils</text>
+<text x="484" y="155" text-anchor="middle" font-size="11" fill="var(--encre2)">et leurs contrats</text>
+<rect x="590" y="90" width="164" height="96" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="672" y="118" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Système réel</text>
+<text x="672" y="140" text-anchor="middle" font-size="11" fill="var(--encre2)">base, fichiers,</text>
+<text x="672" y="155" text-anchor="middle" font-size="11" fill="var(--encre2)">API</text>
+<path d="M 190 138 L 210 138" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<path d="M 378 138 L 398 138" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<path d="M 566 138 L 586 138" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<text x="390" y="220" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Le contrat d&#x27;outil vit côté serveur : l&#x27;agent n&#x27;embarque plus ni schéma ni client.</text>
+<rect x="240" y="240" width="360" height="44" rx="8" class="b-critique" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="420" y="258" text-anchor="middle" font-size="12" font-weight="600" fill="var(--critique)">Le serveur reste une frontière de confiance</text>
+<text x="420" y="275" text-anchor="middle" font-size="11" fill="var(--encre2)">un outil distant vaut une liste blanche et une limite de débit</text>
+</svg>

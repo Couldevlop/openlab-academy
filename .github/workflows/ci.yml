@@ -102,6 +102,11 @@ jobs:
         with:
           python-version: "3.11"
 
+      # les schémas livrés doivent être ceux que le script rend : une figure corrigée dans le code et
+      # oubliée dans le dépôt se verrait sinon seulement à la relecture de la leçon
+      - name: Schémas SVG à jour
+        run: python docs/Ressources/construire_schemas.py --verifier
+
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:

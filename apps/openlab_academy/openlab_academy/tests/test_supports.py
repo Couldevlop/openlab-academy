@@ -153,3 +153,24 @@ class TestLectureYamlDesSupports(unittest.TestCase):
                 with self.assertRaises(Exception) as capture:
                     self._module({cle: valeur})
                 self.assertIn(cle, str(capture.exception))
+
+
+class TestFiguresLivrees(unittest.TestCase):
+    """Une figure citée par un parcours doit exister dans les ressources de l'application, sinon la leçon
+    s'affiche avec une image morte. Le fichier est produit par docs/Ressources/construire_schemas.py ; la CI
+    vérifie en plus que le fichier versionné est bien celui que le script rend."""
+
+    def test_toute_figure_citee_est_livree(self):
+        import pathlib
+
+        from openlab_academy.domain.parcours import Parcours
+        from openlab_academy.infrastructure.yaml_source import PARCOURS_DIR, charger_dossier
+
+        ressources = pathlib.Path(__file__).parents[1] / "data" / "ressources"
+        manquantes = []
+        for parcours in (p for p in charger_dossier(PARCOURS_DIR) if isinstance(p, Parcours)):
+            for bloc in parcours.blocs:
+                for m in bloc.modules:
+                    manquantes += [f"{parcours.title} / {m.num} : {f.nom}"
+                                   for f in m.figures if not (ressources / f.nom).is_file()]
+        self.assertEqual(manquantes, [], "\n".join(manquantes))

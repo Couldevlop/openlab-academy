@@ -18,3 +18,5 @@ docker/secrets/
 *.PNG
 !docs/charte/logo/**/*.png
 !apps/openlab_academy/openlab_academy/public/images/logo*.png
+sh.exe.stackdump
+skills-lock.json
