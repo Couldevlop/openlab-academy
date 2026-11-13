@@ -505,9 +505,102 @@ def memoire_modeles_locaux() -> Dessin:
     d.texte(400, 64, "Ordres de grandeur en quantification agressive, à vérifier sur votre machine.",
             taille=12, couleur="encre2")
     return d
+def description_outil() -> Dessin:
+    """Séance 3 : la même fonction décrite deux fois, et ce que le modèle en fait."""
+    d = Dessin(860, 400, "Deux descriptions du même outil, deux comportements")
+    colonnes = [
+        ("Description pauvre", 30, "critique",
+         ['"name": "lister"', '"description": "liste les factures"',
+          '"age_min_jours": {"type": "integer"}'],
+         ["Appelé à contretemps", "Arguments hors bornes acceptés",
+          "Confondu avec l'outil de calcul"]),
+        ("Description utile", 450, "s3",
+         ['"name": "lister_factures_impayees"',
+          '"description": "Liste les factures dont le retard',
+          'atteint age_min_jours. Exclut les litiges."',
+          '"age_min_jours": {"type":"integer","minimum":0,',
+          '"maximum":365}'],
+         ["Appelé au bon moment", "Arguments refusés avant exécution",
+          "Jamais confondu avec un autre outil"]),
+    ]
+    for titre, x, teinte, lignes, effets in colonnes:
+        d.texte(x + 190, 96, titre, taille=15, gras=True, couleur=teinte)
+        d.boite(x, 110, 380, 128, teinte=teinte)
+        for i, ligne in enumerate(lignes):
+            d.texte(x + 16, 136 + i * 21, ligne, taille=11, ancre="start", couleur="encre2")
+        for i, effet in enumerate(effets):
+            d.texte(x + 190, 270 + i * 24, effet, taille=12)
+    d.texte(430, 42, "Le modèle ne lit pas votre code : il lit la description de l'outil.",
+            taille=14, gras=True)
+    d.texte(430, 64, "C'est le texte le plus rentable de tout votre projet, et le plus souvent bâclé.",
+            taille=12, couleur="encre2")
+    d.texte(430, 372, "Une description dit quand utiliser l'outil, quand ne pas l'utiliser, "
+                      "et ce qu'il renvoie.", taille=12, gras=True, couleur="encre2")
+    return d
+
+
+def techniques_prompting() -> Dessin:
+    """Séance 3 : ce qui agit vraiment, et ce qui relève du folklore."""
+    d = Dessin(860, 420, "Ce qui agit sur la qualité d'un prompt, et ce qui n'agit pas")
+    utiles = [("Objectif précis et vérifiable", "toujours"),
+              ("Format de sortie montré, pas décrit", "toujours"),
+              ("Deux exemples, dont un cas limite", "tâches ambiguës"),
+              ("Découper en plusieurs appels", "tâche à étapes"),
+              ("Demander de citer la source", "réponses sur documents")]
+    inutiles = [("« Tu es un expert mondial »", "aucun effet mesurable"),
+                ("Menaces ou récompenses", "aucun effet mesurable"),
+                ("« Sois précis » sans critère", "trop vague pour agir"),
+                ("Prompt de quatre pages", "dilue et coûte à chaque tour"),
+                ("Raisonnement imposé pas à pas", "déjà interne aux modèles récents")]
+    for i, (texte, quand) in enumerate(utiles):
+        y = 110 + i * 54
+        d.boite(30, y, 380, 44, teinte="s3")
+        d.texte(48, y + 20, texte, taille=12, gras=True, ancre="start")
+        d.texte(48, y + 36, quand, taille=10, ancre="start", couleur="encre2")
+    for i, (texte, quand) in enumerate(inutiles):
+        y = 110 + i * 54
+        d.boite(450, y, 380, 44, teinte="attenue", tirets=True)
+        d.texte(468, y + 20, texte, taille=12, ancre="start", couleur="encre2")
+        d.texte(468, y + 36, quand, taille=10, ancre="start", couleur="attenue")
+    d.texte(220, 90, "Ce qui agit", taille=14, gras=True, couleur="s3")
+    d.texte(640, 90, "Ce qui relève du folklore", taille=14, gras=True, couleur="attenue")
+    d.texte(430, 42, "Un prompt se juge sur un jeu de cas, pas sur une impression.", taille=14, gras=True)
+    d.texte(430, 64, "Toute recette qui ne survit pas à vingt cas mesurés est une superstition.",
+            taille=12, couleur="encre2")
+    d.texte(430, 404, "Changez une chose à la fois, et remesurez : c'est la seule méthode qui "
+                      "progresse.", taille=12, gras=True, couleur="encre2")
+    return d
+
+
+def frontiere_donnee_consigne() -> Dessin:
+    """Séance 3 : où placer la donnée pour qu'elle ne devienne jamais une consigne."""
+    d = Dessin(820, 380, "La frontière entre la consigne et la donnée")
+    d.boite(90, 100, 300, 180, teinte="s1")
+    d.texte(240, 128, "Zone des consignes", taille=14, gras=True, couleur="s1")
+    for i, ligne in enumerate(["message système", "règles dures", "outils et formats",
+                               "écrit par vous", "stable entre deux exécutions"]):
+        d.texte(240, 158 + i * 24, ligne, taille=11, couleur="encre2")
+    d.boite(430, 100, 300, 180, teinte="critique", tirets=True)
+    d.texte(580, 128, "Zone des données", taille=14, gras=True, couleur="critique")
+    for i, ligne in enumerate(["notes de factures", "documents lus", "résultats d'outils",
+                               "écrit par n'importe qui", "change à chaque exécution"]):
+        d.texte(580, 158 + i * 24, ligne, taille=11, couleur="encre2")
+    d.ajouter('<line x1="410" y1="92" x2="410" y2="296" stroke="var(--s2)" stroke-width="3"'
+              ' stroke-dasharray="7 5"/>')
+    d.texte(410, 318, "une donnée ne traverse jamais cette ligne", taille=12, gras=True, couleur="s2")
+    d.texte(410, 42, "Tout ce qui vient du monde extérieur est une donnée, même si c'est écrit "
+                     "à l'impératif.", taille=14, gras=True)
+    d.texte(410, 64, "Citez les données dans un bloc nommé, annoncez qu'elles ne sont pas fiables, "
+                     "et n'y obéissez jamais.", taille=12, couleur="encre2")
+    d.texte(410, 362, "Si vous concaténez les deux zones dans une seule chaîne, la frontière "
+                      "n'existe plus.", taille=12, gras=True, couleur="critique")
+    return d
 
 
 FIGURES = {
+    "description-outil.svg": description_outil,
+    "techniques-prompting.svg": techniques_prompting,
+    "frontiere-donnee-consigne.svg": frontiere_donnee_consigne,
     "jetons-decoupage.svg": jetons_decoupage,
     "temperature-echantillonnage.svg": temperature_echantillonnage,
     "trois-temps-entrainement.svg": trois_temps_entrainement,
