@@ -41,7 +41,10 @@ def _textes_du_parcours(p: Parcours):
 
 def _prose_rendue(p: Parcours, reglages: Reglages):
     """Les phrases que le rendu ajoute de lui-même, invisibles dans le YAML."""
-    documents = [editorjs.lecon_module(m, "D", p.heures_par_module) for bloc in p.blocs for m in bloc.modules]
+    modules = [m for bloc in p.blocs for m in bloc.modules]
+    # les figures exigent une adresse servie par le site ; la prose ne dépend pas de laquelle
+    urls = {f.nom: f"/private/files/{f.nom}" for m in modules for f in m.figures}
+    documents = [editorjs.lecon_module(m, "D", p.heures_par_module, figures_urls=urls) for m in modules]
     documents += [editorjs.lecon_projet(p.capstone, "D", reglages)]
     for document in documents:
         for bloc in json.loads(document)["blocks"]:

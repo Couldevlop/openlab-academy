@@ -46,6 +46,41 @@ blocs:
     modules:
       - num: "01"
         title: Anatomie d'un agent IA
+        figures:
+          - nom: boucle-agent.svg
+            legende: "La boucle d'un agent : percevoir, raisonner, agir, observer, et ce qui l'arrête."
+          - nom: quatre-familles.svg
+            legende: "Chatbot, RAG, workflow, agent : ce qui change est qui décide de l'étape suivante."
+          - nom: echelle-risque.svg
+            legende: "Classer les actions par risque, puis placer la frontière d'autonomie acceptable."
+        tableaux:
+          - titre: Quatre familles de systèmes, départagées par trois questions
+            entetes: ["Famille", "Qui choisit l'étape suivante", "Nombre de passages", "À préférer quand"]
+            lignes:
+              - ["Chatbot", "personne, il répond", "un par message", "la réponse est le livrable"]
+              - ["RAG", "le code, toujours le même ordre", "un seul", "la réponse vit dans vos documents"]
+              - ["Workflow", "le code, écrit à l'avance", "fixe", "les étapes sont connues et stables"]
+              - ["Agent", "le modèle, à chaque tour", "variable, borné", "le chemin dépend de ce qu'on trouve"]
+          - titre: Les quatre composants d'un agent, et ce qui casse quand l'un manque
+            entetes: ["Composant", "Rôle", "S'il manque"]
+            lignes:
+              - ["Modèle", "décide de l'action suivante", "il reste un workflow"]
+              - ["Outils", "agissent sur le monde", "l'agent parle sans rien faire"]
+              - ["Mémoire", "transporte le contexte entre les tours", "l'agent refait deux fois le même appel"]
+              - ["Contrôle", "borne, filtre, fait valider", "la boucle tourne jusqu'au budget"]
+        code:
+          - titre: La boucle, réduite à ce qui la définit
+            langage: python
+            source: |
+              def executer(objectif, outils, etapes_max=8):
+                  historique = [{"role": "user", "content": objectif}]
+                  for tour in range(etapes_max):          # le plafond est du code, pas une consigne
+                      decision = modele.decider(historique, outils)
+                      if decision.terminee:
+                          return decision.reponse
+                      resultat = outils.appeler(decision.outil, decision.arguments)
+                      historique.append({"role": "tool", "content": resultat})
+                  raise PlafondAtteint(f"{etapes_max} étapes sans conclure")
         archive: socle-ia-agentique-v0.2.0.zip
         contenu: >-
           La boucle percevoir, raisonner, agir : le modèle lit le contexte, décide d'une action, observe son
@@ -101,6 +136,47 @@ blocs:
             explication: "Une petite erreur au début oriente toute la suite : d'où l'intérêt de vérifier les résultats intermédiaires."
       - num: "02"
         title: Tool calling et boucle d'agent
+        figures:
+          - nom: appel-outil.svg
+            legende: "Le cycle d'un appel d'outil : qui parle, dans quel ordre, et où se valide le contrat."
+        tableaux:
+          - titre: Anatomie d'un contrat d'outil
+            entetes: ["Élément", "Ce qu'il sert", "Ce qui arrive s'il est bâclé"]
+            lignes:
+              - ["Nom", "ce que le modèle cite pour l'appeler", "deux outils confondus"]
+              - ["Description", "quand l'utiliser, et quand non", "appelé à contretemps"]
+              - ["Schéma des paramètres", "types, bornes, valeurs permises", "arguments absurdes acceptés"]
+              - ["Valeur de retour", "ce que le modèle va relire", "le modèle invente la suite"]
+              - ["Erreurs prévues", "refus lisibles, pas d'exception", "la boucle s'arrête net"]
+        code:
+          - titre: Le contrat, déclaré avant le code
+            langage: json
+            source: |
+              {
+                "name": "chercher_factures",
+                "description": "Liste les factures impayées. N'inclut jamais les litiges.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "age_min_jours": {"type": "integer", "minimum": 0, "maximum": 3650},
+                    "montant_min": {"type": "number", "minimum": 0}
+                  },
+                  "required": ["age_min_jours"],
+                  "additionalProperties": false
+                }
+              }
+          - titre: Le refus porté par le contrat, et l'erreur rendue au modèle
+            langage: python
+            source: |
+              def appeler(nom, arguments):
+                  if nom not in OUTILS_AUTORISES:            # liste blanche, pas liste noire
+                      journal.alerte("outil hors liste", outil=nom)
+                      return "Erreur : outil inconnu."
+                  try:
+                      valides = CONTRATS[nom].model_validate(arguments)
+                  except ValidationError as e:
+                      return f"Erreur d'arguments : {e.errors()[0]['msg']}"
+                  return OUTILS_AUTORISES[nom](valides)
         contenu: >-
           Décrire un outil par un nom, une description et un schéma JSON de ses paramètres. Le cycle d'un appel :
           le modèle demande l'outil avec ses arguments, le code l'exécute, le résultat est renvoyé au modèle, qui
@@ -154,6 +230,36 @@ blocs:
             explication: "Une réponse sans appel d'outil marque la fin ; la borne protège contre les boucles infinies."
       - num: "03"
         title: Patterns d'orchestration
+        figures:
+          - nom: patterns-orchestration.svg
+            legende: "Chaînage, routage, parallélisation, réflexion : le pattern suit la dépendance entre étapes."
+        tableaux:
+          - titre: Choisir le pattern sur un signe, pas sur une préférence
+            entetes: ["Pattern", "Le signe dans le besoin", "Ce qu'il coûte", "Le piège"]
+            lignes:
+              - ["Chaînage", "chaque étape consomme la précédente", "latence cumulée", "une étape fausse pollue la suite"]
+              - ["Routage", "les cas se traitent différemment", "un appel de classement", "une classe oubliée tombe nulle part"]
+              - ["Parallélisation", "les lots sont indépendants", "appels simultanés", "la fusion masque un lot en échec"]
+              - ["Réflexion", "le premier jet est souvent perfectible", "une passe de plus par tour", "boucle sans borne de progrès"]
+          - titre: Quand ne pas prendre d'agent du tout
+            entetes: ["Situation", "Réponse honnête"]
+            lignes:
+              - ["Les étapes sont connues et ne varient jamais", "un workflow, plus rapide et testable"]
+              - ["Une seule recherche puis une réponse", "un RAG"]
+              - ["Décision à fort enjeu, sans relecture humaine", "ni agent ni automatisation"]
+        code:
+          - titre: Routage avec une classe par défaut, pour que rien ne tombe nulle part
+            langage: python
+            source: |
+              ROUTES = {"litige": traiter_litige, "relance": preparer_relance}
+
+              def router(dossier):
+                  classe = modele.classer(dossier, classes=sorted(ROUTES))
+                  traitement = ROUTES.get(classe)
+                  if traitement is None:                 # classe inventée ou inconnue
+                      journal.alerte("classe hors routes", classe=classe)
+                      return escalader_vers_humain(dossier)
+                  return traitement(dossier)
         contenu: >-
           Les patterns de base : chaînage (une étape nourrit la suivante), routage (une classification oriente
           vers le bon traitement), parallélisation (sous-tâches simultanées puis agrégation),
@@ -206,6 +312,30 @@ blocs:
             explication: "Un framework ajoute des abstractions ; pour un enchaînement simple, le code direct reste plus lisible et plus facile à déboguer."
       - num: "04"
         title: État, mémoire et reprise sur erreur
+        figures:
+          - nom: etat-reprise.svg
+            legende: "L'état écrit avant d'être annoncé : une reprise mène à l'état déjà atteint, sans doublon."
+        tableaux:
+          - titre: Ce qui se persiste, ce qui se recalcule
+            entetes: ["Donnée", "Persistée", "Pourquoi"]
+            lignes:
+              - ["Décisions prises et outils appelés", "oui", "la reprise doit savoir où elle en était"]
+              - ["Clés d'idempotence des actions", "oui", "sans elles, une reprise double l'action"]
+              - ["Approbations humaines", "oui", "on ne redemande pas un accord déjà donné"]
+              - ["Contexte complet du modèle", "non", "il se reconstruit, et il grossit sans fin"]
+              - ["Résultats d'outils de lecture", "non", "les relire coûte moins que les garder justes"]
+        code:
+          - titre: Une clé d'idempotence rend l'enregistrement rejouable sans risque
+            langage: python
+            source: |
+              def enregistrer(action, cle):
+                  deja = etat.lire(cle)
+                  if deja is not None:            # rejeu : on rend le résultat d'origine
+                      return deja
+                  etat.ecrire(cle, statut="en_cours")     # écrit AVANT d'agir
+                  resultat = action()
+                  etat.ecrire(cle, statut="fait", resultat=resultat)
+                  return resultat
         contenu: >-
           Décrire l'état de l'agent par un type explicite (factures retenues, exposition calculée, brouillons
           produits, demandes de validation en attente, relances déjà enregistrées) plutôt que par un historique de
@@ -260,6 +390,29 @@ blocs:
             explication: "L'exécution s'interrompt, l'état est sauvegardé, et elle reprend après accord : c'est l'un des usages des checkpoints."
       - num: "05"
         title: MCP et interopérabilité
+        figures:
+          - nom: chaine-mcp.svg
+            legende: "MCP déplace le contrat d'outil vers un serveur que l'agent interroge."
+        tableaux:
+          - titre: Outil écrit dans l'agent, ou serveur MCP
+            entetes: ["Critère", "Outil local", "Serveur MCP"]
+            lignes:
+              - ["Qui détient le contrat", "votre code", "le serveur"]
+              - ["Réutilisation par un autre agent", "copier-coller", "connexion"]
+              - ["Mise à jour de l'outil", "redéployer l'agent", "redéployer le serveur"]
+              - ["Surface d'attaque", "votre processus", "un processus de plus à cadrer"]
+              - ["À préférer", "un outil, un usage", "plusieurs agents, mêmes outils"]
+        code:
+          - titre: Déclarer un outil côté serveur, le contrat voyage avec lui
+            langage: python
+            source: |
+              @serveur.outil(
+                  description="Liste les factures impayées. N'inclut jamais les litiges.",
+              )
+              def chercher_factures(age_min_jours: int, montant_min: float = 0) -> list[dict]:
+                  if age_min_jours < 0:
+                      raise ValeurRefusee("age_min_jours doit être positif")
+                  return depot.impayees(age_min_jours, montant_min)
         contenu: >-
           Le Model Context Protocol (MCP), protocole ouvert fondé sur JSON-RPC : un hôte (application d'IA)
           ouvre un client par serveur ; le serveur MCP expose des outils (fonctions que le modèle peut appeler),
@@ -317,6 +470,28 @@ blocs:
             explication: "Un agent peut utiliser MCP pour ses outils et A2A pour déléguer une tâche à un autre agent, éventuellement d'un autre éditeur."
       - num: "06"
         title: Architectures multi-agents et A2A
+        figures:
+          - nom: topologies-multi-agents.svg
+            legende: "Superviseur, chaîne, pairs : trois assemblages, trois coûts."
+        tableaux:
+          - titre: Choisir la topologie
+            entetes: ["Topologie", "À préférer quand", "Ce qu'elle coûte", "Signe qu'elle est de trop"]
+            lignes:
+              - ["Agent seul", "la tâche tient en un rôle", "rien", "il tient déjà, et vous hésitez"]
+              - ["Superviseur", "des rôles nets et un arbitre", "un tour de décision de plus", "le superviseur ne fait que relayer"]
+              - ["Chaîne", "l'ordre est connu d'avance", "rigidité", "un workflow suffirait"]
+              - ["Pairs", "négociation réelle entre rôles", "traces difficiles à suivre", "personne ne sait qui a décidé"]
+        code:
+          - titre: Le superviseur passe un contrat, pas une conversation
+            langage: python
+            source: |
+              def superviser(portefeuille):
+                  lots = segmenter(portefeuille)
+                  rapports = [analyste.traiter({"lot": lot, "attendu": "exposition et motif"})
+                              for lot in lots]
+                  if any(r.statut != "ok" for r in rapports):   # un lot en échec ne se fond pas
+                      return escalader_vers_humain(rapports)
+                  return redacteur.produire(rapports)
         contenu: >-
           Les topologies multi-agents : superviseur (un agent coordinateur répartit le travail), hiérarchie
           (superviseurs de superviseurs), réseau (chaque agent peut s'adresser aux autres) et transfert entre
@@ -369,6 +544,35 @@ blocs:
             explication: "L'agent qui reçoit la main poursuit la conversation ou la tâche dans son domaine de compétence."
       - num: "07"
         title: Sécurité, évaluation et observabilité
+        figures:
+          - nom: cout-par-etapes.svg
+            legende: "Le coût et la latence suivent le nombre d'étapes ; la qualité, elle, plafonne."
+        tableaux:
+          - titre: Injection indirecte, et les trois défenses qui tiennent
+            entetes: ["Défense", "Ce qu'elle empêche", "Où elle vit"]
+            lignes:
+              - ["La donnée ne rentre jamais dans la consigne", "qu'une note devienne un ordre", "construction du prompt"]
+              - ["Les règles métier sont du code", "qu'un texte annule une règle", "fonctions de filtrage"]
+              - ["Liste blanche d'outils, et journal", "une action hors périmètre", "point d'appel des outils"]
+          - titre: Ce qu'une trace doit porter, et ce qu'elle ne doit jamais porter
+            entetes: ["À écrire", "À ne jamais écrire"]
+            lignes:
+              - ["étape, outil appelé, durée", "secrets, jetons, clés"]
+              - ["arguments, après filtrage", "données personnelles en clair"]
+              - ["résultat résumé et statut", "le contenu intégral d'un document privé"]
+              - ["décision humaine et son auteur", "la justification écrite par un tiers sans son accord"]
+        code:
+          - titre: Une trace structurée se relit par une machine comme par un humain
+            langage: python
+            source: |
+              journal.evenement(
+                  etape=tour,
+                  outil=decision.outil,
+                  arguments=filtrer(decision.arguments),   # jamais les valeurs brutes
+                  statut=resultat.statut,
+                  duree_ms=chrono.ecoule(),
+                  validation_humaine=approbation.auteur if approbation else None,
+              )
         contenu: >-
           L'injection de prompt directe (l'utilisateur tente de détourner les consignes) et indirecte (les
           instructions malveillantes arrivent dans un document, une page web ou un résultat d'outil lu par

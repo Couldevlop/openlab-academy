@@ -216,6 +216,50 @@ def cout_par_etapes() -> Dessin:
     return d
 
 
+def patterns_orchestration() -> Dessin:
+    """Séance 3 : quatre façons d'enchaîner des étapes, et le signe qui désigne la bonne."""
+    d = Dessin(780, 372, "Quatre patterns d'orchestration")
+    def bloc(x, y, libelle, teinte="s1", l=96, h=32):
+        d.boite(x, y, l, h, teinte=teinte)
+        d.texte(x + l / 2, y + 21, libelle, taille=11)
+
+    d.texte(190, 44, "Chaînage", taille=14, gras=True)
+    for i, nom in enumerate(("extraire", "calculer", "rédiger")):
+        bloc(30 + i * 128, 64, nom, "s3")
+        if i:
+            d.fleche(14 + i * 128, 80, 26 + i * 128, 80, teinte="s3")
+    d.texte(190, 124, "chaque étape consomme la précédente", taille=11, couleur="encre2")
+
+    d.texte(590, 44, "Routage", taille=14, gras=True)
+    bloc(434, 64, "classer", "s2")
+    for i, nom in enumerate(("litige", "relance")):
+        bloc(620, 48 + i * 44, nom, "s2")
+        d.fleche(534, 80, 614, 64 + i * 44, teinte="s2")
+    d.texte(590, 150, "un seul chemin est emprunté", taille=11, couleur="encre2")
+
+    d.texte(190, 196, "Parallélisation", taille=14, gras=True)
+    bloc(30, 216, "segmenter", "s1")
+    for i, nom in enumerate(("lot A", "lot B")):
+        bloc(158, 200 + i * 44, nom, "s1")
+        d.fleche(130, 232, 152, 216 + i * 44, teinte="s1")
+    bloc(286, 216, "fusionner", "s1")
+    for i in range(2):
+        d.fleche(256, 216 + i * 44, 280, 232, teinte="s1")
+    d.texte(205, 304, "les lots ne se parlent pas", taille=11, couleur="encre2")
+
+    d.texte(590, 196, "Réflexion", taille=14, gras=True)
+    bloc(470, 216, "produire", "s2")
+    bloc(626, 216, "critiquer", "s2")
+    d.fleche(568, 226, 620, 226, teinte="s2")
+    d.ajouter('<path d="M 674 248 q 0 40 -78 40 q -78 0 -78 -40" fill="none" stroke="var(--s2)"'
+              ' stroke-width="2" marker-end="url(#pointe-s2)"/>')
+    d.texte(590, 304, "une passe de plus, bornée", taille=11, couleur="encre2")
+
+    d.texte(390, 352, "Le pattern se choisit sur la dépendance entre les étapes, pas sur la mode du moment.",
+            taille=12, gras=True, couleur="encre2")
+    return d
+
+
 def _couper(texte: str, largeur: int) -> list[str]:
     lignes, courante = [], ""
     for mot in texte.split():
@@ -237,6 +281,7 @@ FIGURES = {
     "etat-reprise.svg": etat_reprise,
     "chaine-mcp.svg": chaine_mcp,
     "topologies-multi-agents.svg": topologies_multi_agents,
+    "patterns-orchestration.svg": patterns_orchestration,
     "echelle-risque.svg": echelle_risque,
     "cout-par-etapes.svg": cout_par_etapes,
 }

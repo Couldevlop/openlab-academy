@@ -1,5 +1,6 @@
 """Adaptateur de sortie : implémente le port DepotCatalogue sur les doctypes Frappe LMS."""
 import contextlib
+import dataclasses
 import html
 
 import frappe
@@ -187,21 +188,25 @@ class DepotFrappe:
                               TypeExercice.LIVRABLE, grille=m.grille_livrable, chaine=m.correction_livrable)
         evaluations = [{"assessment_type": "LMS Assignment", "assessment_name": devoir}]
         titre = f"{m.num} · {m.title}"
-        lecon = self._nouvelle_lecon(cours_id, chapitre, titre, editorjs.lecon_module(m, devoir, heures),
+        # un média ne se joint qu'à une leçon existante : la première passe écrit le contenu sans les médias,
+        # la seconde le réécrit une fois les adresses connues
+        sans_media = dataclasses.replace(m, figures=())
+        lecon = self._nouvelle_lecon(cours_id, chapitre, titre,
+                                     editorjs.lecon_module(sans_media, devoir, heures),
                                      evaluations, videos.get(titre, ""))
-        # l'archive ne peut être jointe qu'à une leçon existante : le contenu qui la cite est écrit ensuite
         url = ressources_frappe.joindre(lecon.name, m.archive) if m.archive else None
+        figures = {f.nom: ressources_frappe.joindre(lecon.name, f.nom) for f in m.figures}
         if m.quiz:
             quiz = self._quiz(cours_id, lecon.name, m)
             cas = self._devoir(cours_id, f"Mise en situation {m.num} — {m.title}", editorjs.consigne_cas(m),
                                TypeExercice.MISE_EN_SITUATION, grille=m.grille_cas, chaine=m.correction_cas,
                                type_="Text")
-            lecon.content = editorjs.lecon_module(m, devoir, heures, quiz, cas, self._reglages, url)
+            lecon.content = editorjs.lecon_module(m, devoir, heures, quiz, cas, self._reglages, url, figures)
             lecon.set("assessments", evaluations + [{"assessment_type": "LMS Quiz", "assessment_name": quiz},
                                                     {"assessment_type": "LMS Assignment", "assessment_name": cas}])
             lecon.save(ignore_permissions=True)
-        elif url:
-            lecon.content = editorjs.lecon_module(m, devoir, heures, archive_url=url)
+        elif url or figures:
+            lecon.content = editorjs.lecon_module(m, devoir, heures, archive_url=url, figures_urls=figures)
             lecon.save(ignore_permissions=True)
         return lecon.name
 
