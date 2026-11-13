@@ -13,6 +13,7 @@ MODULES = [
     ("04", "Anatomie d'un agent IA"),
     ("05", "Tool calling et boucle d'agent"),
     ("06", "L'orchestrateur sans framework"),
+    ("07", "Brancher un vrai modèle sur votre boucle"),
     ("08", "État, mémoire et reprise sur erreur"),
     ("12", "MCP et interopérabilité"),
     ("13", "Architectures multi-agents et A2A"),

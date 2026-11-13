@@ -1799,6 +1799,667 @@ blocs:
             options: ["Quand l'agent utilise des outils", "Quand une ou deux étapes fixes suffisent et que quelques lignes de code les enchaînent", "Quand l'agent doit être testé", "Quand on veut tracer les exécutions"]
             bonnes: [2]
             explication: "Un framework ajoute des abstractions ; pour un enchaînement simple, le code direct reste plus lisible et plus facile à déboguer."
+      - num: "07"
+        title: Brancher un vrai modèle sur votre boucle
+        contenu: >-
+          Jusqu'ici la boucle décide par du code simulé. Cette séance remplace ce simulacre par un vrai
+          modèle, en écrivant ensemble chaque ligne : la configuration et les secrets, un adaptateur de
+          modèle isolé derrière une interface, l'appel d'outil natif, le décodage des arguments, le
+          traitement des pannes réseau, le comptage des jetons et du coût, puis la bascule vers un modèle
+          local. À la fin, la même boucle fonctionne avec un fournisseur distant ou avec Ollama, sans
+          qu'une ligne du domaine ne change.
+        cours:
+          - titre: Ce que nous allons écrire, et dans quel ordre
+            texte: >-
+              Nous allons créer quatre fichiers et modifier un seul. Le premier, config.py, lit les
+              réglages dans l'environnement et refuse de démarrer si un secret manque. Le deuxième,
+              modele.py, définit l'interface que le reste du code connaît : une méthode decider qui reçoit
+              un historique et des outils, et renvoie une décision. Le troisième, modele_distant.py,
+              implémente cette interface avec un fournisseur. Le quatrième, modele_local.py, l'implémente
+              avec Ollama. Enfin, boucle.py remplace son décideur simulé par l'interface.
+
+              Cet ordre n'est pas arbitraire. En écrivant l'interface avant les implémentations, vous vous
+              interdisez de laisser fuir le vocabulaire d'un fournisseur dans votre code. Si demain vous
+              changez de modèle, vous écrivez un fichier de plus et vous ne touchez à rien d'autre. C'est
+              la règle des ports et adaptateurs, appliquée à l'endroit où elle rapporte le plus.
+
+              Prenez votre dépôt tel qu'il est à la fin de la séance 6, et placez vous à sa racine. Chaque
+              extrait de cette séance est complet : vous pouvez le recopier tel quel, dans le fichier
+              indiqué, et il fonctionne.
+            tableaux:
+              - titre: Les fichiers de la séance, et le rôle de chacun
+                entetes: [Fichier, Rôle, Ce qu'il ne fait jamais]
+                lignes:
+                  - [recouvrement/config.py, Lire les réglages et les secrets, Contenir une clé en dur]
+                  - [recouvrement/modele.py, Déclarer l'interface et les types échangés, Importer un client de fournisseur]
+                  - [recouvrement/modele_distant.py, Parler à l'interface du fournisseur, Décider d'une règle métier]
+                  - [recouvrement/modele_local.py, Parler à un moteur local, Différer du distant côté interface]
+                  - [recouvrement/boucle.py, "Enchaîner décision, action, observation", Connaître le fournisseur utilisé]
+          - titre: Étape 1, la configuration et les secrets
+            texte: >-
+              Une clé d'interface est un secret. Elle ne figure jamais dans le code, jamais dans un dépôt,
+              jamais dans une capture d'écran de démonstration. Elle vit dans une variable d'environnement,
+              lue au démarrage, et le programme refuse de démarrer si elle manque. Ce refus immédiat vaut
+              mieux qu'une erreur obscure au bout de trois minutes d'exécution.
+
+              Créez un fichier .env.example dans le dépôt, qui montre les noms sans les valeurs, et ajoutez
+              .env au fichier .gitignore. Le fichier d'exemple est suivi par Git, le fichier réel ne l'est
+              jamais. Si vous avez publié une clé par accident, considérez la comme perdue et révoquez la
+              immédiatement chez le fournisseur : la retirer d'un commit ne la retire pas de l'historique.
+
+              Voici le fichier de configuration complet. Lisez le ligne à ligne : la fonction exiger lève
+              une erreur claire quand une variable manque, les valeurs numériques sont converties et
+              bornées, et l'objet Reglages est figé pour que personne ne le modifie en cours d'exécution.
+            code:
+              - titre: recouvrement/config.py, le fichier complet
+                langage: python
+                source: |
+                  """Reglages lus dans l'environnement. Aucun secret n'est ecrit dans le code."""
+                  import os
+                  from dataclasses import dataclass
+
+
+                  class ConfigurationManquante(RuntimeError):
+                      """Un reglage obligatoire est absent : on s'arrete tout de suite, pas en plein vol."""
+
+
+                  def exiger(nom: str) -> str:
+                      valeur = os.environ.get(nom, "").strip()
+                      if not valeur:
+                          raise ConfigurationManquante(
+                              f"variable {nom} absente : copiez .env.example vers .env et remplissez-la")
+                      return valeur
+
+
+                  def entier(nom: str, defaut: int, minimum: int, maximum: int) -> int:
+                      brut = os.environ.get(nom, "").strip()
+                      if not brut:
+                          return defaut
+                      try:
+                          valeur = int(brut)
+                      except ValueError:
+                          raise ConfigurationManquante(f"{nom} doit etre un entier, recu {brut!r}") from None
+                      if not minimum <= valeur <= maximum:
+                          raise ConfigurationManquante(f"{nom} doit etre entre {minimum} et {maximum}")
+                      return valeur
+
+
+                  @dataclass(frozen=True)
+                  class Reglages:
+                      modele: str
+                      cle: str
+                      adresse: str | None       # None = service par defaut du fournisseur
+                      tours_max: int
+                      jetons_max: int
+                      budget_jetons: int        # plafond pour une execution complete
+
+                      @classmethod
+                      def depuis_environnement(cls) -> "Reglages":
+                          return cls(
+                              modele=os.environ.get("MODELE", "gpt-4o-mini"),
+                              cle=exiger("CLE_MODELE"),
+                              adresse=os.environ.get("ADRESSE_MODELE") or None,
+                              tours_max=entier("TOURS_MAX", 8, 1, 30),
+                              jetons_max=entier("JETONS_MAX", 600, 50, 4000),
+                              budget_jetons=entier("BUDGET_JETONS", 60_000, 1_000, 2_000_000),
+                          )
+              - titre: .env.example, suivi par Git, et .gitignore
+                langage: bash
+                source: |
+                  # .env.example : les noms, jamais les valeurs
+                  CLE_MODELE=remplacez-moi
+                  MODELE=gpt-4o-mini
+                  # ADRESSE_MODELE=http://localhost:11434/v1   # decommentez pour un modele local
+                  TOURS_MAX=8
+                  JETONS_MAX=600
+                  BUDGET_JETONS=60000
+
+                  # .gitignore : la ligne qui evite la fuite
+                  .env
+          - titre: Étape 2, l'interface que votre code connaîtra
+            texte: >-
+              Nous décidons maintenant du vocabulaire que votre boucle emploie. Elle ne connaîtra ni
+              messages, ni rôles, ni objets propres à un fournisseur : elle enverra un historique et une
+              liste d'outils, et recevra une décision. Une décision est soit un appel d'outil, soit une
+              conclusion.
+
+              Deux classes figées suffisent. AppelOutil porte le nom de l'outil et ses arguments déjà
+              décodés. Conclusion porte le texte final. Un type Décision est l'union des deux, ce qui
+              permet au code appelant de traiter les deux cas sans deviner.
+
+              Remarquez l'usage de Protocol : il décrit ce qu'un modèle doit savoir faire sans imposer
+              d'héritage. Vos implémentations n'ont rien à déclarer, il leur suffit d'avoir la bonne
+              méthode. C'est la façon la plus légère d'obtenir une frontière en Python.
+            code:
+              - titre: recouvrement/modele.py, le fichier complet
+                langage: python
+                source: |
+                  """Le contrat entre la boucle et n'importe quel modele. Aucun import de fournisseur ici."""
+                  from dataclasses import dataclass
+                  from typing import Any, Protocol
+
+
+                  @dataclass(frozen=True)
+                  class AppelOutil:
+                      nom: str
+                      arguments: dict[str, Any]
+
+
+                  @dataclass(frozen=True)
+                  class Conclusion:
+                      texte: str
+
+
+                  Decision = AppelOutil | Conclusion
+
+
+                  @dataclass(frozen=True)
+                  class Usage:
+                      """Ce qu'un appel a coute : indispensable pour le budget et pour la trace."""
+                      jetons_entree: int
+                      jetons_sortie: int
+
+                      @property
+                      def total(self) -> int:
+                          return self.jetons_entree + self.jetons_sortie
+
+
+                  @dataclass(frozen=True)
+                  class Reponse:
+                      decision: Decision
+                      usage: Usage
+
+
+                  class Modele(Protocol):
+                      """Tout objet qui sait decider est un modele, quel que soit son fournisseur."""
+
+                      def decider(self, historique: list[dict[str, Any]],
+                                  outils: list[dict[str, Any]]) -> Reponse:
+                          ...
+
+
+                  class ModeleIndisponible(RuntimeError):
+                      """Panne du cote du modele : reseau, quota, service. Distincte d'une erreur d'outil."""
+          - titre: Étape 3, l'adaptateur distant, écrit en entier
+            texte: >-
+              Nous implémentons maintenant l'interface avec un fournisseur. Le client employé ici suit la
+              convention la plus répandue, celle que beaucoup de services et tous les moteurs locaux
+              savent imiter : c'est ce qui rendra la bascule indolore.
+
+              Trois points méritent votre attention. Le premier est la conversion : le fournisseur renvoie
+              ses propres objets, et notre travail consiste à les traduire en AppelOutil ou Conclusion,
+              immédiatement, pour que rien de son vocabulaire ne circule plus loin. Le deuxième est le
+              décodage des arguments : ils arrivent en texte JSON, donc ils peuvent être mal formés, et
+              nous traitons ce cas comme une décision invalide plutôt que comme un plantage. Le troisième
+              est la gestion des pannes : un dépassement de délai, une coupure réseau ou un quota atteint
+              deviennent une exception nommée, que la boucle saura distinguer d'une erreur d'outil.
+
+              Nous ajoutons aussi une relance unique avec attente croissante. Une seule, car relancer en
+              boucle une requête qui coûte de l'argent est la meilleure façon de transformer une panne en
+              facture.
+            code:
+              - titre: recouvrement/modele_distant.py, le fichier complet
+                langage: python
+                source: |
+                  """Adaptateur pour un fournisseur distant. Le seul fichier qui connait son interface."""
+                  import json
+                  import random
+                  import time
+                  from typing import Any
+
+                  from openai import OpenAI, APIError, APITimeoutError, RateLimitError
+
+                  from recouvrement.config import Reglages
+                  from recouvrement.modele import (AppelOutil, Conclusion, ModeleIndisponible,
+                                                   Reponse, Usage)
+
+
+                  class ModeleDistant:
+                      def __init__(self, reglages: Reglages) -> None:
+                          self._reglages = reglages
+                          self._client = OpenAI(api_key=reglages.cle, base_url=reglages.adresse,
+                                                timeout=30.0, max_retries=0)   # nos relances, pas les siennes
+
+                      def decider(self, historique: list[dict[str, Any]],
+                                  outils: list[dict[str, Any]]) -> Reponse:
+                          brut = self._appeler_avec_une_relance(historique, outils)
+                          message = brut.choices[0].message
+                          usage = Usage(jetons_entree=brut.usage.prompt_tokens,
+                                        jetons_sortie=brut.usage.completion_tokens)
+                          if not message.tool_calls:
+                              return Reponse(Conclusion(message.content or ""), usage)
+                          appel = message.tool_calls[0]
+                          try:
+                              arguments = json.loads(appel.function.arguments or "{}")
+                          except json.JSONDecodeError:
+                              # le modele a produit des arguments illisibles : c'est une decision invalide,
+                              # pas une panne ; la boucle la traitera comme un refus d'outil.
+                              arguments = {"__illisible__": appel.function.arguments}
+                          return Reponse(AppelOutil(appel.function.name, arguments), usage)
+
+                      def _appeler_avec_une_relance(self, historique, outils):
+                          for tentative in (0, 1):
+                              try:
+                                  return self._client.chat.completions.create(
+                                      model=self._reglages.modele,
+                                      messages=historique,
+                                      tools=outils,
+                                      tool_choice="auto",
+                                      temperature=0,
+                                      max_tokens=self._reglages.jetons_max,
+                                  )
+                              except (APITimeoutError, RateLimitError) as erreur:
+                                  if tentative == 1:
+                                      raise ModeleIndisponible(f"modele injoignable : {erreur!r}") from erreur
+                                  time.sleep(1.5 + random.random())   # une seule attente, legerement aleatoire
+                              except APIError as erreur:
+                                  raise ModeleIndisponible(f"erreur du fournisseur : {erreur!r}") from erreur
+          - titre: Étape 4, décrire vos outils dans le format attendu
+            texte: >-
+              Votre dépôt possède déjà cinq outils et leurs schémas, écrits en séance 3. Il reste à les
+              présenter au modèle dans le format que l'interface attend. Écrivons une fonction unique qui
+              fait cette traduction, à partir de votre propre déclaration : ainsi, ajouter un outil reste
+              un geste, et la liste blanche reste la seule source de vérité.
+
+              Notez le détail qui compte : nous construisons la liste à partir du registre des outils
+              autorisés, pas d'une liste écrite à la main à côté. Deux listes finissent toujours par
+              diverger, et le jour où elles divergent, un outil se retrouve décrit au modèle sans être
+              autorisé, ou l'inverse.
+            code:
+              - titre: recouvrement/outils_schema.py, le fichier complet
+                langage: python
+                source: |
+                  """Traduit la liste blanche en descriptions d'outils pour le modele."""
+                  import json
+                  import pathlib
+                  from typing import Any
+
+                  CONTRATS = pathlib.Path("contracts/contrats_outils.json")
+
+
+                  def charger_contrats() -> list[dict[str, Any]]:
+                      donnees = json.loads(CONTRATS.read_text(encoding="utf-8"))
+                      return donnees["tools"]
+
+
+                  def pour_le_modele(noms_autorises: set[str]) -> list[dict[str, Any]]:
+                      """Un outil non autorise n'est pas decrit : le modele ne peut pas demander
+                      ce qu'il ne voit pas, et le point d'appel refuse de toute facon."""
+                      decrits = []
+                      for contrat in charger_contrats():
+                          if contrat["name"] not in noms_autorises:
+                              continue
+                          decrits.append({
+                              "type": "function",
+                              "function": {
+                                  "name": contrat["name"],
+                                  "description": contrat["description"],
+                                  "parameters": contrat["input_schema"],
+                              },
+                          })
+                      manquants = noms_autorises - {c["name"] for c in charger_contrats()}
+                      if manquants:
+                          raise RuntimeError(f"outils autorises sans contrat : {sorted(manquants)}")
+                      return decrits
+          - titre: Étape 5, la boucle qui utilise le vrai modèle
+            texte: >-
+              Nous y sommes. La boucle de la séance 6 appelait un décideur simulé ; elle appelle désormais
+              l'interface Modele. Son corps ne change presque pas, ce qui est le signe que les séances
+              précédentes avaient la bonne structure.
+
+              Lisez attentivement les cinq gardes de cette boucle, car elles sont la différence entre un
+              agent et un programme qui s'emballe. Le budget est vérifié avant l'appel, pas après. Le
+              plafond de tours est vérifié à chaque passage. Une panne de modèle arrête proprement, avec
+              un résultat partiel annoncé. Une erreur d'outil devient une observation que le modèle lira.
+              Et chaque tour écrit une ligne de trace, même en cas d'échec.
+
+              Observez aussi comment le résultat d'un outil rejoint l'historique : sous le rôle prévu pour
+              cela, avec l'identifiant de l'appel. Si vous renvoyez le résultat comme un message utilisateur
+              ordinaire, le modèle perd le lien avec sa propre demande et recommence souvent le même appel.
+            code:
+              - titre: recouvrement/boucle.py, le fichier complet
+                langage: python
+                source: |
+                  """La boucle : decider, agir, observer, s'arreter. Elle ignore quel modele l'anime."""
+                  import json
+                  import time
+                  from dataclasses import dataclass
+                  from typing import Any
+
+                  from recouvrement.modele import (AppelOutil, Conclusion, Modele, ModeleIndisponible)
+                  from recouvrement.outils import OUTILS_AUTORISES, executer_outil
+                  from recouvrement.outils_schema import pour_le_modele
+                  from recouvrement.trace import Trace
+
+
+                  @dataclass
+                  class Resultat:
+                      statut: str              # "termine", "plafond", "budget", "panne"
+                      texte: str
+                      tours: int
+                      jetons: int
+
+
+                  def executer(modele: Modele, demande: str, systeme: str, reglages, trace: Trace) -> Resultat:
+                      historique: list[dict[str, Any]] = [
+                          {"role": "system", "content": systeme},
+                          {"role": "user", "content": demande},
+                      ]
+                      outils = pour_le_modele(OUTILS_AUTORISES)
+                      jetons = 0
+
+                      for tour in range(1, reglages.tours_max + 1):
+                          if jetons >= reglages.budget_jetons:               # garde 1 : avant l'appel
+                              trace.ecrire(tour=tour, evenement="budget_atteint", jetons=jetons)
+                              return Resultat("budget", "Budget atteint avant la fin.", tour, jetons)
+
+                          debut = time.monotonic()
+                          try:
+                              reponse = modele.decider(historique, outils)   # garde 2 : la panne est nommee
+                          except ModeleIndisponible as erreur:
+                              trace.ecrire(tour=tour, evenement="modele_indisponible", motif=str(erreur))
+                              return Resultat("panne", "Modele indisponible, resultat partiel.", tour, jetons)
+
+                          jetons += reponse.usage.total
+                          duree = round((time.monotonic() - debut) * 1000)
+
+                          if isinstance(reponse.decision, Conclusion):
+                              trace.ecrire(tour=tour, evenement="conclusion", duree_ms=duree,
+                                           jetons=reponse.usage.total)
+                              return Resultat("termine", reponse.decision.texte, tour, jetons)
+
+                          appel: AppelOutil = reponse.decision
+                          resultat = executer_outil(appel.nom, appel.arguments)   # garde 3 : liste blanche
+                          trace.ecrire(tour=tour, evenement="appel_outil", outil=appel.nom,
+                                       arguments=appel.arguments, ok=resultat.get("ok"),
+                                       duree_ms=duree, jetons=reponse.usage.total)
+
+                          historique.append({"role": "assistant", "tool_calls": [{
+                              "id": f"appel-{tour}", "type": "function",
+                              "function": {"name": appel.nom,
+                                           "arguments": json.dumps(appel.arguments, ensure_ascii=False)}}]})
+                          historique.append({"role": "tool", "tool_call_id": f"appel-{tour}",
+                                             "content": json.dumps(resultat, ensure_ascii=False)})
+                          # garde 4 : une erreur d'outil est une observation, pas une exception
+
+                      trace.ecrire(tour=reglages.tours_max, evenement="plafond_atteint")  # garde 5
+                      return Resultat("plafond", "Plafond de tours atteint.", reglages.tours_max, jetons)
+          - titre: Étape 6, la trace, écrite une fois pour toutes
+            texte: >-
+              La boucle appelle une trace à chaque tour. Écrivons la maintenant, simplement, en fichier de
+              lignes JSON : un format que l'on lit à l'œil, que l'on filtre avec les outils du système et
+              que l'on charge en trois lignes pour en faire des mesures.
+
+              Un seul point est délicat, et il est de sécurité : la trace ne doit jamais contenir de
+              secret ni de note libre. Nous filtrons donc à l'écriture, par une liste de clés interdites,
+              plutôt que de compter sur la discipline de celui qui appelle. Un filtre à l'écriture protège
+              aussi le code que vous écrirez dans six mois.
+            code:
+              - titre: recouvrement/trace.py, le fichier complet
+                langage: python
+                source: |
+                  """Une ligne JSON par evenement. Ce qui ne doit jamais sortir est filtre ici."""
+                  import json
+                  import pathlib
+                  from datetime import datetime, timezone
+
+                  INTERDITS = {"cle", "api_key", "authorization", "note_non_fiable", "mot_de_passe"}
+
+
+                  def _filtrer(valeur):
+                      if isinstance(valeur, dict):
+                          return {c: ("[retire]" if c.lower() in INTERDITS else _filtrer(v))
+                                  for c, v in valeur.items()}
+                      if isinstance(valeur, list):
+                          return [_filtrer(v) for v in valeur]
+                      return valeur
+
+
+                  class Trace:
+                      def __init__(self, chemin: pathlib.Path) -> None:
+                          self.chemin = chemin
+                          self.chemin.parent.mkdir(parents=True, exist_ok=True)
+
+                      def ecrire(self, **champs) -> None:
+                          ligne = {"horodatage": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                                   **_filtrer(champs)}
+                          with self.chemin.open("a", encoding="utf-8") as fichier:
+                              fichier.write(json.dumps(ligne, ensure_ascii=False) + "\n")
+          - titre: Étape 7, l'adaptateur local, pour travailler sans budget
+            texte: >-
+              Un parcours ne doit pas dépendre d'un abonnement. Écrivons l'adaptateur local : il implémente
+              exactement la même interface, et comme le moteur local imite la convention du client que nous
+              utilisons déjà, le code est très court.
+
+              Deux différences méritent d'être connues. D'abord, les petits modèles locaux appellent les
+              outils moins fidèlement : attendez vous à davantage d'arguments approximatifs, ce qui rend
+              vos contrats de validation encore plus utiles. Ensuite, l'information d'usage peut manquer ;
+              nous estimons alors les jetons plutôt que de perdre le compte, en le signalant dans la trace.
+
+              Vérifiez enfin que les deux adaptateurs passent les mêmes tests. S'ils divergent, c'est votre
+              interface qui est mal définie, pas le modèle local qui est mauvais.
+            code:
+              - titre: recouvrement/modele_local.py, le fichier complet
+                langage: python
+                source: |
+                  """Adaptateur pour un moteur local (Ollama, llama.cpp). Meme interface, zero budget."""
+                  from typing import Any
+
+                  from recouvrement.config import Reglages
+                  from recouvrement.modele_distant import ModeleDistant
+                  from recouvrement.modele import Reponse, Usage
+
+
+                  class ModeleLocal(ModeleDistant):
+                      """Le moteur local imite la meme interface : seule l'adresse change, et l'usage
+                      peut manquer. On herite donc, et on ne redefinit que ce qui differe."""
+
+                      def __init__(self, reglages: Reglages) -> None:
+                          local = Reglages(
+                              modele=reglages.modele,
+                              cle="locale-sans-objet",                  # le moteur local n'en demande pas
+                              adresse=reglages.adresse or "http://localhost:11434/v1",
+                              tours_max=reglages.tours_max,
+                              jetons_max=reglages.jetons_max,
+                              budget_jetons=reglages.budget_jetons,
+                          )
+                          super().__init__(local)
+
+                      def decider(self, historique: list[dict[str, Any]],
+                                  outils: list[dict[str, Any]]) -> Reponse:
+                          reponse = super().decider(historique, outils)
+                          if reponse.usage.total == 0:                  # certains moteurs ne le renvoient pas
+                              estime = sum(len(str(m)) for m in historique) // 4
+                              return Reponse(reponse.decision, Usage(jetons_entree=estime, jetons_sortie=0))
+                          return reponse
+          - titre: Étape 8, tester sans dépenser un centime
+            texte: >-
+              Un agent dont les tests appellent un vrai modèle est un agent que personne ne testera : trop
+              lent, trop cher, trop instable. La solution tient en une classe de quelques lignes : un
+              modèle de rechange qui joue une suite de décisions écrites à l'avance.
+
+              Ce faux modèle vous donne des tests rapides et reproductibles pour tout ce qui compte : le
+              plafond de tours, le budget, la panne, l'erreur d'outil, la boucle qui répète le même appel.
+              Gardez une poignée de tests qui appellent le vrai modèle, marqués comme lents, et exécutés
+              seulement quand vous changez de modèle ou de prompt.
+            code:
+              - titre: tests/test_boucle.py, le fichier complet
+                langage: python
+                source: |
+                  """La boucle se teste sans reseau : le modele est remplace par une liste de decisions."""
+                  import pathlib
+
+                  from recouvrement.boucle import executer
+                  from recouvrement.config import Reglages
+                  from recouvrement.modele import AppelOutil, Conclusion, ModeleIndisponible, Reponse, Usage
+                  from recouvrement.trace import Trace
+
+
+                  class ModeleJoue:
+                      """Joue les decisions prevues, dans l'ordre ; leve si on lui en demande une de trop."""
+
+                      def __init__(self, decisions):
+                          self.decisions = list(decisions)
+                          self.appels = 0
+
+                      def decider(self, historique, outils):
+                          self.appels += 1
+                          if not self.decisions:
+                              raise AssertionError("la boucle a demande une decision de trop")
+                          decision = self.decisions.pop(0)
+                          if isinstance(decision, Exception):
+                              raise decision
+                          return Reponse(decision, Usage(jetons_entree=100, jetons_sortie=20))
+
+
+                  REGLAGES = Reglages(modele="test", cle="x", adresse=None, tours_max=3,
+                                      jetons_max=200, budget_jetons=10_000)
+
+
+                  def _trace(tmp_path):
+                      return Trace(pathlib.Path(tmp_path) / "trace.jsonl")
+
+
+                  def test_un_appel_puis_une_conclusion(tmp_path):
+                      modele = ModeleJoue([AppelOutil("lister_factures_impayees", {"age_min_jours": 30}),
+                                           Conclusion("cinq factures eligibles")])
+                      resultat = executer(modele, "prepare les relances", "systeme", REGLAGES, _trace(tmp_path))
+                      assert resultat.statut == "termine"
+                      assert resultat.tours == 2
+
+                  def test_le_plafond_de_tours_arrete_la_boucle(tmp_path):
+                      bouclant = [AppelOutil("lister_factures_impayees", {"age_min_jours": 30})] * 5
+                      resultat = executer(ModeleJoue(bouclant), "x", "s", REGLAGES, _trace(tmp_path))
+                      assert resultat.statut == "plafond"
+                      assert resultat.tours == REGLAGES.tours_max
+
+                  def test_une_panne_de_modele_arrete_proprement(tmp_path):
+                      modele = ModeleJoue([ModeleIndisponible("reseau coupe")])
+                      resultat = executer(modele, "x", "s", REGLAGES, _trace(tmp_path))
+                      assert resultat.statut == "panne"
+
+                  def test_le_budget_coupe_avant_le_plafond(tmp_path):
+                      serre = Reglages(modele="t", cle="x", adresse=None, tours_max=10,
+                                       jetons_max=200, budget_jetons=1_000)
+                      decisions = [AppelOutil("lister_factures_impayees", {"age_min_jours": 30})] * 10
+                      resultat = executer(ModeleJoue(decisions), "x", "s", serre, _trace(tmp_path))
+                      assert resultat.statut == "budget"
+          - titre: Étape 9, mesurer le coût réel d'une exécution
+            texte: >-
+              Vous avez estimé un coût en séance 2. Mesurons le. La trace contient déjà les jetons par
+              tour ; il suffit de les additionner et de les multiplier par le tarif du modèle, que vous
+              lisez chez le fournisseur et que vous écrivez dans un fichier, pas dans le code.
+
+              Faites tourner le scénario complet trois fois et comparez. La variation vous dira ce que
+              coûte réellement l'indéterminisme du modèle, et vous donnera la fourchette à annoncer. Notez
+              la date, le modèle et sa version : un coût sans ces trois informations ne veut rien dire
+              dans six mois.
+            code:
+              - titre: outils/cout.py, le script de mesure complet
+                langage: python
+                source: |
+                  """Additionne les jetons d'une trace et convertit en francs CFA."""
+                  import json
+                  import pathlib
+                  import sys
+
+                  # tarifs lus chez le fournisseur, en F CFA par million de jetons ; a dater et a verifier
+                  TARIFS = {"gpt-4o-mini": {"entree": 98_000, "sortie": 393_000}}
+
+
+                  def mesurer(trace: pathlib.Path, modele: str) -> dict:
+                      entree = sortie = tours = 0
+                      for ligne in trace.read_text(encoding="utf-8").splitlines():
+                          evenement = json.loads(ligne)
+                          entree += evenement.get("jetons_entree", 0)
+                          sortie += evenement.get("jetons_sortie", evenement.get("jetons", 0))
+                          tours += 1
+                      tarif = TARIFS.get(modele)
+                      if tarif is None:
+                          raise SystemExit(f"tarif inconnu pour {modele} : ajoutez-le et datez-le")
+                      cout = (entree * tarif["entree"] + sortie * tarif["sortie"]) / 1_000_000
+                      return {"tours": tours, "jetons_entree": entree, "jetons_sortie": sortie,
+                              "cout_fcfa": round(cout)}
+
+
+                  if __name__ == "__main__":
+                      print(json.dumps(mesurer(pathlib.Path(sys.argv[1]), sys.argv[2]), indent=2))
+          - titre: Erreurs fréquentes
+            texte: >-
+              Mettre la clé dans le code « juste pour essayer ». Elle finit dans un commit, puis dans une
+              capture d'écran, puis dans une facture.
+
+              Laisser le client du fournisseur relancer tout seul. Les relances automatiques transforment
+              une panne passagère en dépense silencieuse ; prenez la main avec une relance unique.
+
+              Renvoyer le résultat d'outil comme un message ordinaire. Le modèle perd le lien avec sa
+              demande et recommence le même appel.
+
+              Vérifier le budget après l'appel. Il est déjà dépensé.
+
+              Tester la boucle contre un vrai modèle. Les tests deviennent lents et instables, donc ils
+              sont désactivés, donc ils ne servent plus à rien.
+          - titre: Votre projet final cette semaine
+            texte: >-
+              À la fin de cette séance, votre dépôt doit exécuter le fil rouge de bout en bout avec un vrai
+              modèle, et produire les cinq brouillons attendus avant de demander la validation.
+
+              Vérifiez quatre choses avant de passer à la suite. La même commande fonctionne avec le
+              fournisseur distant et avec le modèle local, en changeant seulement deux variables
+              d'environnement. Les quatre tests de boucle passent sans réseau. La trace contient un
+              événement par tour, et aucune note libre. Et le coût mesuré est inscrit dans votre fichier
+              decisions.md, à côté de l'estimation de la séance 2, avec l'écart commenté en une ligne.
+        travaux_pratiques: >-
+          Travail guidé, environ 3 h. Écrivez les sept fichiers de la séance dans l'ordre donné, en
+          exécutant les tests après chacun. Commencez par la configuration et vérifiez qu'une variable
+          absente arrête le programme avec un message compréhensible.
+
+          Branchez ensuite le fournisseur distant et faites tourner le scénario complet. Lisez votre trace
+          ligne par ligne et vérifiez que chaque tour y figure avec son outil, ses arguments et sa durée.
+
+          Basculez sur le modèle local en changeant les deux variables d'environnement, rejouez le même
+          scénario et comparez : nombre de tours, qualité des arguments, durée. Notez les différences.
+
+          Terminez par la mesure de coût sur trois exécutions, et l'inscription du résultat dans
+          decisions.md.
+
+          Défi : faites échouer volontairement le modèle, en coupant le réseau en plein scénario, et
+          vérifiez que votre agent s'arrête proprement, annonce un résultat partiel et laisse une trace
+          exploitable.
+
+          Indices : pour le modèle local, un modèle de sept à huit milliards de paramètres suffit si vos
+          descriptions d'outils sont précises ; si les arguments arrivent souvent invalides, c'est la
+          description qu'il faut corriger avant le modèle.
+        livrable: >-
+          Étape 7 : dépôt exécutant le fil rouge avec un vrai modèle, bascule distant et local par variables
+          d'environnement, quatre tests de boucle verts sans réseau, trace complète et coût mesuré sur trois
+          exécutions.
+        mise_en_situation: >-
+          Votre agent a tourné toute une nuit à cause d'une boucle qui rappelait le même outil, et la facture
+          du lendemain est salée. En vous appuyant sur le code écrit cette semaine, indiquez les trois gardes
+          qui auraient dû l'arrêter, dites laquelle manquait, et proposez la mesure que vous mettriez en place
+          pour être prévenu avant la fin de la nuit.
+        quiz:
+          - question: "Pourquoi déclarer une interface Modele avant d'écrire l'adaptateur du fournisseur ?"
+            options: ["Pour accélérer les appels réseau", "Pour empêcher le vocabulaire d'un fournisseur de se répandre dans le code et pouvoir en changer sans toucher au reste", "Parce que Python l'exige", "Pour réduire le nombre de jetons consommés"]
+            bonnes: [2]
+            explication: "Changer de modèle doit se traduire par un fichier de plus, pas par une refonte : c'est la règle des ports et adaptateurs."
+          - question: "Où le budget de jetons doit il être vérifié ?"
+            options: ["Après l'appel, pour connaître le coût réel", "Avant l'appel, sinon la dépense est déjà faite", "Une fois par jour", "Dans le prompt système"]
+            bonnes: [2]
+            explication: "Vérifié après, le plafond ne sert qu'à constater ; vérifié avant, il empêche la dépense."
+          - question: "Que faire quand le modèle renvoie des arguments JSON illisibles ?"
+            options: ["Arrêter le programme", "Les traiter comme une décision invalide, renvoyée au modèle comme un refus d'outil", "Les corriger automatiquement en devinant", "Relancer l'appel en boucle"]
+            bonnes: [2]
+            explication: "C'est une décision invalide, pas une panne : la boucle continue et le modèle corrige au tour suivant."
+          - question: "Comment tester la boucle sans dépenser ni dépendre du réseau ?"
+            options: ["En baissant la température à zéro", "En remplaçant le modèle par un objet qui joue une suite de décisions écrites à l'avance", "En réduisant le nombre de jetons maximaux", "En utilisant un modèle local pour tous les tests"]
+            bonnes: [2]
+            explication: "Un modèle joué rend les tests rapides et reproductibles ; quelques tests lents suffisent pour le vrai modèle."
+          - question: "Pourquoi renvoyer le résultat d'un outil avec le rôle prévu et l'identifiant de l'appel ?"
+            options: ["Pour réduire la facture", "Pour que le modèle relie le résultat à sa propre demande et ne recommence pas le même appel", "Parce que le format JSON l'impose", "Pour chiffrer les données"]
+            bonnes: [2]
+            explication: "Sans ce lien, le modèle perd le fil de sa demande et répète souvent l'appel, ce qui gonfle les tours et le coût."
       - num: "08"
         title: État, mémoire et reprise sur erreur
         cours:
