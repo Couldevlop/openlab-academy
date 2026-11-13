@@ -79,3 +79,13 @@ jobs:
           echo "PR #$numero"
           # la PR porte le commit que la CI vient de valider : fusion sans écraser l'historique
           gh pr merge "$numero" --merge
+
+  # la fusion ci-dessus est faite avec GITHUB_TOKEN : elle ne declenchera ni la CI de main, ni la release.
+  # L'arbre fusionne est celui que la CI de develop vient de valider ; la livraison est donc appelee ici.
+  livrer:
+    name: Livrer (etiquette et realignement)
+    needs: promouvoir
+    uses: ./.github/workflows/release.yml
+    permissions:
+      contents: write
+      pull-requests: write
