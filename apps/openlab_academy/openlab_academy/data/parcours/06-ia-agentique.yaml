@@ -1988,14 +1988,14 @@ blocs:
                 langage: python
                 source: |
                   def appeler(nom, arguments):
-                      if nom not in OUTILS_AUTORISES:            # liste blanche, pas liste noire
+                      if nom not in REGISTRE:            # liste blanche, pas liste noire
                           journal.alerte("outil hors liste", outil=nom)
                           return "Erreur : outil inconnu."
                       try:
                           valides = CONTRATS[nom].model_validate(arguments)
                       except ValidationError as e:
                           return f"Erreur d'arguments : {e.errors()[0]['msg']}"
-                      return OUTILS_AUTORISES[nom](valides)
+                      return REGISTRE[nom](valides)
             figures:
               - nom: corps-05b.jpg
                 legende: "La porte unique : tout passe par là, et rien ne passe à côté"
@@ -2296,6 +2296,8 @@ blocs:
 
                   def lister_factures_impayees(age_min_jours: int = 30,
                                                exclure_litiges: bool = True) -> dict:
+                      """Liste les factures dont le retard atteint le seuil demande, litiges exclus
+                      par defaut. Renvoie les retenues et, nommement, les exclues avec leur motif."""
                       retenues, exclues = [], {}
                       for f in charger_factures():
                           if exclure_litiges and f.en_litige:
@@ -2314,6 +2316,8 @@ blocs:
 
 
                   def calculer_exposition(facture_ids: list[str]) -> dict:
+                      """Additionne les montants des factures citees. Le total vient du code et
+                      jamais du modele : c'est le critere AC-06."""
                       connues = {f.facture_id: f for f in charger_factures()}
                       inconnues = [i for i in facture_ids if i not in connues]
                       if inconnues:
@@ -2324,6 +2328,8 @@ blocs:
 
 
                   def preparer_brouillon_relance(facture_id: str, palier: int = 1) -> dict:
+                      """Prepare un brouillon de relance pour une facture eligible. Un litige, un
+                      retard insuffisant ou un palier epuise font echouer l'appel, sans ecriture."""
                       facture = next((f for f in charger_factures() if f.facture_id == facture_id), None)
                       if facture is None:
                           raise ErreurMetier(f"facture inconnue : {facture_id}")
@@ -2350,6 +2356,8 @@ blocs:
 
 
                   def soumettre_pour_validation(brouillon_id: str, commentaire: str = "") -> dict:
+                      """Soumet un brouillon a une validation humaine nommee. Rien ne part a ce
+                      stade : la soumission cree une demande, pas un envoi."""
                       etat = charger_etat()
                       brouillon = etat["brouillons"].get(brouillon_id)
                       if brouillon is None:
@@ -2362,6 +2370,8 @@ blocs:
 
                   def enregistrer_relance_simulee(brouillon_id: str, validation_id: str,
                                                   cle_idempotence: str) -> dict:
+                      """Enregistre une relance simulee, apres approbation seulement. Aucun courriel
+                      n'est emis : l'ecriture reste locale, idempotente et tracee."""
                       etat = charger_etat()
                       brouillon = etat["brouillons"].get(brouillon_id)
                       if brouillon is None:
@@ -3323,12 +3333,16 @@ blocs:
                       return donnees["tools"]
 
 
-                  def pour_le_modele(noms_autorises: set[str]) -> list[dict[str, Any]]:
+                  def pour_le_modele(noms_autorises) -> list[dict[str, Any]]:
                       """Un outil non autorise n'est pas decrit : le modele ne peut pas demander
-                      ce qu'il ne voit pas, et le point d'appel refuse de toute facon."""
+                      ce qu'il ne voit pas, et le point d'appel refuse de toute facon.
+
+                      On accepte un ensemble de noms comme le registre lui-meme : set() rend les
+                      deux equivalents, et evite un appel qui echoue pour une question de type."""
+                      noms = set(noms_autorises)
                       decrits = []
                       for contrat in charger_contrats():
-                          if contrat["name"] not in noms_autorises:
+                          if contrat["name"] not in noms:
                               continue
                           decrits.append({
                               "type": "function",
@@ -3338,7 +3352,7 @@ blocs:
                                   "parameters": contrat["input_schema"],
                               },
                           })
-                      manquants = noms_autorises - {c["name"] for c in charger_contrats()}
+                      manquants = noms - {c["name"] for c in charger_contrats()}
                       if manquants:
                           raise RuntimeError(f"outils autorises sans contrat : {sorted(manquants)}")
                       return decrits
@@ -3368,7 +3382,7 @@ blocs:
                   from typing import Any
 
                   from recouvrement.modele import (AppelOutil, Conclusion, Modele, ModeleIndisponible)
-                  from recouvrement.outils import OUTILS_AUTORISES, executer_outil
+                  from recouvrement.outils import REGISTRE, executer_outil
                   from recouvrement.outils_schema import pour_le_modele
                   from recouvrement.trace import Trace
 
@@ -3386,7 +3400,7 @@ blocs:
                           {"role": "system", "content": systeme},
                           {"role": "user", "content": demande},
                       ]
-                      outils = pour_le_modele(OUTILS_AUTORISES)
+                      outils = pour_le_modele(REGISTRE)
                       jetons = 0
 
                       for tour in range(1, reglages.tours_max + 1):
@@ -3442,6 +3456,7 @@ blocs:
                   """Une ligne JSON par evenement. Ce qui ne doit jamais sortir est filtre ici."""
                   import json
                   import pathlib
+                  import uuid
                   from datetime import datetime, timezone
 
                   INTERDITS = {"cle", "api_key", "authorization", "note_non_fiable", "mot_de_passe"}
@@ -3457,15 +3472,31 @@ blocs:
 
 
                   class Trace:
-                      def __init__(self, chemin: pathlib.Path) -> None:
-                          self.chemin = chemin
-                          self.chemin.parent.mkdir(parents=True, exist_ok=True)
+                      """Sans chemin, la trace part sur la sortie standard : c'est le mode atelier des
+                      seances 5 et 6. Avec un chemin, elle devient le journal de production."""
 
-                      def ecrire(self, **champs) -> None:
+                      def __init__(self, chemin: pathlib.Path | None = None) -> None:
+                          self.chemin = chemin
+                          if self.chemin is not None:
+                              self.chemin.parent.mkdir(parents=True, exist_ok=True)
+
+                      def nouvelle_execution(self) -> str:
+                          """Un identifiant court, qui relie entre elles les lignes d'une meme execution."""
+                          return uuid.uuid4().hex[:12]
+
+                      def ecrire(self, execution_id: str | None = None, evenement: str | None = None,
+                                 **champs) -> None:
                           ligne = {"horodatage": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                                   "execution_id": execution_id, "evenement": evenement,
                                    **_filtrer(champs)}
+                          texte = json.dumps({c: v for c, v in ligne.items() if v is not None},
+                                             ensure_ascii=False)
+                          if self.chemin is None:
+                              print(texte)          # mode atelier : la trace se lit dans le terminal
+                              return
                           with self.chemin.open("a", encoding="utf-8") as fichier:
-                              fichier.write(json.dumps(ligne, ensure_ascii=False) + "\n")
+                              fichier.write(texte + "\n")
+
           - titre: Étape 7, l'adaptateur local, pour travailler sans budget
             texte: >-
               Un parcours ne doit pas dépendre d'un abonnement. Écrivons l'adaptateur local : il implémente
@@ -4363,13 +4394,16 @@ blocs:
 
                   from recouvrement.corpus import Passage
 
-                  MOT = re.compile(r"[a-zA-ZaaeeeiouucAEIOUC0-9]+")
+                  MOT = re.compile(r"\w+")          # \w couvre les lettres accentuees
                   K = 1.5      # rendement decroissant des repetitions
                   B = 0.75     # penalite de longueur
 
 
                   def mots(texte: str) -> list[str]:
-                      return [m.group(0).lower() for m in MOT.finditer(texte)]
+                      """Minuscules, et un pluriel simple ramene au singulier : sans cela,
+                      'montants' et 'montant' ne se rencontrent jamais."""
+                      bruts = [m.group(0).lower() for m in MOT.finditer(texte)]
+                      return [mot[:-1] if len(mot) > 3 and mot.endswith("s") else mot for mot in bruts]
 
 
                   class IndexLexical:
@@ -4522,6 +4556,10 @@ blocs:
               Ensuite, les passages sont des données, donc ils entrent dans la zone de données du prompt,
               jamais dans la zone des consignes. Un document peut contenir une phrase impérative, et elle
               ne doit pas devenir un ordre.
+
+              Le contrat JSON de ce sixième outil rejoint le fichier contracts/contrats_outils.json du
+              dépôt de départ. Sans cette entrée, la traduction de la liste blanche en descriptions
+              d'outils échoue au démarrage : c'est voulu, un outil sans contrat n'est pas un outil.
             code:
               - titre: recouvrement/outil_connaissances.py, le fichier complet
                 langage: python
@@ -4557,6 +4595,32 @@ blocs:
                            "extrait": passage.texte[:EXTRAIT_MAX],
                            "score": score}
                           for passage, score in trouves]}
+              - titre: "contracts/contrats_outils.json, l'entree a ajouter au tableau tools"
+                langage: json
+                source: |
+                  {
+                    "name": "chercher_dans_les_connaissances",
+                    "description": "Cherche dans les procedures internes et renvoie des passages citables, avec leur identifiant. Ne repond jamais de memoire.",
+                    "input_schema": {
+                      "type": "object",
+                      "properties": {
+                        "question": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 300
+                        },
+                        "nombre_passages": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 5,
+                          "default": 3
+                        }
+                      },
+                      "required": ["question"],
+                      "additionalProperties": false
+                    },
+                    "side_effect": "none"
+                  }
               - titre: La consigne qui rend la citation obligatoire
                 langage: text
                 source: |
@@ -4892,7 +4956,7 @@ blocs:
                   from langchain_core.messages import AIMessage, ToolMessage
 
                   from recouvrement.graphe_etat import EtatRecouvrement
-                  from recouvrement.outils import OUTILS_AUTORISES, executer_outil
+                  from recouvrement.outils import REGISTRE, executer_outil
                   from recouvrement.trace import Trace
 
                   ECRITURES = {"enregistrer_relance_simulee"}      # exigent un accord humain
@@ -4975,7 +5039,7 @@ blocs:
                   from recouvrement.config import Reglages
                   from recouvrement.graphe_etat import EtatRecouvrement
                   from recouvrement.graphe_noeuds import faire_agir, faire_decider, prochaine_etape, valider
-                  from recouvrement.outils import OUTILS_AUTORISES
+                  from recouvrement.outils import REGISTRE
                   from recouvrement.outils_schema import pour_le_modele
                   from recouvrement.trace import Trace
 
@@ -4986,7 +5050,7 @@ blocs:
                       modele = ChatOpenAI(model=reglages.modele, temperature=0,
                                           max_tokens=reglages.jetons_max,
                                           api_key=reglages.cle, base_url=reglages.adresse)
-                      modele_lie = modele.bind_tools(pour_le_modele(OUTILS_AUTORISES))
+                      modele_lie = modele.bind_tools(pour_le_modele(REGISTRE))
 
                       graphe = StateGraph(EtatRecouvrement)
                       graphe.add_node("decider", faire_decider(modele_lie, trace))
@@ -6331,6 +6395,7 @@ blocs:
                       brouillons: list[str] = []
                       non_traitees: list[str] = []
                       depense = 0
+                      total_fcfa = 0
                       for ordre, rapport in zip(ordres, rapports):
                           # Panne 1 : un specialiste qui leve une exception ne doit pas tout arreter.
                           if isinstance(rapport, BaseException):
@@ -6346,15 +6411,16 @@ blocs:
                           depense += rapport.depense_fcfa
                           if rapport.reussi:
                               brouillons.extend(rapport.brouillons)
+                              # Chaque specialiste a deja fait calculer son total par l'outil : le
+                              # superviseur additionne, il ne recalcule pas sur des identifiants de
+                              # brouillons, qui ne sont pas des identifiants de factures.
+                              total_fcfa += rapport.total_fcfa
                           # Panne 3 : les factures ecartees remontent nommement, jamais en resume.
                           non_traitees.extend(rapport.factures_non_traitees)
 
-                      total = executer_outil("calculer_exposition",
-                                             {"facture_ids": [b.split(":")[0] for b in brouillons]}) \
-                          if brouillons else {"ok": True, "donnees": {"total_fcfa": 0}}
                       return {"reussi": bool(brouillons), "brouillons": brouillons,
                               "factures_non_traitees": sorted(set(non_traitees)),
-                              "total_fcfa": total["donnees"]["total_fcfa"],
+                              "total_fcfa": total_fcfa,
                               "depense_fcfa": depense, "lots": len(ordres)}
               - titre: multi/specialiste.py, le fichier complet
                 langage: python
