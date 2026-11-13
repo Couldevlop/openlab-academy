@@ -14,7 +14,7 @@ capacité au **même** dépôt : le projet fil rouge n'est jamais recommencé.
 | 7 | [TP_SEANCE_7.md](TP_SEANCE_7.md) | Sécurité, évaluation et traces | Rapport de tests, traces, risques résiduels |
 | 8 | [TP_SEANCE_8.md](TP_SEANCE_8.md) | Capstone, démonstration et revue | Dossier de preuves + démonstration 7 min |
 
-Documents de cadrage associés : [progression_16_seances.md](progression_16_seances.md),
+Documents de cadrage associés : [progression_17_seances.md](progression_17_seances.md),
 [brief_apprenant.md](brief_apprenant.md), [grille_jury.md](grille_jury.md),
 [INTEGRATION_FIL_ROUGE.md](INTEGRATION_FIL_ROUGE.md), [RAPPORT_VALIDATION_TECHNIQUE.md](RAPPORT_VALIDATION_TECHNIQUE.md).
 

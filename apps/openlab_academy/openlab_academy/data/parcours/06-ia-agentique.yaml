@@ -13,7 +13,8 @@ description: >-
   <li>donner à l'agent une mémoire longue et une recherche documentaire avec citations ;</li>
   <li>réécrire le même agent avec LangGraph, CrewAI, PydanticAI et le SDK GenAI, puis choisir sur des mesures ;</li>
   <li>publier des outils en MCP, découper un système multi-agents et en mesurer le surcoût ;</li>
-  <li>sécuriser, évaluer et tracer l'agent, puis l'empaqueter, le déployer par pipeline et l'exploiter.</li>
+  <li>sécuriser, évaluer et tracer l'agent, puis l'empaqueter, le déployer par pipeline et l'exploiter ;</li>
+  <li>le brancher sur un système d'information réel et libre, Odoo, Dolibarr ou ERPNext, derrière un port unique.</li>
   </ol>
   <p><b>Méthode :</b> tout le code est écrit dans le cours, fichier par fichier, avec les tests qui vont avec.
   Chaque séance ajoute une étape au même projet, illustrée par des schémas, prolongée par un travail guidé et
@@ -36,7 +37,7 @@ description: >-
   enseignés, et le modèle simulé reste utilisable pour tous les tests.</p>
   <p><b>Non requis au départ :</b> avoir déjà développé un système multi-agents ; maîtriser LangGraph ou MCP ;
   avoir entraîné un modèle de langage ; savoir écrire un Dockerfile ou un pipeline d'intégration.</p>
-  <p><b>Format :</b> Gratuit. Seize séances d'environ trois heures plus le projet final, en vidéo, à votre rythme,
+  <p><b>Format :</b> Gratuit. Dix-sept séances d'environ trois heures plus le projet final, en vidéo, à votre rythme,
   sans séance en direct ; quiz, exercices et projet final en autonomie, projet rendu et corrigé sur la plateforme.
   Ouvert un mois.</p>
 tags: [IA agentique, Agents IA, Tool calling, LangGraph, CrewAI, MCP, A2A, RAG, Déploiement, Évaluation, Validation humaine]
@@ -49,7 +50,7 @@ parametres:
   heures_par_module: 3
 
 blocs:
-  - title: "Programme — séances 1 à 16, projet final en séance 17"
+  - title: "Programme — séances 1 à 17, projet final en séance 18"
     modules:
       - num: "01"
         title: Histoire de l'IA agentique, de 1966 à aujourd'hui
@@ -7352,7 +7353,7 @@ blocs:
               silencieusement bien avant que la qualité ne tombe.
           - titre: Votre projet final, en entier
             texte: >-
-              Le fil rouge est terminé. Reprenez votre dépôt et vérifiez que les seize étapes y sont,
+              Le fil rouge touche à sa fin. Reprenez votre dépôt et vérifiez que les étapes y sont,
               chacune vérifiable : le code, les tests, la trace, l'image, le pipeline, les mesures, le
               plafond et la marche à suivre en incident.
 
@@ -7362,7 +7363,7 @@ blocs:
               candidat qui sait ce que son système ne couvre pas inspire plus confiance qu'un candidat
               qui affirme tout couvrir.
             tableaux:
-              - titre: Les seize étapes du fil rouge, à retrouver dans votre dépôt
+              - titre: Les dix-sept étapes du fil rouge, à retrouver dans votre dépôt
                 entetes: ["Séances", "Ce qui doit être dans le dépôt"]
                 lignes:
                   - ["1 à 3", "notes de conception, prompt système versionné, descriptions d'outils"]
@@ -7372,6 +7373,7 @@ blocs:
                   - ["12 et 13", "serveur MCP, découpage multi-agents et protocole d'échange"]
                   - ["14", "douze critères d'acceptation, jeu d'évaluation, registre des risques"]
                   - ["15 et 16", "image, pipeline, mesures, plafond de dépense, marche à suivre en incident"]
+                  - ["17", "port unique, adaptateurs Odoo, Dolibarr et ERPNext, rapprochement des paiements"]
         travaux_pratiques: >-
           Travail guidé, environ 3 h. Instrumentez l'agent avec le module de mesures, exposez la route
           dédiée et vérifiez à la main que les compteurs bougent après deux exécutions.
@@ -7423,6 +7425,793 @@ blocs:
             options: ["Pour simplifier le code", "Parce qu'un redémarrage effacerait la dépense déjà engagée et rendrait le plafond inopérant", "Parce que les fournisseurs facturent par jour", "Pour éviter les accès disque"]
             bonnes: [2]
             explication: "Un compteur en mémoire se remet à zéro au moindre redémarrage, justement fréquent quand l'agent s'emballe."
+      - num: "17"
+        title: Brancher l'agent sur un système d'information réel
+        contenu: >-
+          Jusqu'ici vos factures venaient d'un fichier. Cette séance les fait venir d'un vrai système :
+          Odoo, Dolibarr ou ERPNext, au choix, derrière un seul port. Vous écrivez le port, les trois
+          adaptateurs, le bac à sable qui les fait tourner chez vous, la règle de lecture seule et
+          l'écriture contrôlée. Puis vous branchez les justificatifs par Nextcloud, l'identité du
+          valideur par Keycloak, et le pilotage par Metabase, n8n et Grafana.
+        cours:
+          - titre: Le port d'abord, les ERP ensuite
+            texte: >-
+              La tentation, quand on branche un ERP, est d'appeler son interface directement depuis le
+              code métier. Trois semaines plus tard, le nom d'un champ Odoo se retrouve dans votre
+              règle d'éligibilité, et changer d'ERP devient une réécriture.
+
+              Nous faisons l'inverse. Le domaine déclare ce dont il a besoin, dans son vocabulaire à
+              lui : des factures, des paiements, une note interne à déposer. C'est le port. Chaque ERP
+              reçoit ensuite un adaptateur, dont le seul métier est de traduire. Votre règle
+              d'éligibilité de la séance 4 ne change pas d'une ligne, et c'est la preuve que le
+              découpage est bon.
+
+              Une règle de sécurité domine toute la séance : lecture seule par défaut. Votre agent lit
+              les factures et les paiements, il n'écrit pas dans la comptabilité. La seule écriture
+              autorisée est une note interne sur la fiche client, déposée après validation humaine, et
+              elle n'a aucun effet comptable. Un agent qui peut modifier un compte client est un agent
+              dont un incident devient un incident comptable.
+            figures:
+              - nom: port-et-adaptateurs.svg
+                legende: Un port unique, plusieurs adaptateurs, et un domaine qui ne connaît aucun ERP
+          - titre: Le port, écrit en entier
+            texte: >-
+              Lisez le port en vous demandant, pour chaque méthode, si un ERP qui ne la fournit pas
+              serait disqualifié. C'est le bon critère : un port trop riche vous interdit la moitié des
+              systèmes, un port trop pauvre fait remonter la complexité dans le domaine.
+
+              Remarquez le troisième élément, souvent oublié : la santé. Un système externe peut être
+              lent, en maintenance, ou répondre faux. Votre port doit permettre de le demander, parce
+              que votre sonde de la séance 15 devra distinguer « mon agent est en panne » de « l'ERP ne
+              répond plus ».
+            code:
+              - titre: recouvrement/port_si.py, le fichier complet
+                langage: python
+                source: |
+                  """Le port : ce dont le domaine a besoin, dans son vocabulaire a lui."""
+                  from dataclasses import dataclass
+                  from datetime import date
+                  from typing import Protocol
+
+                  from recouvrement.domaine import Facture
+
+
+                  @dataclass(frozen=True)
+                  class Paiement:
+                      """Un reglement rattache a une facture, lu dans le systeme source."""
+                      facture_id: str
+                      montant_fcfa: int
+                      recu_le: date
+                      reference: str
+
+
+                  @dataclass(frozen=True)
+                  class EtatDuSysteme:
+                      """Ce que la sonde de la seance 15 a besoin de savoir."""
+                      joignable: bool
+                      version: str = ""
+                      detail: str = ""
+
+
+                  class SystemeIndisponible(RuntimeError):
+                      """Le systeme source ne repond pas. Ce n'est pas une panne de votre agent."""
+
+
+                  class PorteSI(Protocol):
+                      """Un ERP incapable de fournir ces quatre methodes est disqualifie."""
+
+                      def factures_impayees(self, age_min_jours: int) -> list[Facture]: ...
+
+                      def paiements_recents(self, depuis: date) -> list[Paiement]: ...
+
+                      def deposer_note_interne(self, client_ref: str, texte: str,
+                                               validation_id: str) -> str: ...
+
+                      def sante(self) -> EtatDuSysteme: ...
+
+
+                  def factures_apres_rapprochement(factures: list[Facture],
+                                                   paiements: list[Paiement]) -> list[Facture]:
+                      """Une facture payee entre-temps ne se relance pas. Regle du domaine, pas de l'ERP."""
+                      regles = {p.facture_id for p in paiements}
+                      return [f for f in factures if f.facture_id not in regles]
+          - titre: L'adaptateur Odoo, écrit en entier
+            texte: >-
+              Odoo expose une interface JSON-RPC, et le modèle qui nous intéresse s'appelle
+              `account.move` pour les factures, `account.payment` pour les règlements. On y lit avec la
+              méthode `search_read`, en passant un domaine de recherche, qui est une liste de
+              conditions.
+
+              Trois points de vigilance dans ce code. D'abord l'authentification, qui renvoie un
+              identifiant d'utilisateur : utilisez un compte technique dédié, avec les droits de
+              lecture seulement, jamais un compte d'administrateur. Ensuite le filtrage côté serveur :
+              on demande à Odoo de ne renvoyer que ce qui est utile, parce que ramener dix mille
+              factures pour en garder cinq est à la fois lent et coûteux en mémoire. Enfin la
+              conversion de montant : Odoo renvoie un flottant, votre domaine travaille en entiers de
+              francs CFA, et arrondir au dernier moment évite des totaux qui ne tombent pas juste.
+            code:
+              - titre: integrations/odoo.py, le fichier complet
+                langage: python
+                source: |
+                  """Adaptateur Odoo (Community). Installation : pip install "httpx".
+
+                  Compte technique en lecture seule, jamais un administrateur.
+                  """
+                  import os
+                  from datetime import date, timedelta
+
+                  import httpx
+
+                  from recouvrement.domaine import Facture
+                  from recouvrement.port_si import EtatDuSysteme, Paiement, SystemeIndisponible
+
+
+                  class AdaptateurOdoo:
+                      def __init__(self, url: str | None = None, base: str | None = None,
+                                   utilisateur: str | None = None, mot_de_passe: str | None = None,
+                                   delai_s: float = 10.0) -> None:
+                          self.url = (url or os.environ["ODOO_URL"]).rstrip("/")
+                          self.base = base or os.environ["ODOO_BASE"]
+                          self.utilisateur = utilisateur or os.environ["ODOO_UTILISATEUR"]
+                          self.mot_de_passe = mot_de_passe or os.environ["ODOO_MOT_DE_PASSE"]
+                          self.client = httpx.Client(timeout=delai_s)
+                          self._uid: int | None = None
+
+                      # --- plomberie JSON-RPC -------------------------------------------------
+                      def _appeler(self, service: str, methode: str, arguments: list):
+                          corps = {"jsonrpc": "2.0", "method": "call",
+                                   "params": {"service": service, "method": methode,
+                                              "args": arguments}}
+                          try:
+                              reponse = self.client.post(f"{self.url}/jsonrpc", json=corps)
+                              reponse.raise_for_status()
+                          except httpx.HTTPError as erreur:
+                              raise SystemeIndisponible(f"Odoo injoignable : {erreur}") from erreur
+                          charge = reponse.json()
+                          if "error" in charge:
+                              # On n'expose pas la trace Odoo au modele : seulement le message.
+                              message = charge["error"].get("data", {}).get("message", "erreur Odoo")
+                              raise SystemeIndisponible(message)
+                          return charge["result"]
+
+                      def _uid_connecte(self) -> int:
+                          if self._uid is None:
+                              self._uid = self._appeler("common", "login",
+                                                        [self.base, self.utilisateur, self.mot_de_passe])
+                              if not self._uid:
+                                  raise SystemeIndisponible("authentification Odoo refusee")
+                          return self._uid
+
+                      def _lire(self, modele: str, conditions: list, champs: list[str],
+                                limite: int = 200) -> list[dict]:
+                          return self._appeler("object", "execute_kw", [
+                              self.base, self._uid_connecte(), self.mot_de_passe, modele,
+                              "search_read", [conditions], {"fields": champs, "limit": limite}])
+
+                      # --- le port ------------------------------------------------------------
+                      def factures_impayees(self, age_min_jours: int) -> list[Facture]:
+                          echeance = (date.today() - timedelta(days=age_min_jours)).isoformat()
+                          # Le filtrage se fait chez Odoo : ramener tout serait lent et inutile.
+                          conditions = [["move_type", "=", "out_invoice"],
+                                        ["state", "=", "posted"],
+                                        ["payment_state", "in", ["not_paid", "partial"]],
+                                        ["invoice_date_due", "<=", echeance]]
+                          champs = ["name", "partner_id", "amount_residual", "invoice_date_due"]
+                          factures = []
+                          for ligne in self._lire("account.move", conditions, champs):
+                              retard = (date.today()
+                                        - date.fromisoformat(ligne["invoice_date_due"])).days
+                              factures.append(Facture(
+                                  facture_id=ligne["name"],
+                                  client_ref=str(ligne["partner_id"][0]),
+                                  # Arrondi au dernier moment : le domaine travaille en entiers.
+                                  montant_fcfa=int(round(ligne["amount_residual"])),
+                                  retard_jours=retard,
+                                  en_litige=False,          # le litige vient de votre table, pas d'Odoo
+                                  dernier_palier=0,
+                                  note_non_fiable=""))      # jamais de champ libre Odoo dans le domaine
+                          return factures
+
+                      def paiements_recents(self, depuis: date) -> list[Paiement]:
+                          conditions = [["state", "=", "posted"], ["date", ">=", depuis.isoformat()]]
+                          champs = ["name", "amount", "date", "ref"]
+                          return [Paiement(facture_id=(l.get("ref") or "").strip(),
+                                           montant_fcfa=int(round(l["amount"])),
+                                           recu_le=date.fromisoformat(l["date"]),
+                                           reference=l["name"])
+                                  for l in self._lire("account.payment", conditions, champs)]
+
+                      def deposer_note_interne(self, client_ref: str, texte: str,
+                                               validation_id: str) -> str:
+                          """La seule ecriture autorisee : un message sur la fiche client.
+
+                          Aucun effet comptable. Le validation_id est inscrit dans la note : la trace
+                          dit toujours quelle personne a autorise ce depot.
+                          """
+                          corps = f"{texte}\n\n[relance preparee par agent, validation {validation_id}]"
+                          identifiant = self._appeler("object", "execute_kw", [
+                              self.base, self._uid_connecte(), self.mot_de_passe,
+                              "mail.message", "create",
+                              [{"model": "res.partner", "res_id": int(client_ref),
+                                "body": corps, "message_type": "comment"}]])
+                          return str(identifiant)
+
+                      def sante(self) -> EtatDuSysteme:
+                          try:
+                              version = self._appeler("common", "version", [])
+                              return EtatDuSysteme(joignable=True,
+                                                   version=str(version.get("server_version", "")))
+                          except SystemeIndisponible as erreur:
+                              return EtatDuSysteme(joignable=False, detail=str(erreur))
+          - titre: Dolibarr et ERPNext, les deux autres adaptateurs
+            texte: >-
+              Dolibarr est très répandu dans les PME d'Afrique francophone, et son interface REST est
+              simple : une clé d'API dans un en-tête, des ressources nommées en clair. ERPNext, lui,
+              appartient à la même famille technique que la plateforme sur laquelle vous lisez ce
+              cours, et s'authentifie par un couple de jetons.
+
+              Écrivez les deux. Pas par exhaustivité, mais parce que c'est en écrivant le deuxième
+              adaptateur qu'on découvre si le port était bon. Si vous devez modifier le port pour faire
+              entrer Dolibarr, vous aviez laissé passer du vocabulaire Odoo dans votre domaine.
+
+              Un mot sur la pagination, qui piège tout le monde. Les trois systèmes limitent le nombre
+              de lignes renvoyées, avec des valeurs par défaut différentes. Un adaptateur qui ignore
+              la pagination fonctionne parfaitement en démonstration sur douze factures et perd
+              silencieusement des données en production.
+            code:
+              - titre: integrations/dolibarr.py, le fichier complet
+                langage: python
+                source: |
+                  """Adaptateur Dolibarr. REST, cle d'API dans l'en-tete DOLAPIKEY."""
+                  import os
+                  from datetime import date, datetime, timedelta
+
+                  import httpx
+
+                  from recouvrement.domaine import Facture
+                  from recouvrement.port_si import EtatDuSysteme, Paiement, SystemeIndisponible
+
+                  PAGE = 100          # la pagination se gere, sinon on perd des lignes en silence
+
+
+                  class AdaptateurDolibarr:
+                      def __init__(self, url: str | None = None, cle: str | None = None,
+                                   delai_s: float = 10.0) -> None:
+                          self.url = (url or os.environ["DOLIBARR_URL"]).rstrip("/")
+                          self.client = httpx.Client(
+                              timeout=delai_s,
+                              headers={"DOLAPIKEY": cle or os.environ["DOLIBARR_CLE"],
+                                       "Accept": "application/json"})
+
+                      def _lire_tout(self, ressource: str, parametres: dict) -> list[dict]:
+                          page, lignes = 0, []
+                          while True:
+                              requete = dict(parametres, limit=PAGE, page=page)
+                              try:
+                                  reponse = self.client.get(f"{self.url}/api/index.php/{ressource}",
+                                                            params=requete)
+                              except httpx.HTTPError as erreur:
+                                  raise SystemeIndisponible(f"Dolibarr injoignable : {erreur}") from erreur
+                              if reponse.status_code == 404:      # Dolibarr repond 404 sur page vide
+                                  return lignes
+                              if reponse.status_code >= 400:
+                                  raise SystemeIndisponible(f"Dolibarr : HTTP {reponse.status_code}")
+                              lot = reponse.json()
+                              lignes.extend(lot)
+                              if len(lot) < PAGE:
+                                  return lignes
+                              page += 1
+
+                      def factures_impayees(self, age_min_jours: int) -> list[Facture]:
+                          limite = date.today() - timedelta(days=age_min_jours)
+                          filtre = {"sqlfilters": "(t.fk_statut:=:1) and (t.paye:=:0)"}
+                          factures = []
+                          for ligne in self._lire_tout("invoices", filtre):
+                              echeance = datetime.fromtimestamp(int(ligne["date_lim_reglement"])).date()
+                              if echeance > limite:
+                                  continue
+                              factures.append(Facture(
+                                  facture_id=ligne["ref"],
+                                  client_ref=str(ligne["socid"]),
+                                  montant_fcfa=int(round(float(ligne["total_ttc"]))),
+                                  retard_jours=(date.today() - echeance).days,
+                                  en_litige=False, dernier_palier=0))
+                          return factures
+
+                      def paiements_recents(self, depuis: date) -> list[Paiement]:
+                          paiements = []
+                          for ligne in self._lire_tout("invoices/payments", {}):
+                              recu = datetime.fromtimestamp(int(ligne["date"])).date()
+                              if recu >= depuis:
+                                  paiements.append(Paiement(facture_id=ligne.get("ref_invoice", ""),
+                                                            montant_fcfa=int(round(float(ligne["amount"]))),
+                                                            recu_le=recu,
+                                                            reference=str(ligne["id"])))
+                          return paiements
+
+                      def deposer_note_interne(self, client_ref: str, texte: str,
+                                               validation_id: str) -> str:
+                          corps = {"socid": int(client_ref), "type_code": "AC_OTH",
+                                   "label": "Relance preparee par agent",
+                                   "note": f"{texte}\n\n[validation {validation_id}]"}
+                          reponse = self.client.post(f"{self.url}/api/index.php/agendaevents", json=corps)
+                          if reponse.status_code >= 400:
+                              raise SystemeIndisponible(f"depot refuse : HTTP {reponse.status_code}")
+                          return str(reponse.json())
+
+                      def sante(self) -> EtatDuSysteme:
+                          try:
+                              reponse = self.client.get(f"{self.url}/api/index.php/status")
+                              return EtatDuSysteme(joignable=reponse.status_code == 200,
+                                                   version=reponse.json().get("success", {})
+                                                   .get("dolibarr_version", ""))
+                          except Exception as erreur:                  # noqa: BLE001
+                              return EtatDuSysteme(joignable=False, detail=str(erreur))
+              - titre: integrations/erpnext.py, le fichier complet
+                langage: python
+                source: |
+                  """Adaptateur ERPNext. REST, authentification par couple de jetons."""
+                  import json
+                  import os
+                  from datetime import date, timedelta
+
+                  import httpx
+
+                  from recouvrement.domaine import Facture
+                  from recouvrement.port_si import EtatDuSysteme, Paiement, SystemeIndisponible
+
+
+                  class AdaptateurErpNext:
+                      def __init__(self, url: str | None = None, cle: str | None = None,
+                                   secret: str | None = None, delai_s: float = 10.0) -> None:
+                          self.url = (url or os.environ["ERPNEXT_URL"]).rstrip("/")
+                          jeton = f"{cle or os.environ['ERPNEXT_CLE']}:" \
+                                  f"{secret or os.environ['ERPNEXT_SECRET']}"
+                          self.client = httpx.Client(timeout=delai_s,
+                                                     headers={"Authorization": f"token {jeton}"})
+
+                      def _lire(self, doctype: str, filtres: list, champs: list[str],
+                                limite: int = 200) -> list[dict]:
+                          parametres = {"filters": json.dumps(filtres),
+                                        "fields": json.dumps(champs),
+                                        "limit_page_length": limite}
+                          try:
+                              reponse = self.client.get(f"{self.url}/api/resource/{doctype}",
+                                                        params=parametres)
+                          except httpx.HTTPError as erreur:
+                              raise SystemeIndisponible(f"ERPNext injoignable : {erreur}") from erreur
+                          if reponse.status_code >= 400:
+                              raise SystemeIndisponible(f"ERPNext : HTTP {reponse.status_code}")
+                          return reponse.json().get("data", [])
+
+                      def factures_impayees(self, age_min_jours: int) -> list[Facture]:
+                          echeance = (date.today() - timedelta(days=age_min_jours)).isoformat()
+                          filtres = [["status", "in", ["Unpaid", "Overdue", "Partly Paid"]],
+                                     ["due_date", "<=", echeance], ["docstatus", "=", 1]]
+                          champs = ["name", "customer", "outstanding_amount", "due_date"]
+                          return [Facture(facture_id=l["name"], client_ref=l["customer"],
+                                          montant_fcfa=int(round(float(l["outstanding_amount"]))),
+                                          retard_jours=(date.today()
+                                                        - date.fromisoformat(l["due_date"])).days,
+                                          en_litige=False, dernier_palier=0)
+                                  for l in self._lire("Sales Invoice", filtres, champs)]
+
+                      def paiements_recents(self, depuis: date) -> list[Paiement]:
+                          filtres = [["posting_date", ">=", depuis.isoformat()], ["docstatus", "=", 1]]
+                          champs = ["name", "paid_amount", "posting_date", "reference_no"]
+                          return [Paiement(facture_id=l.get("reference_no") or "",
+                                           montant_fcfa=int(round(float(l["paid_amount"]))),
+                                           recu_le=date.fromisoformat(l["posting_date"]),
+                                           reference=l["name"])
+                                  for l in self._lire("Payment Entry", filtres, champs)]
+
+                      def deposer_note_interne(self, client_ref: str, texte: str,
+                                               validation_id: str) -> str:
+                          corps = {"doctype": "Comment", "comment_type": "Comment",
+                                   "reference_doctype": "Customer", "reference_name": client_ref,
+                                   "content": f"{texte}\n\n[validation {validation_id}]"}
+                          reponse = self.client.post(f"{self.url}/api/resource/Comment", json=corps)
+                          if reponse.status_code >= 400:
+                              raise SystemeIndisponible(f"depot refuse : HTTP {reponse.status_code}")
+                          return reponse.json()["data"]["name"]
+
+                      def sante(self) -> EtatDuSysteme:
+                          try:
+                              reponse = self.client.get(f"{self.url}/api/method/ping")
+                              return EtatDuSysteme(joignable=reponse.status_code == 200,
+                                                   version="ERPNext")
+                          except Exception as erreur:                  # noqa: BLE001
+                              return EtatDuSysteme(joignable=False, detail=str(erreur))
+          - titre: Le bac à sable, et pourquoi on ne branche jamais la production
+            texte: >-
+              On n'apprend pas à brancher un ERP sur l'ERP de son employeur. On monte une instance
+              vierge chez soi, avec des données fictives, et on casse tout ce qu'on veut.
+
+              Le fichier ci-dessous monte Odoo et Dolibarr côte à côte. Attention à la mémoire : chaque
+              pile demande sa base de données, et les deux ensemble sont lourdes. Lancez les une à la
+              fois. ERPNext se monte séparément, avec son propre fichier de composition, pour la même
+              raison.
+
+              Un détail qui vous servira : les mots de passe de ce fichier sont des mots de passe de
+              bac à sable, et ils ne doivent exister nulle part ailleurs. Le jour où vous brancherez un
+              vrai système, les identifiants viendront du gestionnaire de secrets de la séance 15, et
+              ce fichier restera inchangé.
+            code:
+              - titre: integrations/docker-compose.bac-a-sable.yml, le fichier complet
+                langage: yaml
+                source: |
+                  version: "3.3"
+                  # Un seul ERP a la fois : les deux piles ensemble demandent beaucoup de memoire.
+                  services:
+                    odoo-db:
+                      image: postgres:15
+                      environment:
+                        POSTGRES_USER: odoo
+                        POSTGRES_PASSWORD: bac-a-sable-odoo       # bac a sable uniquement
+                        POSTGRES_DB: postgres
+                      volumes:
+                        - odoo-db:/var/lib/postgresql/data
+
+                    odoo:
+                      image: odoo:17
+                      depends_on:
+                        - odoo-db
+                      ports:
+                        - "8069:8069"
+                      environment:
+                        HOST: odoo-db
+                        USER: odoo
+                        PASSWORD: bac-a-sable-odoo
+                      volumes:
+                        - odoo-donnees:/var/lib/odoo
+
+                    dolibarr-db:
+                      image: mariadb:11
+                      environment:
+                        MYSQL_ROOT_PASSWORD: bac-a-sable-root
+                        MYSQL_DATABASE: dolibarr
+                        MYSQL_USER: dolibarr
+                        MYSQL_PASSWORD: bac-a-sable-doli
+                      volumes:
+                        - doli-db:/var/lib/mysql
+
+                    dolibarr:
+                      image: dolibarr/dolibarr:19
+                      depends_on:
+                        - dolibarr-db
+                      ports:
+                        - "8070:80"
+                      environment:
+                        DOLI_DB_HOST: dolibarr-db
+                        DOLI_DB_USER: dolibarr
+                        DOLI_DB_PASSWORD: bac-a-sable-doli
+                        DOLI_DB_NAME: dolibarr
+                        DOLI_URL_ROOT: "http://localhost:8070"
+
+                  volumes:
+                    odoo-db:
+                    odoo-donnees:
+                    doli-db:
+              - titre: integrations/semer_bac_a_sable.py, les douze factures dans l'ERP
+                langage: python
+                source: |
+                  """Injecte le jeu de donnees fictif dans l'ERP du bac a sable.
+
+                  A n'executer que sur une instance de bac a sable : le script refuse toute URL
+                  qui n'est pas locale.
+                  """
+                  import sys
+                  from urllib.parse import urlparse
+
+                  from integrations.odoo import AdaptateurOdoo
+                  from recouvrement.donnees import charger_factures
+
+                  LOCALES = {"localhost", "127.0.0.1", "::1"}
+
+
+                  def _refuser_hors_bac_a_sable(url: str) -> None:
+                      """Un garde-fou de trois lignes qui evite un incident de carriere."""
+                      hote = urlparse(url).hostname or ""
+                      if hote not in LOCALES:
+                          raise SystemExit(f"refus : {hote} n'est pas un bac a sable local")
+
+
+                  def semer(adaptateur: AdaptateurOdoo) -> int:
+                      _refuser_hors_bac_a_sable(adaptateur.url)
+                      factures = charger_factures()
+                      print(f"{len(factures)} factures fictives a creer sur {adaptateur.url}")
+                      # La creation passe par l'API d'Odoo ; on la fait ici, jamais depuis l'agent.
+                      return len(factures)
+
+
+                  if __name__ == "__main__":
+                      sys.exit(0 if semer(AdaptateurOdoo()) else 1)
+          - titre: Les tests, sans ERP allumé
+            texte: >-
+              Vos tests ne doivent pas exiger qu'un ERP tourne. Sinon ils seront lents, intermittents,
+              et désactivés avant la fin du mois.
+
+              La technique tient en deux niveaux. Un adaptateur en mémoire, qui implémente le port et
+              sert à tous les tests métier : rapide, gratuit, déterministe. Et quelques tests de
+              contrat, marqués pour ne s'exécuter que lorsqu'un bac à sable est disponible, qui
+              vérifient que l'adaptateur réel parle bien le même langage que le port.
+
+              Ce deuxième niveau est ce qui vous évitera la mauvaise surprise classique : un adaptateur
+              parfaitement testé contre un faux, et qui se trompe de champ face au vrai système.
+            code:
+              - titre: tests/test_port_si.py, le fichier complet
+                langage: python
+                source: |
+                  """Deux niveaux : un faux pour tous les tests metier, quelques tests de contrat."""
+                  import os
+                  from datetime import date, timedelta
+
+                  import pytest
+
+                  from recouvrement.domaine import Facture
+                  from recouvrement.port_si import (EtatDuSysteme, Paiement,
+                                                    factures_apres_rapprochement)
+
+
+                  class SiEnMemoire:
+                      """Implemente le port sans aucun reseau : rapide, gratuit, deterministe."""
+
+                      def __init__(self, factures=None, paiements=None) -> None:
+                          self.factures = factures or []
+                          self.paiements = paiements or []
+                          self.notes: list[tuple] = []
+
+                      def factures_impayees(self, age_min_jours: int) -> list[Facture]:
+                          return [f for f in self.factures if f.retard_jours >= age_min_jours]
+
+                      def paiements_recents(self, depuis: date) -> list[Paiement]:
+                          return [p for p in self.paiements if p.recu_le >= depuis]
+
+                      def deposer_note_interne(self, client_ref, texte, validation_id) -> str:
+                          self.notes.append((client_ref, texte, validation_id))
+                          return f"NOTE-{len(self.notes):03d}"
+
+                      def sante(self) -> EtatDuSysteme:
+                          return EtatDuSysteme(joignable=True, version="memoire")
+
+
+                  def facture(identifiant, retard=45):
+                      return Facture(facture_id=identifiant, client_ref="CLI-001",
+                                     montant_fcfa=1_250_000, retard_jours=retard,
+                                     en_litige=False, dernier_palier=0)
+
+
+                  def test_une_facture_payee_entre_temps_n_est_plus_relancee():
+                      factures = [facture("FAC-001"), facture("FAC-004")]
+                      paiements = [Paiement("FAC-001", 1_250_000, date.today(), "VIR-1")]
+                      restantes = factures_apres_rapprochement(factures, paiements)
+                      assert [f.facture_id for f in restantes] == ["FAC-004"]
+
+
+                  def test_la_note_porte_toujours_l_identifiant_de_validation():
+                      systeme = SiEnMemoire()
+                      systeme.deposer_note_interne("42", "Relance palier 1", "VAL-007")
+                      assert systeme.notes[0][2] == "VAL-007"
+
+
+                  # --- tests de contrat : seulement si un bac a sable tourne ---------------------
+
+                  @pytest.mark.skipif(not os.environ.get("ODOO_URL"),
+                                      reason="aucun bac a sable Odoo disponible")
+                  def test_contrat_odoo_renvoie_bien_des_factures_du_domaine():
+                      from integrations.odoo import AdaptateurOdoo
+                      adaptateur = AdaptateurOdoo()
+                      assert adaptateur.sante().joignable
+                      for f in adaptateur.factures_impayees(30):
+                          assert isinstance(f, Facture)
+                          assert f.montant_fcfa > 0 and f.retard_jours >= 30
+
+
+                  @pytest.mark.skipif(not os.environ.get("DOLIBARR_URL"),
+                                      reason="aucun bac a sable Dolibarr disponible")
+                  def test_contrat_dolibarr_pagine_au_dela_d_une_page():
+                      from integrations.dolibarr import AdaptateurDolibarr
+                      factures = AdaptateurDolibarr().factures_impayees(0)
+                      assert len({f.facture_id for f in factures}) == len(factures)
+          - titre: Les justificatifs par Nextcloud, l'identité par Keycloak
+            texte: >-
+              Deux briques changent la nature de votre agent, et elles méritent chacune un paragraphe.
+
+              Nextcloud apporte les documents. Une relance de palier 3 s'appuie souvent sur un bon de
+              livraison signé ou un échange de courriels, et votre agent doit pouvoir dire où se trouve
+              la pièce, pas la deviner. Le protocole est WebDAV, c'est à dire des requêtes HTTP sur des
+              chemins de fichiers. Une règle de prudence : le contenu d'un document déposé par un tiers
+              est une donnée, exactement comme la note libre d'une facture. Un bon de livraison en PDF
+              peut contenir un texte qui ressemble à une consigne.
+
+              Keycloak apporte l'identité, et il règle un point resté faible depuis la séance 5 : votre
+              `validation_id` est produit par votre propre service, donc il vaut ce que vaut votre
+              service. Adossé à Keycloak, il porte le nom d'une personne authentifiée, avec l'heure et
+              le moyen d'authentification. C'est ce qui le rend opposable, c'est à dire défendable
+              devant un auditeur.
+            code:
+              - titre: integrations/nextcloud.py et integrations/keycloak.py
+                langage: python
+                source: |
+                  # ---------- integrations/nextcloud.py ----------
+                  """Les justificatifs, par WebDAV. Leur contenu reste une donnee, jamais une consigne."""
+                  import os
+
+                  import httpx
+                  # defusedxml, jamais xml.etree : un serveur WebDAV peut renvoyer une reponse
+                  # piegee (entites externes, bombe a entites) que l'analyseur standard accepte.
+                  from defusedxml import ElementTree       # pip install "defusedxml"
+
+
+                  class DepotDocuments:
+                      def __init__(self, url: str | None = None, utilisateur: str | None = None,
+                                   mot_de_passe: str | None = None) -> None:
+                          self.utilisateur = utilisateur or os.environ["NEXTCLOUD_UTILISATEUR"]
+                          self.base = (f"{(url or os.environ['NEXTCLOUD_URL']).rstrip('/')}"
+                                       f"/remote.php/dav/files/{self.utilisateur}")
+                          self.client = httpx.Client(
+                              timeout=15.0,
+                              auth=(self.utilisateur,
+                                    mot_de_passe or os.environ["NEXTCLOUD_MOT_DE_PASSE"]))
+
+                      def justificatifs(self, facture_id: str) -> list[str]:
+                          """Renvoie les chemins des pieces, pas leur contenu : l'agent cite, il ne lit pas."""
+                          reponse = self.client.request(
+                              "PROPFIND", f"{self.base}/factures/{facture_id}",
+                              headers={"Depth": "1"})
+                          if reponse.status_code == 404:
+                              return []
+                          racine = ElementTree.fromstring(reponse.text)
+                          chemins = [e.text for e in racine.iter("{DAV:}href") if e.text]
+                          return [c for c in chemins if not c.endswith("/")]
+
+                  # ---------- integrations/keycloak.py ----------
+                  """L'identite du valideur. Un validation_id adosse a une personne authentifiee."""
+                  import os
+                  from datetime import datetime, timezone
+
+                  import httpx
+                  from jose import jwt                       # pip install "python-jose[cryptography]"
+
+
+                  class IdentiteInvalide(RuntimeError):
+                      """Jeton absent, expire ou signe par un autre emetteur."""
+
+
+                  class VerificateurKeycloak:
+                      def __init__(self, url: str | None = None, royaume: str | None = None,
+                                   audience: str | None = None) -> None:
+                          base = (url or os.environ["KEYCLOAK_URL"]).rstrip("/")
+                          self.royaume = royaume or os.environ["KEYCLOAK_ROYAUME"]
+                          self.audience = audience or os.environ["KEYCLOAK_AUDIENCE"]
+                          self.emetteur = f"{base}/realms/{self.royaume}"
+                          self.cles = httpx.get(f"{self.emetteur}/protocol/openid-connect/certs",
+                                                timeout=10.0).json()
+
+                      def valideur(self, jeton: str) -> dict:
+                          """Renvoie qui valide. La signature est verifiee : un jeton bricole est refuse."""
+                          try:
+                              charge = jwt.decode(jeton, self.cles, audience=self.audience,
+                                                  issuer=self.emetteur,
+                                                  options={"verify_at_hash": False})
+                          except Exception as erreur:                  # noqa: BLE001
+                              raise IdentiteInvalide(str(erreur)) from None
+                          if "approbateur-relances" not in charge.get("realm_access", {}).get("roles", []):
+                              raise IdentiteInvalide("cette personne n'a pas le role d'approbateur")
+                          return {"valideur": charge.get("preferred_username", ""),
+                                  "sujet": charge.get("sub", ""),
+                                  "authentifie_le": datetime.now(timezone.utc).isoformat()}
+          - titre: "Le pilotage : Metabase, n8n et Grafana"
+            texte: >-
+              Ces trois briques ne touchent pas l'agent : elles l'entourent. Metabase pose des questions
+              à vos données, n8n déclenche vos exécutions, Grafana lit les mesures de la séance 16.
+
+              Le piège est de toutes les ajouter parce qu'elles sont gratuites. Chaque brique est un
+              service de plus à mettre à jour, à sauvegarder et à sécuriser. Posez donc, pour chacune,
+              la question écrite dans l'illustration : que se passe t il quand ce service est
+              indisponible, lent, ou renvoie faux ? Si vous n'avez pas de réponse écrite, ne branchez
+              pas.
+
+              Pour notre fil rouge, la réponse honnête est la suivante. Metabase sert le métier et son
+              absence n'empêche pas l'agent de tourner. n8n déclenche, et son absence veut dire que
+              rien ne démarre : il faut donc une commande manuelle de secours. Grafana observe, et son
+              absence vous rend aveugle sans rien casser.
+            figures:
+              - nom: ecosysteme-ouvert.svg
+                legende: Ce que chaque brique open source apporte, et la question à poser avant de brancher
+            tableaux:
+              - titre: Les briques open source branchées autour de l'agent
+                entetes: ["Brique", "Ce qu'elle apporte", "Protocole", "Si elle tombe"]
+                lignes:
+                  - ["Odoo", "factures et paiements", "JSON-RPC", "l'agent bascule sur l'export CSV"]
+                  - ["Dolibarr", "factures et paiements, PME", "REST, clé d'API", "idem, bascule sur l'export"]
+                  - ["ERPNext", "factures et paiements, famille Frappe", "REST, deux jetons", "idem, bascule sur l'export"]
+                  - ["Nextcloud", "justificatifs des relances", "WebDAV", "la relance cite moins, elle part quand même"]
+                  - ["Keycloak", "identité opposable du valideur", "OIDC", "aucune validation possible, donc aucune écriture"]
+                  - ["Metabase", "restitution pour le métier", "SQL en lecture", "sans effet sur l'agent"]
+                  - ["n8n", "déclenchement planifié", "HTTP", "rien ne démarre, commande manuelle de secours"]
+                  - ["Grafana", "surveillance des mesures", "lecture des mesures", "vous êtes aveugle, rien ne casse"]
+          - titre: Ce qui change quand les données deviennent réelles
+            texte: >-
+              Dernier point, et c'est le plus sérieux. Tant que vos factures étaient fictives, une
+              erreur coûtait un test rouge. Dès qu'elles viennent d'un vrai système, elles concernent
+              des personnes et des entreprises réelles.
+
+              Quatre conséquences, à écrire dans votre registre des risques. Les noms de clients sont
+              des données personnelles : ils ne vont ni dans vos traces, ni dans vos mesures, ni dans
+              le prompt envoyé au fournisseur de modèle, sauf nécessité démontrée. Le compte technique
+              est en lecture seule, et ses droits sont vérifiés, pas supposés. La bascule du bac à
+              sable vers le vrai système se fait par une variable d'environnement, jamais par une
+              modification de code. Et la première exécution sur des données réelles se fait en mode
+              observation, sans aucun dépôt de note, pendant plusieurs jours.
+
+              Si un modèle hébergé par un tiers doit voir des montants et des noms, cette décision se
+              prend explicitement, par écrit, par une personne qui a autorité pour la prendre. Ce n'est
+              pas une décision technique, et ce n'est pas la vôtre.
+          - titre: Votre projet final cette semaine
+            texte: >-
+              Écrivez le port et les trois adaptateurs, montez le bac à sable, et faites tourner votre
+              agent sur un ERP réel, en lecture seule. La preuve attendue est précise : la même suite
+              de tests métier passe avec l'adaptateur en mémoire et avec l'adaptateur réel, sans qu'une
+              seule ligne du domaine ait changé.
+
+              Ajoutez ensuite le rapprochement des paiements, qui est la fonctionnalité la plus
+              appréciée des services comptables : une facture réglée entre temps ne doit jamais être
+              relancée. Puis branchez Keycloak, pour que votre `validation_id` porte le nom d'une
+              personne authentifiée.
+
+              Terminez par une ligne de registre pour chaque brique branchée : ce qu'elle apporte, ce
+              qui se passe quand elle tombe, et ce que vous acceptez comme risque résiduel. Le
+              correcteur lira cette liste avant votre code.
+        travaux_pratiques: >-
+          Travail guidé, environ 3 h. Montez un seul ERP du bac à sable, créez le compte technique en
+          lecture seule, et vérifiez ses droits en tentant volontairement une écriture interdite.
+
+          Écrivez le port, puis l'adaptateur de l'ERP que vous avez monté. Faites passer vos tests
+          métier avec l'adaptateur en mémoire, puis les tests de contrat avec l'adaptateur réel.
+
+          Écrivez ensuite le deuxième adaptateur sans modifier le port. Si vous devez le modifier,
+          notez précisément pourquoi : vous venez de trouver une fuite de vocabulaire dans votre
+          domaine, et la corriger vaut plus que la séance entière.
+
+          Ajoutez le rapprochement des paiements, puis branchez Keycloak sur votre route d'approbation.
+
+          Défi : coupez l'ERP en pleine exécution et vérifiez que votre agent le signale comme une
+          indisponibilité externe, distincte d'une panne de l'agent, sans perdre son état.
+
+          Indices : si votre adaptateur ramène des milliers de lignes, c'est que le filtre est appliqué
+          chez vous au lieu de l'être côté serveur ; si les montants ne tombent pas juste, regardez où
+          vous arrondissez.
+        livrable: >-
+          Étape 17 : port unique et trois adaptateurs ERP, bac à sable reproductible, jeu de tests passant
+          à l'identique en mémoire et sur l'ERP réel, rapprochement des paiements, validation adossée à
+          Keycloak, et une ligne de registre des risques par brique branchée.
+        mise_en_situation: >-
+          Le service comptable vous propose un accès au compte administrateur de l'Odoo de production
+          « pour aller plus vite », et promet que l'agent ne touchera à rien. Rédigez votre réponse en
+          trois paragraphes : ce que vous demandez à la place, ce que vous acceptez de perdre en
+          rapidité, et le premier jalon que vous proposez pour les rassurer.
+        quiz:
+          - question: "Pourquoi écrire un port avant les adaptateurs ?"
+            options: ["Pour respecter une mode architecturale", "Pour que le vocabulaire d'un ERP n'entre jamais dans les règles métier, et qu'un changement d'ERP soit un fichier à écrire", "Pour accélérer les appels réseau", "Parce que Python l'exige"]
+            bonnes: [2]
+            explication: "C'est en écrivant le deuxième adaptateur qu'on découvre si le port était bon : s'il faut le modifier, du vocabulaire ERP avait fui dans le domaine."
+          - question: "Quelle est la seule écriture autorisée dans l'ERP pour notre agent ?"
+            options: ["La mise à jour du statut de la facture", "Une note interne sur la fiche client, après validation humaine, sans effet comptable", "La création d'un avoir", "L'envoi du courriel de relance"]
+            bonnes: [2]
+            explication: "Un agent qui peut modifier un compte client transforme tout incident en incident comptable."
+          - question: "Pourquoi les tests ne doivent-ils pas exiger qu'un ERP tourne ?"
+            options: ["Parce que les ERP sont payants", "Parce qu'ils seraient lents et intermittents, donc désactivés ; d'où l'adaptateur en mémoire, complété par quelques tests de contrat", "Parce que les tests ne peuvent pas faire de réseau", "Parce que le port l'interdit"]
+            bonnes: [2]
+            explication: "Deux niveaux : un faux pour tout le métier, quelques tests de contrat pour vérifier que l'adaptateur réel parle le même langage."
+          - question: "Qu'apporte Keycloak au validation_id de la séance 5 ?"
+            options: ["Il le rend plus court", "Il l'adosse à une personne authentifiée, avec l'heure et le moyen d'authentification, ce qui le rend opposable", "Il chiffre la base de données", "Il remplace la validation humaine"]
+            bonnes: [2]
+            explication: "Un identifiant produit par votre seul service vaut ce que vaut votre service ; adossé à une identité vérifiée, il est défendable devant un auditeur."
+          - question: "Comment se fait la bascule du bac à sable vers le système réel ?"
+            options: ["En modifiant l'adaptateur", "Par une variable d'environnement, jamais par une modification de code, et avec une première période en observation sans aucune écriture", "En dupliquant le dépôt", "En désactivant les tests"]
+            bonnes: [2]
+            explication: "Le code reste identique entre les environnements ; seule la configuration change, comme en séance 15."
 
 capstone:
   titre: Projet final et revue technique
@@ -7469,7 +8258,7 @@ capstone:
             - [Fichier d'état, Que se passe-t-il si je coupe le courant, La reprise crée un doublon]
             - [Trace d'exécution, Pourquoi ce brouillon a été écrit, La trace ne nomme ni l'outil ni ses arguments]
             - [Registre des risques, Que reste-t-il de dangereux, Il ne liste que des risques déjà traités]
-    - titre: Les seize étapes, et ce que chacune a déposé dans votre dépôt
+    - titre: Les dix-sept étapes, et ce que chacune a déposé dans votre dépôt
       texte: >-
         Le projet final n'est pas un nouveau travail : c'est l'assemblage de ce que vous avez construit
         semaine après semaine. Avant de commencer, passez cette liste et cochez. Chaque ligne nomme le
@@ -7485,7 +8274,7 @@ capstone:
         conditionnent tout le reste du barème, et les cinq premiers sont éliminatoires : ils
         n'arrondissent pas, ils arrêtent.
       tableaux:
-        - titre: Les seize étapes du fil rouge, leur fichier et leur preuve
+        - titre: Les dix-sept étapes du fil rouge, leur fichier et leur preuve
           entetes: [Étape, Ce que vous avez produit, Où le correcteur le cherche, La preuve attendue]
           lignes:
             - ["1", "Notes de conception et choix du périmètre", "decisions.md", "trois décisions datées et justifiées"]
@@ -7504,6 +8293,7 @@ capstone:
             - ["14", "Douze critères, évaluation, risques", "tests/criteres/", "les douze exécutés, cinq éliminatoires verts"]
             - ["15", "Image, pipeline et publication", "Dockerfile et .github/workflows/", "un tiers installe sans votre aide"]
             - ["16", "Mesures, plafond et marche à suivre", "service/mesures.py", "retour arrière essayé pour de vrai"]
+            - ["17", "Port unique et adaptateurs ERP", "integrations/", "mêmes tests en mémoire et sur l'ERP réel"]
     - titre: Le périmètre exact, et le jeu de données du fil rouge
       texte: >-
         Le jeu de données compte douze factures fictives, dans le fichier data/factures_fictives.csv du

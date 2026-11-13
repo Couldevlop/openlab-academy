@@ -1,4 +1,4 @@
-# Progression du projet fil rouge — 16 séances et un projet final
+# Progression du projet fil rouge — 17 séances et un projet final
 
 Le fil rouge est un agent de recouvrement assisté et contrôlé, construit sur un jeu de douze factures
 fictives libellées en francs CFA. Chaque séance ajoute une capacité au même dépôt : rien n'est
@@ -22,6 +22,7 @@ recommencé de zéro, et chaque livrable est vérifiable par un test ou par une 
 | 14 — Sécurité et évaluation | Injection indirecte, propriétés vérifiables, traces, risques résiduels | Écrire les douze critères et le jeu d'évaluation | Douze critères exécutés, cinq éliminatoires verts |
 | 15 — Empaqueter et déployer | Interface HTTP, conteneur, secrets, pipeline, retour arrière | Rendre le projet installable et déployable sans vous | Un tiers installe et exécute sans votre aide |
 | 16 — Exploiter | Mesures, seuils, plafond de dépense, journal, incidents, dérive | Instrumenter, plafonner, préparer la marche à suivre | Retour arrière déclenché pour de vrai |
+| 17 — Système d'information réel | Port unique et adaptateurs, bac à sable, lecture seule, rapprochement des paiements, identité opposable | Brancher Odoo, Dolibarr ou ERPNext derrière un port ; justificatifs Nextcloud, valideur Keycloak, pilotage Metabase, n8n et Grafana | Mêmes tests en mémoire et sur l'ERP réel, sans toucher au domaine |
 | Projet final | Intégration, démonstration et revue technique | Exécuter le parcours complet jusqu'à la demande de validation ; l'action finale reste simulée | Dépôt documenté, démonstration de 7 minutes et dossier de preuves |
 
 ## Livrable final attendu
@@ -30,6 +31,7 @@ recommencé de zéro, et chaque livrable est vérifiable par un test ou par une 
 3. Jeu de tests automatisés, dont les douze critères d'acceptation, et leurs résultats.
 4. Traces montrant décisions, appels d'outils, résultats, erreurs et validation humaine.
 5. Mesures : taux de réussite, nombre d'étapes, appels d'outils invalides, latence et coût en francs CFA.
+8. Une ligne de registre par brique externe branchée : apport, protocole, comportement en cas d'indisponibilité.
 6. Registre des risques et limites.
 7. Démonstration commentée et README d'installation.
 

@@ -23,6 +23,7 @@ MODULES = [
     ("14", "Sécurité, évaluation et observabilité"),
     ("15", "Empaqueter et déployer par pipeline"),
     ("16", "Exploiter l'agent en production"),
+    ("17", "Brancher l'agent sur un système d'information réel"),
 ]
 
 

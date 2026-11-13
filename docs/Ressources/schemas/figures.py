@@ -806,9 +806,70 @@ def exploitation_agent() -> Dessin:
     d.texte(450, 424, "L'incident se termine par un test ajouté, jamais par une explication seule.",
             taille=12, gras=True, couleur="encre2")
     return d
+def port_et_adaptateurs() -> Dessin:
+    """Séance 17 : un port unique, plusieurs adaptateurs, un seul métier."""
+    d = Dessin(940, 460, "Un port, plusieurs systemes, un seul metier")
+    d.boite(360, 86, 220, 64, teinte="s1")
+    d.texte(470, 112, "Votre domaine", taille=15, gras=True)
+    d.texte(470, 134, "regles et decisions", taille=10, couleur="encre2")
+    d.boite(330, 184, 280, 60, teinte="s3", tirets=True)
+    d.texte(470, 208, "PorteSI", taille=15, gras=True)
+    d.texte(470, 230, "factures, paiements, note interne", taille=10, couleur="encre2")
+    d.fleche(470, 150, 470, 180, teinte="attenue")
+    adaptateurs = [
+        ("Odoo", "JSON-RPC", "s2"),
+        ("Dolibarr", "REST + cle", "s2"),
+        ("ERPNext", "REST + token", "s2"),
+        ("Fichier", "CSV de secours", "attenue"),
+    ]
+    for i, (nom, protocole, teinte) in enumerate(adaptateurs):
+        x = 36 + i * 228
+        d.boite(x, 300, 200, 76, teinte=teinte)
+        d.texte(x + 100, 328, nom, taille=14, gras=True)
+        d.texte(x + 100, 352, protocole, taille=10, couleur="encre2")
+        d.fleche(470, 244, x + 100, 296, teinte="attenue")
+    d.texte(470, 44, "Le domaine ne connait aucun ERP. Il connait un port.", taille=15, gras=True)
+    d.texte(470, 66, "Changer d'ERP devient un fichier a ecrire, jamais une refonte.",
+            taille=12, couleur="encre2")
+    d.texte(470, 420, "Lecture seule par defaut. L'ecriture est une note interne, apres validation humaine.",
+            taille=12, gras=True, couleur="encre2")
+    d.texte(470, 446, "Les identifiants viennent du gestionnaire de secrets, jamais du depot.",
+            taille=11, couleur="encre2")
+    return d
+
+
+def ecosysteme_ouvert() -> Dessin:
+    """Séance 17 : ce que chaque brique open source apporte autour de l'agent."""
+    d = Dessin(920, 440, "Ce qui entoure l'agent, et ce que chaque brique apporte")
+    groupes = [
+        ("Donnees metier", "s1", ["Odoo", "Dolibarr", "ERPNext"], "d'ou viennent les factures"),
+        ("Documents", "s3", ["Nextcloud"], "les justificatifs, par WebDAV"),
+        ("Identite", "s2", ["Keycloak"], "qui a valide, de maniere opposable"),
+        ("Pilotage", "s3", ["Metabase", "n8n", "Grafana"], "mesurer, declencher, surveiller"),
+    ]
+    for i, (nom, teinte, briques, role) in enumerate(groupes):
+        x = 26 + i * 222
+        d.boite(x, 104, 196, 180, teinte=teinte)
+        d.texte(x + 98, 134, nom, taille=14, gras=True)
+        for j, brique in enumerate(briques):
+            d.texte(x + 98, 166 + j * 26, brique, taille=12, couleur="encre2")
+        d.texte(x + 98, 262, role, taille=10, couleur="encre2")
+    d.texte(460, 44, "Un agent utile vit dans un systeme d'information, pas tout seul.",
+            taille=15, gras=True)
+    d.texte(460, 68, "Chaque brique ajoute une dependance : on ne l'ajoute que contre un besoin nomme.",
+            taille=12, couleur="encre2")
+    d.boite(120, 322, 680, 76, teinte="trait", tirets=True)
+    d.texte(460, 348, "La question a poser avant chaque branchement", taille=13, gras=True)
+    d.texte(460, 372, "que se passe-t-il quand ce service est indisponible, lent, ou renvoie faux ?",
+            taille=11, couleur="encre2")
+    d.texte(460, 426, "Pas de reponse ecrite a cette question : pas de branchement.",
+            taille=12, gras=True, couleur="encre2")
+    return d
 
 
 FIGURES = {
+    "port-et-adaptateurs.svg": port_et_adaptateurs,
+    "ecosysteme-ouvert.svg": ecosysteme_ouvert,
     "pipeline-deploiement.svg": pipeline_deploiement,
     "exploitation-agent.svg": exploitation_agent,
     "cinq-implementations.svg": cinq_implementations,
