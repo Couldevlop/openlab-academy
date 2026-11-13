@@ -595,9 +595,97 @@ def frontiere_donnee_consigne() -> Dessin:
     d.texte(410, 362, "Si vous concaténez les deux zones dans une seule chaîne, la frontière "
                       "n'existe plus.", taille=12, gras=True, couleur="critique")
     return d
+def trois_memoires() -> Dessin:
+    """Séance 9 : mémoire de travail, mémoire des faits, mémoire des connaissances."""
+    d = Dessin(880, 360, "Les trois mémoires d'un agent, et ce qui les distingue")
+    memoires = [
+        ("Mémoire de travail", "s1", ["l'historique du tour en cours"],
+         ["Vit le temps d'une exécution", "Payée à chaque appel", "Bornée par un résumé"],
+         "le contexte"),
+        ("Mémoire des faits", "s3", ["ce que l'agent a déjà fait"],
+         ["Survit au programme", "Relue à la reprise", "Clé d'idempotence"],
+         "le fichier d'état"),
+        ("Mémoire des connaissances", "s2", ["ce que l'organisation sait"],
+         ["Indépendante des exécutions", "Interrogée par un outil", "Citée dans la réponse"],
+         "l'index documentaire"),
+    ]
+    for i, (nom, teinte, sous_titre, points, support) in enumerate(memoires):
+        x = 24 + i * 286
+        d.boite(x, 92, 268, 180, teinte=teinte)
+        d.texte(x + 134, 120, nom, taille=14, gras=True)
+        d.texte(x + 134, 142, sous_titre[0], taille=11, couleur="encre2")
+        for j, point in enumerate(points):
+            d.texte(x + 134, 174 + j * 26, point, taille=11, couleur="encre2")
+        d.texte(x + 134, 292, support, taille=12, gras=True, couleur=teinte)
+    d.texte(440, 42, "Confondre ces trois mémoires est la cause la plus fréquente de contextes "
+                     "obèses.", taille=14, gras=True)
+    d.texte(440, 64, "Chacune a sa durée de vie, son support et son coût.", taille=12, couleur="encre2")
+    d.texte(440, 336, "Règle : ce qui peut être relu par un outil ne reste pas dans le contexte.",
+            taille=12, gras=True, couleur="encre2")
+    return d
+
+
+def pipeline_rag() -> Dessin:
+    """Séance 9 : de la question à la réponse citée, avec l'endroit où chaque réglage agit."""
+    d = Dessin(900, 380, "Le trajet d'une question dans une recherche documentaire")
+    etapes = [("Question", "s1", "reformulée si besoin"), ("Recherche", "s3", "lexicale et vectorielle"),
+              ("Fusion", "s3", "les deux listes réunies"), ("Sélection", "s3", "les k meilleurs passages"),
+              ("Réponse", "s2", "citations obligatoires")]
+    for i, (nom, teinte, note) in enumerate(etapes):
+        x = 22 + i * 176
+        d.boite(x, 110, 158, 76, teinte=teinte)
+        d.texte(x + 79, 140, nom, taille=14, gras=True)
+        d.texte(x + 79, 164, note, taille=10, couleur="encre2")
+        if i < len(etapes) - 1:
+            d.fleche(x + 158, 148, x + 168, 148, teinte=teinte)
+    d.boite(22, 228, 334, 88, teinte="trait", tirets=True)
+    d.texte(189, 252, "Préparé à l'avance, une fois", taille=12, gras=True)
+    d.lignes_de_texte(189, 274, ["découpage des documents en passages",
+                                 "index lexical et vecteurs calculés"], taille=11)
+    d.boite(546, 228, 334, 88, teinte="critique", tirets=True)
+    d.texte(713, 252, "Ce qui se vérifie à chaque réponse", taille=12, gras=True, couleur="critique")
+    d.lignes_de_texte(713, 274, ["chaque affirmation porte sa source",
+                                 "un passage non cité ne compte pas"], taille=11)
+    d.texte(450, 42, "Une recherche documentaire n'est pas un agent : c'est un outil que l'agent appelle.",
+            taille=14, gras=True)
+    d.texte(450, 64, "Elle répond à une question sur vos documents, et elle cite ses sources.",
+            taille=12, couleur="encre2")
+    d.texte(450, 352, "Si la réponse ne peut pas être citée, l'agent doit dire qu'il ne sait pas.",
+            taille=12, gras=True, couleur="encre2")
+    return d
+
+
+def decoupage_documents() -> Dessin:
+    """Séance 9 : trois découpages du même document, et ce que chacun retrouve."""
+    d = Dessin(880, 380, "Trois découpages du même document, trois qualités de réponse")
+    cas = [
+        ("Trop petit", "critique", [26, 26, 26, 26, 26, 26],
+         "la phrase trouvée a perdu son contexte"),
+        ("Par section", "s3", [58, 58, 58],
+         "le passage se suffit à lui-même"),
+        ("Document entier", "attenue", [184],
+         "le passage utile se noie dans le reste"),
+    ]
+    for i, (nom, teinte, blocs, note) in enumerate(cas):
+        x = 40 + i * 290
+        d.texte(x + 110, 100, nom, taille=14, gras=True, couleur=teinte)
+        y = 118
+        for hauteur in blocs:
+            d.boite(x, y, 220, hauteur - 6, teinte=teinte)
+            y += hauteur
+        d.lignes_de_texte(x + 110, 324, _couper(note, 28), taille=11, couleur="encre2")
+    d.texte(440, 42, "Le découpage décide de ce que la recherche peut retrouver.", taille=14, gras=True)
+    d.texte(440, 64, "Un passage doit être compréhensible seul, et porter le titre de sa section.",
+            taille=12, couleur="encre2")
+    d.texte(440, 370, "Règle de départ : une section, un passage ; puis mesurez avant de régler.",
+            taille=12, gras=True, couleur="encre2")
+    return d
 
 
 FIGURES = {
+    "trois-memoires.svg": trois_memoires,
+    "pipeline-rag.svg": pipeline_rag,
+    "decoupage-documents.svg": decoupage_documents,
     "description-outil.svg": description_outil,
     "techniques-prompting.svg": techniques_prompting,
     "frontiere-donnee-consigne.svg": frontiere_donnee_consigne,
