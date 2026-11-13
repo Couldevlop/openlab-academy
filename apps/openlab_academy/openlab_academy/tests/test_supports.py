@@ -174,3 +174,73 @@ class TestFiguresLivrees(unittest.TestCase):
                     manquantes += [f"{parcours.title} / {m.num} : {f.nom}"
                                    for f in m.figures if not (ressources / f.nom).is_file()]
         self.assertEqual(manquantes, [], "\n".join(manquantes))
+
+
+class TestSectionsDeCours(unittest.TestCase):
+    """Une leçon est un chapitre, pas un résumé : elle se découpe en sections titrées, chacune pouvant
+    porter la figure, le tableau ou l'extrait qui l'illustre, au plus près du texte qui l'explique."""
+
+    def _section(self, **kw):
+        from openlab_academy.domain.parcours import Section
+        base = {"titre": "La boucle", "paragraphes": ("Un agent décide, agit, observe.",)}
+        return Section(**{**base, **kw})
+
+    def test_titre_et_paragraphes_obligatoires(self):
+        for invalide in ({"titre": "  "}, {"paragraphes": ()}):
+            with self.subTest(invalide), self.assertRaises(ValueError):
+                self._section(**invalide)
+
+    def test_sections_rendues_sous_le_contenu(self):
+        from openlab_academy.domain.parcours import Section
+        sections = (self._section(),
+                    Section("Les composants", ("Le modèle, les outils, la mémoire, le contrôle.",
+                                               "Sans contrôle, la boucle ne s'arrête pas.")))
+        rendu = blocs(editorjs.lecon_module(module(cours=sections), "D", 3))
+        titres = [b["data"]["text"] for b in rendu if b["type"] == "header"]
+        self.assertIn("La boucle", titres)
+        self.assertIn("Les composants", titres)
+        textes = [b["data"].get("text", "") for b in rendu if b["type"] == "paragraph"]
+        self.assertIn("Sans contrôle, la boucle ne s&#x27;arrête pas.", textes)
+
+    def test_section_porte_ses_propres_supports(self):
+        section = self._section(figures=(Figure("boucle-agent.svg", "La boucle"),),
+                                tableaux=(Tableau("T", ("a",), (("1",),)),),
+                                extraits=(Extrait("E", "python", "x = 1"),))
+        rendu = blocs(editorjs.lecon_module(module(cours=(section,)), "D", 3,
+                                            figures_urls={"boucle-agent.svg": FIGURE_URL}))
+        types = [b["type"] for b in rendu]
+        self.assertLess(types.index("header"), types.index("image"))
+        for attendu in ("image", "table", "codeBox"):
+            self.assertIn(attendu, types)
+
+    def test_texte_des_sections_echappe(self):
+        rendu = editorjs.lecon_module(module(cours=(self._section(
+            titre='<img src=x onerror="a">', paragraphes=('<img src=x onerror="a">',)),)), "D", 3)
+        self.assertNotIn("<img src=x", rendu)
+
+
+class TestLectureYamlDesSections(unittest.TestCase):
+    def _module(self, supplement: dict):
+        from openlab_academy.domain.reglages import Reglages
+        from openlab_academy.infrastructure.yaml_source import _Lecteur
+        base = {"num": "01", "title": "M", "contenu": "c", "livrable": "l"}
+        return _Lecteur("test.yaml", Reglages()).module({**base, **supplement}, "blocs[0].modules[0].")
+
+    def test_sections_lues_avec_leurs_supports(self):
+        m = self._module({"cours": [
+            {"titre": "La boucle", "texte": "Un agent décide.\n\nPuis il agit.",
+             "figures": [{"nom": "boucle-agent.svg", "legende": "La boucle"}],
+             "tableaux": [{"titre": "T", "entetes": ["a"], "lignes": [["1"]]}],
+             "code": [{"titre": "E", "langage": "python", "source": "x = 1"}]}]})
+        self.assertEqual(len(m.cours), 1)
+        section = m.cours[0]
+        self.assertEqual(section.titre, "La boucle")
+        self.assertEqual(section.paragraphes, ("Un agent décide.", "Puis il agit."))
+        self.assertEqual(section.figures[0].nom, "boucle-agent.svg")
+        self.assertEqual(section.tableaux[0].titre, "T")
+        self.assertEqual(section.extraits[0].langage, "python")
+
+    def test_section_mal_formee_refusee_en_nommant_la_cle(self):
+        with self.assertRaises(Exception) as capture:
+            self._module({"cours": [{"titre": "", "texte": "x"}]})
+        self.assertIn("cours", str(capture.exception))

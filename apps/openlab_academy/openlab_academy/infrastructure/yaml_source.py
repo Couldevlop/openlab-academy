@@ -6,7 +6,7 @@ import yaml
 
 from openlab_academy.domain.grille import Grille, GrilleInvalide
 from openlab_academy.domain.parcours import (Annonce, Bloc, Extrait, Figure, Module, Niveau, Parcours,
-                                             ParcoursInvalide, Projet, Question, Tableau)
+                                             ParcoursInvalide, Projet, Question, Section, Tableau)
 from openlab_academy.domain.reglages import Reglages, ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import Chaine
 
@@ -158,6 +158,20 @@ class _Lecteur:
                              langage=str(e.get("langage") or ""), code=str(e.get("source") or ""))
             for i, e in enumerate(self._entrees(brut, chemin)))
 
+    def sections(self, brut, chemin: str) -> tuple[Section, ...]:
+        """Clé facultative `cours:` : le chapitre en sections titrées. Le texte d'une section se découpe en
+        paragraphes sur les lignes vides, comme les travaux pratiques."""
+        resultat = []
+        for i, s in enumerate(self._entrees(brut, chemin)):
+            ou = f"{chemin}[{i}]"
+            paragraphes = tuple(p.strip() for p in re.split(r"\n\s*\n", str(s.get("texte") or "")) if p.strip())
+            resultat.append(self._construire(
+                Section, ou, titre=str(s.get("titre") or ""), paragraphes=paragraphes,
+                figures=self.figures(s.get("figures"), f"{ou}.figures"),
+                tableaux=self.tableaux(s.get("tableaux"), f"{ou}.tableaux"),
+                extraits=self.extraits(s.get("code"), f"{ou}.code")))
+        return tuple(resultat)
+
     def module(self, m: dict, chemin: str) -> Module:
         quiz = m.get("quiz") or []
         if not isinstance(quiz, list):
@@ -167,6 +181,7 @@ class _Lecteur:
                       mise_en_situation=str(m.get("mise_en_situation") or ""),
                       travaux_pratiques=str(m.get("travaux_pratiques") or ""),
                       archive=self.archive(m.get("archive"), f"{chemin}archive"),
+                      cours=self.sections(m.get("cours"), f"{chemin}cours"),
                       figures=self.figures(m.get("figures"), f"{chemin}figures"),
                       tableaux=self.tableaux(m.get("tableaux"), f"{chemin}tableaux"),
                       extraits=self.extraits(m.get("code"), f"{chemin}code"),

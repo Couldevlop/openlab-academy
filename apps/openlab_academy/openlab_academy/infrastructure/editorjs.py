@@ -7,7 +7,7 @@ import json
 import re
 from urllib.parse import parse_qs, urlsplit
 
-from openlab_academy.domain.parcours import Extrait, Figure, Module, Projet, Tableau
+from openlab_academy.domain.parcours import Extrait, Figure, Module, Projet, Section, Tableau
 from openlab_academy.domain.reglages import Reglages
 
 
@@ -19,8 +19,10 @@ def _bloc(type_: str, **data) -> dict:
     return {"type": type_, "data": data}
 
 
-def _titre(texte: str) -> dict:
-    return _bloc("header", text=texte, level=2)
+def _titre(texte: str, niveau: int = 2) -> dict:
+    """Le texte est celui d'une rubrique du rendu, écrit ici. Un titre venu d'un parcours passe par `_e`
+    chez l'appelant : l'échappement est au plus près de la donnée, et le HTML des rubriques reste lisible."""
+    return _bloc("header", text=texte, level=niveau)
 
 
 def _liste(items) -> dict:
@@ -71,7 +73,7 @@ def _extrait(extrait: Extrait) -> list[dict]:
             _bloc("codeBox", code=_e(extrait.code), language=extrait.langage)]
 
 
-def _supports(module: Module, figures_urls: dict[str, str]) -> list[dict]:
+def _supports(module: Module | Section, figures_urls: dict[str, str]) -> list[dict]:
     """La figure ouvre, le tableau tranche, le code montre. Un lecteur qui survole la page doit comprendre la
     séance avant d'en lire une phrase."""
     blocs = [_image(f, figures_urls) for f in module.figures]
@@ -82,6 +84,12 @@ def _supports(module: Module, figures_urls: dict[str, str]) -> list[dict]:
     return blocs
 
 
+def _section(section: Section, figures_urls: dict[str, str]) -> list[dict]:
+    blocs = [_titre(_e(section.titre), niveau=3)]
+    blocs += [_bloc("paragraph", text=_e(p.strip())) for p in section.paragraphes if p.strip()]
+    return blocs + _supports(section, figures_urls)
+
+
 def lecon_module(module: Module, devoir: str, heures: int, quiz: str | None = None,
                  devoir_cas: str | None = None, reglages: Reglages | None = None,
                  archive_url: str | None = None, figures_urls: dict[str, str] | None = None) -> str:
@@ -90,7 +98,10 @@ def lecon_module(module: Module, devoir: str, heures: int, quiz: str | None = No
         _bloc("paragraph", text=_e(module.contenu)),
         _bloc("paragraph", text=f"Format : ~{heures} h, 40 % de théorie et 60 % de pratique."),
     ]
-    blocs += _supports(module, figures_urls or {})
+    urls = figures_urls or {}
+    blocs += _supports(module, urls)
+    for section in module.cours:
+        blocs += _section(section, urls)
     if module.travaux_pratiques.strip():
         blocs.append(_titre("Travaux pratiques"))
         blocs += [_bloc("paragraph", text=_e(paragraphe.strip()))

@@ -126,6 +126,25 @@ class Extrait:
 
 
 @dataclass(frozen=True)
+class Section:
+    """Une partie du cours d'une séance. Une leçon est un chapitre : elle se lit en sections titrées, chacune
+    portant au plus près du texte la figure, le tableau ou l'extrait qui l'explique. Un support posé en fin de
+    page n'est plus relié à ce qu'il illustre, et personne ne remonte le lire."""
+
+    titre: str
+    paragraphes: tuple[str, ...]
+    figures: tuple[Figure, ...] = ()
+    tableaux: tuple[Tableau, ...] = ()
+    extraits: tuple[Extrait, ...] = ()
+
+    def __post_init__(self):
+        if not self.titre.strip():
+            raise ParcoursInvalide("section sans titre")
+        if not self.paragraphes or not any(p.strip() for p in self.paragraphes):
+            raise ParcoursInvalide(f"section « {self.titre} » : au moins un paragraphe")
+
+
+@dataclass(frozen=True)
 class Module:
     num: str
     title: str
@@ -135,6 +154,7 @@ class Module:
     mise_en_situation: str = ""
     travaux_pratiques: str = ""  # support de la séance : déroulé et défi, affiché dans la leçon
     archive: str = ""  # nom de fichier de l'archive de départ, jointe à la leçon et citée par elle
+    cours: tuple[Section, ...] = ()  # le chapitre proprement dit, en sections titrées
     figures: tuple[Figure, ...] = ()  # schémas de la séance, servis comme l'archive
     tableaux: tuple[Tableau, ...] = ()
     extraits: tuple[Extrait, ...] = ()
