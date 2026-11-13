@@ -1,0 +1,31 @@
+# Garde le flux de branches : main ne reçoit que des PR venues de develop.
+#
+# GitHub n'autorise aucune protection de branche sur un dépôt privé en plan gratuit (voir docs/flux-git.md) :
+# ce workflow est le seul contrôle automatique de la règle, côté serveur. Il vise la PR *humaine* — celle que
+# la promotion ouvre avec GITHUB_TOKEN reste en attente d'approbation, et vient de develop par construction.
+name: Gardien
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  flux:
+    name: main ne reçoit que develop
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Vérifier la branche source
+        env:
+          SOURCE: ${{ github.head_ref }}
+        run: |
+          if [ "$SOURCE" != "develop" ]; then
+            echo "::error::main ne reçoit que des PR venues de develop ; celle-ci vient de '$SOURCE'." \
+                 "Ouvrez la PR vers develop, la promotion vers main est automatique."
+            exit 1
+          fi
+          echo "Source : develop — conforme."

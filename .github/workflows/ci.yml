@@ -1,14 +1,14 @@
 name: CI
 
-# Chaque arbre n'est validé qu'une fois : les trois jobs lourds tournent sur les PR vers develop et sur les
-# push de develop et de main. Une PR develop → main ne les rejoue pas — elle porte l'arbre que la CI de
-# develop vient de valider, et la promotion vérifie que la branche n'a pas bougé depuis. Seul le gardien de
-# flux s'y exécute ; la fusion dans main déclenche ensuite sa propre CI complète.
+# Chaque arbre n'est validé qu'une fois : les jobs tournent sur les PR vers develop et sur les push de
+# develop et de main. Une PR develop → main n'ouvre aucun run ici — elle porte l'arbre que la CI de develop
+# vient de valider, et la promotion vérifie que la branche n'a pas bougé depuis. Le flux de branches est
+# gardé par gardien.yml.
 on:
   push:
     branches: [main, develop]
   pull_request:
-    branches: [main, develop]
+    branches: [develop]
   workflow_dispatch:
 
 concurrency:
@@ -32,8 +32,6 @@ jobs:
   frontend:
     name: Frontend — lint, type, tests, build
     runs-on: ubuntu-24.04
-    # une PR develop → main ne rejoue pas ce job : l'arbre vient d'être validé sur develop
-    if: github.base_ref != 'main'
 
     defaults:
       run:
@@ -79,8 +77,6 @@ jobs:
     name: Backend — tests Frappe et couverture
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    # une PR develop → main ne rejoue pas ce job : l'arbre vient d'être validé sur develop
-    if: github.base_ref != 'main'
 
     services:
       mariadb:
@@ -169,8 +165,6 @@ jobs:
     name: Sécurité — SAST, secrets, dépendances
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    # une PR develop → main ne rejoue pas ce job : l'arbre vient d'être validé sur develop
-    if: github.base_ref != 'main'
 
     steps:
       - uses: actions/checkout@v5
@@ -200,23 +194,3 @@ jobs:
       - name: npm audit (dépendances de production du front)
         working-directory: apps/openlab_academy/frontend
         run: npm audit --omit=dev --audit-level=high
-
-  # ==========================================================================
-  # Gardien de flux — main ne reçoit que des PR venues de develop
-  # ==========================================================================
-  gardien:
-    name: Gardien — main ne reçoit que develop
-    runs-on: ubuntu-24.04
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
-    timeout-minutes: 5
-
-    steps:
-      - name: Vérifier la branche source
-        env:
-          SOURCE: ${{ github.head_ref }}
-        run: |
-          if [ "$SOURCE" != "develop" ]; then
-            echo "::error::main ne reçoit que des PR venues de develop ; celle-ci vient de '$SOURCE'."                  "Ouvrez la PR vers develop, la promotion vers main est automatique."
-            exit 1
-          fi
-          echo "Source : develop — conforme."
