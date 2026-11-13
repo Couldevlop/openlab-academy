@@ -7,7 +7,7 @@ import json
 import re
 from urllib.parse import parse_qs, urlsplit
 
-from openlab_academy.domain.parcours import Extrait, Figure, Module, Projet, Section, Tableau
+from openlab_academy.domain.parcours import AvecCours, Extrait, Figure, Module, Projet, Section, Tableau
 from openlab_academy.domain.reglages import Reglages
 
 
@@ -73,7 +73,7 @@ def _extrait(extrait: Extrait) -> list[dict]:
             _bloc("codeBox", code=_e(extrait.code), language=extrait.langage)]
 
 
-def _supports(module: Module | Section, figures_urls: dict[str, str]) -> list[dict]:
+def _supports(module: AvecCours | Section, figures_urls: dict[str, str]) -> list[dict]:
     """La figure ouvre, le tableau tranche, le code montre. Un lecteur qui survole la page doit comprendre la
     séance avant d'en lire une phrase."""
     blocs = [_image(f, figures_urls) for f in module.figures]
@@ -129,10 +129,16 @@ def lecon_module(module: Module, devoir: str, heures: int, quiz: str | None = No
     return _doc(blocs)
 
 
-def lecon_projet(projet: Projet, devoir: str, reglages: Reglages) -> str:
+def lecon_projet(projet: Projet, devoir: str, reglages: Reglages,
+                 figures_urls: dict[str, str] | None = None) -> str:
+    urls = figures_urls or {}
+    guide: list[dict] = _supports(projet, urls)
+    for section in projet.cours:
+        guide += _section(section, urls)
     return _doc([
         _bloc("paragraph", text=f"<b>{projet.niveau.libelle}</b> · ~{projet.duree_h} h"),
         _titre("Contexte"), _bloc("paragraph", text=_e(projet.contexte)),
+        *guide,
         _titre("Objectifs"), _liste(projet.objectifs),
         _titre("Fonctionnalités attendues"), _liste(projet.fonctionnalites),
         _titre("Stack"), _liste(projet.stack),

@@ -144,8 +144,22 @@ class Section:
             raise ParcoursInvalide(f"section « {self.titre} » : au moins un paragraphe")
 
 
+class AvecCours:
+    """Mêlé aux leçons qui portent un chapitre en sections : une séance et le guide de réalisation du projet
+    final se lisent de la même façon, donc se rendent et se servent de la même façon."""
+
+    @property
+    def toutes_les_figures(self) -> tuple[Figure, ...]:
+        """Les figures de la leçon et celles de ses sections, dédoublonnées en conservant l'ordre de lecture."""
+        vues: dict[str, Figure] = {}
+        for porteur in (self, *self.cours):
+            for figure in porteur.figures:
+                vues.setdefault(figure.nom, figure)
+        return tuple(vues.values())
+
+
 @dataclass(frozen=True)
-class Module:
+class Module(AvecCours):
     num: str
     title: str
     contenu: str
@@ -158,15 +172,6 @@ class Module:
     figures: tuple[Figure, ...] = ()  # schémas de la séance, servis comme l'archive
     tableaux: tuple[Tableau, ...] = ()
     extraits: tuple[Extrait, ...] = ()
-    @property
-    def toutes_les_figures(self) -> tuple[Figure, ...]:
-        """Les figures du module et celles de ses sections, dédoublonnées en conservant l'ordre de lecture."""
-        vues: dict[str, Figure] = {}
-        for porteur in (self, *self.cours):
-            for figure in porteur.figures:
-                vues.setdefault(figure.nom, figure)
-        return tuple(vues.values())
-
     grille_cas: Grille | None = None  # grille propre à la mise en situation (sinon grille générique)
     correction_cas: Chaine | None = None
     grille_livrable: Grille | None = None
@@ -180,7 +185,7 @@ class Bloc:
 
 
 @dataclass(frozen=True)
-class Projet:
+class Projet(AvecCours):
     titre: str
     duree_h: int
     niveau: Niveau
@@ -192,6 +197,10 @@ class Projet:
     exigences_specifiques: tuple[str, ...]
     livrables: tuple[str, ...]
     apres_module: str | None = None
+    cours: tuple[Section, ...] = ()  # guide de réalisation, en sections titrées
+    figures: tuple[Figure, ...] = ()
+    tableaux: tuple[Tableau, ...] = ()
+    extraits: tuple[Extrait, ...] = ()
     grille: Grille | None = None  # sinon grille dérivée du barème des réglages
     correction: Chaine | None = None
 

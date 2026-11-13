@@ -211,6 +211,10 @@ class _Lecteur:
             contexte=str(self.exiger(p, "contexte", chemin)),
             exigences_specifiques=self.textes(p["exigences_specifiques"] or (), f"{chemin}exigences_specifiques"),
             apres_module=None if apres is None else str(apres),
+            cours=self.sections(p.get("cours"), f"{chemin}cours"),
+            figures=self.figures(p.get("figures"), f"{chemin}figures"),
+            tableaux=self.tableaux(p.get("tableaux"), f"{chemin}tableaux"),
+            extraits=self.extraits(p.get("code"), f"{chemin}code"),
             grille=self.grille(p.get("grille"), f"{chemin}grille"),
             correction=self.correction(p.get("correction"), f"{chemin}correction"), **listes,
         )

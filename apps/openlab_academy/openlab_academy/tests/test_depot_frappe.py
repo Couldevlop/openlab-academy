@@ -8,7 +8,7 @@ import yaml
 from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy.application.publier_parcours import PublierParcours, Statut
-from openlab_academy.domain.parcours import Annonce, Bloc, Module
+from openlab_academy.domain.parcours import Annonce, Bloc, Module, Niveau
 from openlab_academy.entrypoints import install, seed
 from openlab_academy.infrastructure import contenus_parcours_frappe as contenus
 from openlab_academy.infrastructure import ressources_frappe
@@ -114,6 +114,21 @@ class TestDepotFrappe(FrappeTestCase):
         references = contenus.references_avouees(fichier.file_url)
         self.assertIn((la_lecon.name, False, nom), references)
         self.assertFalse([r for r in references if r[1]], references)
+
+    def test_figure_du_guide_de_projet_jointe_a_la_lecon_et_citee(self):
+        """Le guide de réalisation du projet final porte ses schémas comme une séance : fichiers privés
+        attachés à la leçon, servis par le contrôle d'accès du LMS."""
+        from openlab_academy.domain.parcours import Figure, Section
+        figure = Figure("boucle-agent.svg", "La boucle d'un agent")
+        cap = projet(titre="Cap", apres_module=None, niveau=Niveau.AUTONOME, duree_h=60,
+                     cours=(Section("Cadrer", ("Écrire la mission.",), figures=(figure,)),))
+        nom = self.depot.creer(parcours(title=TITRE, capstone=cap))
+        la_lecon = lecon(nom, "Énoncé — Cap")
+        fichier = frappe.get_doc("File", {"attached_to_doctype": "Course Lesson",
+                                          "attached_to_name": la_lecon.name, "file_name": figure.nom})
+        self.assertEqual((fichier.is_private, fichier.attached_to_field), (1, "content"))
+        images = [b for b in json.loads(la_lecon.content)["blocks"] if b["type"] == "image"]
+        self.assertEqual([b["data"]["url"] for b in images], [fichier.file_url])
 
     def test_archive_deja_jointe_reutilisee(self):
         """Une archive jointe deux fois à la même leçon ne crée pas un second fichier."""

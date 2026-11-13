@@ -244,3 +244,32 @@ class TestLectureYamlDesSections(unittest.TestCase):
         with self.assertRaises(Exception) as capture:
             self._module({"cours": [{"titre": "", "texte": "x"}]})
         self.assertIn("cours", str(capture.exception))
+
+
+class TestLectureYamlDuGuideDeProjet(unittest.TestCase):
+    """Le projet final se prépare comme une séance : son guide se lit en sections titrées, avec supports."""
+
+    def _projet(self, supplement: dict):
+        from openlab_academy.domain.reglages import Reglages
+        from openlab_academy.infrastructure.yaml_source import _Lecteur
+        base = {"titre": "Cap", "duree_h": 3, "niveau": "autonome", "contexte": "c", "objectifs": ["o"],
+                "fonctionnalites": ["f"], "stack": ["s"], "criteres_acceptation": ["a"],
+                "exigences_specifiques": ["e"], "livrables": ["l"]}
+        return _Lecteur("test.yaml", Reglages()).projet({**base, **supplement}, "capstone.", False)
+
+    def test_guide_lu_avec_ses_supports(self):
+        p = self._projet({
+            "figures": [{"nom": "boucle-agent.svg", "legende": "La boucle"}],
+            "cours": [{"titre": "Cadrer", "texte": "Écrire la mission.\n\nPuis les limites.",
+                       "tableaux": [{"titre": "T", "entetes": ["a"], "lignes": [["1"]]}],
+                       "code": [{"titre": "E", "langage": "yaml", "source": "mission: x"}]}]})
+        self.assertEqual([s.titre for s in p.cours], ["Cadrer"])
+        self.assertEqual(p.cours[0].paragraphes, ("Écrire la mission.", "Puis les limites."))
+        self.assertEqual(p.cours[0].tableaux[0].titre, "T")
+        self.assertEqual(p.cours[0].extraits[0].langage, "yaml")
+        self.assertEqual([f.nom for f in p.toutes_les_figures], ["boucle-agent.svg"])
+
+    def test_section_mal_formee_refusee_en_nommant_la_cle(self):
+        with self.assertRaises(Exception) as capture:
+            self._projet({"cours": [{"titre": "", "texte": "x"}]})
+        self.assertIn("capstone.cours", str(capture.exception))

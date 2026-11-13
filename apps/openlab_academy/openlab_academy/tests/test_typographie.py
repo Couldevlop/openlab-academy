@@ -43,16 +43,23 @@ def _textes_du_parcours(p: Parcours):
             continue
         yield from (projet.contexte, *projet.objectifs, *projet.fonctionnalites, *projet.stack,
                     *projet.criteres_acceptation, *projet.exigences_specifiques, *projet.livrables)
+        for section in projet.cours:
+            yield from (section.titre, *section.paragraphes)
+            for t in section.tableaux:
+                yield from (t.titre, *t.entetes, *(c for ligne in t.lignes for c in ligne))
+            for f in section.figures:
+                yield f.legende
 
 
 def _prose_rendue(p: Parcours, reglages: Reglages):
     """Les phrases que le rendu ajoute de lui-même, invisibles dans le YAML."""
     modules = [m for bloc in p.blocs for m in bloc.modules]
     # les figures exigent une adresse servie par le site ; la prose ne dépend pas de laquelle
-    porteurs = [*modules, *(section for m in modules for section in m.cours)]
+    porteurs = [*modules, *(section for m in modules for section in m.cours),
+                p.capstone, *p.capstone.cours]
     urls = {f.nom: f"/private/files/{f.nom}" for porteur in porteurs for f in porteur.figures}
     documents = [editorjs.lecon_module(m, "D", p.heures_par_module, figures_urls=urls) for m in modules]
-    documents += [editorjs.lecon_projet(p.capstone, "D", reglages)]
+    documents += [editorjs.lecon_projet(p.capstone, "D", reglages, urls)]
     for document in documents:
         for bloc in json.loads(document)["blocks"]:
             if bloc["type"] not in PROSE:

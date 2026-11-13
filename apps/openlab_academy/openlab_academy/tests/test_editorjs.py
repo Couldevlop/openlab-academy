@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from openlab_academy.domain.parcours import Module
+from openlab_academy.domain.parcours import Extrait, Figure, Module, Section, Tableau
 from openlab_academy.domain.reglages import CritereBareme, Reglages
 from openlab_academy.infrastructure import editorjs
 from openlab_academy.tests.fabriques import projet
@@ -90,6 +90,30 @@ class TestRenduProjet(unittest.TestCase):
                         "couverture ≥ 70 %", "Spécifique", "Fonctionnel : 40 %", "Documentation : 10 %"):
             self.assertIn(attendu, rendu)
         self.assertEqual(blocs(editorjs.lecon_projet(projet(), "D", REGLAGES))[-1]["data"], {"assignment": "D"})
+
+    def test_cours_du_projet_rendu_en_sections_apres_le_contexte(self):
+        """Le capstone se prepare : son guide de realisation se lit en sections titrees, comme une seance."""
+        section = Section("Cadrer avant de coder", ("Un paragraphe.", "Un autre."),
+                          tableaux=(Tableau("T", ("A",), (("1",),)),),
+                          extraits=(Extrait("E", "python", "x = 1"),))
+        b = blocs(editorjs.lecon_projet(projet(cours=(section,)), "D", REGLAGES))
+        titres = [x["data"]["text"] for x in b if x["type"] == "header"]
+        self.assertEqual(titres[:3], ["Contexte", "Cadrer avant de coder", "Objectifs"])
+        niveau = next(x["data"]["level"] for x in b if x["data"].get("text") == "Cadrer avant de coder")
+        self.assertEqual(niveau, 3)
+        types = [x["type"] for x in b]
+        self.assertIn("table", types)
+        self.assertIn("codeBox", types)
+
+    def test_figures_du_projet_servies_par_url(self):
+        section = Section("S", ("p",), figures=(Figure("schema.svg", "Une legende"),))
+        p = projet(cours=(section,), figures=(Figure("ouverture.svg", "Ouverture"),))
+        self.assertEqual([f.nom for f in p.toutes_les_figures], ["ouverture.svg", "schema.svg"])
+        b = blocs(editorjs.lecon_projet(p, "D", REGLAGES,
+                                        figures_urls={"schema.svg": "/private/files/s.svg",
+                                                     "ouverture.svg": "/private/files/o.svg"}))
+        images = [x for x in b if x["type"] == "image"]
+        self.assertEqual([i["data"]["url"] for i in images], ["/private/files/o.svg", "/private/files/s.svg"])
 
     def test_listes_au_format_attendu_par_nested_list(self):
         """Le LMS rend les listes avec @editorjs/nested-list : chaque entree est un objet {content, items}.

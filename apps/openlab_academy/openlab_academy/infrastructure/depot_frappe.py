@@ -179,9 +179,18 @@ class DepotFrappe:
         devoir = self._devoir(cours_id, ch.titre, editorjs.consigne_projet(ch.projet), type_exercice, ch.projet,
                               ch.projet.grille, ch.projet.correction)
         titre = f"Énoncé — {ch.projet.titre}"
-        return self._nouvelle_lecon(cours_id, chapitre, titre, editorjs.lecon_projet(ch.projet, devoir, self._reglages),
-                                    [{"assessment_type": "LMS Assignment", "assessment_name": devoir}],
-                                    videos.get(titre, "")).name
+        # mêmes deux passes que pour une séance : un média ne se joint qu'à une leçon déjà créée
+        sans_media = dataclasses.replace(
+            ch.projet, figures=(), cours=tuple(dataclasses.replace(s, figures=()) for s in ch.projet.cours))
+        lecon = self._nouvelle_lecon(cours_id, chapitre, titre,
+                                     editorjs.lecon_projet(sans_media, devoir, self._reglages),
+                                     [{"assessment_type": "LMS Assignment", "assessment_name": devoir}],
+                                     videos.get(titre, ""))
+        figures = {f.nom: ressources_frappe.joindre(lecon.name, f.nom) for f in ch.projet.toutes_les_figures}
+        if figures:
+            lecon.content = editorjs.lecon_projet(ch.projet, devoir, self._reglages, figures)
+            lecon.save(ignore_permissions=True)
+        return lecon.name
 
     def _lecon_module(self, cours_id: str, chapitre: str, m: Module, heures: int, videos: dict[str, str]) -> str:
         devoir = self._devoir(cours_id, f"Livrable {m.num} — {m.title}", editorjs.consigne_module(m),
