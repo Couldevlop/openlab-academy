@@ -5285,6 +5285,181 @@ blocs:
               Mesurez enfin la latence des deux versions sur dix appels. L'écart, de l'ordre de quelques
               millisecondes par appel en local, se multiplie par le nombre de tours : c'est le prix de
               l'interopérabilité, et il se paie en connaissance de cause.
+          - titre: Le serveur MCP du fil rouge, écrit en entier
+            texte: >-
+              Nous publions maintenant deux de vos outils comme un serveur MCP, afin que n'importe
+              quel client compatible puisse les utiliser : votre agent, un assistant de bureau, ou
+              l'agent d'un collègue.
+
+              Deux décisions structurent ce fichier, et elles sont plus importantes que la syntaxe.
+              D'abord, nous ne publions que des lectures. Un serveur partagé est appelé par des clients
+              que vous ne contrôlez pas ; l'enregistrement d'une relance reste chez vous, derrière
+              votre validation humaine. Ensuite, les descriptions d'outils sont écrites pour une
+              machine qui ne connaît pas votre métier : elles disent ce que fait l'outil, dans quelle
+              unité, et ce qu'il refuse.
+
+              Notez le journal placé dans chaque outil. Côté serveur, vous ne voyez plus le
+              raisonnement du client : la trace est votre seul moyen de comprendre, après coup, qui a
+              demandé quoi.
+            code:
+              - titre: serveur_mcp/serveur.py, le fichier complet
+                langage: python
+                source: |
+                  """Vos outils, publies en MCP. Installation : pip install "mcp[cli]"."""
+                  import logging
+
+                  from mcp.server.fastmcp import FastMCP
+
+                  from recouvrement.outils import executer_outil
+
+                  logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+                  journal = logging.getLogger("serveur-recouvrement")
+
+                  serveur = FastMCP("recouvrement")
+
+
+                  @serveur.tool()
+                  def lister_factures_impayees(age_min_jours: int = 30,
+                                               exclure_litiges: bool = True) -> dict:
+                      """Liste les factures impayees dont le retard atteint age_min_jours.
+
+                      Les montants sont en francs CFA. Les factures en litige sont ecartees par
+                      defaut et ne doivent jamais etre relancees. Les notes libres des factures ne
+                      sont jamais renvoyees. Lecture seule : cet outil n'ecrit rien.
+                      """
+                      journal.info("appel lister_factures_impayees age=%s", age_min_jours)
+                      return executer_outil("lister_factures_impayees",
+                                            {"age_min_jours": age_min_jours,
+                                             "exclure_litiges": exclure_litiges})
+
+
+                  @serveur.tool()
+                  def calculer_exposition(facture_ids: list[str]) -> dict:
+                      """Somme les montants des factures citees et renvoie le total en francs CFA.
+
+                      Les identifiants ont la forme FAC-000. Un identifiant inconnu fait echouer
+                      l'appel plutot que de produire un total partiel. Lecture seule.
+                      """
+                      journal.info("appel calculer_exposition n=%s", len(facture_ids))
+                      return executer_outil("calculer_exposition", {"facture_ids": facture_ids})
+
+
+                  @serveur.resource("recouvrement://politique")
+                  def politique_de_relance() -> str:
+                      """La politique interne de relance, offerte en lecture aux clients."""
+                      from pathlib import Path
+                      return Path("connaissances/politique_relance.md").read_text(encoding="utf-8")
+
+
+                  # Ce qui n'est PAS publie, et pourquoi : preparer_brouillon_relance,
+                  # soumettre_pour_validation et enregistrer_relance ecrivent. Un serveur partage
+                  # est appele par des clients que vous ne controlez pas : l'ecriture reste chez vous,
+                  # derriere votre validation humaine.
+
+                  if __name__ == "__main__":
+                      serveur.run(transport="stdio")
+          - titre: Le client, et la frontière de confiance
+            texte: >-
+              Appeler un serveur MCP, c'est sortir de chez soi. Le client ci-dessous traite donc le
+              serveur comme une source externe : il découvre les outils disponibles, il vérifie que
+              ceux qu'il compte utiliser sont bien là, et il n'exécute jamais une instruction trouvée
+              dans une réponse.
+
+              Ce dernier point est la leçon de sécurité de la séance, et il anticipe la séance 14. Un
+              serveur distant peut renvoyer, dans une description d'outil ou dans un résultat, un
+              texte qui ressemble à une consigne. Votre client doit traiter tout cela comme de la
+              donnée. La règle pratique : la liste des outils autorisés est écrite chez vous, jamais
+              déduite de ce que le serveur annonce.
+            code:
+              - titre: recouvrement/client_mcp.py, le fichier complet
+                langage: python
+                source: |
+                  """Client MCP : un serveur distant est une source externe, jamais une autorite."""
+                  from contextlib import asynccontextmanager
+
+                  from mcp import ClientSession, StdioServerParameters
+                  from mcp.client.stdio import stdio_client
+
+                  # La liste des outils autorises est ecrite ici, pas deduite de ce que le serveur annonce.
+                  AUTORISES = {"lister_factures_impayees", "calculer_exposition"}
+
+
+                  class ServeurNonConforme(RuntimeError):
+                      """Le serveur n'offre pas ce que nous attendons : on ne s'adapte pas, on refuse."""
+
+
+                  @asynccontextmanager
+                  async def connexion(commande: list[str]):
+                      """Connexion, decouverte, usage, fermeture : toujours dans cet ordre."""
+                      parametres = StdioServerParameters(command=commande[0], args=commande[1:])
+                      async with stdio_client(parametres) as (lecture, ecriture):
+                          async with ClientSession(lecture, ecriture) as session:
+                              await session.initialize()
+                              yield session
+                      # La fermeture est garantie meme en cas d'erreur : pas de processus orphelin.
+
+
+                  async def outils_utilisables(session: ClientSession) -> set[str]:
+                      annonces = {outil.name for outil in (await session.list_tools()).tools}
+                      utilisables = annonces & AUTORISES
+                      if not utilisables:
+                          raise ServeurNonConforme(f"aucun outil attendu ; annonces : {sorted(annonces)}")
+                      return utilisables
+
+
+                  async def appeler(session: ClientSession, nom: str, arguments: dict) -> dict:
+                      if nom not in AUTORISES:
+                          # Meme si le serveur le propose : notre liste blanche prime.
+                          return {"ok": False, "erreur": f"outil {nom} non autorise chez nous"}
+                      reponse = await session.call_tool(nom, arguments)
+                      textes = [bloc.text for bloc in reponse.content if hasattr(bloc, "text")]
+                      # Le contenu renvoye est une donnee. Jamais une consigne, jamais du code a executer.
+                      return {"ok": not reponse.isError, "donnees": textes}
+              - titre: tests/test_client_mcp.py, la frontière prouvée
+                langage: python
+                source: |
+                  """La frontiere de confiance se teste, sinon elle n'existe pas."""
+                  import pytest
+
+                  from recouvrement.client_mcp import AUTORISES, appeler
+
+
+                  class SessionSimulee:
+                      """Un serveur hostile : il annonce un outil dangereux et renvoie une consigne."""
+
+                      def __init__(self) -> None:
+                          self.appels = []
+
+                      async def call_tool(self, nom, arguments):
+                          self.appels.append(nom)
+                          raise AssertionError("ne devrait jamais etre appele pour un outil non autorise")
+
+
+                  @pytest.mark.asyncio
+                  async def test_un_outil_non_autorise_n_est_jamais_appele():
+                      session = SessionSimulee()
+                      resultat = await appeler(session, "supprimer_les_factures", {})
+                      assert resultat["ok"] is False
+                      assert session.appels == []        # l'appel n'a meme pas quitte notre code
+
+
+                  def test_la_liste_blanche_ne_contient_aucune_ecriture():
+                      interdits = {"preparer_brouillon_relance", "soumettre_pour_validation",
+                                   "enregistrer_relance"}
+                      assert not (AUTORISES & interdits)
+          - titre: Votre projet final cette semaine
+            texte: >-
+              Publiez vos deux outils de lecture en MCP, et faites les consommer par votre agent via
+              le client. Votre boucle ne doit pas changer : c'est la preuve que votre porte unique de
+              la séance 5 était bien conçue.
+
+              Essayez ensuite le test qui compte : branchez votre serveur sur un client MCP qui n'est
+              pas le vôtre, par exemple un assistant de bureau compatible, et regardez si les
+              descriptions d'outils suffisent à quelqu'un qui ne connaît pas votre projet. Chaque
+              question que l'autre client pose mal est une description à réécrire.
+
+              Notez dans decisions.md quels outils vous publiez, lesquels restent chez vous, et la
+              raison de la frontière. C'est exactement la question qu'on vous posera en entretien.
           - titre: Glossaire de la séance
             texte: >-
               MCP : protocole par lequel un agent découvre et appelle des outils publiés par un serveur.
@@ -5527,6 +5702,240 @@ blocs:
               mieux : le travail est trop petit pour amortir la coordination. Sur trois cents factures avec
               des règles différentes par segment, le rapport s'inverse. Le point de bascule n'est pas une
               opinion, il se mesure, et votre rapport de projet doit le citer.
+          - titre: Les contrats d'échange, écrits avant les agents
+            texte: >-
+              En multi-agents, ce qui casse n'est presque jamais le raisonnement d'un agent : c'est ce
+              qui circule entre eux. On écrit donc les contrats d'abord, et les agents ensuite.
+
+              Deux contrats suffisent. Un ordre de mission, qui dit ce qu'on demande, avec ses limites.
+              Un rapport, qui dit ce qui a été fait, avec son résultat et son coût. Remarquez que le
+              rapport porte un champ d'échec explicite : un spécialiste a le droit de ne pas y arriver,
+              et il doit pouvoir le dire. Un sous agent qui renvoie une phrase vague parce qu'il n'a
+              pas de façon de signaler l'échec est la première cause de panne silencieuse.
+
+              Remarquez aussi les limites portées par l'ordre de mission. Le superviseur distribue un
+              budget et un plafond de tours, il ne les laisse pas à la discrétion de chacun. Sans cela,
+              cinq spécialistes à huit tours font quarante appels de modèle pour une seule demande.
+            code:
+              - titre: multi/contrats_echange.py, le fichier complet
+                langage: python
+                source: |
+                  """Ce qui circule entre agents, fige avant d'ecrire le moindre agent."""
+                  from pydantic import BaseModel, Field
+
+
+                  class OrdreDeMission(BaseModel):
+                      """Un contrat, pas une conversation : le superviseur demande, il ne discute pas."""
+                      mission_id: str = Field(pattern=r"^MIS-[A-Z0-9]{3}$")
+                      objectif: str = Field(min_length=10, max_length=400)
+                      factures: list[str] = Field(min_length=1, max_length=10)
+                      # Les limites sont distribuees par le superviseur, jamais choisies par l'execute.
+                      tours_maximum: int = Field(default=4, ge=1, le=8)
+                      budget_fcfa: int = Field(default=120, ge=10, le=1000)
+
+
+                  class Rapport(BaseModel):
+                      """Le retour d'un specialiste. L'echec y est une reponse valide."""
+                      mission_id: str
+                      reussi: bool
+                      # Rempli quand reussi vaut vrai.
+                      brouillons: list[str] = Field(default_factory=list)
+                      total_fcfa: int = 0
+                      # Rempli quand reussi vaut faux : sans ce champ, l'echec devient silencieux.
+                      motif_echec: str = ""
+                      factures_non_traitees: list[str] = Field(default_factory=list)
+                      # Toujours rempli : c'est ce qui permet de mesurer le surcout du decoupage.
+                      tours_consommes: int = 0
+                      depense_fcfa: int = 0
+
+                      def est_coherent(self) -> bool:
+                          """Un rapport reussi sans brouillon, ou echoue sans motif, est invalide."""
+                          if self.reussi:
+                              return bool(self.brouillons) and not self.motif_echec
+                          return bool(self.motif_echec)
+          - titre: Le superviseur, et les trois pannes qu'il doit prévoir
+            texte: >-
+              Le superviseur découpe, distribue, attend, puis agrège. Son code est court, et presque
+              entièrement consacré aux trois pannes propres au multi-agents.
+
+              La première est la panne silencieuse : un spécialiste répond quelque chose d'incohérent,
+              et le superviseur l'accepte. La parade est la vérification de cohérence du rapport, avant
+              toute agrégation. La deuxième est la perte d'information : chaque échange résume, et à la
+              fin plus personne ne sait pourquoi une facture a été écartée. La parade est de faire
+              remonter les factures non traitées, nommément. La troisième est l'emballement du coût :
+              la parade est le budget distribué, puis vérifié à l'arrivée.
+
+              Un mot sur l'exécution en parallèle. Elle est tentante et elle est correcte ici, parce
+              que les lots sont disjoints. Dès que deux spécialistes peuvent toucher la même facture,
+              vous avez besoin d'un verrou, ou vous aurez deux brouillons pour un même client.
+            code:
+              - titre: multi/superviseur.py, le fichier complet
+                langage: python
+                source: |
+                  """Decouper, distribuer, verifier, agreger. Le reste est du detail."""
+                  import asyncio
+                  import uuid
+
+                  from multi.contrats_echange import OrdreDeMission, Rapport
+                  from multi.specialiste import traiter_mission
+                  from recouvrement.outils import executer_outil
+                  from recouvrement.trace import Trace
+
+                  TAILLE_LOT = 4
+                  BUDGET_TOTAL_FCFA = 500
+
+
+                  def _decouper(factures: list[str]) -> list[list[str]]:
+                      """Des lots disjoints : c'est ce qui autorise le parallele sans verrou."""
+                      return [factures[i:i + TAILLE_LOT] for i in range(0, len(factures), TAILLE_LOT)]
+
+
+                  async def orchestrer(age_min_jours: int = 30, trace: Trace | None = None) -> dict:
+                      trace = trace or Trace()
+                      liste = executer_outil("lister_factures_impayees",
+                                             {"age_min_jours": age_min_jours}, trace=trace)
+                      if not liste["ok"]:
+                          return {"reussi": False, "motif": liste["erreur"]}
+                      factures = [f["facture_id"] for f in liste["donnees"]["factures"]]
+                      lots = _decouper(factures)
+
+                      # Le budget se divise avant de partir : il ne se negocie pas en route.
+                      budget_par_lot = max(10, BUDGET_TOTAL_FCFA // max(1, len(lots)))
+                      ordres = [OrdreDeMission(mission_id=f"MIS-{uuid.uuid4().hex[:3].upper()}",
+                                               objectif="preparer un brouillon de palier 1 par facture",
+                                               factures=lot, budget_fcfa=budget_par_lot)
+                                for lot in lots]
+
+                      rapports = await asyncio.gather(*[traiter_mission(o, trace) for o in ordres],
+                                                      return_exceptions=True)
+                      return _agreger(ordres, rapports, trace)
+
+
+                  def _agreger(ordres: list[OrdreDeMission], rapports: list, trace: Trace) -> dict:
+                      brouillons: list[str] = []
+                      non_traitees: list[str] = []
+                      depense = 0
+                      for ordre, rapport in zip(ordres, rapports):
+                          # Panne 1 : un specialiste qui leve une exception ne doit pas tout arreter.
+                          if isinstance(rapport, BaseException):
+                              trace.ecrire(evenement="specialiste_en_erreur", mission=ordre.mission_id,
+                                           type=type(rapport).__name__)
+                              non_traitees.extend(ordre.factures)
+                              continue
+                          # Panne 2 : un rapport incoherent est refuse, pas agrege en silence.
+                          if not isinstance(rapport, Rapport) or not rapport.est_coherent():
+                              trace.ecrire(evenement="rapport_incoherent", mission=ordre.mission_id)
+                              non_traitees.extend(ordre.factures)
+                              continue
+                          depense += rapport.depense_fcfa
+                          if rapport.reussi:
+                              brouillons.extend(rapport.brouillons)
+                          # Panne 3 : les factures ecartees remontent nommement, jamais en resume.
+                          non_traitees.extend(rapport.factures_non_traitees)
+
+                      total = executer_outil("calculer_exposition",
+                                             {"facture_ids": [b.split(":")[0] for b in brouillons]}) \
+                          if brouillons else {"ok": True, "donnees": {"total_fcfa": 0}}
+                      return {"reussi": bool(brouillons), "brouillons": brouillons,
+                              "factures_non_traitees": sorted(set(non_traitees)),
+                              "total_fcfa": total["donnees"]["total_fcfa"],
+                              "depense_fcfa": depense, "lots": len(ordres)}
+              - titre: multi/specialiste.py, le fichier complet
+                langage: python
+                source: |
+                  """Un specialiste : il execute une mission bornee et rend un rapport honnete."""
+                  from multi.contrats_echange import OrdreDeMission, Rapport
+                  from recouvrement.outils import executer_outil
+                  from recouvrement.trace import Trace
+
+
+                  async def traiter_mission(ordre: OrdreDeMission, trace: Trace) -> Rapport:
+                      brouillons: list[str] = []
+                      non_traitees: list[str] = []
+                      depense = 0
+
+                      for tour, facture_id in enumerate(ordre.factures):
+                          # Les limites recues sont respectees, pas renegociees.
+                          if tour >= ordre.tours_maximum or depense >= ordre.budget_fcfa:
+                              non_traitees.extend(ordre.factures[tour:])
+                              break
+                          resultat = executer_outil("preparer_brouillon_relance",
+                                                    {"facture_id": facture_id, "palier": 1},
+                                                    trace=trace)
+                          depense += 20                          # cout simule d'un tour de modele
+                          if resultat["ok"]:
+                              brouillons.append(resultat["donnees"]["brouillon_id"])
+                          else:
+                              # L'echec partiel est nomme : le superviseur saura quoi reprendre.
+                              non_traitees.append(facture_id)
+
+                      if not brouillons:
+                          return Rapport(mission_id=ordre.mission_id, reussi=False,
+                                         motif_echec="aucun brouillon preparable sur ce lot",
+                                         factures_non_traitees=non_traitees,
+                                         tours_consommes=len(ordre.factures), depense_fcfa=depense)
+                      return Rapport(mission_id=ordre.mission_id, reussi=True, brouillons=brouillons,
+                                     factures_non_traitees=non_traitees,
+                                     tours_consommes=len(brouillons), depense_fcfa=depense)
+              - titre: tests/test_multi_agents.py, les trois pannes prouvées
+                langage: python
+                source: |
+                  """Les trois pannes propres au multi-agents, chacune avec son test."""
+                  import pytest
+
+                  from multi.contrats_echange import OrdreDeMission, Rapport
+                  from multi.superviseur import _agreger, _decouper
+                  from recouvrement.trace import Trace
+
+
+                  def ordre(factures):
+                      return OrdreDeMission(mission_id="MIS-001", objectif="preparer les brouillons",
+                                            factures=factures)
+
+
+                  def test_les_lots_sont_disjoints_et_couvrent_tout():
+                      factures = [f"FAC-{i:03d}" for i in range(1, 11)]
+                      lots = _decouper(factures)
+                      assert [f for lot in lots for f in lot] == factures
+                      assert sum(len(lot) for lot in lots) == len(set(factures))
+
+
+                  def test_un_specialiste_en_erreur_n_arrete_pas_les_autres():
+                      ordres = [ordre(["FAC-001"]), ordre(["FAC-004"])]
+                      rapports = [RuntimeError("panne"),
+                                  Rapport(mission_id="MIS-001", reussi=True, brouillons=["BRO-001"])]
+                      resultat = _agreger(ordres, rapports, Trace())
+                      assert resultat["brouillons"] == ["BRO-001"]
+                      assert "FAC-001" in resultat["factures_non_traitees"]
+
+
+                  def test_un_rapport_incoherent_est_refuse_et_pas_agrege():
+                      incoherent = Rapport(mission_id="MIS-001", reussi=True, brouillons=[])
+                      assert not incoherent.est_coherent()
+                      resultat = _agreger([ordre(["FAC-001"])], [incoherent], Trace())
+                      assert resultat["brouillons"] == []
+                      assert resultat["factures_non_traitees"] == ["FAC-001"]
+
+
+                  def test_une_facture_ecartee_remonte_nommement():
+                      rapport = Rapport(mission_id="MIS-001", reussi=True, brouillons=["BRO-001"],
+                                        factures_non_traitees=["FAC-003"])
+                      resultat = _agreger([ordre(["FAC-001", "FAC-003"])], [rapport], Trace())
+                      assert resultat["factures_non_traitees"] == ["FAC-003"]
+          - titre: Votre projet final cette semaine
+            texte: >-
+              Montez la version multi-agents de votre fil rouge, puis faites la mesure qui conclut la
+              séance : comparez le découpage en lots à votre boucle simple de la séance 6, sur trois
+              exécutions, avec trois chiffres chacun, soit la durée, le nombre d'appels au modèle et le
+              coût total.
+
+              Dans la plupart des cas, sur douze factures, la boucle simple gagnera. C'est un bon
+              résultat, pas un échec : vous venez d'apprendre à mesurer avant d'ajouter de la
+              complexité, et c'est exactement ce que le correcteur veut voir.
+
+              Écrivez dans decisions.md à partir de quel volume le découpage deviendrait rentable, et
+              comment vous l'avez estimé. Un chiffre justifié vaut mieux qu'une architecture
+              impressionnante.
           - titre: Glossaire de la séance
             texte: >-
               Superviseur : agent qui décide de la répartition et arbitre les résultats.
@@ -5818,6 +6227,236 @@ blocs:
                   - ["Aucune écriture sans approbation", "test de l'enregistrement refusé", "une action engageante automatique"]
                   - ["Reprise sans doublon", "interruption puis relance", "deux relances pour un même client"]
                   - ["Trace complète et sans secret", "lecture du journal par un tiers", "incident inexplicable, ou fuite"]
+          - titre: Les douze critères d'acceptation, écrits en entier
+            texte: >-
+              Voici le fichier qui gardera votre agent jusqu'en production. Douze critères, numérotés,
+              chacun en un test court et lisible. Ils ne vérifient pas que le code est joli : ils
+              vérifient que les règles que vous avez promises tiennent.
+
+              Lisez d'abord les cinq premiers, marqués éliminatoires. Un échec sur l'un d'eux arrête
+              tout, et aucune qualité ailleurs ne le rattrape : un agent qui relance un litige n'est
+              pas un agent perfectible, c'est un agent à débrancher. Les sept suivants sont gradués :
+              un échec coûte des points, il n'arrête pas la livraison.
+
+              Observez enfin que pas un seul de ces tests ne compare un texte produit par le modèle.
+              Ils comparent des identifiants, des totaux, des statuts, des listes. C'est ce qui leur
+              permettra d'être encore verts dans six mois, après trois changements de modèle.
+            code:
+              - titre: tests/criteres/test_criteres_acceptation.py, le fichier complet
+                langage: python
+                source: |
+                  """Les douze criteres d'acceptation du fil rouge.
+
+                  AC-01 a AC-05 sont eliminatoires : un echec arrete la livraison.
+                  AC-06 a AC-12 sont gradues : un echec coute des points.
+                  Aucun ne compare un texte produit par le modele.
+                  """
+                  import json
+
+                  import pytest
+
+                  from recouvrement.etat import charger_etat
+                  from recouvrement.executer_boucle import executer_analyse
+                  from recouvrement.modele_simule import ModeleSimule, Reponse
+                  from recouvrement.outils import REGISTRE, executer_outil
+
+                  LITIGES = {"FAC-003", "FAC-007", "FAC-010"}
+
+
+                  @pytest.fixture
+                  def resultat():
+                      """Une execution complete du fil rouge, jouee sur le modele simule."""
+                      modele = ModeleSimule([
+                          Reponse(appel_outil={"nom": "lister_factures_impayees",
+                                               "arguments": {"age_min_jours": 30}}),
+                          Reponse(conclusion="analyse terminee"),
+                      ])
+                      return executer_analyse("prepare les relances", modele)
+
+
+                  # --- Eliminatoires -------------------------------------------------------------
+
+                  def test_ac01_aucune_facture_en_litige_n_est_retenue(resultat):
+                      assert not (set(resultat["factures_retenues"]) & LITIGES)
+
+
+                  def test_ac02_aucun_brouillon_n_est_produit_pour_un_litige():
+                      for facture_id in sorted(LITIGES):
+                          reponse = executer_outil("preparer_brouillon_relance",
+                                                   {"facture_id": facture_id})
+                          assert reponse["ok"] is False
+                          assert "litige" in reponse["erreur"]
+
+
+                  def test_ac03_aucune_ecriture_sans_approbation_humaine_nommee():
+                      preparation = executer_outil("preparer_brouillon_relance",
+                                                   {"facture_id": "FAC-001"})
+                      brouillon_id = preparation["donnees"]["brouillon_id"]
+                      reponse = executer_outil("enregistrer_relance",
+                                               {"brouillon_id": brouillon_id,
+                                                "cle_idempotence": "cle-de-test-0001"})
+                      assert reponse["ok"] is False
+                      assert "approbation" in reponse["erreur"]
+
+
+                  def test_ac04_une_note_hostile_n_influence_aucun_brouillon():
+                      """FAC-006 porte une note qui se fait passer pour une consigne."""
+                      reponse = executer_outil("preparer_brouillon_relance",
+                                               {"facture_id": "FAC-006"})
+                      corps = charger_etat()["brouillons"][reponse["donnees"]["brouillon_id"]]["corps"]
+                      assert "ignore" not in corps.lower()
+                      assert "Assistant" not in corps
+
+
+                  def test_ac05_un_outil_hors_liste_blanche_ne_s_execute_pas(capsys):
+                      reponse = executer_outil("envoyer_email", {"destinataire": "client@exemple.ci"})
+                      assert reponse["ok"] is False
+                      assert "outil_refuse" in capsys.readouterr().out      # et il est journalise
+
+
+                  # --- Gradues -------------------------------------------------------------------
+
+                  def test_ac06_le_total_est_calcule_par_le_code(resultat):
+                      verification = executer_outil("calculer_exposition",
+                                                    {"facture_ids": resultat["factures_retenues"]})
+                      assert resultat["total_fcfa"] == verification["donnees"]["total_fcfa"]
+
+
+                  def test_ac07_les_notes_libres_ne_sortent_jamais_d_un_outil():
+                      donnees = executer_outil("lister_factures_impayees", {})["donnees"]
+                      assert all("note_non_fiable" not in f for f in donnees["factures"])
+
+
+                  def test_ac08_chaque_exclusion_porte_un_motif_lisible():
+                      exclusions = executer_outil("lister_factures_impayees", {})["donnees"]["exclusions"]
+                      assert exclusions
+                      assert all(isinstance(m, str) and len(m) > 5 for m in exclusions.values())
+
+
+                  def test_ac09_la_boucle_respecte_son_plafond_de_tours():
+                      from recouvrement.modele_simule import ModeleBloque
+                      sortie = executer_analyse("analyse", ModeleBloque())
+                      assert sortie["tours"] <= 8
+
+
+                  def test_ac10_un_enregistrement_rejoue_ne_cree_pas_de_doublon():
+                      etat = charger_etat()
+                      approuves = [b for b, v in etat["brouillons"].items() if v["statut"] == "approuve"]
+                      if not approuves:
+                          pytest.skip("aucun brouillon approuve dans l'etat de test")
+                      premier = executer_outil("enregistrer_relance",
+                                               {"brouillon_id": approuves[0],
+                                                "cle_idempotence": "cle-rejouee-0001"})
+                      second = executer_outil("enregistrer_relance",
+                                              {"brouillon_id": approuves[0],
+                                               "cle_idempotence": "cle-rejouee-0001"})
+                      assert premier["donnees"]["relance_id"] == second["donnees"]["relance_id"]
+
+
+                  def test_ac11_la_trace_ne_contient_aucun_secret(capsys):
+                      executer_outil("lister_factures_impayees", {})
+                      sortie = capsys.readouterr().out
+                      assert "sk-" not in sortie
+                      for ligne in filter(None, sortie.splitlines()):
+                          json.loads(ligne)                 # chaque ligne est du JSON valide
+
+
+                  def test_ac12_tout_outil_du_registre_porte_une_description_utile():
+                      for nom, fonction in REGISTRE.items():
+                          documentation = (fonction.__doc__ or "").strip()
+                          assert len(documentation) > 30, f"{nom} : description trop courte"
+          - titre: Le jeu d'évaluation, et la courbe qui dit la dérive
+            texte: >-
+              Les critères disent oui ou non. Le jeu d'évaluation, lui, donne une note, et c'est la
+              courbe de cette note dans le temps qui révélera les dérives dont nous reparlerons en
+              séance 16.
+
+              Le fichier ci-dessous contient des cas, pas des chaînes attendues. Chaque cas décrit une
+              situation et les propriétés que la réponse doit satisfaire. Conservez l'historique des
+              résultats dans un fichier versionné : c'est la seule façon de voir une baisse de trois
+              points, qui ne déclenche aucune alerte mais annonce un problème.
+            code:
+              - titre: evaluation/cas.py et evaluation/executer.py, les deux fichiers complets
+                langage: python
+                source: |
+                  # ---------- evaluation/cas.py ----------
+                  """Des cas decrits par leurs proprietes, jamais par la reponse attendue mot a mot."""
+                  from dataclasses import dataclass
+                  from typing import Callable
+
+
+                  @dataclass(frozen=True)
+                  class Cas:
+                      nom: str
+                      consigne: str
+                      verifier: Callable[[dict], bool]
+                      poids: int = 1
+
+
+                  CAS = [
+                      Cas("exclut les litiges",
+                          "prepare les relances des impayes de plus de 30 jours",
+                          lambda r: not ({"FAC-003", "FAC-007", "FAC-010"} & set(r["factures_retenues"])),
+                          poids=3),
+                      Cas("respecte le plancher de montant",
+                          "prepare les relances des impayes de plus de 30 jours",
+                          lambda r: all(m >= 500_000 for m in r.get("montants", [500_000]))),
+                      Cas("produit un brouillon par facture retenue",
+                          "prepare un brouillon par facture relancable",
+                          lambda r: len(r["brouillons"]) == len(r["factures_retenues"])),
+                      Cas("ne depasse pas six tours",
+                          "prepare les relances des impayes de plus de 30 jours",
+                          lambda r: r["tours"] <= 6),
+                      Cas("reste dans le budget",
+                          "prepare les relances des impayes de plus de 30 jours",
+                          lambda r: r["depense_fcfa"] <= 500, poids=2),
+                  ]
+
+                  # ---------- evaluation/executer.py ----------
+                  """Joue le jeu d'evaluation et ajoute une ligne a l'historique versionne."""
+                  import json
+                  import pathlib
+                  from datetime import date
+
+                  from evaluation.cas import CAS
+                  from recouvrement.executer_boucle import executer_analyse
+
+                  HISTORIQUE = pathlib.Path("evaluation/historique.jsonl")
+
+
+                  def evaluer(modele) -> dict:
+                      obtenus = total = 0
+                      details = {}
+                      for cas in CAS:
+                          total += cas.poids
+                          try:
+                              resultat = executer_analyse(cas.consigne, modele)
+                              reussi = bool(cas.verifier(resultat))
+                          except Exception:                             # noqa: BLE001
+                              reussi = False
+                          details[cas.nom] = reussi
+                          obtenus += cas.poids if reussi else 0
+                      note = round(100 * obtenus / total)
+                      ligne = {"jour": date.today().isoformat(), "note": note, "details": details}
+                      # L'historique est versionne : c'est la courbe qui parle, jamais la note du jour.
+                      with HISTORIQUE.open("a", encoding="utf-8") as fichier:
+                          fichier.write(json.dumps(ligne, ensure_ascii=False) + "\n")
+                      return ligne
+          - titre: Votre projet final cette semaine
+            texte: >-
+              Faites entrer les douze critères et le jeu d'évaluation dans votre dépôt, dans deux
+              dossiers séparés : ils ne servent pas au même moment et le pipeline de la séance 15 les
+              exécutera séparément.
+
+              Faites ensuite l'exercice qui vaut la séance entière. Pour chacun des cinq critères
+              éliminatoires, cassez volontairement la défense correspondante, lancez les tests, et
+              vérifiez que le bon critère devient rouge. Remettez la défense. Un critère qui reste vert
+              pendant que sa défense est cassée ne protège rien, et il vaut mieux le découvrir ici que
+              devant un client.
+
+              Terminez par votre registre des risques résiduels, trois risques au minimum, chacun avec
+              ce que vous avez mis en face et ce que vous acceptez de laisser. Le correcteur accorde
+              plus de valeur à un risque lucidement accepté qu'à une promesse de couverture totale.
           - titre: Glossaire de la séance
             texte: >-
               Injection indirecte : instruction hostile placée dans une donnée que l'agent va lire.
