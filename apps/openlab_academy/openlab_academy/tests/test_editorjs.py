@@ -91,6 +91,17 @@ class TestRenduProjet(unittest.TestCase):
             self.assertIn(attendu, rendu)
         self.assertEqual(blocs(editorjs.lecon_projet(projet(), "D", REGLAGES))[-1]["data"], {"assignment": "D"})
 
+    def test_listes_au_format_attendu_par_nested_list(self):
+        """Le LMS rend les listes avec @editorjs/nested-list : chaque entree est un objet {content, items}.
+        Une chaine nue s'affiche 'undefined' dans la lecon."""
+        listes = [b for b in blocs(editorjs.lecon_projet(projet(), "D", REGLAGES)) if b["type"] == "list"]
+        self.assertTrue(listes)
+        for bloc in listes:
+            for entree in bloc["data"]["items"]:
+                self.assertIsInstance(entree, dict)
+                self.assertIsInstance(entree.get("content"), str)
+                self.assertEqual(entree.get("items"), [])
+
     def test_xss_neutralise_dans_toutes_les_listes(self):
         p = projet(contexte="<svg onload=x>", objectifs=("<b>o</b>",), stack=("<i>s</i>",),
                    criteres_acceptation=("<a href=javascript:x>",))

@@ -24,7 +24,10 @@ def _titre(texte: str) -> dict:
 
 
 def _liste(items) -> dict:
-    return _bloc("list", style="unordered", items=[_e(i) for i in items])
+    """Le LMS rend les listes avec `@editorjs/nested-list` : chaque entrée est un objet `{content, items}`.
+    Une chaîne nue s'affiche « undefined » dans la leçon."""
+    return _bloc("list", style="unordered",
+                 items=[{"content": _e(i), "items": []} for i in items])
 
 
 def _doc(blocks: list[dict]) -> str:
