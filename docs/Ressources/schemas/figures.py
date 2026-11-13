@@ -680,9 +680,41 @@ def decoupage_documents() -> Dessin:
     d.texte(440, 370, "Règle de départ : une section, un passage ; puis mesurez avant de régler.",
             taille=12, gras=True, couleur="encre2")
     return d
+def graphe_langgraph() -> Dessin:
+    """Séance 10 : le même fil rouge, écrit comme un graphe d'états."""
+    d = Dessin(880, 420, "Le fil rouge écrit comme un graphe d'états")
+    d.boite(360, 96, 160, 54, teinte="s1")
+    d.texte(440, 128, "decider", taille=14, gras=True)
+    d.boite(170, 214, 160, 54, teinte="s3")
+    d.texte(250, 246, "agir", taille=14, gras=True)
+    d.boite(560, 214, 180, 54, teinte="s2", tirets=True)
+    d.texte(650, 240, "valider", taille=14, gras=True)
+    d.texte(650, 258, "pause humaine", taille=10, couleur="encre2")
+    d.boite(370, 326, 140, 48, teinte="attenue")
+    d.texte(440, 356, "fin", taille=13, gras=True)
+    d.fleche(440, 72, 440, 92, teinte="attenue")
+    d.texte(440, 64, "entrée", taille=11, couleur="encre2")
+    d.fleche(380, 150, 280, 210, teinte="s3")
+    d.texte(290, 186, "appel d'outil demandé", taille=10, ancre="end", couleur="encre2")
+    d.fleche(510, 150, 620, 210, teinte="s2")
+    d.texte(600, 186, "écriture demandée", taille=10, ancre="start", couleur="encre2")
+    d.fleche(250, 268, 390, 330, teinte="attenue")
+    d.fleche(650, 268, 500, 330, teinte="attenue")
+    d.ajouter('<path d="M 250 214 L 250 170 L 356 170" fill="none" stroke="var(--s3)"'
+              ' stroke-width="2" marker-end="url(#pointe-s3)"/>')
+    d.texte(250, 160, "observation renvoyée", taille=10, couleur="encre2")
+    d.boite(40, 326, 240, 60, teinte="trait", tirets=True)
+    d.texte(160, 350, "Point de sauvegarde", taille=12, gras=True)
+    d.texte(160, 370, "écrit après chaque nœud", taille=10, couleur="encre2")
+    d.texte(440, 42, "Les nœuds sont vos fonctions ; les arêtes sont vos conditions d'enchaînement.",
+            taille=14, gras=True)
+    d.texte(440, 406, "Le cadre fournit la reprise et la pause humaine ; la logique métier reste "
+                      "la vôtre.", taille=12, gras=True, couleur="encre2")
+    return d
 
 
 FIGURES = {
+    "graphe-langgraph.svg": graphe_langgraph,
     "trois-memoires.svg": trois_memoires,
     "pipeline-rag.svg": pipeline_rag,
     "decoupage-documents.svg": decoupage_documents,

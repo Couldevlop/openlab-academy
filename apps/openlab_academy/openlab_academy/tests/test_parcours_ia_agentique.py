@@ -16,6 +16,7 @@ MODULES = [
     ("07", "Brancher un vrai modèle sur votre boucle"),
     ("08", "État, mémoire et reprise sur erreur"),
     ("09", "Mémoire longue et recherche documentaire"),
+    ("10", "Le même orchestrateur avec LangGraph"),
     ("12", "MCP et interopérabilité"),
     ("13", "Architectures multi-agents et A2A"),
     ("14", "Sécurité, évaluation et observabilité"),

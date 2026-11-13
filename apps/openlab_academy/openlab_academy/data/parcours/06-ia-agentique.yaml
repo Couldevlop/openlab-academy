@@ -3243,6 +3243,443 @@ blocs:
             options: ["Répondre avec le passage le moins mauvais", "Dire qu'il ne sait pas, sans inventer de règle", "Augmenter k jusqu'à trouver quelque chose", "Relancer la recherche avec une température plus haute"]
             bonnes: [2]
             explication: "Une règle inventée en recouvrement coûte plus cher qu'un refus honnête, et la trace doit garder ce refus."
+      - num: "10"
+        title: Le même orchestrateur avec LangGraph
+        contenu: >-
+          Vous avez écrit la boucle à la main : vous savez donc ce qu'un cadre fait à votre place, et ce
+          qu'il vous coûte. Cette séance réécrit exactement le même fil rouge avec LangGraph, fichier par
+          fichier : état typé, nœuds, arêtes conditionnelles, point de sauvegarde pour la reprise, pause
+          pour validation humaine, bornes d'exécution et tests sans réseau. À la fin, les deux
+          implémentations passent le même jeu de critères d'acceptation.
+        cours:
+          - titre: Pourquoi réécrire ce qui marche déjà
+            texte: >-
+              Votre boucle fonctionne. L'objectif n'est donc pas de la remplacer, mais de savoir juger un
+              cadre : ce qu'il apporte, ce qu'il impose, et ce qu'il cache. On ne juge bien que ce qu'on a
+              d'abord écrit soi même, et c'est exactement la situation où vous êtes.
+
+              Ce qu'un cadre comme LangGraph apporte réellement tient en quatre points : la persistance de
+              l'état entre les tours sans l'écrire vous même, la reprise d'une exécution interrompue par
+              un identifiant de fil, la pause pour validation humaine intégrée au graphe, et une
+              visualisation du flux qui aide en revue d'architecture.
+
+              Ce qu'il impose : une dépendance qui évolue vite, un vocabulaire à apprendre, une pile
+              d'appels plus profonde au moment de déboguer, et la tentation de laisser le cadre décider de
+              votre architecture. La règle qui vous protège : votre domaine ne dépend jamais du cadre, et
+              votre logique métier reste dans des fonctions qui s'exécutent sans lui.
+
+              Un avertissement utile : les interfaces de ce cadre évoluent d'une version à l'autre.
+              Épinglez la version dans vos dépendances, et lisez les notes de version avant toute montée.
+              Le code de cette séance suit la ligne 0.6.
+            figures:
+              - nom: graphe-langgraph.svg
+                legende: "Le fil rouge écrit comme un graphe : nœuds, arêtes conditionnelles, sauvegarde et pause"
+          - titre: Le modèle mental en cinq mots
+            texte: >-
+              Un état : un dictionnaire typé qui circule entre les étapes. Chaque étape reçoit l'état et
+              renvoie les champs qu'elle modifie ; le cadre fusionne.
+
+              Un nœud : une fonction Python ordinaire. Si vous savez écrire une fonction qui prend un
+              dictionnaire et en renvoie un autre, vous savez écrire un nœud.
+
+              Une arête : un lien entre deux nœuds. Une arête conditionnelle choisit la suite en fonction
+              de l'état, par une fonction que vous écrivez et qui renvoie un nom de nœud.
+
+              Une compilation : le graphe est figé en objet exécutable. C'est à ce moment que vous
+              branchez le point de sauvegarde et les pauses.
+
+              Un fil : un identifiant d'exécution. Deux invocations avec le même identifiant reprennent le
+              même état, ce qui donne la reprise sans écrire une ligne de persistance.
+            tableaux:
+              - titre: Votre code de la séance 7, et son équivalent dans le cadre
+                entetes: [Dans votre boucle, Dans LangGraph, Qui garde la responsabilité]
+                lignes:
+                  - [Variable historique, Champ messages de l'état, "Le cadre fusionne, vous décidez du contenu"]
+                  - ["if isinstance(decision, AppelOutil)", Arête conditionnelle, Vous écrivez la condition]
+                  - [executer_outil avec liste blanche, Nœud d'outils, Vous gardez la liste blanche]
+                  - [Fichier d'état écrit à la main, Point de sauvegarde, "Le cadre écrit, vous choisissez le support"]
+                  - [Plafond de tours, Limite de récursion, "Le cadre coupe, vous fixez la valeur"]
+                  - [Validation humaine codée, Pause avant un nœud, "Le cadre suspend, vous décidez de reprendre"]
+          - titre: Étape 1, installer et figer les versions
+            texte: >-
+              Nous installons le cadre et le connecteur du modèle, en épinglant les versions. Un cadre qui
+              bouge vite doit être figé, sinon votre projet cesse de fonctionner un matin sans que rien
+              n'ait changé chez vous.
+
+              Nous ajoutons aussi le point de sauvegarde sur SQLite, qui suffit pour un projet pédagogique
+              et pour beaucoup de projets réels.
+            code:
+              - titre: requirements-langgraph.txt, et l'installation
+                langage: bash
+                source: |
+                  # un fichier separe : le cadre reste optionnel, le depot marche sans lui
+                  cat > requirements-langgraph.txt <<'FIN'
+                  langgraph==0.6.*
+                  langgraph-checkpoint-sqlite==2.*
+                  langchain-openai==0.3.*
+                  FIN
+
+                  pip install -r requirements-langgraph.txt
+                  python -c "import langgraph; print(langgraph.__version__)"   # verifiez avant de coder
+          - titre: Étape 2, l'état du graphe
+            texte: >-
+              L'état est le cœur du graphe. Nous y mettons quatre champs : les messages, la liste des
+              brouillons déjà préparés, le compteur de jetons et le statut courant.
+
+              Le champ messages reçoit une annotation particulière, qui indique au cadre que les nouvelles
+              valeurs s'ajoutent à la liste au lieu de la remplacer. Les autres champs sont remplacés par
+              défaut, ce qui est le comportement que nous voulons pour un compteur ou un statut.
+
+              Prenez l'habitude de typer cet état : c'est votre contrat entre les nœuds, et c'est lui que
+              vous relirez dans six mois pour comprendre ce qui circule.
+            code:
+              - titre: recouvrement/graphe_etat.py, le fichier complet
+                langage: python
+                source: |
+                  """L'etat qui circule entre les noeuds du graphe."""
+                  from typing import Annotated, Any, Literal, TypedDict
+
+                  from langgraph.graph.message import add_messages
+
+
+                  class EtatRecouvrement(TypedDict):
+                      # add_messages : les nouveaux messages s'ajoutent, ils ne remplacent pas la liste
+                      messages: Annotated[list[Any], add_messages]
+                      brouillons: list[str]          # identifiants des brouillons deja prepares
+                      jetons: int                    # cumul, pour le budget
+                      statut: Literal["en_cours", "attente_validation", "termine", "budget"]
+          - titre: Étape 3, les nœuds, qui sont vos fonctions
+            texte: >-
+              Trois nœuds suffisent. Le nœud decider appelle le modèle muni des outils. Le nœud agir
+              exécute l'outil demandé, en passant par votre point d'appel, celui qui porte la liste
+              blanche. Le nœud valider marque l'état en attente d'accord humain.
+
+              Observez bien le nœud agir : nous n'utilisons pas le nœud d'outils fourni par le cadre, et
+              c'est volontaire. Votre point d'appel contient la liste blanche, la validation des arguments
+              et le journal des refus, c'est à dire vos garanties de sécurité. Les déléguer à un composant
+              tiers reviendrait à confier à une dépendance ce qui vous sera reproché en cas d'incident.
+
+              Remarquez aussi que chaque nœud renvoie seulement ce qu'il modifie. C'est la forme attendue,
+              et c'est aussi la plus lisible.
+            code:
+              - titre: recouvrement/graphe_noeuds.py, le fichier complet
+                langage: python
+                source: |
+                  """Les noeuds du graphe : des fonctions ordinaires, testables sans le cadre."""
+                  import json
+                  from typing import Any
+
+                  from langchain_core.messages import AIMessage, ToolMessage
+
+                  from recouvrement.graphe_etat import EtatRecouvrement
+                  from recouvrement.outils import OUTILS_AUTORISES, executer_outil
+                  from recouvrement.trace import Trace
+
+                  ECRITURES = {"enregistrer_relance_simulee"}      # exigent un accord humain
+
+
+                  def faire_decider(modele_lie, trace: Trace):
+                      """modele_lie : le modele deja muni des outils (voir l'etape suivante)."""
+
+                      def decider(etat: EtatRecouvrement) -> dict[str, Any]:
+                          reponse = modele_lie.invoke(etat["messages"])
+                          usage = getattr(reponse, "usage_metadata", None) or {}
+                          consommes = usage.get("total_tokens", 0)
+                          trace.ecrire(evenement="decision", jetons=consommes,
+                                       outils=[a["name"] for a in getattr(reponse, "tool_calls", [])])
+                          return {"messages": [reponse], "jetons": etat["jetons"] + consommes}
+
+                      return decider
+
+
+                  def faire_agir(trace: Trace):
+                      def agir(etat: EtatRecouvrement) -> dict[str, Any]:
+                          dernier: AIMessage = etat["messages"][-1]
+                          sorties, brouillons = [], list(etat["brouillons"])
+                          for appel in dernier.tool_calls:
+                              # votre point d'appel : liste blanche, contrats, journal des refus
+                              resultat = executer_outil(appel["name"], appel["args"])
+                              trace.ecrire(evenement="appel_outil", outil=appel["name"],
+                                           arguments=appel["args"], ok=resultat.get("ok"))
+                              if resultat.get("ok") and resultat.get("brouillon_id"):
+                                  brouillons.append(resultat["brouillon_id"])
+                              sorties.append(ToolMessage(
+                                  content=json.dumps(resultat, ensure_ascii=False),
+                                  tool_call_id=appel["id"]))
+                          return {"messages": sorties, "brouillons": brouillons}
+
+                      return agir
+
+
+                  def valider(etat: EtatRecouvrement) -> dict[str, Any]:
+                      """Marque l'attente : le graphe s'arrete ici jusqu'a une reprise explicite."""
+                      return {"statut": "attente_validation"}
+
+
+                  def prochaine_etape(etat: EtatRecouvrement) -> str:
+                      """L'arete conditionnelle : c'est vous qui decidez de la suite, pas le cadre."""
+                      if etat["jetons"] >= 60_000:
+                          return "fin"
+                      dernier = etat["messages"][-1]
+                      appels = getattr(dernier, "tool_calls", [])
+                      if not appels:
+                          return "fin"
+                      if any(appel["name"] in ECRITURES for appel in appels):
+                          return "valider"
+                      return "agir"
+          - titre: Étape 4, assembler et compiler le graphe
+            texte: >-
+              Nous assemblons maintenant les nœuds. Trois gestes : déclarer le graphe avec son type
+              d'état, ajouter les nœuds et les arêtes, puis compiler en branchant le point de sauvegarde
+              et la pause.
+
+              Le point de sauvegarde est ce qui rend la reprise possible. Avec SQLite, l'état de chaque
+              fil est écrit dans un fichier ; relancer avec le même identifiant de fil reprend là où
+              l'exécution s'était arrêtée. C'est le travail que vous aviez fait à la main en séance 8, et
+              vous mesurez ici exactement ce que le cadre vous économise.
+
+              La pause avant le nœud de validation suspend l'exécution. Le programme appelant reprend la
+              main, affiche le lot à la personne qui décide, et relance le graphe seulement après l'accord.
+            code:
+              - titre: recouvrement/graphe.py, le fichier complet
+                langage: python
+                source: |
+                  """Assemblage et compilation du graphe. Le seul fichier qui connait LangGraph."""
+                  import pathlib
+                  import sqlite3
+
+                  from langchain_openai import ChatOpenAI
+                  from langgraph.checkpoint.sqlite import SqliteSaver
+                  from langgraph.graph import END, START, StateGraph
+
+                  from recouvrement.config import Reglages
+                  from recouvrement.graphe_etat import EtatRecouvrement
+                  from recouvrement.graphe_noeuds import faire_agir, faire_decider, prochaine_etape, valider
+                  from recouvrement.outils import OUTILS_AUTORISES
+                  from recouvrement.outils_schema import pour_le_modele
+                  from recouvrement.trace import Trace
+
+                  BASE = pathlib.Path(".local/graphe.sqlite")
+
+
+                  def construire(reglages: Reglages, trace: Trace):
+                      modele = ChatOpenAI(model=reglages.modele, temperature=0,
+                                          max_tokens=reglages.jetons_max,
+                                          api_key=reglages.cle, base_url=reglages.adresse)
+                      modele_lie = modele.bind_tools(pour_le_modele(OUTILS_AUTORISES))
+
+                      graphe = StateGraph(EtatRecouvrement)
+                      graphe.add_node("decider", faire_decider(modele_lie, trace))
+                      graphe.add_node("agir", faire_agir(trace))
+                      graphe.add_node("valider", valider)
+
+                      graphe.add_edge(START, "decider")
+                      graphe.add_conditional_edges("decider", prochaine_etape,
+                                                   {"agir": "agir", "valider": "valider", "fin": END})
+                      graphe.add_edge("agir", "decider")      # l'observation repart vers la decision
+                      graphe.add_edge("valider", END)         # la reprise se fait par une invocation
+
+                      BASE.parent.mkdir(parents=True, exist_ok=True)
+                      connexion = sqlite3.connect(BASE, check_same_thread=False)
+                      return graphe.compile(checkpointer=SqliteSaver(connexion),
+                                            interrupt_before=["valider"])
+          - titre: Étape 5, exécuter, interrompre, reprendre
+            texte: >-
+              Voici le programme d'entrée. Il lance le graphe sur un fil nommé, s'arrête à la pause,
+              affiche le lot à valider, demande l'accord, puis reprend le même fil.
+
+              Deux détails comptent. La limite de récursion remplace votre plafond de tours : sans elle,
+              un graphe qui boucle tourne jusqu'à épuisement. Et la reprise se fait en invoquant à nouveau
+              avec le même identifiant de fil et une entrée vide, ce qui signifie au cadre de continuer
+              plutôt que de recommencer.
+
+              Testez l'interruption pour de bon : lancez, coupez le programme pendant l'exécution, puis
+              relancez avec le même identifiant. Vous devez retrouver l'état, et ne pas produire de
+              brouillon en double.
+            code:
+              - titre: recouvrement/executer_graphe.py, le fichier complet
+                langage: python
+                source: |
+                  """Lance le graphe, s'arrete pour la validation humaine, puis reprend le meme fil."""
+                  import pathlib
+                  import sys
+
+                  from langchain_core.messages import HumanMessage, SystemMessage
+
+                  from recouvrement.config import Reglages
+                  from recouvrement.graphe import construire
+                  from recouvrement.trace import Trace
+
+                  SYSTEME = pathlib.Path("prompts/agent.md").read_text(encoding="utf-8")
+
+
+                  def main(fil: str) -> int:
+                      reglages = Reglages.depuis_environnement()
+                      trace = Trace(pathlib.Path(f".local/trace-{fil}.jsonl"))
+                      graphe = construire(reglages, trace)
+                      config = {"configurable": {"thread_id": fil}, "recursion_limit": 25}
+
+                      etat_initial = {
+                          "messages": [SystemMessage(content=SYSTEME),
+                                       HumanMessage(content="Prepare les relances des impayes de plus de 30 jours.")],
+                          "brouillons": [], "jetons": 0, "statut": "en_cours",
+                      }
+                      resultat = graphe.invoke(etat_initial, config)
+
+                      instantane = graphe.get_state(config)
+                      if instantane.next:                       # le graphe est en pause avant "valider"
+                          print(f"{len(resultat['brouillons'])} brouillon(s) prepare(s) :")
+                          for identifiant in resultat["brouillons"]:
+                              print("  -", identifiant)
+                          reponse = input("Approuver l'enregistrement simule ? [o/N] ").strip().lower()
+                          if reponse != "o":
+                              print("Refus enregistre, rien n'a ete ecrit.")
+                              return 0
+                          resultat = graphe.invoke(None, config)   # None : on reprend, on ne recommence pas
+
+                      print("Statut final :", resultat.get("statut"), "| jetons :", resultat.get("jetons"))
+                      return 0
+
+
+                  if __name__ == "__main__":
+                      raise SystemExit(main(sys.argv[1] if len(sys.argv) > 1 else "demo"))
+          - titre: Étape 6, tester le graphe sans réseau
+            texte: >-
+              Les nœuds sont des fonctions : ils se testent seuls, sans cadre et sans modèle. C'est le
+              premier niveau, et le plus rentable.
+
+              Pour tester le graphe entier, nous remplaçons le modèle par un objet qui joue des réponses
+              écrites à l'avance, comme en séance 7. La bonne nouvelle est que ce même faux modèle sert
+              aux deux implémentations, ce qui vous donne un jeu de tests commun et, surtout, la preuve
+              que les deux se comportent pareil.
+            code:
+              - titre: tests/test_graphe.py, le fichier complet
+                langage: python
+                source: |
+                  """Le graphe se teste comme la boucle : un modele joue, aucun reseau."""
+                  import pathlib
+
+                  from langchain_core.messages import AIMessage, HumanMessage
+
+                  from recouvrement.graphe_noeuds import faire_agir, prochaine_etape
+                  from recouvrement.trace import Trace
+
+
+                  def _message_avec_appel(nom, arguments):
+                      return AIMessage(content="", tool_calls=[
+                          {"name": nom, "args": arguments, "id": "appel-1", "type": "tool_call"}])
+
+
+                  def test_l_arete_envoie_vers_la_validation_pour_une_ecriture():
+                      etat = {"messages": [_message_avec_appel("enregistrer_relance_simulee", {})],
+                              "brouillons": [], "jetons": 0, "statut": "en_cours"}
+                      assert prochaine_etape(etat) == "valider"
+
+
+                  def test_l_arete_envoie_vers_l_outil_pour_une_lecture():
+                      etat = {"messages": [_message_avec_appel("lister_factures_impayees",
+                                                               {"age_min_jours": 30})],
+                              "brouillons": [], "jetons": 0, "statut": "en_cours"}
+                      assert prochaine_etape(etat) == "agir"
+
+
+                  def test_le_budget_termine_le_graphe():
+                      etat = {"messages": [_message_avec_appel("lister_factures_impayees", {})],
+                              "brouillons": [], "jetons": 99_000, "statut": "en_cours"}
+                      assert prochaine_etape(etat) == "fin"
+
+
+                  def test_le_noeud_agir_passe_par_la_liste_blanche(tmp_path):
+                      agir = faire_agir(Trace(pathlib.Path(tmp_path) / "t.jsonl"))
+                      etat = {"messages": [_message_avec_appel("supprimer_facture", {"facture_id": "FAC-001"})],
+                              "brouillons": [], "jetons": 0, "statut": "en_cours"}
+                      sortie = agir(etat)
+                      assert "ok" in sortie["messages"][0].content      # refus lisible, pas d'exception
+          - titre: Ce que le cadre apporte, et ce qu'il ne dispense pas de faire
+            texte: >-
+              Comparez honnêtement les deux implémentations. Le cadre vous a économisé la persistance de
+              l'état, la mécanique de reprise et le code de pause humaine : trois sujets que vous aviez
+              écrits à la main, et qui représentent environ cent cinquante lignes. Il vous offre en plus
+              une visualisation du graphe, utile en revue.
+
+              Il ne vous dispense de rien d'essentiel. La liste blanche reste la vôtre. Les contrats
+              d'arguments restent les vôtres. La trace reste la vôtre, car celle du cadre ne connaît pas
+              vos interdits de journalisation. La condition d'arrêt métier reste la vôtre. Et le budget,
+              le cadre ne le connaît pas du tout.
+
+              Retenez la règle de choix : un cadre se justifie quand il vous donne la persistance, la
+              reprise et l'observabilité que vous auriez écrites de toute façon. Il ne se justifie pas
+              pour enchaîner trois appels, et il ne remplace jamais votre architecture.
+            tableaux:
+              - titre: Ce que vous gagnez et ce que vous gardez
+                entetes: [Sujet, Avec le cadre, À votre charge malgré le cadre]
+                lignes:
+                  - [Persistance de l'état, Fournie par le point de sauvegarde, Le choix du support et la purge]
+                  - [Reprise après coupure, Fournie par l'identifiant de fil, La clé d'idempotence métier]
+                  - [Pause humaine, Fournie par l'interruption, Ce qu'on montre à la personne qui valide]
+                  - [Sécurité des outils, Rien, "Liste blanche, contrats, journal des refus"]
+                  - [Budget et coût, Rien, "Comptage, plafond, arrêt avant l'appel"]
+                  - [Débogage, Visualisation du graphe, Une pile d'appels plus profonde à lire]
+          - titre: Votre projet final cette semaine
+            texte: >-
+              Votre dépôt contient désormais deux implémentations du même fil rouge : la vôtre et celle
+              du cadre. Gardez les deux, dans deux dossiers clairement nommés, et faites passer le même
+              jeu de critères d'acceptation aux deux.
+
+              Ajoutez dans decisions.md une section de comparaison, avec quatre chiffres mesurés : nombre
+              de lignes de code, durée d'une exécution complète, jetons consommés, et temps qu'il vous a
+              fallu pour écrire chacune. Terminez par une phrase de décision : laquelle vous rendez, et
+              pourquoi. Les deux réponses sont défendables, c'est la justification qui est notée.
+        travaux_pratiques: >-
+          Travail guidé, environ 3 h. Installez le cadre avec les versions épinglées, et vérifiez la
+          version installée avant d'écrire une ligne. Écrivez ensuite les cinq fichiers dans l'ordre, en
+          lançant les tests de nœuds après chacun.
+
+          Faites tourner le graphe complet sur le fil rouge, jusqu'à la pause de validation. Refusez une
+          première fois, et vérifiez que rien n'a été écrit. Relancez, approuvez, et vérifiez que
+          l'enregistrement simulé a bien eu lieu une seule fois.
+
+          Coupez ensuite le programme pendant l'exécution, puis relancez avec le même identifiant de fil :
+          l'état doit être retrouvé, sans brouillon en double.
+
+          Terminez par la comparaison chiffrée entre vos deux implémentations, et la section de décision
+          dans decisions.md.
+
+          Défi : faites échouer la reprise exprès, en changeant l'identifiant de fil, et expliquez en deux
+          lignes ce que le cadre fait alors, et pourquoi la clé d'idempotence métier reste indispensable.
+
+          Indices : si le graphe boucle, regardez votre arête conditionnelle avant d'accuser le cadre ; si
+          la reprise recommence tout, vérifiez que vous invoquez bien avec une entrée vide.
+        livrable: >-
+          Étape 10 : le fil rouge réécrit avec le cadre, point de sauvegarde actif, pause de validation
+          fonctionnelle, reprise sans doublon démontrée, tests de nœuds verts, et comparaison chiffrée des
+          deux implémentations.
+        mise_en_situation: >-
+          Votre équipe veut adopter le cadre partout, y compris pour un traitement de nuit qui enchaîne
+          trois appels dans un ordre connu d'avance. En vous appuyant sur ce que vous avez mesuré cette
+          semaine, dites ce que le cadre apporterait dans ce cas précis, ce qu'il coûterait, et quelle
+          recommandation vous défendez.
+        quiz:
+          - question: "Dans un graphe d'états, qu'est ce qu'un nœud ?"
+            options: ["Un appel au modèle, obligatoirement", "Une fonction qui reçoit l'état et renvoie les champs qu'elle modifie", "Une entrée de la base de données", "Un fichier de configuration"]
+            bonnes: [2]
+            explication: "Un nœud est une fonction Python ordinaire, testable seule, sans le cadre."
+          - question: "À quoi sert l'identifiant de fil au moment d'invoquer le graphe ?"
+            options: ["À identifier l'utilisateur pour la facturation", "À retrouver l'état sauvegardé et reprendre une exécution au lieu de la recommencer", "À choisir le modèle employé", "À chiffrer les messages"]
+            bonnes: [2]
+            explication: "Le point de sauvegarde range l'état par fil ; réinvoquer avec le même fil reprend là où l'on s'était arrêté."
+          - question: "Pourquoi garder votre propre point d'appel d'outils plutôt que celui fourni par le cadre ?"
+            options: ["Parce qu'il est plus rapide", "Parce qu'il porte la liste blanche, les contrats et le journal des refus, c'est à dire vos garanties de sécurité", "Parce que le cadre ne sait pas appeler de fonctions", "Pour consommer moins de jetons"]
+            bonnes: [2]
+            explication: "Déléguer ces garanties à une dépendance revient à confier à un tiers ce qui vous sera reproché en cas d'incident."
+          - question: "Que remplace la limite de récursion du graphe ?"
+            options: ["Le budget en jetons", "Le plafond de tours de votre boucle", "La température du modèle", "La taille de la fenêtre de contexte"]
+            bonnes: [2]
+            explication: "Sans elle, un graphe qui boucle tourne jusqu'à épuisement ; le budget, lui, reste entièrement à votre charge."
+          - question: "Quand l'adoption d'un cadre d'orchestration se justifie-t-elle le mieux ?"
+            options: ["Pour enchaîner trois appels dans un ordre connu d'avance", "Quand vous avez besoin de persistance, de reprise et de pause humaine que vous auriez écrites de toute façon", "Pour impressionner en revue d'architecture", "Quand le prompt dépasse deux pages"]
+            bonnes: [2]
+            explication: "Un ordre connu d'avance demande un workflow ; le cadre se paie quand il fournit l'état, la reprise et l'observabilité."
       - num: "12"
         title: MCP et interopérabilité
         cours:
