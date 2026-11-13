@@ -1122,6 +1122,280 @@ blocs:
               Les actions irréversibles ne pardonnent pas. C'est le seul point de cette liste où une erreur
               ne se rattrape pas par une relance du programme, et c'est pourquoi il occupe une séance
               entière en fin de parcours.
+          - titre: Le domaine du fil rouge, écrit en entier
+            texte: >-
+              Nous écrivons maintenant la première ligne de votre projet, et nous l'écrivons à
+              l'endroit le plus important : le domaine. Le domaine, ce sont les objets et les règles
+              métier, sans rien qui touche au modèle de langage, au réseau ou à l'affichage. C'est le
+              cœur, et il doit pouvoir se tester sans aucune clé d'API.
+
+              Prenez le temps de lire ce fichier ligne par ligne. Une facture y est un objet immuable,
+              parce qu'une facture ne change pas sous vos pieds pendant un traitement. Les règles
+              d'éligibilité sont des méthodes, pas des conditions éparpillées : quand on vous demandera
+              pourquoi FAC-003 n'a pas été relancée, vous montrerez une méthode, pas une recherche dans
+              tout le code.
+
+              La règle qui vous servira pendant seize séances : si une règle métier existe à deux
+              endroits, elle finira par différer. Elle vit ici, et nulle part ailleurs.
+            code:
+              - titre: recouvrement/domaine.py, le fichier complet
+                langage: python
+                source: |
+                  """Le coeur metier : des objets et des regles, aucun appel reseau, aucun modele."""
+                  from dataclasses import dataclass
+                  from datetime import date
+
+
+                  SEUIL_RELANCE_JOURS = 30          # au-dela, une facture devient relancable
+                  MONTANT_PLANCHER_FCFA = 500_000   # en dessous, la relance coute plus qu'elle ne rapporte
+                  PALIER_MAXIMUM = 3                # apres trois relances, le dossier passe en recouvrement
+
+
+                  @dataclass(frozen=True)
+                  class Facture:
+                      """Immuable : une facture ne change pas sous vos pieds pendant un traitement."""
+                      facture_id: str
+                      client_ref: str
+                      montant_fcfa: int
+                      retard_jours: int
+                      en_litige: bool
+                      dernier_palier: int
+                      note_non_fiable: str = ""      # donnee, jamais consigne : voir la seance 14
+
+                      def est_relancable(self) -> bool:
+                          """La seule definition de l'eligibilite, dans tout le projet."""
+                          return (not self.en_litige
+                                  and self.retard_jours >= SEUIL_RELANCE_JOURS
+                                  and self.montant_fcfa >= MONTANT_PLANCHER_FCFA
+                                  and self.dernier_palier < PALIER_MAXIMUM)
+
+                      def motif_exclusion(self) -> str | None:
+                          """Pourquoi cette facture n'est pas relancee : une phrase, pour l'humain."""
+                          if self.en_litige:
+                              return "litige en cours"
+                          if self.retard_jours < SEUIL_RELANCE_JOURS:
+                              return f"retard de {self.retard_jours} jours, seuil a {SEUIL_RELANCE_JOURS}"
+                          if self.montant_fcfa < MONTANT_PLANCHER_FCFA:
+                              return f"montant sous le plancher de {montant_lisible(MONTANT_PLANCHER_FCFA)}"
+                          if self.dernier_palier >= PALIER_MAXIMUM:
+                              return "trois relances deja envoyees, dossier a escalader"
+                          return None
+
+                      def palier_suivant(self) -> int:
+                          return min(self.dernier_palier + 1, PALIER_MAXIMUM)
+
+
+                  @dataclass(frozen=True)
+                  class Brouillon:
+                      """Un brouillon n'est pas un envoi : il attend une validation humaine."""
+                      brouillon_id: str
+                      facture_id: str
+                      palier: int
+                      objet: str
+                      corps: str
+                      cree_le: date
+
+                      def resume(self) -> str:
+                          return f"{self.brouillon_id} - {self.facture_id} - palier {self.palier}"
+
+
+                  def montant_lisible(montant: int) -> str:
+                      """Un montant comme on l'ecrit sur une facture : groupes de mille espaces."""
+                      return f"{int(montant):,}".replace(",", "\u00a0") + "\u00a0F CFA"
+
+
+                  def exposition(factures: list[Facture]) -> int:
+                      """La somme des montants : calculee ici, jamais par le modele de langage."""
+                      return sum(f.montant_fcfa for f in factures)
+          - titre: Charger les données, et refuser celles qui sont douteuses
+            texte: >-
+              Le jeu de données du fil rouge est un fichier de douze factures fictives. Le charger
+              semble trivial, et c'est précisément pour cela qu'on s'y trompe. Un chargeur honnête
+              refuse ce qu'il ne comprend pas plutôt que de deviner.
+
+              Regardez les trois refus dans le code. Un montant négatif, un retard négatif, un palier
+              hors bornes : chacun lève une erreur nommée, avec le numéro de ligne. Vous remercierez ce
+              détail le jour où un fichier mal exporté vous arrivera, parce que l'erreur dira où
+              regarder au lieu de produire un total faux et silencieux.
+            code:
+              - titre: recouvrement/donnees.py, le fichier complet
+                langage: python
+                source: |
+                  """Chargement du jeu de donnees. Un chargeur honnete refuse plutot que de deviner."""
+                  import csv
+                  import pathlib
+
+                  from recouvrement.domaine import Facture
+
+                  CHEMIN_PAR_DEFAUT = pathlib.Path("data/factures_fictives.csv")
+
+
+                  class DonneesInvalides(ValueError):
+                      """Le numero de ligne est dans le message : c'est tout l'interet."""
+
+
+                  def _entier(valeur: str, champ: str, ligne: int) -> int:
+                      try:
+                          nombre = int(str(valeur).strip())
+                      except (TypeError, ValueError):
+                          raise DonneesInvalides(f"ligne {ligne} : {champ} n'est pas un entier") from None
+                      if nombre < 0:
+                          raise DonneesInvalides(f"ligne {ligne} : {champ} negatif ({nombre})")
+                      return nombre
+
+
+                  def charger_factures(chemin: pathlib.Path | None = None) -> list[Facture]:
+                      chemin = chemin or CHEMIN_PAR_DEFAUT
+                      if not chemin.exists():
+                          raise DonneesInvalides(f"fichier introuvable : {chemin}")
+                      factures: list[Facture] = []
+                      # utf-8-sig : l'export d'un tableur place souvent une marque invisible en tete.
+                      with chemin.open(encoding="utf-8-sig", newline="") as fichier:
+                          for ligne, enregistrement in enumerate(csv.DictReader(fichier), start=2):
+                              palier = _entier(enregistrement["dernier_palier"], "dernier_palier", ligne)
+                              if palier > 3:
+                                  raise DonneesInvalides(f"ligne {ligne} : palier {palier} hors bornes")
+                              factures.append(Facture(
+                                  facture_id=enregistrement["facture_id"].strip(),
+                                  client_ref=enregistrement["client_ref"].strip(),
+                                  montant_fcfa=_entier(enregistrement["montant_fcfa"], "montant", ligne),
+                                  retard_jours=_entier(enregistrement["retard_jours"], "retard", ligne),
+                                  en_litige=enregistrement["statut_litige"].strip() != "none",
+                                  dernier_palier=palier,
+                                  note_non_fiable=enregistrement.get("note_non_fiable", "").strip(),
+                              ))
+                      if not factures:
+                          raise DonneesInvalides("aucune facture chargee : fichier vide ?")
+                      return factures
+              - titre: tests/test_domaine.py, vos premiers tests, à écrire avant le reste
+                langage: python
+                source: |
+                  """Ecrits avant la boucle : ils tiendront pendant les seize seances."""
+                  from recouvrement.domaine import Facture, exposition
+
+
+                  def facture(**remplacements) -> Facture:
+                      """Une facture relancable par defaut ; on ne modifie que ce qu'on teste."""
+                      valeurs = dict(facture_id="FAC-001", client_ref="CLI-001",
+                                     montant_fcfa=1_250_000, retard_jours=45,
+                                     en_litige=False, dernier_palier=0)
+                      valeurs.update(remplacements)
+                      return Facture(**valeurs)
+
+
+                  def test_une_facture_en_retard_et_hors_litige_est_relancable():
+                      assert facture().est_relancable()
+
+
+                  def test_un_litige_bloque_la_relance_quel_que_soit_le_montant():
+                      bloquee = facture(en_litige=True, montant_fcfa=50_000_000)
+                      assert not bloquee.est_relancable()
+                      assert bloquee.motif_exclusion() == "litige en cours"
+
+
+                  def test_sous_le_seuil_de_retard_rien_ne_part():
+                      assert not facture(retard_jours=29).est_relancable()
+
+
+                  def test_sous_le_plancher_de_montant_la_relance_ne_vaut_pas_son_cout():
+                      assert not facture(montant_fcfa=499_999).est_relancable()
+
+
+                  def test_apres_trois_relances_le_dossier_s_escalade():
+                      assert not facture(dernier_palier=3).est_relancable()
+
+
+                  def test_l_exposition_est_calculee_par_le_code_jamais_par_le_modele():
+                      total = exposition([facture(montant_fcfa=1_000_000),
+                                          facture(montant_fcfa=250_000)])
+                      assert total == 1_250_000
+          - titre: Le squelette de l'agent, pour voir la forme avant le détail
+            texte: >-
+              Avant d'écrire la boucle complète, qui viendra en séance 6, posons son squelette. Ce
+              fichier ne contient aucune intelligence : il nomme les quatre composants de la séance et
+              les relie. Sa valeur est pédagogique, mais pas seulement : vous verrez en séance 6 que le
+              code final ressemble beaucoup à ce squelette, avec les détails remplis.
+
+              Le détail qui compte ici est la signature de la fonction principale. Elle reçoit ses
+              dépendances en paramètres au lieu de les créer elle même. C'est ce qui rendra l'agent
+              testable sans modèle réel : il suffira de passer un modèle simulé. Si vous ne retenez
+              qu'une habitude de cette séance, retenez celle là.
+            code:
+              - titre: recouvrement/agent.py, le squelette à compléter en séance 6
+                langage: python
+                source: |
+                  """Le squelette de l'agent : les quatre composants, et rien d'autre."""
+                  from dataclasses import dataclass, field
+                  from typing import Protocol
+
+                  from recouvrement.domaine import Brouillon, Facture
+
+
+                  class Modele(Protocol):
+                      """Le composant 1 : le raisonnement. Un protocole, pas une classe concrete,
+                      pour qu'un modele simule suffise aux tests."""
+
+                      def decider(self, consigne: str, observations: list[str]) -> str: ...
+
+
+                  class Outils(Protocol):
+                      """Le composant 2 : les actions. Rien ne s'execute hors de cette porte."""
+
+                      def executer(self, nom: str, arguments: dict) -> dict: ...
+
+
+                  @dataclass
+                  class Memoire:
+                      """Le composant 3 : la memoire de travail d'une execution."""
+                      observations: list[str] = field(default_factory=list)
+                      factures: list[Facture] = field(default_factory=list)
+                      brouillons: list[Brouillon] = field(default_factory=list)
+
+                      def noter(self, observation: str) -> None:
+                          self.observations.append(observation)
+
+
+                  @dataclass
+                  class Garde:
+                      """Le composant 4 : les limites. Sans elles, la boucle ne s'arrete pas."""
+                      tours_maximum: int = 8
+                      budget_fcfa: int = 500
+                      depense_fcfa: int = 0
+
+                      def autorise(self, tour: int) -> bool:
+                          return tour < self.tours_maximum and self.depense_fcfa < self.budget_fcfa
+
+
+                  def executer(consigne: str, modele: Modele, outils: Outils,
+                               memoire: Memoire | None = None, garde: Garde | None = None) -> Memoire:
+                      """Les dependances entrent par les parametres : c'est ce qui rend l'agent testable.
+
+                      La boucle elle-meme est ecrite en seance 6 ; ici, seule la forme compte.
+                      """
+                      memoire = memoire or Memoire()
+                      garde = garde or Garde()
+                      tour = 0
+                      while garde.autorise(tour):
+                          decision = modele.decider(consigne, memoire.observations)
+                          if decision == "conclure":
+                              break
+                          memoire.noter(f"tour {tour} : {decision}")   # seance 6 : l'appel d'outil reel
+                          tour += 1
+                      return memoire
+          - titre: Votre projet final cette semaine
+            texte: >-
+              Créez le dépôt qui portera votre projet final pendant seize séances, et faites y entrer
+              les quatre fichiers de cette séance : le domaine, le chargeur, le squelette d'agent et
+              les tests du domaine.
+
+              Vérifiez les deux choses qui conditionnent tout le reste. Les tests passent sans aucune
+              clé d'API, parce que le domaine ne dépend d'aucun service. Et le fichier de données est
+              bien chargé, avec le nombre exact de factures relançables : écrivez ce nombre dans votre
+              README, vous le vérifierez à chaque séance.
+
+              Ajoutez enfin un fichier decisions.md où vous noterez, en deux lignes à chaque séance,
+              les choix que vous faites et pourquoi. C'est ce fichier que le correcteur lira pour
+              comprendre votre raisonnement, et c'est celui qui vous servira le plus en entretien.
           - titre: Erreurs fréquentes en cadrage
             texte: >-
               Confondre une règle métier et une consigne au modèle. « Exclure les litiges » écrit dans un
@@ -1443,6 +1717,309 @@ blocs:
               L'observation rejoint l'historique comme un message d'outil. Au tour suivant, le modèle lit
               cinq factures et décide d'appeler le calcul d'exposition. Si vous ne voyez pas ces six étapes
               dans votre journal, c'est votre journal qu'il faut corriger avant d'aller plus loin.
+          - titre: La porte unique, écrite en entier
+            texte: >-
+              Nous écrivons maintenant le fichier le plus sensible du projet. Tous les appels d'outils
+              passent par une seule fonction, et par aucune autre. Cette porte unique fait quatre
+              choses dans un ordre qui n'est pas négociable : elle refuse ce qui n'est pas dans la
+              liste blanche, elle valide les arguments, elle exécute, et elle journalise dans tous les
+              cas, y compris le refus.
+
+              L'ordre compte. Si vous journalisiez après l'exécution seulement, un outil hors liste
+              blanche passerait sans laisser de trace, et vous ne sauriez jamais qu'une tentative a eu
+              lieu. Un refus silencieux est une information perdue, et dans un incident de sécurité
+              c'est souvent la seule qui comptait.
+
+              Notez aussi que la fonction renvoie toujours la même forme : un dictionnaire avec `ok`,
+              puis `donnees` ou `erreur`. Le modèle apprendra cette forme en trois tours ; une forme
+              qui change selon le cas lui demanderait de deviner.
+            code:
+              - titre: recouvrement/outils.py, le fichier complet
+                langage: python
+                source: |
+                  """La porte unique des actions. Rien ne s'execute en dehors d'executer_outil."""
+                  import time
+                  from typing import Any, Callable
+
+                  from pydantic import ValidationError
+
+                  from recouvrement import actions
+                  from recouvrement.contrats import CONTRATS
+                  from recouvrement.trace import Trace
+
+                  # La liste blanche : un outil absent d'ici n'existe pas, quoi que demande le modele.
+                  REGISTRE: dict[str, Callable[..., Any]] = {
+                      "lister_factures_impayees": actions.lister_factures_impayees,
+                      "calculer_exposition": actions.calculer_exposition,
+                      "preparer_brouillon_relance": actions.preparer_brouillon_relance,
+                      "soumettre_pour_validation": actions.soumettre_pour_validation,
+                      "enregistrer_relance": actions.enregistrer_relance,
+                      "chercher_dans_les_connaissances": actions.chercher_dans_les_connaissances,
+                  }
+
+
+                  def executer_outil(nom: str, arguments: dict, trace: Trace | None = None) -> dict:
+                      """Refuser, valider, executer, journaliser. Dans cet ordre, toujours."""
+                      debut = time.perf_counter()
+                      trace = trace or Trace()
+
+                      # 1. Refuser : un outil hors liste blanche est journalise, pas seulement refuse.
+                      if nom not in REGISTRE:
+                          trace.ecrire(evenement="outil_refuse", outil=nom, motif="hors_liste_blanche")
+                          return {"ok": False, "erreur": "outil inconnu",
+                                  "outils_disponibles": sorted(REGISTRE)}
+
+                      # 2. Valider : le contrat refuse avant que le code metier ne voie quoi que ce soit.
+                      try:
+                          valides = CONTRATS[nom](**arguments).model_dump()
+                      except ValidationError as erreur:
+                          detail = "; ".join(f"{'.'.join(map(str, e['loc']))}: {e['msg']}"
+                                             for e in erreur.errors()[:3])
+                          trace.ecrire(evenement="arguments_refuses", outil=nom, detail=detail)
+                          return {"ok": False, "erreur": f"arguments invalides : {detail}"}
+
+                      # 3. Executer : une erreur metier est une reponse, pas un plantage.
+                      try:
+                          donnees = REGISTRE[nom](**valides)
+                          resultat = {"ok": True, "donnees": donnees}
+                      except actions.ErreurMetier as erreur:
+                          resultat = {"ok": False, "erreur": str(erreur)}
+                      except Exception as erreur:                       # noqa: BLE001
+                          # Inattendu : on n'expose pas la trace interne au modele.
+                          trace.ecrire(evenement="erreur_interne", outil=nom, type=type(erreur).__name__)
+                          resultat = {"ok": False, "erreur": "erreur interne, reessayez autrement"}
+
+                      # 4. Journaliser : toujours, succes comme echec.
+                      trace.ecrire(evenement="appel_outil", outil=nom, ok=resultat["ok"],
+                                   duree_ms=round((time.perf_counter() - debut) * 1000, 1))
+                      return resultat
+          - titre: Les contrats d'arguments, un par outil
+            texte: >-
+              Un contrat dit ce qu'un argument a le droit d'être. Écrit en Pydantic, il sert deux fois :
+              il refuse les arguments absurdes, et il produit le schéma que le modèle lira. Un seul
+              endroit, deux usages, donc aucune dérive possible entre la description et la réalité.
+
+              Regardez les bornes. Un retard entre zéro et trois cent soixante cinq jours, un palier
+              entre un et trois, une liste d'au plus vingt factures. Ces nombres ne sont pas décoratifs :
+              sans la borne sur la liste, un modèle en boucle vous enverrait un jour mille identifiants
+              et ferait exploser votre appel suivant.
+            code:
+              - titre: recouvrement/contrats.py, le fichier complet
+                langage: python
+                source: |
+                  """Les contrats d'arguments. Un seul endroit, deux usages : valider et decrire."""
+                  from pydantic import BaseModel, Field
+
+
+                  class ListerFacturesImpayees(BaseModel):
+                      """Liste les factures dont le retard atteint age_min_jours."""
+                      age_min_jours: int = Field(default=30, ge=0, le=365,
+                                                 description="retard minimal en jours")
+                      exclure_litiges: bool = Field(default=True,
+                                                    description="ecarte les factures en litige")
+
+
+                  class CalculerExposition(BaseModel):
+                      """Somme les montants des factures citees, en francs CFA."""
+                      facture_ids: list[str] = Field(min_length=1, max_length=20,
+                                                     description="identifiants au format FAC-000")
+
+
+                  class PreparerBrouillonRelance(BaseModel):
+                      """Prepare un brouillon local. Aucun envoi."""
+                      facture_id: str = Field(pattern=r"^\d{3}$")
+                      palier: int = Field(default=1, ge=1, le=3,
+                                          description="1 rappel courtois, 2 ferme, 3 mise en demeure")
+
+
+                  class SoumettrePourValidation(BaseModel):
+                      """Place un brouillon en file d'attente humaine."""
+                      brouillon_id: str = Field(pattern=r"^\d{3}$")
+                      commentaire: str = Field(default="", max_length=300)
+
+
+                  class EnregistrerRelance(BaseModel):
+                      """Enregistre localement une relance approuvee. Refuse sans approbation."""
+                      brouillon_id: str = Field(pattern=r"^\d{3}$")
+                      cle_idempotence: str = Field(min_length=8, max_length=64)
+
+
+                  class ChercherDansLesConnaissances(BaseModel):
+                      """Cherche un passage dans la politique de relance interne."""
+                      question: str = Field(min_length=3, max_length=300)
+                      nombre_passages: int = Field(default=3, ge=1, le=5)
+
+
+                  CONTRATS = {
+                      "lister_factures_impayees": ListerFacturesImpayees,
+                      "calculer_exposition": CalculerExposition,
+                      "preparer_brouillon_relance": PreparerBrouillonRelance,
+                      "soumettre_pour_validation": SoumettrePourValidation,
+                      "enregistrer_relance": EnregistrerRelance,
+                      "chercher_dans_les_connaissances": ChercherDansLesConnaissances,
+                  }
+          - titre: Les actions, et les trois règles qu'elles ne contournent pas
+            texte: >-
+              Voici le code métier appelé derrière la porte. Trois règles y sont écrites en dur, et
+              c'est volontaire : elles ne doivent jamais dépendre de la bonne volonté du modèle.
+
+              Une facture en litige est refusée, même si la consigne le demande. Le texte du brouillon
+              ne reprend aucune note libre de la facture, parce qu'une note est une donnée écrite par
+              un tiers et que nous verrons en séance 14 ce qu'on peut y cacher. Et l'enregistrement
+              refuse tout brouillon non approuvé par une personne nommée.
+
+              Si vous ne codez qu'une chose de cette séance, codez ces trois refus, et écrivez le test
+              qui prouve chacun.
+            code:
+              - titre: recouvrement/actions.py, le fichier complet
+                langage: python
+                source: |
+                  """Le code metier derriere la porte. Trois regles y sont en dur, et c'est voulu."""
+                  import hashlib
+                  from datetime import date
+
+                  from recouvrement.domaine import Brouillon, exposition, montant_lisible
+                  from recouvrement.donnees import charger_factures
+                  from recouvrement.etat import charger_etat, enregistrer_etat
+
+
+                  class ErreurMetier(Exception):
+                      """Une erreur attendue, destinee a etre lue par le modele."""
+
+
+                  def lister_factures_impayees(age_min_jours: int = 30,
+                                               exclure_litiges: bool = True) -> dict:
+                      retenues, exclues = [], {}
+                      for f in charger_factures():
+                          if exclure_litiges and f.en_litige:
+                              exclues[f.facture_id] = "litige en cours"
+                              continue
+                          if f.retard_jours < age_min_jours:
+                              exclues[f.facture_id] = f"retard de {f.retard_jours} jours"
+                              continue
+                          # La note libre n'est jamais renvoyee : c'est une donnee de tiers.
+                          retenues.append({"facture_id": f.facture_id, "client_ref": f.client_ref,
+                                           "montant_fcfa": f.montant_fcfa,
+                                           "retard_jours": f.retard_jours,
+                                           "palier_suivant": f.palier_suivant()})
+                      return {"factures": retenues, "exclusions": exclues,
+                              "nombre": len(retenues)}
+
+
+                  def calculer_exposition(facture_ids: list[str]) -> dict:
+                      connues = {f.facture_id: f for f in charger_factures()}
+                      inconnues = [i for i in facture_ids if i not in connues]
+                      if inconnues:
+                          raise ErreurMetier(f"identifiants inconnus : {', '.join(inconnues)}")
+                      total = exposition([connues[i] for i in facture_ids])
+                      return {"total_fcfa": total, "total_lisible": montant_lisible(total),
+                              "nombre_factures": len(facture_ids)}
+
+
+                  def preparer_brouillon_relance(facture_id: str, palier: int = 1) -> dict:
+                      facture = next((f for f in charger_factures() if f.facture_id == facture_id), None)
+                      if facture is None:
+                          raise ErreurMetier(f"facture inconnue : {facture_id}")
+                      # Regle en dur numero 1 : le litige bloque, quelle que soit la consigne recue.
+                      if facture.en_litige:
+                          raise ErreurMetier(f"{facture_id} est en litige : aucune relance possible")
+                      objets = {1: "Rappel amiable", 2: "Relance ferme", 3: "Mise en demeure"}
+                      # Regle en dur numero 2 : aucune note libre de la facture n'entre dans le texte.
+                      corps = (f"Bonjour,\n\nSauf erreur de notre part, la facture {facture.facture_id} "
+                               f"d'un montant de {montant_lisible(facture.montant_fcfa)} reste impayee "
+                               f"depuis {facture.retard_jours} jours.\n\nNous vous remercions de "
+                               f"proceder au reglement.\n\nCordialement,")
+                      etat = charger_etat()
+                      brouillon = Brouillon(
+                          brouillon_id=f"BRO-{len(etat['brouillons']) + 1:03d}",
+                          facture_id=facture.facture_id, palier=palier,
+                          objet=f"{objets[palier]} - {facture.facture_id}",
+                          corps=corps, cree_le=date.today())
+                      etat["brouillons"][brouillon.brouillon_id] = {
+                          "facture_id": brouillon.facture_id, "palier": palier,
+                          "objet": brouillon.objet, "corps": corps, "statut": "prepare"}
+                      enregistrer_etat(etat)
+                      return {"brouillon_id": brouillon.brouillon_id, "objet": brouillon.objet}
+
+
+                  def soumettre_pour_validation(brouillon_id: str, commentaire: str = "") -> dict:
+                      etat = charger_etat()
+                      brouillon = etat["brouillons"].get(brouillon_id)
+                      if brouillon is None:
+                          raise ErreurMetier(f"brouillon inconnu : {brouillon_id}")
+                      brouillon["statut"] = "en_attente"
+                      brouillon["commentaire"] = commentaire[:300]
+                      enregistrer_etat(etat)
+                      return {"brouillon_id": brouillon_id, "statut": "en_attente"}
+
+
+                  def enregistrer_relance(brouillon_id: str, cle_idempotence: str) -> dict:
+                      etat = charger_etat()
+                      brouillon = etat["brouillons"].get(brouillon_id)
+                      if brouillon is None:
+                          raise ErreurMetier(f"brouillon inconnu : {brouillon_id}")
+                      # Regle en dur numero 3 : aucune ecriture sans approbation humaine nommee.
+                      if brouillon.get("statut") != "approuve" or not brouillon.get("valideur"):
+                          raise ErreurMetier("enregistrement refuse : approbation humaine manquante")
+                      empreinte = hashlib.sha256(cle_idempotence.encode()).hexdigest()[:16]
+                      if empreinte in etat["idempotence"]:
+                          return {"relance_id": etat["idempotence"][empreinte], "rejouee": True}
+                      relance_id = f"REL-{len(etat['relances']) + 1:03d}"
+                      etat["relances"].append({"relance_id": relance_id, "brouillon_id": brouillon_id,
+                                               "valideur": brouillon["valideur"]})
+                      etat["idempotence"][empreinte] = relance_id
+                      brouillon["statut"] = "enregistre"
+                      enregistrer_etat(etat)
+                      return {"relance_id": relance_id, "rejouee": False}
+
+
+                  def chercher_dans_les_connaissances(question: str, nombre_passages: int = 3) -> dict:
+                      """Implemente en seance 9 ; ici, la signature suffit a figer le contrat."""
+                      raise ErreurMetier("recherche documentaire disponible a partir de la seance 9")
+              - titre: tests/test_outils.py, les quatre tests qui gardent la porte
+                langage: python
+                source: |
+                  """Ces quatre tests resteront verts pendant douze seances. Ecrivez-les maintenant."""
+                  from recouvrement.outils import executer_outil
+
+
+                  def test_un_outil_hors_liste_blanche_est_refuse_et_journalise(capsys):
+                      resultat = executer_outil("supprimer_la_base", {})
+                      assert resultat["ok"] is False
+                      assert "inconnu" in resultat["erreur"]
+                      assert "outil_refuse" in capsys.readouterr().out
+
+
+                  def test_un_argument_hors_bornes_n_atteint_jamais_le_code_metier():
+                      resultat = executer_outil("lister_factures_impayees", {"age_min_jours": -5})
+                      assert resultat["ok"] is False
+                      assert "arguments invalides" in resultat["erreur"]
+
+
+                  def test_une_facture_en_litige_ne_produit_aucun_brouillon():
+                      resultat = executer_outil("preparer_brouillon_relance", {"facture_id": "FAC-003"})
+                      assert resultat["ok"] is False
+                      assert "litige" in resultat["erreur"]
+
+
+                  def test_la_forme_de_reponse_est_toujours_la_meme():
+                      for appel in [("lister_factures_impayees", {}), ("outil_imaginaire", {})]:
+                          resultat = executer_outil(*appel)
+                          assert set(resultat) <= {"ok", "donnees", "erreur", "outils_disponibles"}
+                          assert isinstance(resultat["ok"], bool)
+          - titre: Votre projet final cette semaine
+            texte: >-
+              Votre agent a maintenant des mains. Faites entrer dans votre dépôt la porte unique, les
+              six contrats, les actions et les quatre tests.
+
+              Vérifiez ensuite la propriété qui résume la séance : cherchez dans tout votre code les
+              appels directs à une fonction de `actions`. Il ne doit en exister aucun hors de
+              `outils.py`. Si vous en trouvez un, vous venez de découvrir le chemin par lequel une
+              règle métier sera contournée un jour.
+
+              Notez dans decisions.md les bornes que vous avez choisies pour vos contrats, et pourquoi.
+              Le correcteur ne cherche pas les mêmes valeurs que les miennes, il cherche que vous
+              sachiez les justifier.
           - titre: Glossaire de la séance
             texte: >-
               Contrat d'outil : la description et le schéma que le modèle lit pour décider d'un appel.
@@ -1709,6 +2286,251 @@ blocs:
 
               Notez ce qui n'apparaît pas : aucune boucle de réflexion. Le brouillon passe de toute façon
               devant un humain, qui le corrigera mieux et pour moins cher qu'une seconde passe du modèle.
+          - titre: La boucle, enfin écrite en entier
+            texte: >-
+              Vous avez le domaine, les outils et la porte. Il manque le chef d'orchestre. Nous
+              l'écrivons maintenant, entièrement, sans aucune bibliothèque d'agent : environ cent
+              vingt lignes qui feront tout ce que font les cadres que nous verrons ensuite.
+
+              Lisez d'abord la structure, puis les gardes. La structure est un simple `while` : tant
+              qu'on a le droit de continuer, on demande une décision, on l'exécute, on note
+              l'observation. Les gardes sont les cinq conditions d'arrêt, et ce sont elles qui
+              séparent un agent d'un script qui tourne en rond.
+
+              Le point que les débutants manquent le plus souvent se trouve dans la gestion d'une
+              décision invalide. Quand le modèle demande un outil qui n'existe pas, on ne lève pas
+              d'exception : on lui renvoie l'erreur comme une observation, et on le laisse corriger.
+              Un agent qui plante à la première maladresse du modèle est inutilisable ; un agent qui
+              corrige au tour suivant est robuste.
+            code:
+              - titre: recouvrement/executer_boucle.py, le fichier complet
+                langage: python
+                source: |
+                  """La boucle d'orchestration, ecrite a la main. Aucun cadre, cinq gardes."""
+                  import json
+                  from dataclasses import dataclass, field
+
+                  from recouvrement.outils import REGISTRE, executer_outil
+                  from recouvrement.trace import Trace
+
+                  TOURS_MAXIMUM = 8
+                  OBSERVATIONS_MAXIMUM = 12
+                  BUDGET_FCFA_PAR_EXECUTION = 500
+
+
+                  @dataclass
+                  class EtatBoucle:
+                      """Tout ce que la boucle sait d'elle-meme, a un instant donne."""
+                      tour: int = 0
+                      depense_fcfa: int = 0
+                      observations: list[dict] = field(default_factory=list)
+                      appels_identiques: dict[str, int] = field(default_factory=dict)
+                      conclusion: str | None = None
+
+                      def resumer(self) -> str:
+                          """Ce que le modele relit a chaque tour : borne, donc previsible en cout."""
+                          recentes = self.observations[-OBSERVATIONS_MAXIMUM:]
+                          return "\n".join(
+                              f"- {o['outil']} -> {json.dumps(o['resultat'], ensure_ascii=False)[:300]}"
+                              for o in recentes)
+
+
+                  class BoucleArretee(RuntimeError):
+                      """Arret volontaire : le message dit laquelle des cinq gardes a parle."""
+
+
+                  def _verifier_les_gardes(etat: EtatBoucle, decision: dict) -> None:
+                      # Garde 1 : le nombre de tours. Sans elle, une boucle peut ne jamais finir.
+                      if etat.tour >= TOURS_MAXIMUM:
+                          raise BoucleArretee(f"plafond de {TOURS_MAXIMUM} tours atteint")
+                      # Garde 2 : le budget. Une boucle qui s'emballe coute de l'argent reel.
+                      if etat.depense_fcfa >= BUDGET_FCFA_PAR_EXECUTION:
+                          raise BoucleArretee(f"budget de {BUDGET_FCFA_PAR_EXECUTION} F CFA atteint")
+                      # Garde 3 : la repetition. Trois fois le meme appel identique = blocage.
+                      empreinte = json.dumps(decision, sort_keys=True, ensure_ascii=False)
+                      etat.appels_identiques[empreinte] = etat.appels_identiques.get(empreinte, 0) + 1
+                      if etat.appels_identiques[empreinte] >= 3:
+                          raise BoucleArretee("meme appel repete trois fois : le modele est bloque")
+
+
+                  def executer_analyse(consigne: str, modele, age_min_jours: int = 30,
+                                       trace: Trace | None = None) -> dict:
+                      """Le chef d'orchestre. Le modele entre en parametre : un simule suffit aux tests."""
+                      trace = trace or Trace()
+                      etat = EtatBoucle()
+                      execution_id = trace.nouvelle_execution()
+                      outils_decrits = [{"nom": n, "description": (f.__doc__ or "").strip()}
+                                        for n, f in REGISTRE.items()]
+
+                      while etat.conclusion is None:
+                          try:
+                              reponse = modele.decider(consigne=consigne,
+                                                       observations=etat.resumer(),
+                                                       outils=outils_decrits)
+                          except Exception as erreur:                   # noqa: BLE001
+                              # Garde 4 : le modele indisponible arrete proprement, sans perdre l'etat.
+                              trace.ecrire(execution_id, "modele_indisponible", type=type(erreur).__name__)
+                              raise BoucleArretee("le modele ne repond pas") from erreur
+
+                          etat.depense_fcfa += reponse.cout_fcfa
+
+                          if reponse.conclusion is not None:
+                              etat.conclusion = reponse.conclusion
+                              break
+
+                          try:
+                              _verifier_les_gardes(etat, reponse.appel_outil)
+                          except BoucleArretee as arret:
+                              trace.ecrire(execution_id, "boucle_arretee", motif=str(arret))
+                              etat.conclusion = f"arret : {arret}"
+                              break
+
+                          # Une decision invalide n'est pas une exception : c'est une observation.
+                          resultat = executer_outil(reponse.appel_outil["nom"],
+                                                    reponse.appel_outil.get("arguments", {}),
+                                                    trace=trace)
+                          etat.observations.append({"outil": reponse.appel_outil["nom"],
+                                                    "resultat": resultat})
+                          etat.tour += 1
+
+                      # Garde 5 : le resultat est recalcule par le code, jamais repris du modele.
+                      retenues = _factures_retenues(etat)
+                      total = executer_outil("calculer_exposition", {"facture_ids": retenues}) \
+                          if retenues else {"ok": True, "donnees": {"total_fcfa": 0}}
+                      return {"execution_id": execution_id, "tours": etat.tour,
+                              "depense_fcfa": etat.depense_fcfa,
+                              "factures_retenues": retenues,
+                              "total_fcfa": total["donnees"]["total_fcfa"],
+                              "brouillons": _brouillons(etat),
+                              "conclusion": etat.conclusion}
+
+
+                  def _factures_retenues(etat: EtatBoucle) -> list[str]:
+                      """Lu dans les observations reelles, pas dans le texte du modele."""
+                      for observation in reversed(etat.observations):
+                          if observation["outil"] == "lister_factures_impayees" and observation["resultat"]["ok"]:
+                              return [f["facture_id"]
+                                      for f in observation["resultat"]["donnees"]["factures"]]
+                      return []
+
+
+                  def _brouillons(etat: EtatBoucle) -> list[str]:
+                      return [o["resultat"]["donnees"]["brouillon_id"]
+                              for o in etat.observations
+                              if o["outil"] == "preparer_brouillon_relance" and o["resultat"]["ok"]]
+          - titre: Le modèle simulé, pour tester la boucle sans dépenser un franc
+            texte: >-
+              Avant de brancher un vrai modèle en séance 7, nous écrivons un modèle simulé. Ce n'est
+              pas un exercice d'attente : ce faux modèle restera dans votre projet jusqu'au bout, parce
+              que c'est lui qui rendra vos tests rapides, gratuits et déterministes.
+
+              Le principe est simple. Il joue une liste de décisions écrites d'avance, et il sait aussi
+              jouer les cas qui vous intéressent : une boucle infinie, un outil inconnu, une panne. Un
+              modèle simulé qui ne sait pas mal se comporter ne teste rien d'intéressant.
+            code:
+              - titre: recouvrement/modele_simule.py, le fichier complet
+                langage: python
+                source: |
+                  """Un modele joue d'avance : des tests rapides, gratuits et deterministes."""
+                  from dataclasses import dataclass
+
+
+                  @dataclass
+                  class Reponse:
+                      appel_outil: dict | None = None
+                      conclusion: str | None = None
+                      cout_fcfa: int = 1
+
+
+                  class ModeleSimule:
+                      """Rejoue une liste de decisions. Sait aussi mal se comporter, c'est l'interet."""
+
+                      def __init__(self, decisions: list[Reponse]) -> None:
+                          self.decisions = list(decisions)
+                          self.appels = 0
+
+                      def decider(self, consigne: str, observations: str, outils: list[dict]) -> Reponse:
+                          self.appels += 1
+                          if not self.decisions:
+                              return Reponse(conclusion="plus rien a faire")
+                          return self.decisions.pop(0)
+
+
+                  class ModeleEnPanne:
+                      """Pour verifier que la boucle s'arrete proprement sans perdre l'etat."""
+
+                      def decider(self, **_) -> Reponse:
+                          raise ConnectionError("le fournisseur ne repond pas")
+
+
+                  class ModeleBloque:
+                      """Repete eternellement le meme appel : verifie la garde anti-repetition."""
+
+                      def decider(self, **_) -> Reponse:
+                          return Reponse(appel_outil={"nom": "lister_factures_impayees",
+                                                      "arguments": {"age_min_jours": 30}})
+              - titre: tests/test_boucle_sans_cadre.py, les cinq gardes prouvées
+                langage: python
+                source: |
+                  """Une garde non testee est une garde qui sautera a la prochaine refonte."""
+                  import pytest
+
+                  from recouvrement.executer_boucle import BoucleArretee, executer_analyse
+                  from recouvrement.modele_simule import (ModeleBloque, ModeleEnPanne,
+                                                          ModeleSimule, Reponse)
+
+
+                  def test_la_boucle_s_arrete_quand_le_modele_conclut():
+                      modele = ModeleSimule([
+                          Reponse(appel_outil={"nom": "lister_factures_impayees",
+                                               "arguments": {"age_min_jours": 30}}),
+                          Reponse(conclusion="cinq factures relancables"),
+                      ])
+                      resultat = executer_analyse("analyse les impayes", modele)
+                      assert resultat["tours"] == 1
+                      assert resultat["conclusion"] == "cinq factures relancables"
+
+
+                  def test_le_meme_appel_repete_trois_fois_arrete_la_boucle():
+                      resultat = executer_analyse("analyse", ModeleBloque())
+                      assert "repete trois fois" in resultat["conclusion"]
+
+
+                  def test_un_outil_inconnu_devient_une_observation_pas_un_plantage():
+                      modele = ModeleSimule([
+                          Reponse(appel_outil={"nom": "outil_imaginaire", "arguments": {}}),
+                          Reponse(conclusion="j'ai corrige"),
+                      ])
+                      resultat = executer_analyse("analyse", modele)
+                      assert resultat["conclusion"] == "j'ai corrige"
+
+
+                  def test_le_modele_en_panne_arrete_proprement():
+                      with pytest.raises(BoucleArretee, match="ne repond pas"):
+                          executer_analyse("analyse", ModeleEnPanne())
+
+
+                  def test_le_total_est_recalcule_et_jamais_repris_du_modele():
+                      modele = ModeleSimule([
+                          Reponse(appel_outil={"nom": "lister_factures_impayees",
+                                               "arguments": {"age_min_jours": 30}}),
+                          Reponse(conclusion="le total est de 1 franc"),   # le modele se trompe
+                      ])
+                      resultat = executer_analyse("analyse", modele)
+                      assert resultat["total_fcfa"] > 1          # le code a recalcule
+          - titre: Votre projet final cette semaine
+            texte: >-
+              Votre agent tourne maintenant de bout en bout, sans modèle réel et sans dépenser un
+              franc. C'est l'étape la plus satisfaisante du parcours, et la plus structurante : tout ce
+              qui suit viendra se brancher sur cette boucle.
+
+              Faites entrer dans votre dépôt la boucle, le modèle simulé et les cinq tests. Puis faites
+              l'exercice qui révèle la qualité de votre travail : commentez une garde, lancez les
+              tests, et vérifiez qu'exactement un test devient rouge. Si aucun ne tombe, votre garde
+              n'est pas testée. Si trois tombent, vos tests ne sont pas assez précis.
+
+              Notez dans decisions.md les valeurs de vos trois plafonds, et la raison de chacune. En
+              séance 16, vous les comparerez à ce que la production vous aura appris.
           - titre: Glossaire de la séance
             texte: >-
               Chaînage : enchaînement d'étapes dont chacune consomme le résultat de la précédente.
@@ -2634,6 +3456,205 @@ blocs:
 
               C'est la leçon de la séance : la bonne réponse à un contexte qui enfle est presque toujours de
               faire sortir les données, pas de les compresser.
+          - titre: L'état durable, écrit en entier
+            texte: >-
+              Nous écrivons le module d'état, celui que vos actions appellent depuis la séance 5. Son
+              métier tient en une phrase : ne jamais laisser le fichier dans un état à moitié écrit.
+
+              La technique s'appelle l'écriture atomique, et elle tient en trois gestes. On écrit dans
+              un fichier temporaire, on force le vidage des tampons du système, puis on remplace
+              l'ancien fichier par le nouveau en une seule opération. Si le courant tombe au milieu,
+              vous perdez la dernière écriture, jamais le fichier entier. Écrire directement dans le
+              fichier cible vous ferait un jour perdre tous vos brouillons en attente, et vous ne
+              sauriez même pas pourquoi.
+
+              Le verrou mérite aussi un mot. Deux exécutions simultanées qui écrivent le même fichier
+              se marchent dessus, et le résultat est une relance envoyée deux fois. Le verrou coûte
+              trois lignes ; l'incident coûte un client.
+            code:
+              - titre: recouvrement/etat.py, le fichier complet
+                langage: python
+                source: |
+                  """L'etat durable. Regle unique : jamais de fichier a moitie ecrit."""
+                  import json
+                  import os
+                  import pathlib
+                  import tempfile
+                  import threading
+
+                  CHEMIN = pathlib.Path(os.environ.get("ETAT_CHEMIN", "donnees/etat.json"))
+                  VERSION = 2
+                  _VERROU = threading.Lock()
+
+
+                  def etat_vide() -> dict:
+                      return {"version": VERSION, "brouillons": {}, "relances": [],
+                              "idempotence": {}, "executions": []}
+
+
+                  def charger_etat() -> dict:
+                      """Un etat absent n'est pas une erreur : c'est un premier demarrage."""
+                      if not CHEMIN.exists():
+                          return etat_vide()
+                      try:
+                          donnees = json.loads(CHEMIN.read_text(encoding="utf-8"))
+                      except json.JSONDecodeError:
+                          # Fichier corrompu : on le met de cote au lieu de l'ecraser en silence.
+                          CHEMIN.rename(CHEMIN.with_suffix(".corrompu"))
+                          return etat_vide()
+                      return _migrer(donnees)
+
+
+                  def _migrer(donnees: dict) -> dict:
+                      """Le format evolue ; les anciens fichiers doivent continuer a s'ouvrir."""
+                      if donnees.get("version", 1) < 2:
+                          donnees.setdefault("executions", [])
+                          donnees["version"] = 2
+                      return donnees
+
+
+                  def enregistrer_etat(etat: dict) -> None:
+                      """Ecriture atomique : temporaire, vidage force, remplacement en une operation."""
+                      CHEMIN.parent.mkdir(parents=True, exist_ok=True)
+                      with _VERROU:
+                          descripteur, temporaire = tempfile.mkstemp(dir=str(CHEMIN.parent),
+                                                                     suffix=".tmp")
+                          try:
+                              with os.fdopen(descripteur, "w", encoding="utf-8") as fichier:
+                                  json.dump(etat, fichier, ensure_ascii=False, indent=2)
+                                  fichier.flush()
+                                  os.fsync(fichier.fileno())   # sans cela, le systeme peut differer
+                              os.replace(temporaire, CHEMIN)   # atomique sur Windows comme sur Linux
+                          except BaseException:
+                              pathlib.Path(temporaire).unlink(missing_ok=True)
+                              raise
+          - titre: La reprise, et la clé d'idempotence qui évite le doublon
+            texte: >-
+              Une exécution peut s'arrêter n'importe où : panne du modèle, plafond atteint, machine
+              redémarrée. La question n'est pas de l'éviter, c'est de savoir reprendre sans refaire ce
+              qui est déjà fait.
+
+              Deux mécanismes y suffisent. Le journal d'exécution, qui dit où on en était, et la clé
+              d'idempotence, qui garantit qu'un même enregistrement demandé deux fois ne produit
+              qu'une seule relance. La clé se construit à partir de ce qui identifie l'intention,
+              jamais de l'heure ni d'un tirage aléatoire : si elle changeait à chaque tentative, elle
+              ne protégerait de rien.
+            code:
+              - titre: recouvrement/reprise.py, le fichier complet
+                langage: python
+                source: |
+                  """Reprendre une execution interrompue sans refaire ce qui est deja fait."""
+                  import hashlib
+
+                  from recouvrement.etat import charger_etat, enregistrer_etat
+
+
+                  def cle_idempotence(brouillon_id: str, facture_id: str, palier: int) -> str:
+                      """Construite sur l'intention, jamais sur l'heure : sinon elle ne protege rien."""
+                      graine = f"{brouillon_id}|{facture_id}|{palier}"
+                      return hashlib.sha256(graine.encode("utf-8")).hexdigest()[:32]
+
+
+                  def demarrer_execution(execution_id: str, consigne: str) -> None:
+                      etat = charger_etat()
+                      etat["executions"].append({"execution_id": execution_id, "consigne": consigne,
+                                                 "statut": "en_cours", "etapes_faites": []})
+                      enregistrer_etat(etat)
+
+
+                  def marquer_etape(execution_id: str, etape: str) -> None:
+                      """Ecrit apres l'action : une etape marquee est une etape reellement faite."""
+                      etat = charger_etat()
+                      for execution in etat["executions"]:
+                          if execution["execution_id"] == execution_id:
+                              execution["etapes_faites"].append(etape)
+                              break
+                      enregistrer_etat(etat)
+
+
+                  def etapes_deja_faites(execution_id: str) -> set[str]:
+                      etat = charger_etat()
+                      for execution in etat["executions"]:
+                          if execution["execution_id"] == execution_id:
+                              return set(execution["etapes_faites"])
+                      return set()
+
+
+                  def executions_interrompues() -> list[dict]:
+                      """Ce que l'exploitant regarde apres un redemarrage."""
+                      return [e for e in charger_etat()["executions"] if e["statut"] == "en_cours"]
+
+
+                  def cloturer_execution(execution_id: str, conclusion: str) -> None:
+                      etat = charger_etat()
+                      for execution in etat["executions"]:
+                          if execution["execution_id"] == execution_id:
+                              execution["statut"] = "terminee"
+                              execution["conclusion"] = conclusion
+                      enregistrer_etat(etat)
+              - titre: tests/test_etat_et_reprise.py, la coupure simulée
+                langage: python
+                source: |
+                  """On ne croit pas une reprise : on coupe le courant et on regarde."""
+                  import json
+
+                  from recouvrement.etat import CHEMIN, charger_etat, enregistrer_etat
+                  from recouvrement.reprise import (cle_idempotence, demarrer_execution,
+                                                    etapes_deja_faites, marquer_etape)
+
+
+                  def test_un_fichier_absent_est_un_premier_demarrage_pas_une_erreur(tmp_path, monkeypatch):
+                      monkeypatch.setattr("recouvrement.etat.CHEMIN", tmp_path / "etat.json")
+                      assert charger_etat()["brouillons"] == {}
+
+
+                  def test_un_fichier_corrompu_est_mis_de_cote_et_pas_ecrase(tmp_path, monkeypatch):
+                      chemin = tmp_path / "etat.json"
+                      chemin.write_text("{ceci n'est pas du json", encoding="utf-8")
+                      monkeypatch.setattr("recouvrement.etat.CHEMIN", chemin)
+                      assert charger_etat()["version"] == 2
+                      assert chemin.with_suffix(".corrompu").exists()
+
+
+                  def test_la_cle_d_idempotence_ne_depend_ni_de_l_heure_ni_du_hasard():
+                      premiere = cle_idempotence("BRO-001", "FAC-001", 1)
+                      seconde = cle_idempotence("BRO-001", "FAC-001", 1)
+                      assert premiere == seconde
+                      assert premiere != cle_idempotence("BRO-001", "FAC-001", 2)
+
+
+                  def test_apres_coupure_les_etapes_faites_ne_sont_pas_refaites(tmp_path, monkeypatch):
+                      monkeypatch.setattr("recouvrement.etat.CHEMIN", tmp_path / "etat.json")
+                      demarrer_execution("exe-001", "analyse les impayes")
+                      marquer_etape("exe-001", "lister")
+                      marquer_etape("exe-001", "brouillon:FAC-001")
+                      # Ici, la machine redemarre : on relit tout depuis le disque.
+                      faites = etapes_deja_faites("exe-001")
+                      assert "brouillon:FAC-001" in faites
+                      assert "brouillon:FAC-004" not in faites
+
+
+                  def test_l_ecriture_laisse_toujours_un_fichier_lisible(tmp_path, monkeypatch):
+                      chemin = tmp_path / "etat.json"
+                      monkeypatch.setattr("recouvrement.etat.CHEMIN", chemin)
+                      for tour in range(20):
+                          etat = charger_etat()
+                          etat["brouillons"][f"BRO-{tour:03d}"] = {"statut": "prepare"}
+                          enregistrer_etat(etat)
+                          json.loads(chemin.read_text(encoding="utf-8"))   # jamais a moitie ecrit
+          - titre: Votre projet final cette semaine
+            texte: >-
+              Branchez l'état durable et la reprise dans votre boucle : une étape marquée après chaque
+              action réussie, une clé d'idempotence pour tout enregistrement.
+
+              Faites ensuite l'épreuve honnête, celle qui vaut tous les tests : lancez votre agent et
+              tuez le processus en plein milieu, pour de vrai. Relancez le. Il doit reprendre sans
+              reproduire un brouillon déjà créé, et votre fichier d'état doit rester lisible. Répétez
+              trois fois, à des moments différents.
+
+              Notez dans decisions.md ce que vous avez choisi de persister et ce que vous recalculez,
+              avec la raison. C'est la question que pose tout relecteur expérimenté, et une bonne
+              réponse vaut plus qu'un long code.
           - titre: Glossaire de la séance
             texte: >-
               Contexte : la liste de messages envoyée au modèle à chaque tour ; volatile et facturée.
