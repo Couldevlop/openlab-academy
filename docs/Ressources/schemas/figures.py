@@ -400,9 +400,118 @@ def anatomie_prompt() -> Dessin:
     d.texte(410, 434, "Une consigne et une donnée qui se ressemblent à l'écran se confondront "
                       "aussi dans le modèle.", taille=12, gras=True, couleur="encre2")
     return d
+def jetons_decoupage() -> Dessin:
+    """Séance 2 : une même phrase découpée en jetons, et ce que le découpage coûte."""
+    d = Dessin(860, 340, "Le découpage en jetons, et son coût")
+    exemples = [
+        ("Anglais", ["The", " invoice", " is", " late"], "4 jetons", "s3"),
+        ("Français", ["La", " fact", "ure", " est", " en", " ret", "ard"], "7 jetons", "s1"),
+        ("Identifiant", ["FAC", "-", "0", "11"], "4 jetons pour 7 signes", "s2"),
+    ]
+    for i, (langue, morceaux, total, teinte) in enumerate(exemples):
+        y = 96 + i * 76
+        d.texte(96, y + 28, langue, taille=13, gras=True, ancre="end")
+        x = 116
+        for morceau in morceaux:
+            largeur = max(42, 13 + len(morceau) * 11)
+            d.boite(x, y, largeur, 44, teinte=teinte)
+            d.texte(x + largeur / 2, y + 28, morceau.strip() or "␣", taille=12)
+            x += largeur + 8
+        d.texte(x + 12, y + 28, total, taille=12, ancre="start", couleur="encre2")
+    d.texte(430, 42, "Un jeton n'est ni un mot ni une lettre : c'est un fragment fréquent.",
+            taille=14, gras=True)
+    d.texte(430, 64, "La même phrase coûte plus cher en français, et un identifiant coûte "
+                     "plus cher qu'un mot courant.", taille=12, couleur="encre2")
+    d.boite(150, 258, 560, 60, teinte="critique", tirets=True)
+    d.texte(430, 282, "Ce que le modèle ne voit pas", taille=12, gras=True, couleur="critique")
+    d.texte(430, 303, "les lettres à l'intérieur d'un jeton : d'où les erreurs de comptage et "
+                      "de recopie d'identifiants.", taille=11, couleur="encre2")
+    return d
+
+
+def temperature_echantillonnage() -> Dessin:
+    """Séance 2 : la même distribution, échantillonnée froid puis chaud."""
+    d = Dessin(820, 360, "La température agit sur le tirage, pas sur le savoir du modèle")
+    colonnes = [("Température 0", 60, "s1", [96, 10, 6, 4, 2], "le jeton le plus probable gagne presque toujours"),
+                ("Température 1", 450, "s2", [46, 24, 16, 9, 5], "les jetons rares deviennent atteignables")]
+    etiquettes = ["lister", "calculer", "rédiger", "demander", "arrêter"]
+    for titre, x0, teinte, hauteurs, note in colonnes:
+        d.texte(x0 + 155, 96, titre, taille=14, gras=True)
+        base = 260
+        for i, h in enumerate(hauteurs):
+            hauteur = h * 1.3
+            x = x0 + i * 62
+            d.barre(x, base - hauteur, 44, hauteur, teinte)
+            d.texte(x + 22, base + 18, etiquettes[i], taille=10, couleur="encre2")
+            d.texte(x + 22, base - hauteur - 8, f"{h} %", taille=10, couleur="encre2")
+        d.ajouter(f'<line x1="{x0 - 10}" y1="{base}" x2="{x0 + 300}" y2="{base}"'
+                  ' stroke="var(--trait)" stroke-width="1.5"/>')
+        d.lignes_de_texte(x0 + 145, 302, _couper(note, 34), taille=11, couleur="encre2")
+    d.texte(410, 42, "Le modèle produit des scores ; la température décide de ce qu'on en fait.",
+            taille=14, gras=True)
+    d.texte(410, 64, "Pour décider d'un outil, on veut la colonne de gauche. Pour rédiger à un "
+                     "humain, celle de droite.", taille=12, couleur="encre2")
+    d.texte(410, 348, "Température 0 ne veut pas dire reproductible : le calcul flottant et les "
+                      "mises à jour font varier le résultat.", taille=11, gras=True, couleur="encre2")
+    return d
+
+
+def trois_temps_entrainement() -> Dessin:
+    """Séance 2 : pré-entraînement, instructions, alignement, et ce que chacun vous laisse."""
+    d = Dessin(860, 340, "Les trois temps d'un entraînement")
+    temps = [
+        ("Pré-entraînement", "s3", ["prédire le jeton suivant", "sur un très grand corpus"],
+         "donne la langue et la culture, fixe la date de coupure"),
+        ("Instructions", "s1", ["obéir plutôt que", "continuer le texte"],
+         "donne la variante instruite, la seule utile pour un agent"),
+        ("Alignement", "s2", ["préférences humaines", "ou règles écrites"],
+         "donne la prudence, et explique une partie des refus"),
+    ]
+    for i, (nom, teinte, lignes, apport) in enumerate(temps):
+        x = 30 + i * 272
+        d.boite(x, 100, 252, 104, teinte=teinte)
+        d.texte(x + 126, 132, nom, taille=15, gras=True)
+        d.lignes_de_texte(x + 126, 156, lignes, taille=11)
+        d.lignes_de_texte(x + 126, 230, _couper(apport, 36), taille=11, couleur="encre2")
+        if i < 2:
+            d.fleche(x + 252, 152, x + 266, 152, teinte="attenue")
+    d.texte(430, 42, "Trois étapes que vous ne referez pas, et dont vous héritez.", taille=14, gras=True)
+    d.texte(430, 64, "Deux opérations légères complètent le tableau : la distillation vers un petit "
+                     "modèle, et la quantification.", taille=12, couleur="encre2")
+    d.boite(180, 276, 500, 52, teinte="trait", tirets=True)
+    d.texte(430, 298, "Le réglage fin n'est presque jamais la première réponse", taille=12, gras=True)
+    d.texte(430, 317, "un meilleur prompt, de meilleurs outils et de meilleures données coûtent "
+                      "moins et se corrigent plus vite.", taille=11, couleur="encre2")
+    return d
+
+
+def memoire_modeles_locaux() -> Dessin:
+    """Séance 2 : mémoire nécessaire selon la taille du modèle, en quantification 4 bits."""
+    d = Dessin(800, 360, "Mémoire nécessaire pour exécuter un modèle en local, en 4 bits")
+    mesures = [("3 à 4 Md", 2.5, "extraction simple"), ("7 à 8 Md", 5.5, "agent simple"),
+               ("12 à 14 Md", 9, "point d'équilibre"), ("30 à 34 Md", 20, "machine équipée"),
+               ("70 Md", 42, "serveur ou carte pro")]
+    base, echelle = 288, 4.6
+    for i, (nom, giga, usage) in enumerate(mesures):
+        x = 90 + i * 136
+        hauteur = giga * echelle
+        teinte = "s3" if giga <= 10 else ("s1" if giga <= 22 else "s2")
+        d.barre(x, base - hauteur, 78, hauteur, teinte)
+        d.texte(x + 39, base - hauteur - 10, f"{giga:g} Go", taille=12, gras=True)
+        d.texte(x + 39, base + 20, nom, taille=12)
+        d.lignes_de_texte(x + 39, base + 40, _couper(usage, 16), taille=10, couleur="encre2")
+    d.ajouter(f'<line x1="60" y1="{base}" x2="740" y2="{base}" stroke="var(--trait)" stroke-width="1.5"/>')
+    d.texte(400, 42, "La mémoire disponible décide du modèle, pas l'inverse.", taille=14, gras=True)
+    d.texte(400, 64, "Ordres de grandeur en quantification agressive, à vérifier sur votre machine.",
+            taille=12, couleur="encre2")
+    return d
 
 
 FIGURES = {
+    "jetons-decoupage.svg": jetons_decoupage,
+    "temperature-echantillonnage.svg": temperature_echantillonnage,
+    "trois-temps-entrainement.svg": trois_temps_entrainement,
+    "memoire-modeles-locaux.svg": memoire_modeles_locaux,
     "frise-agentique.svg": frise_agentique,
     "anatomie-llm.svg": anatomie_llm,
     "familles-modeles.svg": familles_modeles,

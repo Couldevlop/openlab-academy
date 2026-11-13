@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 340" width="860" height="340" role="img" aria-label="Le découpage en jetons, et son coût">
+<title>Le découpage en jetons, et son coût</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="860" height="340" fill="var(--surface)"/>
+<text x="96" y="124" text-anchor="end" font-size="13" font-weight="600" fill="var(--encre)">Anglais</text>
+<rect x="116" y="96" width="46" height="44" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="139" y="124" text-anchor="middle" font-size="12" fill="var(--encre)">The</text>
+<rect x="170" y="96" width="101" height="44" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="220.5" y="124" text-anchor="middle" font-size="12" fill="var(--encre)">invoice</text>
+<rect x="279" y="96" width="46" height="44" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="302" y="124" text-anchor="middle" font-size="12" fill="var(--encre)">is</text>
+<rect x="333" y="96" width="68" height="44" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="367" y="124" text-anchor="middle" font-size="12" fill="var(--encre)">late</text>
+<text x="421" y="124" text-anchor="start" font-size="12" fill="var(--encre2)">4 jetons</text>
+<text x="96" y="200" text-anchor="end" font-size="13" font-weight="600" fill="var(--encre)">Français</text>
+<rect x="116" y="172" width="42" height="44" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="137" y="200" text-anchor="middle" font-size="12" fill="var(--encre)">La</text>
+<rect x="166" y="172" width="68" height="44" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="200" y="200" text-anchor="middle" font-size="12" fill="var(--encre)">fact</text>
+<rect x="242" y="172" width="46" height="44" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="265" y="200" text-anchor="middle" font-size="12" fill="var(--encre)">ure</text>
+<rect x="296" y="172" width="57" height="44" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="324.5" y="200" text-anchor="middle" font-size="12" fill="var(--encre)">est</text>
+<rect x="361" y="172" width="46" height="44" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="384" y="200" text-anchor="middle" font-size="12" fill="var(--encre)">en</text>
+<rect x="415" y="172" width="57" height="44" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="443.5" y="200" text-anchor="middle" font-size="12" fill="var(--encre)">ret</text>
+<rect x="480" y="172" width="46" height="44" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="503" y="200" text-anchor="middle" font-size="12" fill="var(--encre)">ard</text>
+<text x="546" y="200" text-anchor="start" font-size="12" fill="var(--encre2)">7 jetons</text>
+<text x="96" y="276" text-anchor="end" font-size="13" font-weight="600" fill="var(--encre)">Identifiant</text>
+<rect x="116" y="248" width="46" height="44" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="139" y="276" text-anchor="middle" font-size="12" fill="var(--encre)">FAC</text>
+<rect x="170" y="248" width="42" height="44" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="191" y="276" text-anchor="middle" font-size="12" fill="var(--encre)">-</text>
+<rect x="220" y="248" width="42" height="44" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="241" y="276" text-anchor="middle" font-size="12" fill="var(--encre)">0</text>
+<rect x="270" y="248" width="42" height="44" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="291" y="276" text-anchor="middle" font-size="12" fill="var(--encre)">11</text>
+<text x="332" y="276" text-anchor="start" font-size="12" fill="var(--encre2)">4 jetons pour 7 signes</text>
+<text x="430" y="42" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Un jeton n&#x27;est ni un mot ni une lettre : c&#x27;est un fragment fréquent.</text>
+<text x="430" y="64" text-anchor="middle" font-size="12" fill="var(--encre2)">La même phrase coûte plus cher en français, et un identifiant coûte plus cher qu&#x27;un mot courant.</text>
+<rect x="150" y="258" width="560" height="60" rx="8" class="b-critique" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="430" y="282" text-anchor="middle" font-size="12" font-weight="600" fill="var(--critique)">Ce que le modèle ne voit pas</text>
+<text x="430" y="303" text-anchor="middle" font-size="11" fill="var(--encre2)">les lettres à l&#x27;intérieur d&#x27;un jeton : d&#x27;où les erreurs de comptage et de recopie d&#x27;identifiants.</text>
+</svg>

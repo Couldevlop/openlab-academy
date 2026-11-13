@@ -299,6 +299,345 @@ blocs:
             options: ["Le format d'entraînement des modèles", "La découverte et l'appel des outils par un agent", "La tarification des fournisseurs", "La structure des bases vectorielles"]
             bonnes: [2]
             explication: "MCP joue pour les outils le rôle d'un pilote standard : l'agent découvre les outils et leurs schémas au lieu de les coder en dur."
+      - num: "02"
+        title: Les modèles de langage, de l'intérieur
+        contenu: >-
+          Un agent est un modèle de langage branché sur des outils. Tant que le modèle reste une boîte
+          noire, ses échecs paraissent arbitraires. Cette séance ouvre la boîte : jetons, plongements,
+          attention, distribution et échantillonnage, puis les trois phases d'entraînement. Elle compare
+          ensuite les modèles propriétaires, à poids ouverts et pleinement ouverts, et donne la méthode
+          pour en choisir un, l'exécuter chez soi et estimer son coût.
+        cours:
+          - titre: Un modèle prédit le jeton suivant, et rien d'autre
+            texte: >-
+              Tout ce qu'un modèle de langage sait faire tient dans une opération : étant donné une suite de
+              jetons, produire une distribution de probabilité sur le jeton suivant. Tout le reste, dialogue,
+              raisonnement apparent, appel d'outil, est cette opération répétée. Quand vous aurez cette
+              phrase en tête, la plupart des comportements surprenants d'un agent deviendront prévisibles.
+
+              Le trajet comporte cinq étapes. Le texte est découpé en jetons. Chaque jeton devient un
+              vecteur de nombres, sa position dans un espace où la proximité traduit une parenté de sens et
+              d'usage. Les couches d'attention laissent chaque jeton regarder ceux qui le précèdent et
+              pondérer ce qui compte. La dernière couche produit un score pour chaque jeton du vocabulaire.
+              L'échantillonnage en tire un, qui est ajouté à la suite, et tout recommence.
+
+              Trois conséquences pratiques découlent de ce fonctionnement. Le modèle ne consulte aucune
+              source au moment où il répond : il produit ce qui est le plus probable, ce qui ressemble
+              souvent à la vérité et ne l'est pas toujours. Il ne sait pas qu'il ignore quelque chose,
+              puisqu'aucun signal interne ne distingue le souvenir de l'invention. Et il n'a aucune mémoire
+              entre deux appels : ce que vous appelez mémoire est un texte que vous lui renvoyez à chaque
+              fois, et que vous payez à chaque fois.
+            figures:
+              - nom: anatomie-llm.svg
+                legende: Du texte au jeton suivant, et la boucle qui recommence à chaque jeton produit
+          - titre: Les jetons, et pourquoi ils décident de votre facture
+            texte: >-
+              Un jeton n'est ni un mot ni un caractère : c'est un fragment fréquent, appris sur un grand
+              corpus. En anglais, un mot courant vaut souvent un jeton. En français, les accents et les
+              terminaisons en coûtent davantage, et une même phrase occupe en général vingt à trente pour
+              cent de jetons de plus qu'en anglais. Les identifiants techniques, les sommes et les codes
+              sont les pires : FAC-011 peut coûter quatre jetons à lui seul.
+
+              Cela a des effets que vous constaterez dans vos traces. Un modèle compte mal les lettres d'un
+              mot, parce qu'il ne voit pas les lettres mais les fragments. Il se trompe sur les grands
+              nombres, qu'il découpe arbitrairement. Il recopie mal un identifiant inhabituel. Ces échecs
+              ne sont pas des défauts de raisonnement, ce sont des conséquences du découpage, et aucun
+              prompt ne les corrige : seul un outil qui calcule ou qui vérifie les corrige.
+
+              Pour un agent, la règle qui en découle est simple : ne faites jamais calculer, trier ou
+              compter par le modèle ce qu'une fonction fait exactement. Le modèle choisit l'outil, l'outil
+              produit le chiffre.
+            figures:
+              - nom: jetons-decoupage.svg
+                legende: La même phrase en anglais et en français, et le coût d'un identifiant technique
+            tableaux:
+              - titre: Ordres de grandeur utiles, à vérifier sur votre propre texte
+                entetes: [Contenu, Jetons approximatifs, Ce qu'il faut en retenir]
+                lignes:
+                  - [Une page de texte français, 600 à 800, Une consigne longue coûte à chaque tour]
+                  - [Une ligne de facture en JSON, 40 à 60, Douze factures tiennent largement dans le contexte]
+                  - [Un identifiant comme FAC-011, 3 à 5, Le modèle le recopie mal plus souvent qu'un mot]
+                  - [Une trace d'exécution complète, Plusieurs milliers, Ne la renvoyez jamais entière au modèle]
+          - titre: Attention et fenêtre de contexte, le coût caché
+            texte: >-
+              Le mécanisme d'attention compare chaque jeton à tous les précédents. Le coût de calcul croît
+              donc à peu près comme le carré de la longueur du contexte. Doubler la taille du contexte
+              multiplie le travail par quatre, ce qui se voit sur la latence et sur la facture bien avant
+              de se voir sur la qualité.
+
+              La fenêtre de contexte est la longueur maximale que le modèle accepte. Les modèles récents
+              annoncent des fenêtres très larges, et c'est une facilité trompeuse : la qualité d'usage du
+              contexte n'est pas uniforme. Une information placée au milieu d'un très long contexte est
+              moins bien exploitée qu'au début ou à la fin, phénomène bien documenté sous le nom de perte
+              au milieu. Ce qui compte n'est donc pas de tout mettre dans le contexte, mais d'y mettre peu
+              et bien.
+
+              Pour un agent, la fenêtre est une mémoire de travail payante, pas un disque dur. Les
+              résultats d'outils volumineux se résument avant d'entrer dans l'historique, le détail reste
+              dans un état que l'agent relit par un outil quand il en a besoin. C'est le sujet des séances
+              8 et 9.
+          - titre: L'échantillonnage, ou comment on règle le hasard
+            texte: >-
+              La dernière couche donne des scores ; elle ne choisit pas. Le choix revient à
+              l'échantillonnage, et c'est là que vos réglages agissent. La température aplatit ou accentue
+              la distribution : basse, elle favorise le jeton le plus probable et rend les sorties
+              répétitives et stables ; haute, elle ouvre la porte aux jetons rares, donc à l'originalité et
+              à l'erreur. Le top-p ne garde que les jetons dont les probabilités cumulées atteignent un
+              seuil, le top-k ne garde que les k meilleurs.
+
+              Pour un agent, le réglage par défaut est une température basse, souvent zéro ou proche de
+              zéro. Vous ne cherchez pas la créativité quand il s'agit de choisir un outil et de produire
+              des arguments valides. Réservez la chaleur au seul endroit où elle a un sens, la rédaction
+              du texte destiné à un humain, et faites le dans un appel séparé.
+
+              Attention à une idée fausse répandue : une température à zéro ne garantit pas un résultat
+              identique à chaque exécution. Le calcul en virgule flottante sur des accélérateurs, le
+              traitement par lots côté fournisseur et les mises à jour du modèle introduisent des écarts.
+              Un agent ne doit donc jamais dépendre d'une reproductibilité au mot près ; ses tests portent
+              sur des propriétés, pas sur des chaînes de caractères.
+            figures:
+              - nom: temperature-echantillonnage.svg
+                legende: La même distribution de scores, tirée à froid puis à chaud
+            tableaux:
+              - titre: Les réglages d'échantillonnage, et quand les toucher
+                entetes: [Réglage, Effet, Valeur conseillée pour un agent]
+                lignes:
+                  - [Température, Aplatit ou accentue la distribution, "0 à 0.2 pour décider, 0.7 pour rédiger"]
+                  - [Top-p, Coupe la queue des jetons improbables, 1 si la température est déjà basse]
+                  - [Top-k, Ne garde que les k meilleurs jetons, Rarement utile en complément du top-p]
+                  - [Jetons maximaux, Borne la longueur de la réponse, "Toujours réglé, pour borner le coût"]
+                  - [Graine aléatoire, Rend le tirage reproductible quand elle existe, "Utile en test, jamais une garantie"]
+          - titre: Les trois temps d'un entraînement
+            texte: >-
+              Le pré-entraînement apprend la langue et le monde sur un très grand corpus, en prédisant le
+              jeton suivant. C'est l'étape qui coûte des millions et que vous ne referez pas. Elle explique
+              la culture générale du modèle, et sa date de coupure : au delà, il ne sait rien, sauf si vous
+              le lui dites dans le contexte ou s'il dispose d'un outil de recherche.
+
+              L'ajustement aux instructions apprend ensuite au modèle à obéir plutôt qu'à continuer le
+              texte. C'est ce qui transforme un générateur en assistant, à partir de milliers d'exemples de
+              consignes et de réponses attendues. Les modèles dits instruct ou chat ont passé cette étape ;
+              un modèle de base, lui, complétera votre question au lieu d'y répondre.
+
+              L'alignement, enfin, ajuste le comportement à partir de préférences humaines ou de règles
+              écrites. Il rend le modèle plus utile et plus prudent, et il explique une partie de ses refus.
+              Deux opérations complètent ce tableau sans refaire l'entraînement : la distillation, qui
+              transfère le comportement d'un grand modèle vers un petit, et la quantification, qui réduit
+              la précision des poids pour tenir dans moins de mémoire, au prix d'une perte de qualité
+              généralement modeste.
+
+              Pour un agent, retenez trois choses. Choisissez toujours une variante instruite. La date de
+              coupure impose des outils pour tout ce qui est récent ou propre à votre organisation. Et le
+              réglage fin, souvent évoqué, n'est presque jamais la bonne première réponse : un meilleur
+              prompt, de meilleurs outils et de meilleures données coûtent moins cher et se corrigent plus
+              vite.
+            figures:
+              - nom: trois-temps-entrainement.svg
+                legende: "Pré-entraînement, instructions, alignement : ce que chaque temps vous laisse"
+          - titre: Ce qu'un modèle ne sait pas faire, et qui justifie les outils
+            texte: >-
+              La liste suivante n'est pas une critique, c'est le cahier des charges de vos outils. Un
+              modèle ne connaît ni la date ni l'heure. Il ne calcule pas de façon fiable au delà de
+              l'arithmétique la plus simple. Il n'accède à aucune base de données et n'a aucun moyen de
+              vérifier une affirmation. Il ne sait pas ce qu'il ignore, donc il comble les manques avec du
+              plausible. Il n'a aucune mémoire entre deux appels. Il ne distingue pas spontanément une
+              consigne d'une donnée, ce qui est précisément la faille exploitée par l'injection indirecte.
+
+              Chacune de ces limites se traite par une pièce d'architecture, jamais par une phrase ajoutée
+              au prompt. C'est la ligne directrice du parcours : le modèle propose, le code dispose, l'outil
+              fait autorité.
+            tableaux:
+              - titre: Chaque limite du modèle, et la pièce qui la compense
+                entetes: [Limite, Symptôme observé, Pièce d'architecture]
+                lignes:
+                  - [Ne connaît pas la date, Calcule un retard faux, Outil qui reçoit la date du système]
+                  - [Calcule mal, Total d'exposition erroné, Fonction de calcul et contrôle du total]
+                  - [N'accède à rien, Invente une référence client, Outil de lecture et identifiants validés]
+                  - [Ignore ce qu'il ignore, Affirme avec aplomb, Vérification par le code et mention des réserves]
+                  - [Aucune mémoire, Recommence le même appel, État persistant et clé d'idempotence]
+                  - [Consigne et donnée confondues, Obéit à une note de facture, "Données citées, jamais fusionnées"]
+          - titre: Propriétaire, poids ouverts, pleinement ouvert
+            texte: >-
+              Trois familles cohabitent, et l'expression « open source » les mélange souvent à tort. Un
+              modèle propriétaire s'utilise par une interface distante : vous envoyez du texte, vous
+              recevez du texte et une facture. Vous n'avez ni les poids, ni les données, ni le droit de
+              l'exécuter ailleurs. Vous obtenez en échange le meilleur niveau disponible, sans matériel à
+              gérer, et vous subissez les mises à jour, les variations de disponibilité et le trajet de vos
+              données.
+
+              Un modèle à poids ouverts publie ses poids, sous une licence qui autorise l'exécution locale
+              et souvent l'ajustement, sans publier les données d'entraînement ni toujours le code. C'est le
+              compromis le plus fréquent aujourd'hui : vous exécutez chez vous, vous maîtrisez le trajet
+              des données, vous figez une version, et vous assumez le matériel et l'exploitation. Lisez la
+              licence : certaines restreignent l'usage commercial ou imposent des conditions au delà d'un
+              seuil d'utilisateurs.
+
+              Un modèle pleinement ouvert publie en plus les données et le code d'entraînement. C'est le
+              seul cas où un tiers peut reproduire et auditer le modèle de bout en bout. Ces modèles sont
+              précieux pour la recherche, la souveraineté et l'enseignement, et leur niveau reste souvent
+              en retrait des meilleurs propriétaires.
+
+              Pour un projet, la question utile n'est pas le nom de la licence mais une suite de questions
+              concrètes : où partent mes données, puis-je figer une version, combien me coûte une exécution,
+              et que se passe-t-il si le fournisseur change ses conditions ou ferme le service.
+            figures:
+              - nom: familles-modeles.svg
+                legende: Ce que chaque famille vous donne réellement, et ce qu'elle vous laisse maîtriser
+            tableaux:
+              - titre: Les trois familles sur les critères qui décident
+                entetes: [Critère, Propriétaire, Poids ouverts, Pleinement ouvert]
+                lignes:
+                  - [Trajet des données, Vers le fournisseur, Là où vous exécutez, Là où vous exécutez]
+                  - [Version figée, Rarement garantie, Oui, Oui]
+                  - [Coût, Par jeton consommé, Matériel et exploitation, Matériel et exploitation]
+                  - [Niveau de qualité, Le plus élevé, Proche sur de nombreux usages, Variable]
+                  - [Audit possible, Non, Partiel, Complet]
+                  - [Mise en route, Immédiate, Installation et matériel, Installation et matériel]
+          - titre: Choisir un modèle pour un agent, et le faire tourner chez soi
+            texte: >-
+              Un agent sollicite le modèle autrement qu'un assistant de conversation. Ce qui compte en
+              premier n'est pas l'élégance de la prose, mais la fiabilité de l'appel d'outil : le modèle
+              produit-il des arguments conformes au schéma, choisit-il le bon outil, sait-il s'arrêter.
+              Viennent ensuite la robustesse des sorties structurées, la latence au premier jeton, le prix
+              par million de jetons, la taille de fenêtre réellement exploitable et la question du lieu
+              d'exécution.
+
+              Prenez l'habitude de tester deux modèles sur votre propre jeu de cas avant de choisir, en
+              mesurant trois choses : part des appels d'outils valides du premier coup, nombre d'étapes
+              pour arriver au résultat, et coût de l'exécution complète. Ce petit banc d'essai vaut mieux
+              que n'importe quel classement public, parce qu'il mesure votre tâche.
+
+              Pour l'exécution locale, la mémoire disponible décide de tout. Un modèle de huit milliards de
+              paramètres quantifié sur quatre bits tient dans environ cinq à six gigaoctets de mémoire
+              vive ou vidéo, et tourne sur un ordinateur portable récent. Un modèle de soixante dix
+              milliards demande une machine équipée, autour de quarante gigaoctets en quantification
+              agressive. Entre les deux, les modèles de douze à quatorze milliards sont le point d'équilibre
+              le plus fréquent pour un agent local. Un gestionnaire local comme Ollama ou llama.cpp suffit
+              à démarrer, et expose une interface compatible avec les clients habituels, ce qui permet de
+              basculer d'un fournisseur distant à un modèle local en changeant une adresse.
+            figures:
+              - nom: memoire-modeles-locaux.svg
+                legende: La mémoire nécessaire selon la taille du modèle, en quantification 4 bits
+            tableaux:
+              - titre: Ordres de grandeur pour une exécution locale, à vérifier sur votre machine
+                entetes: [Taille du modèle, Mémoire nécessaire en 4 bits, Usage réaliste]
+                lignes:
+                  - [3 à 4 milliards, 2 à 3 Go, Classement et extraction simples]
+                  - [7 à 8 milliards, 5 à 6 Go, Agent simple avec outils bien décrits]
+                  - [12 à 14 milliards, 8 à 10 Go, Point d'équilibre pour un agent local]
+                  - [30 à 34 milliards, 18 à 22 Go, "Tâches plus longues, machine équipée"]
+                  - [70 milliards, 38 à 45 Go, Serveur ou carte professionnelle]
+            code:
+              - titre: Basculer d'un fournisseur distant à un modèle local sans changer le code
+                langage: python
+                source: |
+                  import os
+                  from openai import OpenAI          # client compatible, pas un choix de fournisseur
+
+                  # distant : la cle vient de l'environnement, jamais du code
+                  # local  : OPENAI_BASE_URL=http://localhost:11434/v1 et une cle factice
+                  client = OpenAI(
+                      base_url=os.environ.get("OPENAI_BASE_URL"),   # None = service par defaut
+                      api_key=os.environ["OPENAI_API_KEY"],         # absente : echec immediat, pas plus tard
+                  )
+
+                  reponse = client.chat.completions.create(
+                      model=os.environ.get("MODELE", "gpt-4o-mini"),
+                      temperature=0,                                # on decide, on ne cree pas
+                      max_tokens=400,                               # une borne, toujours
+                      messages=[{"role": "system", "content": "Tu choisis un outil ou tu conclus."},
+                                {"role": "user", "content": "Prepare les relances de plus de 30 jours."}],
+                  )
+                  print(reponse.choices[0].message.content)
+              - titre: Démarrer un modèle local en deux commandes
+                langage: bash
+                source: |
+                  # installation du gestionnaire local, puis telechargement d'un modele instruit quantifie
+                  ollama pull qwen2.5:7b-instruct
+                  ollama serve &                      # expose http://localhost:11434
+
+                  # verification : le modele repond, et l'interface est compatible
+                  curl -s http://localhost:11434/v1/models | head -c 200
+          - titre: Évaluer un modèle sans se laisser impressionner
+            texte: >-
+              Les classements publics mesurent des tâches qui ne sont pas la vôtre, et les jeux de test
+              finissent par fuiter dans les corpus d'entraînement, ce qui gonfle les scores sans améliorer
+              l'usage réel. Lisez les comme une indication de catégorie, jamais comme une décision.
+
+              Votre jeu d'évaluation, lui, tient en vingt cas tirés de votre domaine, avec la réponse
+              attendue écrite à la main. Pour notre fil rouge, cela donne des cas du type : cette facture
+              est-elle éligible, quel outil appeler en premier, que faire quand l'outil renvoie une erreur.
+              Vingt cas suffisent à départager deux modèles, et vous les réutiliserez à chaque mise à jour.
+
+              Mesurez aussi ce qui coûte : nombre d'appels, jetons consommés, temps total. Un modèle
+              légèrement moins bon qui finit en trois étapes bat souvent un modèle meilleur qui en prend
+              sept.
+          - titre: Votre projet final cette semaine
+            texte: >-
+              Ajoutez à votre dépôt un fichier modele.md qui tranche trois points et qui sera relu en
+              séance 17.
+
+              Le modèle principal retenu, avec la famille à laquelle il appartient et la raison du choix,
+              exprimée en termes de trajet des données, de coût et de fiabilité d'appel d'outil. Le modèle
+              de secours, qui doit être exécutable localement, afin que votre projet reste démontrable sans
+              connexion ni budget. Et les réglages retenus, température, jetons maximaux et plafond
+              d'étapes, avec une phrase de justification pour chacun.
+
+              Ajoutez une estimation chiffrée du coût d'une exécution complète du fil rouge, obtenue en
+              multipliant le nombre d'appels attendus par la taille moyenne de contexte. Vous la vérifierez
+              en séance 7, quand le modèle sera réellement branché, et l'écart entre estimation et mesure
+              est en soi un enseignement.
+        travaux_pratiques: >-
+          Travail guidé, environ 3 h. Commencez par compter les jetons : prenez trois textes de votre
+          projet, une consigne, une ligne de facture et une trace, et mesurez leur taille en jetons avec
+          l'outil de comptage de votre fournisseur ou une bibliothèque locale. Comparez la même phrase en
+          français et en anglais, et notez l'écart.
+
+          Installez ensuite un modèle local instruit et faites lui produire trois réponses à la même
+          question, à température zéro puis à température élevée. Observez la variation, et expliquez en
+          deux lignes pourquoi la température zéro ne garantit pas l'identité des réponses.
+
+          Constituez votre jeu d'évaluation de vingt cas issus du fil rouge, avec la réponse attendue pour
+          chacun, puis faites le passer à deux modèles, l'un distant, l'autre local. Relevez pour chacun la
+          part de réponses correctes, le nombre d'appels et le temps total.
+
+          Terminez par le fichier modele.md et l'estimation de coût.
+
+          Défi : trouvez un cas où le modèle le plus réputé perd contre le plus petit sur votre jeu, et
+          expliquez pourquoi.
+
+          Indices : les cas qui départagent sont rarement les plus difficiles, ce sont ceux où la consigne
+          est ambiguë ; pour le comptage de jetons, une bibliothèque locale évite d'envoyer vos données.
+        livrable: >-
+          Étape 2 : fichier modele.md avec le modèle principal, le modèle de secours local et les réglages
+          justifiés, jeu d'évaluation de vingt cas et résultats comparés de deux modèles.
+        mise_en_situation: >-
+          Votre direction veut que l'agent de recouvrement fonctionne sans qu'aucune donnée de facturation
+          ne quitte l'entreprise, avec un budget matériel modeste, tout en gardant une qualité suffisante
+          pour les appels d'outils. Proposez une solution en nommant la famille de modèle, un ordre de
+          grandeur de taille, la mémoire nécessaire, et ce que vous acceptez de perdre par rapport à un
+          modèle propriétaire.
+        quiz:
+          - question: "Qu'est ce qu'un modèle de langage produit à chaque étape de calcul ?"
+            options: ["Une phrase complète", "Une distribution de probabilité sur le jeton suivant", "Une requête vers une base de connaissances", "Un plan d'actions"]
+            bonnes: [2]
+            explication: "Tout le reste, y compris le dialogue et l'appel d'outil, est cette opération répétée jeton après jeton."
+          - question: "Pourquoi un modèle se trompe il souvent en comptant les lettres d'un mot ?"
+            options: ["Sa température est trop haute", "Il voit des jetons, c'est à dire des fragments, et non des lettres", "Sa fenêtre de contexte est pleine", "Il a été aligné pour refuser ce type de question"]
+            bonnes: [2]
+            explication: "Le découpage en jetons masque les caractères ; aucun prompt ne corrige cela, seul un outil de calcul le fait."
+          - question: "Quelle température convient à la partie décision d'un agent ?"
+            options: ["Une température élevée, pour explorer plus d'options", "Une température basse, proche de zéro", "Peu importe, elle n'agit que sur la longueur", "Une température négative"]
+            bonnes: [2]
+            explication: "Choisir un outil et produire des arguments valides demande de la stabilité ; la chaleur se réserve à la rédaction destinée à un humain."
+          - question: "Un modèle à poids ouverts se distingue d'un modèle pleinement ouvert parce que :"
+            options: ["il publie les poids mais pas les données ni toujours le code d'entraînement", "il est toujours gratuit", "il ne peut pas être exécuté localement", "il n'accepte pas l'appel d'outils"]
+            bonnes: [1]
+            explication: "Les poids suffisent à exécuter et souvent à ajuster, mais la reproduction et l'audit complets exigent les données et le code."
+          - question: "Quelle mesure décide le mieux du choix d'un modèle pour un agent ?"
+            options: ["Son rang dans un classement public", "Le nombre de ses paramètres", "Sa réussite sur votre propre jeu de cas, avec le coût et le nombre d'étapes", "La taille maximale de sa fenêtre de contexte"]
+            bonnes: [3]
+            explication: "Les classements mesurent d'autres tâches et finissent par fuiter dans les corpus ; vingt cas de votre domaine tranchent mieux."
       - num: "04"
         title: Anatomie d'un agent IA
         cours:
