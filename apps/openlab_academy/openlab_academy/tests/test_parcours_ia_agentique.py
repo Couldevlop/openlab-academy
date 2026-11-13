@@ -17,6 +17,7 @@ MODULES = [
     ("08", "État, mémoire et reprise sur erreur"),
     ("09", "Mémoire longue et recherche documentaire"),
     ("10", "Le même orchestrateur avec LangGraph"),
+    ("11", "CrewAI, PydanticAI et GenAI, puis le comparatif"),
     ("12", "MCP et interopérabilité"),
     ("13", "Architectures multi-agents et A2A"),
     ("14", "Sécurité, évaluation et observabilité"),

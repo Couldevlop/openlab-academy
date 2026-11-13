@@ -711,9 +711,38 @@ def graphe_langgraph() -> Dessin:
     d.texte(440, 406, "Le cadre fournit la reprise et la pause humaine ; la logique métier reste "
                       "la vôtre.", taille=12, gras=True, couleur="encre2")
     return d
+def cinq_implementations() -> Dessin:
+    """Séance 11 : le même fil rouge écrit cinq fois, et ce que chaque écriture met en avant."""
+    d = Dessin(920, 420, "Le même fil rouge, écrit cinq fois")
+    cadres = [
+        ("À la main", "s1", "une boucle", ["tout visible", "tout à écrire"]),
+        ("LangGraph", "s3", "un graphe", ["état et reprise", "vocabulaire à apprendre"]),
+        ("CrewAI", "s2", "une équipe", ["rôles explicites", "contrôle moins fin"]),
+        ("PydanticAI", "s3", "des types", ["sorties garanties", "jeune, API mouvante"]),
+        ("GenAI", "s1", "le SDK du modèle", ["au plus près du modèle", "lié à un fournisseur"]),
+    ]
+    for i, (nom, teinte, forme, points) in enumerate(cadres):
+        x = 22 + i * 178
+        d.boite(x, 104, 160, 150, teinte=teinte)
+        d.texte(x + 80, 134, nom, taille=15, gras=True)
+        d.texte(x + 80, 158, forme, taille=11, couleur="encre2")
+        for j, point in enumerate(points):
+            d.texte(x + 80, 192 + j * 26, point, taille=11, couleur="encre2")
+        d.texte(x + 80, 282, f"{i + 1}", taille=12, gras=True, couleur=teinte)
+    d.texte(460, 42, "Cinq écritures, un seul comportement attendu.", taille=14, gras=True)
+    d.texte(460, 64, "Les mêmes douze critères d'acceptation passent sur les cinq, ou la comparaison "
+                     "ne vaut rien.", taille=12, couleur="encre2")
+    d.boite(120, 310, 680, 72, teinte="trait", tirets=True)
+    d.texte(460, 334, "Ce qui ne change jamais, quel que soit le cadre", taille=13, gras=True)
+    d.texte(460, 356, "la liste blanche, les contrats d'arguments, la trace filtrée, le budget "
+                      "et la validation humaine.", taille=11, couleur="encre2")
+    d.texte(460, 406, "Un cadre se choisit sur ce qu'il vous économise, jamais sur sa popularité.",
+            taille=12, gras=True, couleur="encre2")
+    return d
 
 
 FIGURES = {
+    "cinq-implementations.svg": cinq_implementations,
     "graphe-langgraph.svg": graphe_langgraph,
     "trois-memoires.svg": trois_memoires,
     "pipeline-rag.svg": pipeline_rag,

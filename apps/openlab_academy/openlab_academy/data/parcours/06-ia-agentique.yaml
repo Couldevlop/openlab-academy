@@ -3680,6 +3680,435 @@ blocs:
             options: ["Pour enchaîner trois appels dans un ordre connu d'avance", "Quand vous avez besoin de persistance, de reprise et de pause humaine que vous auriez écrites de toute façon", "Pour impressionner en revue d'architecture", "Quand le prompt dépasse deux pages"]
             bonnes: [2]
             explication: "Un ordre connu d'avance demande un workflow ; le cadre se paie quand il fournit l'état, la reprise et l'observabilité."
+      - num: "11"
+        title: CrewAI, PydanticAI et GenAI, puis le comparatif
+        contenu: >-
+          Trois cadres de plus, sur le même fil rouge, avec le code complet de chacun : CrewAI, qui pense
+          en équipe de rôles, PydanticAI, qui pense en types garantis, et le SDK GenAI de Google, qui
+          colle au plus près du modèle. Vous obtenez cinq écritures du même agent, vous leur faites
+          passer les mêmes critères d'acceptation, vous mesurez, et vous choisissez celle que vous rendez,
+          avec des arguments chiffrés.
+        cours:
+          - titre: La règle qui rend la comparaison honnête
+            texte: >-
+              Avant d'écrire une ligne, fixons la règle : les cinq implémentations partagent le même
+              domaine, les mêmes outils, la même liste blanche, les mêmes contrats d'arguments et la même
+              trace. Seule l'orchestration change. Sans cette règle, vous ne comparez pas des cadres, vous
+              comparez cinq projets différents.
+
+              Concrètement, vos modules métier et vos outils restent dans recouvrement/, et chaque cadre
+              reçoit un dossier qui ne contient que son orchestration. Un cadre qui vous oblige à dupliquer
+              une règle métier vous a déjà donné sa réponse : il n'est pas fait pour ce projet.
+
+              Les douze critères d'acceptation du dépôt serviront de juge. Une implémentation qui en
+              échoue un seul est hors comparaison, quelle que soit son élégance.
+            figures:
+              - nom: cinq-implementations.svg
+                legende: Les cinq écritures du même agent, et ce que chacune met en avant
+          - titre: CrewAI, penser en équipe de rôles
+            texte: >-
+              CrewAI part d'une idée simple : au lieu de décrire une boucle, vous décrivez des rôles, des
+              tâches et un processus. L'analyste cherche les factures, le rédacteur prépare les
+              brouillons, un processus séquentiel les enchaîne.
+
+              Ce modèle est séduisant et il a une contrepartie qu'il faut connaître : vous contrôlez moins
+              finement ce qui se passe entre deux tours. Le cadre décide d'une partie de l'enchaînement, et
+              votre budget comme votre plafond de tours deviennent plus difficiles à imposer. Pour notre
+              fil rouge, nous gardons donc la validation humaine et l'écriture hors du périmètre du cadre :
+              l'équipe produit des brouillons, et c'est votre code qui demande l'accord et enregistre.
+
+              Lisez le code en entier. Les outils sont déclarés par une classe qui enveloppe vos fonctions
+              existantes : c'est le point important, le cadre n'accède jamais directement à votre métier.
+            code:
+              - titre: cadres/avec_crewai.py, le fichier complet
+                langage: python
+                source: |
+                  """Le fil rouge avec CrewAI : des roles, des taches, un processus sequentiel.
+                  Installation : pip install "crewai==0.80.*" (epinglez, l'API bouge vite)."""
+                  import json
+                  from typing import Any, Type
+
+                  from crewai import Agent, Crew, Process, Task
+                  from crewai.tools import BaseTool
+                  from pydantic import BaseModel, Field
+
+                  from recouvrement.outils import executer_outil      # votre point d'appel, inchange
+                  from recouvrement.trace import Trace
+
+
+                  class ArgumentsLister(BaseModel):
+                      age_min_jours: int = Field(ge=0, le=365)
+                      exclure_litiges: bool = True
+
+
+                  class OutilLister(BaseTool):
+                      name: str = "lister_factures_impayees"
+                      description: str = ("Liste les factures dont le retard atteint age_min_jours. "
+                                          "Exclut les litiges. Ne renvoie jamais les notes libres.")
+                      args_schema: Type[BaseModel] = ArgumentsLister
+
+                      def _run(self, **arguments: Any) -> str:
+                          # l'enveloppe ne fait que deleguer : la liste blanche reste votre affaire
+                          return json.dumps(executer_outil(self.name, arguments), ensure_ascii=False)
+
+
+                  class ArgumentsBrouillon(BaseModel):
+                      facture_id: str = Field(pattern=r"^\d{3}$")
+                      palier: int = Field(ge=1, le=3)
+
+
+                  class OutilBrouillon(BaseTool):
+                      name: str = "preparer_brouillon_relance"
+                      description: str = ("Prepare un brouillon local de relance pour une facture eligible. "
+                                          "Aucun envoi. Refuse les factures en litige.")
+                      args_schema: Type[BaseModel] = ArgumentsBrouillon
+
+                      def _run(self, **arguments: Any) -> str:
+                          return json.dumps(executer_outil(self.name, arguments), ensure_ascii=False)
+
+
+                  def construire_equipe(modele: str) -> Crew:
+                      analyste = Agent(
+                          role="Analyste du poste client",
+                          goal="Identifier les factures relancables et chiffrer l'exposition",
+                          backstory="Tu travailles sur des donnees fictives et tu n'envoies jamais rien.",
+                          tools=[OutilLister()], llm=modele, verbose=False, allow_delegation=False)
+                      redacteur = Agent(
+                          role="Redacteur de relances",
+                          goal="Preparer un brouillon par facture relancable, sans jamais en envoyer",
+                          backstory="Tu ecris sobrement et tu n'utilises aucune note libre des factures.",
+                          tools=[OutilBrouillon()], llm=modele, verbose=False, allow_delegation=False)
+
+                      analyse = Task(
+                          description="Liste les factures de plus de 30 jours hors litige, puis donne "
+                                      "leurs identifiants et le total en francs CFA.",
+                          expected_output="Une liste d'identifiants et un total en francs CFA.",
+                          agent=analyste)
+                      redaction = Task(
+                          description="Prepare un brouillon de palier 1 pour chaque facture listee.",
+                          expected_output="Un identifiant de brouillon par facture.",
+                          agent=redacteur, context=[analyse])
+
+                      return Crew(agents=[analyste, redacteur], tasks=[analyse, redaction],
+                                  process=Process.sequential, verbose=False)
+
+
+                  def executer(modele: str, trace: Trace) -> dict:
+                      equipe = construire_equipe(modele)
+                      resultat = equipe.kickoff(inputs={"seuil": 30})
+                      trace.ecrire(evenement="crewai_termine", sortie=str(resultat)[:400])
+                      # la validation humaine et l'enregistrement restent hors du cadre, dans votre code
+                      return {"brouillons": [], "sortie": str(resultat)}
+          - titre: PydanticAI, penser en types garantis
+            texte: >-
+              PydanticAI prend le problème par l'autre bout : au lieu d'organiser des rôles, il garantit
+              la forme de ce qui entre et de ce qui sort. Vous déclarez un type de sortie, et le cadre
+              s'occupe de l'obtenir, en réessayant si le modèle produit autre chose.
+
+              Pour un agent de recouvrement, c'est exactement ce que l'on veut à la fin : un objet avec la
+              liste des factures retenues, le total et les brouillons, pas un paragraphe à relire. Les
+              outils sont de simples fonctions décorées, avec leurs annotations de type, et les
+              dépendances injectées par un contexte, ce qui évite les variables globales.
+
+              Notez le détail qui compte le plus dans ce cadre : la fonction de validation de sortie. Elle
+              vous permet de refuser une réponse qui violerait une règle métier, et de la faire corriger
+              par le modèle, sans écrire une boucle vous même.
+            code:
+              - titre: cadres/avec_pydantic_ai.py, le fichier complet
+                langage: python
+                source: |
+                  """Le fil rouge avec PydanticAI : la sortie est typee, donc verifiable.
+                  Installation : pip install "pydantic-ai-slim[openai]==0.4.*" (epinglez la version)."""
+                  from dataclasses import dataclass
+
+                  from pydantic import BaseModel, Field
+                  from pydantic_ai import Agent, ModelRetry, RunContext
+
+                  from recouvrement.outils import executer_outil
+                  from recouvrement.trace import Trace
+
+
+                  @dataclass
+                  class Dependances:
+                      trace: Trace
+
+
+                  class Rapport(BaseModel):
+                      """La forme exacte attendue : plus rien a interpreter en aval."""
+                      factures_retenues: list[str] = Field(min_length=0, max_length=20)
+                      total_fcfa: int = Field(ge=0)
+                      brouillons: list[str]
+                      exclusions: dict[str, str] = Field(default_factory=dict)   # facture -> motif
+
+
+                  agent = Agent(
+                      "openai:gpt-4o-mini",
+                      deps_type=Dependances,
+                      output_type=Rapport,
+                      system_prompt=(
+                          "Tu prepares des brouillons de relance. Utilise les outils pour lire les "
+                          "donnees et preparer les brouillons. N'invente aucun montant. "
+                          "Une facture en litige n'est jamais relancee ; indique-la dans exclusions."),
+                  )
+
+
+                  @agent.tool
+                  def lister_factures_impayees(contexte: RunContext[Dependances],
+                                               age_min_jours: int, exclure_litiges: bool = True) -> dict:
+                      """Liste les factures dont le retard atteint age_min_jours, litiges exclus."""
+                      resultat = executer_outil("lister_factures_impayees",
+                                                {"age_min_jours": age_min_jours,
+                                                 "exclure_litiges": exclure_litiges})
+                      contexte.deps.trace.ecrire(evenement="appel_outil", outil="lister_factures_impayees",
+                                                 ok=resultat.get("ok"))
+                      return resultat
+
+
+                  @agent.tool
+                  def preparer_brouillon_relance(contexte: RunContext[Dependances],
+                                                 facture_id: str, palier: int = 1) -> dict:
+                      """Prepare un brouillon local de relance. Aucun envoi, aucune ecriture definitive."""
+                      resultat = executer_outil("preparer_brouillon_relance",
+                                                {"facture_id": facture_id, "palier": palier})
+                      contexte.deps.trace.ecrire(evenement="appel_outil",
+                                                 outil="preparer_brouillon_relance", ok=resultat.get("ok"))
+                      return resultat
+
+
+                  @agent.output_validator
+                  def verifier_le_rapport(contexte: RunContext[Dependances], rapport: Rapport) -> Rapport:
+                      """Une regle metier violee fait rejouer le modele, sans boucle ecrite a la main."""
+                      if len(rapport.brouillons) != len(rapport.factures_retenues):
+                          raise ModelRetry("un brouillon par facture retenue, ni plus ni moins")
+                      if rapport.total_fcfa <= 0 and rapport.factures_retenues:
+                          raise ModelRetry("le total ne peut pas etre nul si des factures sont retenues")
+                      return rapport
+
+
+                  def executer(trace: Trace) -> Rapport:
+                      resultat = agent.run_sync(
+                          "Prepare les relances des impayes de plus de 30 jours.",
+                          deps=Dependances(trace=trace))
+                      return resultat.output
+          - titre: GenAI, le SDK au plus près du modèle
+            texte: >-
+              Le SDK GenAI de Google n'est pas un cadre d'orchestration : c'est l'interface du modèle,
+              avec l'appel de fonctions intégré. On le place dans cette comparaison parce qu'il représente
+              une troisième philosophie, celle du minimum d'intermédiaires : vous donnez vos fonctions
+              Python au SDK, il en déduit les schémas et gère l'aller-retour.
+
+              Cette proximité a deux visages. D'un côté, très peu de code, peu de couches à déboguer, et
+              un accès immédiat aux nouveautés du fournisseur. De l'autre, un lien direct avec ce
+              fournisseur : changer de modèle signifie réécrire cette couche, ce que l'interface de la
+              séance 7 évitait justement.
+
+              Un avertissement de sécurité, important pour notre fil rouge : l'appel de fonctions
+              automatique exécute vos fonctions sans vous demander. Nous ne lui donnons donc que des
+              lectures, et nous gardons l'écriture pour notre propre code, après validation humaine. Ce
+              n'est pas une précaution théorique, c'est la différence entre un brouillon et un
+              enregistrement.
+            code:
+              - titre: cadres/avec_genai.py, le fichier complet
+                langage: python
+                source: |
+                  """Le fil rouge avec le SDK GenAI de Google : les fonctions Python sont les outils.
+                  Installation : pip install "google-genai==1.*" (epinglez la version)."""
+                  import os
+
+                  from google import genai
+                  from google.genai import types
+
+                  from recouvrement.outils import executer_outil
+                  from recouvrement.trace import Trace
+
+                  TRACE: Trace | None = None      # injectee par executer(), pour garder les signatures nettes
+
+
+                  def lister_factures_impayees(age_min_jours: int, exclure_litiges: bool = True) -> dict:
+                      """Liste les factures dont le retard atteint age_min_jours.
+
+                      Args:
+                          age_min_jours: retard minimal en jours, entre 0 et 365.
+                          exclure_litiges: si vrai, les factures en litige sont ecartees.
+                      """
+                      resultat = executer_outil("lister_factures_impayees",
+                                                {"age_min_jours": age_min_jours,
+                                                 "exclure_litiges": exclure_litiges})
+                      if TRACE:
+                          TRACE.ecrire(evenement="appel_outil", outil="lister_factures_impayees",
+                                       ok=resultat.get("ok"))
+                      return resultat
+
+
+                  def calculer_exposition(facture_ids: list[str]) -> dict:
+                      """Calcule la somme des montants des factures citees, en francs CFA.
+
+                      Args:
+                          facture_ids: identifiants au format FAC-000, deja connus du jeu de donnees.
+                      """
+                      resultat = executer_outil("calculer_exposition", {"facture_ids": facture_ids})
+                      if TRACE:
+                          TRACE.ecrire(evenement="appel_outil", outil="calculer_exposition",
+                                       ok=resultat.get("ok"))
+                      return resultat
+
+
+                  def executer(trace: Trace, modele: str = "gemini-2.0-flash") -> str:
+                      global TRACE
+                      TRACE = trace
+                      client = genai.Client(api_key=os.environ["CLE_GENAI"])
+                      configuration = types.GenerateContentConfig(
+                          system_instruction=(
+                              "Tu analyses des factures impayees fictives. Utilise les outils pour lire "
+                              "et calculer. N'invente aucun montant. Aucune ecriture, aucun envoi."),
+                          temperature=0,
+                          max_output_tokens=600,
+                          # seules des lectures sont exposees : l'appel automatique executerait
+                          # immediatement toute fonction fournie ici.
+                          tools=[lister_factures_impayees, calculer_exposition],
+                      )
+                      reponse = client.models.generate_content(
+                          model=modele,
+                          contents="Prepare l'analyse des impayes de plus de 30 jours.",
+                          config=configuration)
+                      trace.ecrire(evenement="genai_termine",
+                                   jetons=getattr(reponse.usage_metadata, "total_token_count", 0))
+                      return reponse.text
+          - titre: Faire passer les mêmes critères aux cinq
+            texte: >-
+              Le moment de vérité. Nous écrivons un test unique, paramétré par l'implémentation, et nous
+              lui faisons vérifier les trois critères qui comptent le plus : aucune facture en litige
+              relancée, le bon total, et aucune écriture sans validation.
+
+              L'intérêt de ce test paramétré dépasse la comparaison. Il vous protège d'une dérive
+              classique : laisser une implémentation prendre du retard sur les autres, puis découvrir en
+              démonstration qu'elle n'applique plus la même règle.
+            code:
+              - titre: tests/test_cinq_implementations.py, le fichier complet
+                langage: python
+                source: |
+                  """Les memes criteres passent sur les cinq ecritures, sinon la comparaison ne vaut rien."""
+                  import pytest
+
+                  from recouvrement.workflow_local import charger_factures
+
+                  LITIGES = {"FAC-003", "FAC-007", "FAC-010"}
+                  TOTAL_ATTENDU = 7_730_000
+
+
+                  def _implementations():
+                      """Chaque entree renvoie un dict : factures_retenues, total_fcfa, ecritures."""
+                      from cadres import avec_crewai, avec_genai, avec_langgraph, avec_pydantic_ai
+                      from recouvrement import executer_boucle
+                      return {
+                          "a_la_main": executer_boucle.resultat_normalise,
+                          "langgraph": avec_langgraph.resultat_normalise,
+                          "crewai": avec_crewai.resultat_normalise,
+                          "pydantic_ai": avec_pydantic_ai.resultat_normalise,
+                          "genai": avec_genai.resultat_normalise,
+                      }
+
+
+                  @pytest.mark.parametrize("nom", list(_implementations()))
+                  def test_aucun_litige_relance(nom):
+                      resultat = _implementations()[nom]()
+                      assert not (set(resultat["factures_retenues"]) & LITIGES), resultat
+
+                  @pytest.mark.parametrize("nom", list(_implementations()))
+                  def test_le_total_est_le_bon(nom):
+                      assert _implementations()[nom]()["total_fcfa"] == TOTAL_ATTENDU
+
+                  @pytest.mark.parametrize("nom", list(_implementations()))
+                  def test_aucune_ecriture_sans_validation(nom):
+                      assert _implementations()[nom]()["ecritures"] == []
+          - titre: Le comparatif, et la méthode de choix
+            texte: >-
+              Vous avez maintenant cinq écritures et des mesures. Le tableau ci-dessous résume ce que
+              chacune apporte ; vos propres chiffres, eux, trancheront pour votre contexte.
+
+              La méthode de choix tient en quatre questions, dans cet ordre. Ai-je besoin de persistance
+              et de reprise ? Si oui, un cadre qui les fournit se paie. Ai-je besoin de garanties sur la
+              forme des sorties ? Si oui, un cadre typé se paie. Mon équipe saura-t-elle déboguer cette
+              dépendance dans six mois, quand son interface aura changé ? Si non, écrivez la boucle. Et
+              enfin : qu'est-ce que je perds si le cadre disparaît ou change de licence ?
+
+              Une recommandation d'expérience, à peser et non à suivre aveuglément. Pour un premier agent
+              en production, la boucle écrite à la main, avec l'état en fichier, reste souvent le meilleur
+              choix : vous comprenez tout, vous déboguez vite, et vous migrez plus tard si le besoin
+              apparaît. Pour un système qui doit reprendre après panne et faire valider par des humains,
+              un cadre à graphe fait gagner des semaines. Pour une sortie structurée stricte, un cadre
+              typé évite beaucoup de code de validation.
+            tableaux:
+              - titre: Les cinq écritures, sur les critères qui décident
+                entetes: [Écriture, Ce qu'elle donne, Ce qu'elle coûte, Quand la choisir]
+                lignes:
+                  - [À la main, Contrôle total et débogage direct, Tout est à écrire, "Premier agent, équipe réduite"]
+                  - [LangGraph, "Persistance, reprise, pause humaine", Dépendance mouvante, Reprise après panne exigée]
+                  - [CrewAI, Rôles et tâches explicites, Contrôle fin plus difficile, Plusieurs rôles vraiment distincts]
+                  - [PydanticAI, Sorties typées et revalidées, Cadre jeune, Sortie structurée stricte]
+                  - [GenAI, "Peu de couches, au plus près du modèle", Lien fort au fournisseur, Prototype rapide sur un modèle donné]
+          - titre: Votre projet final cette semaine
+            texte: >-
+              Rendez les cinq écritures dans votre dépôt, avec un tableau de mesures dans decisions.md :
+              lignes de code d'orchestration, durée d'exécution, jetons consommés, et le résultat des
+              douze critères pour chacune.
+
+              Puis tranchez. Écrivez quel cadre vous rendez en séance 17, et trois raisons chiffrées. Une
+              seule contrainte : votre choix doit être cohérent avec ce que vous avez mesuré, pas avec ce
+              qui est à la mode. Le correcteur acceptera n'importe lequel des cinq, et refusera une
+              justification non chiffrée.
+        travaux_pratiques: >-
+          Travail guidé, environ 3 h. Installez les trois cadres avec des versions épinglées, dans des
+          environnements séparés si leurs dépendances se contredisent, ce qui arrive. Écrivez les trois
+          fichiers d'orchestration en réutilisant vos outils existants, sans dupliquer une seule règle
+          métier.
+
+          Faites passer à chaque écriture les douze critères d'acceptation, et notez les échecs. Un échec
+          n'est pas une défaite du cadre : regardez d'abord si votre adaptation lui a bien transmis vos
+          contraintes.
+
+          Mesurez ensuite les quatre chiffres pour chaque écriture, sur trois exécutions, et remplissez le
+          tableau de decisions.md.
+
+          Terminez par votre choix argumenté, en trois raisons chiffrées.
+
+          Défi : faites tourner l'écriture CrewAI avec un outil d'écriture exposé par erreur, observez ce
+          qui se passe, puis retirez le et expliquez en deux lignes pourquoi l'écriture reste hors du cadre
+          dans votre conception.
+
+          Indices : si un cadre refuse de s'installer à côté d'un autre, un environnement virtuel par cadre
+          règle le problème en deux minutes ; si une implémentation échoue sur le total, regardez d'abord
+          si le modèle a calculé lui même au lieu d'appeler l'outil.
+        livrable: >-
+          Étape 11 : trois écritures supplémentaires du fil rouge, les douze critères passés sur les cinq,
+          tableau de mesures comparatives dans decisions.md et choix argumenté par trois raisons chiffrées.
+        mise_en_situation: >-
+          Votre direction technique impose un cadre parce qu'un concurrent l'utilise. Vos mesures montrent
+          que votre boucle écrite à la main consomme moins de jetons, s'exécute plus vite et passe les
+          douze critères, tandis que le cadre imposé apporte la reprise après panne, dont le projet n'a pas
+          besoin aujourd'hui. Rédigez la réponse que vous enverriez, en trois paragraphes, sans caricaturer
+          la position adverse.
+        quiz:
+          - question: "Quelle condition rend une comparaison entre cadres honnête ?"
+            options: ["Utiliser le même modèle de langage", "Partager le même domaine, les mêmes outils, la même liste blanche et la même trace, et ne faire varier que l'orchestration", "Écrire le même nombre de lignes", "Mesurer uniquement la durée d'exécution"]
+            bonnes: [2]
+            explication: "Sans cette règle, vous comparez cinq projets différents et non cinq orchestrations."
+          - question: "Quel est l'apport principal de PydanticAI dans ce fil rouge ?"
+            options: ["Il parallélise les appels d'outils", "Il garantit la forme de la sortie et permet de rejouer le modèle quand une règle métier est violée", "Il fournit la persistance de l'état", "Il réduit le coût par jeton"]
+            bonnes: [2]
+            explication: "La sortie typée plus la validation de sortie évitent beaucoup de code de vérification écrit à la main."
+          - question: "Quelle précaution impose l'appel de fonctions automatique du SDK GenAI ?"
+            options: ["Augmenter la température", "N'exposer que des lectures, et garder les écritures dans votre code après validation humaine", "Désactiver la trace", "Passer les arguments en texte libre"]
+            bonnes: [2]
+            explication: "Le SDK exécute les fonctions fournies sans demander : une fonction d'écriture exposée serait appelée sans accord."
+          - question: "Quel est le principal inconvénient de CrewAI pour notre fil rouge ?"
+            options: ["Il ne gère pas le français", "Le contrôle fin entre deux tours, donc le budget et le plafond, y est plus difficile à imposer", "Il ne permet pas d'appeler des outils", "Il exige un modèle local"]
+            bonnes: [2]
+            explication: "Le cadre décide d'une partie de l'enchaînement, d'où le choix de garder validation et écriture hors de son périmètre."
+          - question: "Sur quoi fonder le choix d'un cadre, à la fin de cette séance ?"
+            options: ["Sur sa popularité et son nombre d'étoiles", "Sur ce qu'il vous économise réellement, mesuré sur vos propres critères, et sur votre capacité à le déboguer dans six mois", "Sur le nombre de ses fonctionnalités", "Sur l'avis d'un concurrent"]
+            bonnes: [2]
+            explication: "Un cadre se paie quand il fournit la persistance, la reprise ou les garanties que vous auriez écrites de toute façon."
       - num: "12"
         title: MCP et interopérabilité
         cours:

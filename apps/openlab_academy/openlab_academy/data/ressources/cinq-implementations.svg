@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 420" width="920" height="420" role="img" aria-label="Le même fil rouge, écrit cinq fois">
+<title>Le même fil rouge, écrit cinq fois</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="920" height="420" fill="var(--surface)"/>
+<rect x="22" y="104" width="160" height="150" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="102" y="134" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">À la main</text>
+<text x="102" y="158" text-anchor="middle" font-size="11" fill="var(--encre2)">une boucle</text>
+<text x="102" y="192" text-anchor="middle" font-size="11" fill="var(--encre2)">tout visible</text>
+<text x="102" y="218" text-anchor="middle" font-size="11" fill="var(--encre2)">tout à écrire</text>
+<text x="102" y="282" text-anchor="middle" font-size="12" font-weight="600" fill="var(--s1)">1</text>
+<rect x="200" y="104" width="160" height="150" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="280" y="134" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">LangGraph</text>
+<text x="280" y="158" text-anchor="middle" font-size="11" fill="var(--encre2)">un graphe</text>
+<text x="280" y="192" text-anchor="middle" font-size="11" fill="var(--encre2)">état et reprise</text>
+<text x="280" y="218" text-anchor="middle" font-size="11" fill="var(--encre2)">vocabulaire à apprendre</text>
+<text x="280" y="282" text-anchor="middle" font-size="12" font-weight="600" fill="var(--s3)">2</text>
+<rect x="378" y="104" width="160" height="150" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="458" y="134" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">CrewAI</text>
+<text x="458" y="158" text-anchor="middle" font-size="11" fill="var(--encre2)">une équipe</text>
+<text x="458" y="192" text-anchor="middle" font-size="11" fill="var(--encre2)">rôles explicites</text>
+<text x="458" y="218" text-anchor="middle" font-size="11" fill="var(--encre2)">contrôle moins fin</text>
+<text x="458" y="282" text-anchor="middle" font-size="12" font-weight="600" fill="var(--s2)">3</text>
+<rect x="556" y="104" width="160" height="150" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="636" y="134" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">PydanticAI</text>
+<text x="636" y="158" text-anchor="middle" font-size="11" fill="var(--encre2)">des types</text>
+<text x="636" y="192" text-anchor="middle" font-size="11" fill="var(--encre2)">sorties garanties</text>
+<text x="636" y="218" text-anchor="middle" font-size="11" fill="var(--encre2)">jeune, API mouvante</text>
+<text x="636" y="282" text-anchor="middle" font-size="12" font-weight="600" fill="var(--s3)">4</text>
+<rect x="734" y="104" width="160" height="150" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="814" y="134" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">GenAI</text>
+<text x="814" y="158" text-anchor="middle" font-size="11" fill="var(--encre2)">le SDK du modèle</text>
+<text x="814" y="192" text-anchor="middle" font-size="11" fill="var(--encre2)">au plus près du modèle</text>
+<text x="814" y="218" text-anchor="middle" font-size="11" fill="var(--encre2)">lié à un fournisseur</text>
+<text x="814" y="282" text-anchor="middle" font-size="12" font-weight="600" fill="var(--s1)">5</text>
+<text x="460" y="42" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Cinq écritures, un seul comportement attendu.</text>
+<text x="460" y="64" text-anchor="middle" font-size="12" fill="var(--encre2)">Les mêmes douze critères d&#x27;acceptation passent sur les cinq, ou la comparaison ne vaut rien.</text>
+<rect x="120" y="310" width="680" height="72" rx="8" class="b-trait" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="460" y="334" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">Ce qui ne change jamais, quel que soit le cadre</text>
+<text x="460" y="356" text-anchor="middle" font-size="11" fill="var(--encre2)">la liste blanche, les contrats d&#x27;arguments, la trace filtrée, le budget et la validation humaine.</text>
+<text x="460" y="406" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Un cadre se choisit sur ce qu&#x27;il vous économise, jamais sur sa popularité.</text>
+</svg>
