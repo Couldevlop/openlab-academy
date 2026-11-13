@@ -17,9 +17,8 @@ git switch -c feat/mon-sujet
 ## Chaîne d'intégration
 
 1. **`ci.yml`** — sur les PR vers `develop` et sur les push de `develop` et de `main`. Une PR
-   `develop` → `main` ne rejoue pas les jobs lourds : elle porte l'arbre que la CI de `develop` vient de
-   valider, seul le gardien de flux s'y exécute, et la fusion dans `main` déclenche sa propre CI
-   complète. Jobs :
+   `develop` → `main` n'y ouvre aucun run : elle porte l'arbre que la CI de `develop` vient de valider.
+   Jobs :
    - `frontend` : ESLint, Prettier, `vue-tsc`, tests avec seuils de couverture, build ;
    - `backend` : site Frappe réel sur les références épinglées, suite complète, **couverture ≥ 99 %** ;
    - `securite` : Semgrep (Python, JavaScript, secrets), Gitleaks sur l'historique — version figée, avec une
@@ -27,7 +26,8 @@ git switch -c feat/mon-sujet
      `npm audit --omit=dev --audit-level=high` sur le front. Le backend n'a aucune dépendance Python propre.
      Restent quatre avis **modérés** non bloquants, hérités de `frappe-ui` (XSS d'Apache ECharts) : aucun
      correctif n'existe sans sortir de la version de `frappe-ui` qu'impose le LMS ;
-   - `gardien` : une PR vers `main` qui ne vient pas de `develop` est refusée.
+1bis. **`gardien.yml`** — sur toute PR vers `main` : refuse une source autre que `develop`. Il vise la PR
+   humaine ; celle que la promotion ouvre vient de `develop` par construction.
 2. **`promotion.yml`** — déclenché par la **réussite de la CI sur `develop`**, pas par le push : il vérifie que
    `develop` n'a pas bougé depuis la validation, ouvre ou met à jour la PR « Promotion vers main », puis la
    fusionne. Le commit promu est exactement celui que la CI vient de valider ; aucun test n'est court-circuité.
@@ -47,8 +47,9 @@ garde-fou anti-récursion de GitHub. Deux conséquences, assumées :
 - la fusion automatique dans `main` ne rejoue ni la CI de `main`, ni la release par l'événement `push` — d'où
   l'appel direct de `release.yml` par la promotion. L'arbre livré est celui que la CI de `develop` vient de
   valider, et la promotion vérifie que la branche n'a pas bougé entre-temps ;
-- les contrôles de la PR de promotion, ouverte par Actions, restent en attente d'approbation
-  (`action_required`). Le job `gardien` garde donc son sens pour une PR **humaine** vers `main`.
+- les contrôles d'une PR ouverte par Actions restent en attente d'approbation (`action_required`), ce qui
+  s'affiche comme un échec. C'est pourquoi `ci.yml` n'écoute plus les PR vers `main` : la PR de promotion
+  n'ouvre plus de run de CI, et `gardien.yml` ne vise que la PR humaine.
 
 Le déploiement n'est pas dans la chaîne : aucune cible de production n'est encore câblée pour l'Academy. La
 livraison s'arrête à l'étiquette de version, qui désignera l'artefact à déployer.
