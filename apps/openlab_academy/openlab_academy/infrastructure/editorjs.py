@@ -51,7 +51,7 @@ def lecon_module(module: Module, devoir: str, heures: int, quiz: str | None = No
     blocs = [
         _titre("Contenu du module"),
         _bloc("paragraph", text=_e(module.contenu)),
-        _bloc("paragraph", text=f"Format : ~{heures} h — 40 % théorie, 60 % pratique."),
+        _bloc("paragraph", text=f"Format : ~{heures} h, 40 % de théorie et 60 % de pratique."),
     ]
     if module.travaux_pratiques.strip():
         blocs.append(_titre("Travaux pratiques"))

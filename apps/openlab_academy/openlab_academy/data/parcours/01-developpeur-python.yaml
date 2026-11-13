@@ -1,9 +1,9 @@
 title: Développeur Python
 short_introduction: >-
-  Parcours I · de la base au niveau confirmé, orienté data — un code testé, packagé et conteneurisé,
+  Parcours I · de la base au niveau confirmé, orienté data : un code testé, packagé et conteneurisé,
   prêt pour les parcours AI Engineer et Data Engineer.
 description: >-
-  <p><b>Prérequis :</b> aucun — le parcours démarre au niveau zéro.</p>
+  <p><b>Prérequis :</b> aucun. Le parcours démarre au niveau zéro.</p>
   <p><b>Format :</b> 1 module par semaine (~8 h), un livrable par module, 10 semaines projet intercalées
   et un capstone devant jury.</p>
   <p><b>Trajectoire :</b> de la syntaxe de base jusqu'à un code confirmé, testé et packagé.</p>
@@ -291,7 +291,7 @@ blocs:
       - num: "11"
         title: Python pour la data
         contenu: >-
-          NumPy, pandas et Polars, nettoyage, agrégations, Parquet, premières visualisations — le pont vers
+          NumPy, pandas et Polars, nettoyage, agrégations, Parquet et premières visualisations, le pont vers
           les parcours Data et AI.
         livrable: Pipeline d'analyse de données de bout en bout.
         mise_en_situation: "Le traitement pandas d'un fichier de 5 millions de lignes de transactions prend 20 minutes. Proposez au moins trois pistes pour l'accélérer et dites comment vous mesurez le gain."
@@ -506,7 +506,7 @@ portfolio:
     stack: [Python, uv, pyproject.toml, pre-commit, pytest, ruff, mypy, GitHub Actions]
     criteres_acceptation:
       - "`pip install` depuis l'index de test fonctionne dans un environnement vierge"
-      - Les montants en lettres respectent l'orthographe (vingt, cent, mille au pluriel) — tests
+      - Les montants en lettres respectent l'orthographe (vingt, cent, mille au pluriel), tests
       - Version sémantique et changelog tenus à jour
       - Publication déclenchée par un tag Git
       - Tests et CI verts
@@ -519,7 +519,7 @@ portfolio:
     duree_h: 14
     niveau: semi-guide
     contexte: >-
-      Les compagnies de cars Abidjan–Bouaké–Yamoussoukro vendent encore beaucoup de billets au guichet.
+      Les compagnies de cars reliant Abidjan, Bouaké et Yamoussoukro vendent encore beaucoup de billets au guichet.
       On construit le cœur métier d'un système de réservation, piloté par les tests.
     objectifs:
       - Pratiquer le TDD de bout en bout

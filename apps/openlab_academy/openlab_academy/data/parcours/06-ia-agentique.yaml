@@ -56,16 +56,17 @@ blocs:
           code). Les degrés d'autonomie, de l'assistant qui propose à l'agent qui agit seul, et les limites
           actuelles : erreurs qui se cumulent, coût, latence, actions irréversibles.
         livrable: >-
-          Étape 1 : cadrage de l'agent de recouvrement — mission, sources de données, outils, règles métier vérifiables,
-          conditions d'arrêt — schéma de sa boucle et classement des cinq actions par risque.
+          Étape 1 : cadrage de l'agent de recouvrement, soit sa mission, ses sources de données, ses outils, ses règles
+          métier vérifiables et ses conditions d'arrêt, accompagné du schéma de sa boucle et du classement des cinq
+          actions par risque.
         mise_en_situation: >-
           La directrice financière d'une PME d'Abidjan veut « un agent IA » pour relancer ses impayés. Déterminez s'il lui
           faut un chatbot, un RAG, un workflow ou un agent : justifiez votre choix, précisez le degré d'autonomie
           acceptable, et dites laquelle des cinq actions du projet ne doit jamais s'exécuter sans accord humain.
         travaux_pratiques: >-
           Travail guidé, environ 3 h. Commencez par les règles du laboratoire : données fictives, aucun envoi réel, aucun
-          système d'information connecté. Comparez ensuite les quatre familles de systèmes sur un même besoin métier —
-          chatbot, RAG, workflow, agent — puis reprenez l'anatomie d'un agent et sa boucle percevoir, raisonner, agir,
+          système d'information connecté. Comparez ensuite les quatre familles de systèmes sur un même besoin métier :
+          chatbot, RAG, workflow et agent. Reprenez ensuite l'anatomie d'un agent et sa boucle percevoir, raisonner, agir,
           observer, avec ses conditions d'arrêt. Classez sept actions du cas métier du moins au plus risqué et placez la
           frontière d'autonomie acceptable. Terminez par le cadrage écrit de votre agent : mission, sources de données,
           actions autorisées, actions interdites, critères de réussite.
@@ -123,8 +124,8 @@ blocs:
           cas invalides, éprouvez un outil absent de la liste blanche et le plafond d'étapes, et terminez par la lecture
           de la validation humaine et de l'idempotence.
 
-          Défi : ajoutez le filtre, mettez à jour le contrat JSON et le modèle de validation, écrivez au moins trois tests
-          — cas nominal, montant négatif, argument supplémentaire — et montrez qu'une note malveillante du jeu de données
+          Défi : ajoutez le filtre, mettez à jour le contrat JSON et le modèle de validation, écrivez au moins trois tests,
+          le cas nominal, le montant négatif et l'argument supplémentaire, puis montrez qu'une note malveillante du jeu de données
           ne peut pas modifier les règles.
 
           Indices : un argument inconnu doit produire une erreur d'arguments et non une exception ; un montant négatif se
@@ -181,7 +182,7 @@ blocs:
 
           Indices : le routage est une règle métier, donc testable sans agent ; un workflow fixe n'est qu'un plan que
           personne ne peut modifier ; si les deux versions donnent le même résultat pour un coût moindre, la bonne réponse
-          est « pas d'agent ici » — et il faut l'écrire.
+          est « pas d'agent ici », et il faut l'écrire.
         quiz:
           - question: "Quel pattern oriente une demande vers un traitement spécialisé selon sa nature ?"
             options: ["Le chaînage", "La parallélisation", "Le routage", "L'évaluateur-optimiseur"]
@@ -223,15 +224,15 @@ blocs:
         travaux_pratiques: >-
           Travail guidé, environ 3 h. Distinguez mémoire de travail, état partagé et checkpoint, et listez ce qu'il ne
           faut jamais persister. Lisez le chargement et l'enregistrement de l'état, le journal d'événements et le registre
-          d'idempotence, puis déroulez le parcours complet à la main dans un shell Python — brouillon, demande de
-          validation, approbation, enregistrement — en observant le fichier d'état après chaque appel. Interrompez le
+          d'idempotence, puis déroulez le parcours complet à la main dans un shell Python, du brouillon à la demande de
+          validation, puis à l'approbation et à l'enregistrement, en observant le fichier d'état après chaque appel. Interrompez le
           processus juste après la demande de validation, rouvrez le même fichier d'état et constatez que la demande en
           attente est retrouvée et non dupliquée. Rejouez ensuite le même enregistrement avec la même clé d'idempotence,
           puis avec cette clé sur un autre brouillon, et expliquez les deux réponses. Comprenez enfin pourquoi
           l'approbation n'est pas exposée dans le registre des outils de l'agent.
 
-          Défi : écrivez trois tests — reprise après interruption sans doublon, rejeu d'une clé d'idempotence,
-          enregistrement refusé sans approbation — puis ajoutez un compteur de reprises au journal sans casser les tests
+          Défi : écrivez trois tests, la reprise après interruption sans doublon, le rejeu d'une clé d'idempotence et
+          l'enregistrement refusé sans approbation, puis ajoutez un compteur de reprises au journal sans casser les tests
           existants.
 
           Indices : la reprise se simule en rouvrant un second service sur le même fichier d'état, aucun processus à tuer
@@ -334,7 +335,7 @@ blocs:
         travaux_pratiques: >-
           Travail guidé, environ 3 h. Reprenez décomposition, délégation et contexte partagé, puis les trois façons de
           perdre de l'argent en multi-agent : contexte recopié, allers-retours inutiles, conclusions contradictoires.
-          Concevez un orchestrateur qui segmente le portefeuille, deux analystes — retards récents et retards lourds — et
+          Concevez un orchestrateur qui segmente le portefeuille, deux analystes, l'un sur les retards récents et l'autre sur les retards lourds, et
           un agrégateur qui réconcilie. Implémentez les analystes comme fonctions bornées, avec leur propre plafond
           d'étapes, puis l'orchestrateur et l'agrégation. Instrumentez les deux architectures : étapes, appels d'outils,
           durée de bout en bout, taille du contexte transmis. Décidez enfin ce que vous faites lorsque deux analystes
@@ -390,7 +391,7 @@ blocs:
           note retirée de la sortie de l'outil, le texte du brouillon qui n'incorpore aucune note libre, le litige bloqué
           en dur. Examinez la liste blanche et comprenez pourquoi un outil inconnu est journalisé et pas seulement refusé.
           Exécutez les douze critères d'acceptation l'un après l'autre en notant leur criticité, puis produisez la trace
-          d'une exécution — étape, outil, arguments, résultat, durée — et listez ce qu'il est interdit d'y écrire.
+          d'une exécution, avec l'étape, l'outil, les arguments, le résultat et la durée, puis listez ce qu'il est interdit d'y écrire.
           Terminez par votre registre des risques résiduels, trois risques au minimum, avec leur atténuation et ce qui
           reste accepté.
 

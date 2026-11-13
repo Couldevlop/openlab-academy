@@ -1,9 +1,9 @@
 title: Fondamentaux de la Data Science
 short_introduction: >-
-  Parcours 0 · socle commun — les bases mathématiques, statistiques et l'outillage
+  Parcours 0 · socle commun : les bases mathématiques, statistiques et l'outillage
   avant toute spécialisation AI, Data ou Cybersécurité.
 description: >-
-  <p><b>Prérequis :</b> aucun — un niveau lycée en mathématiques suffit.</p>
+  <p><b>Prérequis :</b> aucun. Un niveau lycée en mathématiques suffit.</p>
   <p><b>Format :</b> 1 module par semaine (~8 h, 40 % théorie, 60 % pratique), un livrable par module,
   10 semaines projet intercalées et un capstone devant jury.</p>
   <p><b>Rôle :</b> installer le vocabulaire, les maths et l'outillage communs aux parcours
@@ -160,7 +160,7 @@ blocs:
       - num: "06"
         title: Algèbre linéaire & calcul
         contenu: >-
-          Vecteurs, matrices, produit matriciel, notion de dérivée et de gradient — le minimum
+          Vecteurs, matrices, produit matriciel, notion de dérivée et de gradient, le minimum
           pour comprendre le ML et le deep learning.
         livrable: Fiche de synthèse appliquée (régression linéaire à la main).
         mise_en_situation: "On vous donne trois appartements (surface, loyer) : (40 m², 150 000 FCFA), (60, 210 000), (80, 270 000). Calculez à la main la droite loyer = a × surface + b et estimez le loyer d'un 70 m². Montrez vos calculs."
@@ -190,7 +190,7 @@ blocs:
       - num: "07"
         title: Manipulation avec pandas
         contenu: >-
-          Chargement, nettoyage, valeurs manquantes, jointures, agrégations, pivots — avec pandas
+          Chargement, nettoyage, valeurs manquantes, jointures, agrégations et pivots avec pandas
           et une ouverture sur Polars. Le cœur du métier au quotidien.
         livrable: Jeu de données brut nettoyé et documenté.
         mise_en_situation: "Vous recevez un fichier Excel de ventes avec des dates dans trois formats, des montants écrits « 15 000 F » et des clients en double. Décrivez étape par étape le nettoyage pandas que vous appliquez et comment vous vérifiez le résultat."
