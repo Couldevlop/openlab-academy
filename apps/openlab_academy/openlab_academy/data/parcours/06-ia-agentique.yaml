@@ -80,6 +80,8 @@ blocs:
               Lisez cette frise comme la carte du reste du parcours : chaque âge a légué une pièce que vous
               allez manipuler, de la boucle d'exécution jusqu'aux protocoles d'interopérabilité.
             figures:
+              - nom: ouverture-01.jpg
+                legende: "Les idées de l'agentique sont plus anciennes que les modèles de langage"
               - nom: frise-agentique.svg
                 legende: Les cinq âges de l'agentique, et ce que chacun a légué au code d'aujourd'hui
           - titre: 1966 à 1985, les programmes symboliques
@@ -116,6 +118,9 @@ blocs:
                   - [MYCIN et les règles expertes, Années 1970, "Les règles métier en dur, qui restent la bonne réponse"]
                   - [Le facteur de certitude de MYCIN, Années 1970, L'idée de mesurer la confiance d'une décision]
                   - [L'effondrement des bases de règles, Fin des années 1980, La méfiance envers les consignes qui enflent]
+            figures:
+              - nom: corps-01b.jpg
+                legende: "Les programmes symboliques raisonnaient sur des règles écrites à la main"
           - titre: 1986 à 2005, les agents logiciels et leurs protocoles
             texte: >-
               C'est la période qui a inventé le mot agent au sens où vous l'employez. Rodney Brooks propose
@@ -336,6 +341,8 @@ blocs:
               entre deux appels : ce que vous appelez mémoire est un texte que vous lui renvoyez à chaque
               fois, et que vous payez à chaque fois.
             figures:
+              - nom: ouverture-02.jpg
+                legende: "Un réseau de neurones, vu de loin : des poids, des couches, aucune base de données"
               - nom: anatomie-llm.svg
                 legende: Du texte au jeton suivant, et la boucle qui recommence à chaque jeton produit
           - titre: Les jetons, et pourquoi ils décident de votre facture
@@ -384,6 +391,9 @@ blocs:
               résultats d'outils volumineux se résument avant d'entrer dans l'historique, le détail reste
               dans un état que l'agent relit par un outil quand il en a besoin. C'est le sujet des séances
               8 et 9.
+            figures:
+              - nom: corps-02a.jpg
+                legende: "La fenêtre de contexte est ce que le modèle peut relire d'un coup, pas ce qu'il sait"
           - titre: L'échantillonnage, ou comment on règle le hasard
             texte: >-
               La dernière couche donne des scores ; elle ne choisit pas. Le choix revient à
@@ -524,6 +534,8 @@ blocs:
               à démarrer, et expose une interface compatible avec les clients habituels, ce qui permet de
               basculer d'un fournisseur distant à un modèle local en changeant une adresse.
             figures:
+              - nom: corps-02b.jpg
+                legende: "Faire tourner un modèle chez soi, c'est une affaire de mémoire disponible"
               - nom: memoire-modeles-locaux.svg
                 legende: La mémoire nécessaire selon la taille du modèle, en quantification 4 bits
             tableaux:
@@ -672,6 +684,8 @@ blocs:
               changent rarement et appartiennent à votre dépôt. La dernière, les données, change à chaque
               exécution et vient du monde extérieur : elle ne doit jamais être confondue avec les autres.
             figures:
+              - nom: ouverture-03.jpg
+                legende: "Un prompt s'écrit, se relit et se corrige comme un composant du logiciel"
               - nom: anatomie-prompt.svg
                 legende: Les couches d'un prompt d'agent, de la plus stable à la plus volatile
           - titre: Les cinq couches, et ce qu'on écrit dans chacune
@@ -703,6 +717,9 @@ blocs:
                   - [Outils, "Les schémas, noms et effets de bord", Le bon outil est choisi en premier]
                   - [Format de sortie, Un exemple complet et bien formé, La sortie se valide sans correction]
                   - [Exemples, Un cas courant et un cas limite, Le cas limite est traité comme montré]
+            figures:
+              - nom: corps-03a.jpg
+                legende: "Cinq couches, écrites et versionnées, plutôt qu'un paragraphe réécrit chaque jour"
           - titre: La description d'un outil est le texte le plus rentable du projet
             texte: >-
               Le modèle ne voit pas votre code : il voit un nom, une description et un schéma d'arguments.
@@ -773,6 +790,9 @@ blocs:
                   except ValidationError as e:
                       journal.alerte("sortie non conforme", details=e.errors()[:3])
                       return reessayer_une_fois(messages)      # une fois, pas en boucle
+            figures:
+              - nom: corps-03b.jpg
+                legende: "Une sortie structurée se décrit comme une notice : forme imposée, pas style libre"
           - titre: La frontière entre consigne et donnée
             texte: >-
               Un modèle ne distingue pas spontanément ce que vous lui ordonnez de ce que vous lui montrez.
@@ -971,6 +991,9 @@ blocs:
               Rédiger le cadrage écrit d'un agent : mission, sources de données, actions autorisées, actions
               interdites, critères de réussite. Ce document d'une page est le livrable de la séance, et il
               servira de référence jusqu'au projet final.
+            figures:
+              - nom: ouverture-04.jpg
+                legende: "Un agent se conçoit avant de s'écrire : périmètre, actions, limites"
           - titre: Le cas qui servira de fil rouge
             texte: >-
               Une PME d'Abidjan vend du matériel à des clients professionnels. Sa directrice financière
@@ -1025,6 +1048,9 @@ blocs:
                   - ["Outils", "agissent sur le monde", "l'agent parle sans rien faire", "le registre des fonctions appelables"]
                   - ["Mémoire", "transporte le contexte entre les tours", "l'agent refait deux fois le même appel", "la liste d'historique passée au modèle"]
                   - ["Contrôle", "borne, filtre, fait valider", "la boucle tourne jusqu'au budget", "le plafond d'étapes et la liste blanche"]
+            figures:
+              - nom: corps-04a.jpg
+                legende: "Quatre composants, et un bras qui ne bouge que si les quatre tiennent"
           - titre: Agent, chatbot, RAG, workflow
             texte: >-
               Ces quatre mots désignent des systèmes différents, et les confondre coûte cher : on paie la
@@ -1521,6 +1547,9 @@ blocs:
 
               Ajouter un paramètre à un outil existant de bout en bout : contrat, validation, implémentation,
               tests du cas nominal et des cas invalides.
+            figures:
+              - nom: ouverture-05.jpg
+                legende: "Les outils sont les mains de l'agent : peu nombreux, bien rangés, bien décrits"
           - titre: Ce qu'un modèle voit d'un outil
             texte: >-
               Un modèle ne voit pas votre fonction. Il voit une description textuelle et un schéma. Tout ce
@@ -1573,6 +1602,9 @@ blocs:
                       "additionalProperties": false
                     }
                   }
+            figures:
+              - nom: corps-05a.jpg
+                legende: "Le contrat s'écrit avant le code, et il sert deux fois : valider et décrire"
           - titre: Où se place la validation, et pourquoi là
             texte: >-
               La validation appartient au point d'appel, pas au corps de l'outil. La différence paraît
@@ -1602,6 +1634,9 @@ blocs:
                       except ValidationError as e:
                           return f"Erreur d'arguments : {e.errors()[0]['msg']}"
                       return OUTILS_AUTORISES[nom](valides)
+            figures:
+              - nom: corps-05b.jpg
+                legende: "La porte unique : tout passe par là, et rien ne passe à côté"
           - titre: "Exemple travaillé : ajouter un filtre de montant minimal"
             texte: >-
               La directrice financière veut ignorer les petits montants, qui coûtent plus cher à relancer
@@ -2138,6 +2173,9 @@ blocs:
 
               Nommer le coût de chaque pattern en latence, en jetons et en difficulté de relecture, pour
               arbitrer avec des chiffres plutôt qu'avec des préférences.
+            figures:
+              - nom: ouverture-06.jpg
+                legende: "L'orchestrateur ne joue d'aucun instrument : il décide qui joue et quand"
           - titre: Quatre patterns, quatre signes dans le besoin
             texte: >-
               Un pattern d'orchestration n'est pas un style de programmation : c'est la forme que prend la
@@ -2281,6 +2319,9 @@ blocs:
                   - ["Appels de modèle par exécution", "le coût", "il augmente sans gain de qualité"]
                   - ["Temps total", "la latence perçue", "au-delà de l'attente acceptable du métier"]
                   - ["Étapes avant la première action utile", "la cérémonie", "plus de deux"]
+            figures:
+              - nom: corps-06a.jpg
+                legende: "Mesurer un enchaînement avant de le complexifier : trois chiffres suffisent"
           - titre: "Exemple travaillé : composer trois patterns sur le fil rouge"
             texte: >-
               Le traitement complet du portefeuille se décrit en trois patterns imbriqués, et l'ordre dans
@@ -2670,6 +2711,9 @@ blocs:
                   - [recouvrement/modele_distant.py, Parler à l'interface du fournisseur, Décider d'une règle métier]
                   - [recouvrement/modele_local.py, Parler à un moteur local, Différer du distant côté interface]
                   - [recouvrement/boucle.py, "Enchaîner décision, action, observation", Connaître le fournisseur utilisé]
+            figures:
+              - nom: ouverture-07.jpg
+                legende: "Derrière une clé d'API, des machines réelles et une facture réelle"
           - titre: Étape 1, la configuration et les secrets
             texte: >-
               Une clé d'interface est un secret. Elle ne figure jamais dans le code, jamais dans un dépôt,
@@ -3179,6 +3223,9 @@ blocs:
                       decisions = [AppelOutil("lister_factures_impayees", {"age_min_jours": 30})] * 10
                       resultat = executer(ModeleJoue(decisions), "x", "s", serre, _trace(tmp_path))
                       assert resultat.statut == "budget"
+            figures:
+              - nom: corps-07a.jpg
+                legende: "Le modèle simulé rend les tests rapides, gratuits et répétables"
           - titre: Étape 9, mesurer le coût réel d'une exécution
             texte: >-
               Vous avez estimé un coût en séance 2. Mesurons le. La trace contient déjà les jetons par
@@ -3312,6 +3359,9 @@ blocs:
 
               Décider, pour chaque donnée, si elle se persiste ou se recalcule, avec un argument qui tient en
               une phrase.
+            figures:
+              - nom: ouverture-08.jpg
+                legende: "Un état durable est ce qui survit à la coupure, pas ce qui tient en mémoire"
           - titre: Trois mémoires qu'il ne faut pas confondre
             texte: >-
               Le contexte du modèle est la liste de messages envoyée à chaque tour. Il est volatile, il
@@ -3400,6 +3450,9 @@ blocs:
                   - ["Approbations humaines", "oui", "on ne redemande pas un accord déjà donné"]
                   - ["Contexte complet du modèle", "non", "il se reconstruit, et il grossit sans fin"]
                   - ["Résultats d'outils de lecture", "non", "les relire coûte moins que les garder faux"]
+            figures:
+              - nom: corps-08a.jpg
+                legende: "Ce qui se persiste doit se relire ; ce qui se recalcule ne s'écrit pas"
           - titre: "Exemple travaillé : couper le courant au bon moment"
             texte: >-
               L'exercice de la séance consiste à dérouler le parcours complet à la main, dans un shell
@@ -3789,6 +3842,8 @@ blocs:
               La règle de décision tient en une phrase : tout ce qui peut être relu par un outil ne reste
               pas dans le contexte.
             figures:
+              - nom: ouverture-09.jpg
+                legende: "La mémoire longue de l'agent est une bibliothèque, pas un souvenir"
               - nom: trois-memoires.svg
                 legende: Les trois mémoires, leur durée de vie, leur support et leur coût
           - titre: Étape 1, borner la mémoire de travail
@@ -3986,6 +4041,9 @@ blocs:
                                   scores.append((self.passages[indice], round(score, 4)))
                           scores.sort(key=lambda couple: couple[1], reverse=True)
                           return scores[:k]
+            figures:
+              - nom: corps-09a.jpg
+                legende: "L'index lexical, avant les vecteurs : un fichier bien rangé répond déjà beaucoup"
           - titre: Étape 5, les vecteurs, et la fusion des deux recherches
             texte: >-
               La recherche lexicale échoue quand la question n'emploie pas les mots du document : demander
@@ -4199,6 +4257,9 @@ blocs:
                           trouves = [p.identifiant for p, _ in recherche.chercher(question, k=5)]
                           rangs.append(trouves.index(attendu) + 1 if attendu in trouves else 6)
                       assert sum(rangs) / len(rangs) <= 2.0, rangs
+            figures:
+              - nom: corps-09b.jpg
+                legende: "Mesurer la recherche, c'est vérifier que le bon passage remonte, et qu'il est cité"
           - titre: Les pièges de la recherche documentaire
             texte: >-
               Le premier piège est le découpage. Trop fin, les passages perdent leur contexte et la
@@ -4307,6 +4368,8 @@ blocs:
               Épinglez la version dans vos dépendances, et lisez les notes de version avant toute montée.
               Le code de cette séance suit la ligne 0.6.
             figures:
+              - nom: ouverture-10.jpg
+                legende: "Un graphe d'états se lit comme un plan de ligne : nœuds, arêtes, correspondances"
               - nom: graphe-langgraph.svg
                 legende: "Le fil rouge écrit comme un graphe : nœuds, arêtes conditionnelles, sauvegarde et pause"
           - titre: Le modèle mental en cinq mots
@@ -4335,6 +4398,9 @@ blocs:
                   - [Fichier d'état écrit à la main, Point de sauvegarde, "Le cadre écrit, vous choisissez le support"]
                   - [Plafond de tours, Limite de récursion, "Le cadre coupe, vous fixez la valeur"]
                   - [Validation humaine codée, Pause avant un nœud, "Le cadre suspend, vous décidez de reprendre"]
+            figures:
+              - nom: corps-10a.jpg
+                legende: "Le modèle mental tient sur un tableau blanc avant de tenir dans le code"
           - titre: Étape 1, installer et figer les versions
             texte: >-
               Nous installons le cadre et le connecteur du modèle, en épinglant les versions. Un cadre qui
@@ -4738,6 +4804,8 @@ blocs:
               Les douze critères d'acceptation du dépôt serviront de juge. Une implémentation qui en
               échoue un seul est hors comparaison, quelle que soit son élégance.
             figures:
+              - nom: ouverture-11.jpg
+                legende: "Un cadre est un échafaudage : utile pour monter, jamais pour habiter"
               - nom: cinq-implementations.svg
                 legende: Les cinq écritures du même agent, et ce que chacune met en avant
           - titre: CrewAI, penser en équipe de rôles
@@ -5082,6 +5150,9 @@ blocs:
                   - [CrewAI, Rôles et tâches explicites, Contrôle fin plus difficile, Plusieurs rôles vraiment distincts]
                   - [PydanticAI, Sorties typées et revalidées, Cadre jeune, Sortie structurée stricte]
                   - [GenAI, "Peu de couches, au plus près du modèle", Lien fort au fournisseur, Prototype rapide sur un modèle donné]
+            figures:
+              - nom: corps-11a.jpg
+                legende: "L'outil qui fait tout fait rarement bien la seule chose dont vous avez besoin"
           - titre: Votre projet final cette semaine
             texte: >-
               Rendez les cinq écritures dans votre dépôt, avec un tableau de mesures dans decisions.md :
@@ -5159,6 +5230,9 @@ blocs:
 
               Nommer ce qu'un serveur d'outils change pour la sécurité, et les trois mesures qui s'imposent
               dès qu'un outil devient distant.
+            figures:
+              - nom: ouverture-12.jpg
+                legende: "MCP est au couplage d'outils ce qu'un connecteur normalisé est au matériel"
           - titre: Ce que MCP déplace
             texte: >-
               Jusqu'ici, le contrat d'un outil vivait dans votre code : la description, le schéma, la
@@ -5233,6 +5307,9 @@ blocs:
               Le débit n'est plus le vôtre. Un appel local raté coûte une milliseconde ; un appel distant
               raté coûte un aller-retour, et une boucle qui s'emballe devient une charge pour autrui. Posez
               une limite de débit et un délai d'expiration.
+            figures:
+              - nom: corps-12a.jpg
+                legende: "Un serveur distant est une frontière de confiance, pas une extension de votre code"
           - titre: A2A, et ce qu'il ne faut pas en attendre
             texte: >-
               MCP relie un agent à des outils. A2A vise autre chose : relier des agents entre eux, pour
@@ -5579,6 +5656,9 @@ blocs:
 
               Détecter les trois pannes propres au multi-agents : la boucle entre pairs, le superviseur qui
               ne fait que relayer, et le rapport fusionné qui masque un échec.
+            figures:
+              - nom: ouverture-13.jpg
+                legende: "Plusieurs agents, c'est une équipe : des rôles, des contrats, des comptes à rendre"
           - titre: Pourquoi plusieurs agents, et pourquoi rarement
             texte: >-
               Un deuxième agent se justifie quand deux rôles demandent des instructions, des outils ou des
@@ -5618,6 +5698,9 @@ blocs:
                       if any(r.statut != "ok" for r in rapports):   # un lot en échec ne se fond pas
                           return escalader_vers_humain(rapports)
                       return redacteur.produire(rapports)
+            figures:
+              - nom: corps-13a.jpg
+                legende: "Le passage de relais est l'endroit où l'on perd le plus souvent l'information"
           - titre: Choisir la topologie
             texte: >-
               Quatre choix se présentent, et le premier est de ne rien ajouter. Les trois autres se
@@ -6051,6 +6134,9 @@ blocs:
 
               Mesurer le coût et la latence d'une exécution, et tenir un registre des risques résiduels avec
               leur atténuation.
+            figures:
+              - nom: ouverture-14.jpg
+                legende: "La sécurité d'un agent tient dans son code, jamais dans la politesse de sa consigne"
           - titre: L'injection indirecte, expliquée simplement
             texte: >-
               L'injection directe, c'est un utilisateur qui écrit « ignore tes instructions » dans la zone de
@@ -6065,6 +6151,9 @@ blocs:
               Dans le jeu de données du laboratoire, une note de facture contient une phrase de ce genre. Le
               travail de la séance consiste à la trouver, puis à montrer pourquoi, dans ce dépôt, elle
               n'obtient rien.
+            figures:
+              - nom: corps-14a.jpg
+                legende: "L'injection indirecte entre par les données que l'agent lit, pas par la zone de saisie"
           - titre: Les trois défenses qui tiennent
             texte: >-
               Il n'existe pas de filtre qui reconnaîtrait les instructions hostiles de façon fiable. Les
@@ -6117,6 +6206,9 @@ blocs:
                       avec = executer_scenario(JEU_AVEC_NOTE_HOSTILE)
                       sans = executer_scenario(JEU_AVEC_NOTE_ANODINE)
                       assert [b.texte for b in avec] == [b.texte for b in sans]
+            figures:
+              - nom: corps-14b.jpg
+                legende: "Évaluer, c'est vérifier des propriétés, pas relire des phrases"
           - titre: La trace, et ce qu'elle ne doit pas contenir
             texte: >-
               Une trace répond à une question posée plus tard, souvent par quelqu'un d'autre : pourquoi
@@ -6589,6 +6681,8 @@ blocs:
               de journalisation entrent au démarrage, par variables d'environnement. Une image qui
               contient une clé est une clé publiée.
             figures:
+              - nom: ouverture-15.jpg
+                legende: "Un conteneur se transporte à l'identique : c'est exactement ce qu'on attend d'une image"
               - nom: pipeline-deploiement.svg
                 legende: Du commit à la production, et ce qui bloque le passage à chaque étape
           - titre: Une porte d'entrée HTTP, écrite en entier
@@ -6730,6 +6824,9 @@ blocs:
                   traces/
                   tests/
                   docs/
+            figures:
+              - nom: corps-15a.jpg
+                legende: "La chaîne de construction est reproductible, ou elle ne vaut rien"
           - titre: Les secrets, et la seule façon correcte de les passer
             texte: >-
               Un secret ne se tape pas dans un fichier suivi par Git, ne se colle pas dans un Dockerfile
@@ -6930,6 +7027,9 @@ blocs:
                       --env-file /etc/agent/production.env "$PRECEDENTE"
                   fi
                   exit 1
+            figures:
+              - nom: corps-15b.jpg
+                legende: "Le retour arrière compte autant que la mise en service"
           - titre: Ce qui change pour un agent, par rapport à une application ordinaire
             texte: >-
               Tout ce qui précède vaudrait pour n'importe quel service. Quatre points sont propres aux
@@ -7041,6 +7141,8 @@ blocs:
               vous posez doit donc venir avec une action écrite, et si vous n'arrivez pas à l'écrire,
               c'est que l'alerte ne sert à rien.
             figures:
+              - nom: ouverture-16.jpg
+                legende: "Exploiter, c'est savoir ce que fait le système sans avoir à le deviner"
               - nom: exploitation-agent.svg
                 legende: Quatre familles de mesures, et la marche à suivre quand une alerte sonne
           - titre: Les mesures, écrites en entier
@@ -7292,6 +7394,9 @@ blocs:
                   - ["Dépense du jour", "80 % du plafond", "prévenir, examiner le nombre de tours moyen"]
                   - ["Délai de validation humaine", "plus de 24 h en médiane", "parler au métier, pas au code"]
                   - ["Durée d'exécution au 95e centile", "plus du double de la normale", "regarder la latence du modèle et le nombre de tours"]
+            figures:
+              - nom: corps-16a.jpg
+                legende: "Un seuil sans action écrite est une alerte que l'on finira par ignorer"
           - titre: La marche à suivre en incident
             texte: >-
               Un incident se traite dans un ordre fixe, et cet ordre n'est pas négociable parce qu'on
@@ -7339,6 +7444,9 @@ blocs:
                       exit 2
                       ;;
                   esac
+            figures:
+              - nom: corps-16b.jpg
+                legende: "L'incident se termine par un test ajouté, jamais par une explication seule"
           - titre: La dérive, ce qui se dégrade sans rien casser
             texte: >-
               Le danger propre aux agents n'est pas la panne, qui se voit, mais la dérive, qui ne se
@@ -7452,6 +7560,8 @@ blocs:
               elle n'a aucun effet comptable. Un agent qui peut modifier un compte client est un agent
               dont un incident devient un incident comptable.
             figures:
+              - nom: ouverture-17.jpg
+                legende: "Les factures du fil rouge viennent désormais d'un vrai système de gestion"
               - nom: port-et-adaptateurs.svg
                 legende: Un port unique, plusieurs adaptateurs, et un domaine qui ne connaît aucun ERP
           - titre: Le port, écrit en entier
@@ -7926,6 +8036,9 @@ blocs:
 
                   if __name__ == "__main__":
                       sys.exit(0 if semer(AdaptateurOdoo()) else 1)
+            figures:
+              - nom: corps-17a.jpg
+                legende: "Le bac à sable reproduit le système réel sans en porter les conséquences"
           - titre: Les tests, sans ERP allumé
             texte: >-
               Vos tests ne doivent pas exiger qu'un ERP tourne. Sinon ils seront lents, intermittents,
@@ -8101,6 +8214,9 @@ blocs:
                           return {"valideur": charge.get("preferred_username", ""),
                                   "sujet": charge.get("sub", ""),
                                   "authentifie_le": datetime.now(timezone.utc).isoformat()}
+            figures:
+              - nom: corps-17c.jpg
+                legende: "L'identité du valideur rend l'approbation opposable, pas seulement tracée"
           - titre: "Le pilotage : Metabase, n8n et Grafana"
             texte: >-
               Ces trois briques ne touchent pas l'agent : elles l'entourent. Metabase pose des questions
@@ -8148,6 +8264,9 @@ blocs:
               Si un modèle hébergé par un tiers doit voir des montants et des noms, cette décision se
               prend explicitement, par écrit, par une personne qui a autorité pour la prendre. Ce n'est
               pas une décision technique, et ce n'est pas la vôtre.
+            figures:
+              - nom: corps-17b.jpg
+                legende: "Des données réelles, ce sont des entreprises et des personnes réelles"
           - titre: Votre projet final cette semaine
             texte: >-
               Écrivez le port et les trois adaptateurs, montez le bac à sable, et faites tourner votre

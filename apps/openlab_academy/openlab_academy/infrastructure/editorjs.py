@@ -47,12 +47,13 @@ def _lien_archive(nom: str, url: str) -> dict:
     return _bloc("paragraph", text=f'Archive de départ : <a href="{url}">{_e(nom)}</a>')
 
 
-_FIGURE_PRIVEE = re.compile(r"/private/files/[a-z0-9][a-z0-9-]{0,79}\.svg")
+_FIGURE_PRIVEE = re.compile(r"/private/files/[a-z0-9][a-z0-9-]{0,79}\.(?:svg|jpg|png|webp)")
 
 
 def _image(figure: Figure, urls: dict[str, str]) -> dict:
-    """Schéma de la leçon. Comme l'archive, un SVG est un média privé servi par le contrôle d'accès : une
-    adresse absente du dossier des ressources, ou hors des fichiers privés, est refusée (OWASP A03)."""
+    """Illustration de la leçon, schéma ou photographie. Comme l'archive, c'est un média privé servi par le
+    contrôle d'accès : une adresse absente du dossier des ressources, ou hors des fichiers privés, est
+    refusée (OWASP A03)."""
     url = urls.get(figure.nom)
     if url is None:
         raise ValueError(f"figure non déposée sur le site : {figure.nom!r}")

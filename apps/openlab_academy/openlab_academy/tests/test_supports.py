@@ -42,10 +42,16 @@ class TestTableau(unittest.TestCase):
 
 
 class TestFigure(unittest.TestCase):
-    def test_nom_de_fichier_svg_exige(self):
-        for nom in ("boucle-agent.png", "../secret.svg", "", "boucle agent.svg"):
+    def test_nom_de_fichier_image_exige(self):
+        for nom in ("../secret.svg", "", "boucle agent.svg", "schema.gif", "photo.jpeg.exe"):
             with self.subTest(nom), self.assertRaises(ValueError):
                 Figure(nom, "légende")
+
+    def test_schemas_et_photographies_acceptes(self):
+        """Les séances mêlent schémas construits (SVG) et photographies d'illustration."""
+        for nom in ("boucle-agent.svg", "ouverture-01.jpg", "atelier.webp", "capture-odoo.png"):
+            with self.subTest(nom):
+                self.assertEqual(Figure(nom, "légende").nom, nom)
 
     def test_legende_obligatoire(self):
         with self.assertRaises(ValueError):
@@ -145,7 +151,7 @@ class TestLectureYamlDesSupports(unittest.TestCase):
         self.assertEqual(m.extraits, (Extrait("T", "python", "x = 1"),))
 
     def test_support_mal_forme_refuse_en_nommant_la_cle(self):
-        for cle, valeur in (("figures", [{"nom": "x.png", "legende": "l"}]),
+        for cle, valeur in (("figures", [{"nom": "x.gif", "legende": "l"}]),
                             ("tableaux", [{"titre": "T", "entetes": ["a"], "lignes": [["1", "2"]]}]),
                             ("code", [{"titre": "T", "langage": "cobol", "source": "x"}]),
                             ("figures", "pas une liste")):

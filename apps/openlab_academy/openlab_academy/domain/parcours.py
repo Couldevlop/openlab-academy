@@ -12,7 +12,9 @@ from openlab_academy.domain.reglages_evaluation import Chaine
 
 TITRE_MAX = 120  # laisse la place aux préfixes (« Projet 10 — ») sous la limite LMS de 140
 _SALAIRE = re.compile(r"\d+\s*k\s*€", re.IGNORECASE)
-_NOM_FIGURE = re.compile(r"[a-z0-9][a-z0-9-]{0,79}\.svg")
+# Schémas construits (SVG) et photographies d'illustration : une seule extension, en fin de nom,
+# pour qu'aucun « photo.jpg.exe » ni aucun chemin ne passe.
+_NOM_FIGURE = re.compile(r"[a-z0-9][a-z0-9-]{0,79}\.(?:svg|jpg|png|webp)")
 # langages colorés par le bloc codeBox du LMS ; au-delà, le bloc s'affiche sans coloration et sans alerte
 LANGAGES = frozenset({"python", "json", "yaml", "bash", "sql", "text"})
 
@@ -70,7 +72,8 @@ class Question:
 
 @dataclass(frozen=True)
 class Figure:
-    """Schéma d'une leçon. Le nom désigne un SVG construit par le dépôt et déposé en fichier privé du site :
+    """Illustration d'une leçon : schéma construit par le dépôt, ou photographie livrée avec l'application.
+    Le fichier est déposé en fichier privé du site :
     la figure suit donc le contrôle d'accès de la leçon, comme l'archive de départ. Le nom est contraint pour
     qu'aucune valeur de parcours ne puisse désigner un fichier hors du dossier des ressources."""
 
@@ -79,7 +82,8 @@ class Figure:
 
     def __post_init__(self):
         if not _NOM_FIGURE.fullmatch(self.nom or ""):
-            raise ParcoursInvalide(f"nom de figure invalide : {self.nom!r} (attendu « quelque-chose.svg »)")
+            raise ParcoursInvalide(f"nom de figure invalide : {self.nom!r} "
+                                   "(attendu « quelque-chose.svg », .jpg, .png ou .webp)")
         if not self.legende.strip():
             raise ParcoursInvalide(f"figure « {self.nom} » : légende obligatoire")
 
