@@ -867,13 +867,13 @@ def ecosysteme_ouvert() -> Dessin:
     return d
 def famille_ia() -> Dessin:
     """Séance 2 : les quatre niveaux emboîtés, et les deux familles de modèles."""
-    d = Dessin(920, 460, "Quatre niveaux emboites, et deux questions")
+    d = Dessin(920, 460, "Quatre niveaux emboîtés, et deux questions")
     niveaux = [
-        ("Intelligence artificielle", "automatiser une tache qui demande de l'intelligence, depuis 1956"),
-        ("Apprentissage automatique", "le systeme deduit ses regles des donnees"),
-        ("Apprentissage profond", "des couches de neurones, des representations abstraites"),
-        ("IA generative", "produire un contenu nouveau, pas une etiquette"),
-        ("Modeles de langage", "la specialisation texte : notre sujet"),
+        ("Intelligence artificielle", "automatiser une tâche qui demande de l'intelligence, depuis 1956"),
+        ("Apprentissage automatique", "le système déduit ses règles des données"),
+        ("Apprentissage profond", "des couches de neurones, des représentations abstraites"),
+        ("IA générative", "produire un contenu nouveau, pas une étiquette"),
+        ("Modèles de langage", "la spécialisation texte : notre sujet"),
     ]
     for i, (nom, detail) in enumerate(niveaux):
         x = 30 + i * 22
@@ -882,30 +882,30 @@ def famille_ia() -> Dessin:
         d.boite(x, y, 500 - i * 44, 46, teinte=teinte)
         d.texte(x + 16, y + 20, nom, taille=13, gras=True, ancre="start")
         d.texte(x + 16, y + 37, detail, taille=10, couleur="encre2", ancre="start")
-    d.texte(30, 44, "Quatre niveaux qui s'emboitent, et qu'on confond souvent",
+    d.texte(30, 44, "Quatre niveaux qui s'emboîtent, et qu'on confond souvent",
             taille=15, gras=True, ancre="start")
     d.boite(580, 70, 310, 130, teinte="s2")
-    d.texte(735, 96, "Modele discriminatif", taille=14, gras=True)
-    d.lignes_de_texte(735, 122, ["A quelle categorie appartient", "cette entree ?",
-                                 "Sortie : une etiquette, un score"], taille=11)
-    d.texte(735, 188, "espace des reponses ferme", taille=11, gras=True, couleur="encre2")
+    d.texte(735, 96, "Modèle discriminatif", taille=14, gras=True)
+    d.lignes_de_texte(735, 122, ["À quelle catégorie appartient", "cette entrée ?",
+                                 "Sortie : une étiquette, un score"], taille=11)
+    d.texte(735, 188, "espace des réponses fermé", taille=11, gras=True, couleur="encre2")
     d.boite(580, 226, 310, 130, teinte="s3")
-    d.texte(735, 252, "Modele generatif", taille=14, gras=True)
+    d.texte(735, 252, "Modèle génératif", taille=14, gras=True)
     d.lignes_de_texte(735, 278, ["Quelle suite plausible", "puis-je produire ?",
-                                 "Sortie : un contenu inedit"], taille=11)
-    d.texte(735, 344, "espace des reponses ouvert", taille=11, gras=True, couleur="encre2")
-    d.texte(460, 410, "Aucun des deux ne comprend : tous deux exploitent des regularites statistiques apprises.",
+                                 "Sortie : un contenu inédit"], taille=11)
+    d.texte(735, 344, "espace des réponses ouvert", taille=11, gras=True, couleur="encre2")
+    d.texte(460, 410, "Aucun des deux ne comprend : tous deux exploitent des régularités statistiques apprises.",
             taille=12, gras=True)
-    d.texte(460, 436, "L'ouverture du second fait sa puissance et tout son risque : c'est a vous de la borner.",
+    d.texte(460, 436, "L'ouverture du second fait sa puissance et tout son risque : c'est à vous de la borner.",
             taille=11, couleur="encre2")
     return d
 
 
 def plongements_geometrie() -> Dessin:
     """Séance 2 : le sens devient de la géométrie, et la proximité se mesure."""
-    d = Dessin(920, 440, "Le sens devient de la geometrie")
+    d = Dessin(920, 440, "Le sens devient de la géométrie")
     d.boite(30, 70, 440, 300, teinte="grille")
-    d.texte(250, 56, "deux dimensions, des centaines en realite", taille=11, couleur="encre2")
+    d.texte(250, 56, "deux dimensions, des centaines en réalité", taille=11, couleur="encre2")
     nuages = [
         ("s1", [(110, 130, "chien"), (158, 158, "chat"), (96, 182, "cheval")]),
         ("s3", [(330, 120, "Paris"), (378, 150, "Abidjan"), (318, 176, "Lyon")]),
@@ -921,12 +921,12 @@ def plongements_geometrie() -> Dessin:
         d.texte(x1 - 10, y1 + 4, a, taille=11, ancre="end", couleur="encre2")
         d.texte(x2 + 12, y2 + 4, b, taille=11, ancre="start", couleur="encre2")
         d.fleche(x1 + 8, y1 - 2, x2 - 8, y2 + 2, teinte="s2")
-    d.texte(250, 390, "meme direction = meme relation", taille=11, gras=True, couleur="encre2")
+    d.texte(250, 390, "même direction = même relation", taille=11, gras=True, couleur="encre2")
     cartes = [
         ("Une liste de nombres", "chaque jeton devient un vecteur de", "plusieurs centaines de dimensions"),
-        ("Une distance mesurable", "la similarite cosinus dit la proximite", "sans aucun mot commun"),
-        ("Le sens depend du contexte", "le vecteur de << avocat >> est recalcule", "selon les mots qui l'entourent"),
-        ("Le socle de la recherche", "retrouver << conge de maternite >> a partir", "de << arret apres accouchement >>"),
+        ("Une distance mesurable", "la similarité cosinus dit la proximité", "sans aucun mot commun"),
+        ("Le sens dépend du contexte", "le vecteur de « avocat » est recalculé", "selon les mots qui l'entourent"),
+        ("Le socle de la recherche", "retrouver « congé de maternité » à partir", "de « arrêt après accouchement »"),
     ]
     for i, (titre, l1, l2) in enumerate(cartes):
         y = 70 + i * 78
@@ -939,13 +939,13 @@ def plongements_geometrie() -> Dessin:
 
 def architecture_transformeur() -> Dessin:
     """Séance 2 : la pile d'un transformeur, et ce que l'attention résout."""
-    d = Dessin(940, 480, "Dans le moteur : la pile, et ce que l'attention resout")
+    d = Dessin(940, 480, "Dans le moteur : la pile, et ce que l'attention résout")
     etages = [
-        ("Texte decoupe en jetons", "s1", 40),
+        ("Texte découpé en jetons", "s1", 40),
         ("Plongements + position", "s1", 40),
-        ("Attention multi-tete : chaque jeton regarde les autres", "s2", 40),
-        ("Reseau dense : transformation apprise", "s2", 40),
-        ("Normalisation + connexion residuelle", "s2", 40),
+        ("Attention multi-tête : chaque jeton regarde les autres", "s2", 40),
+        ("Réseau dense : transformation apprise", "s2", 40),
+        ("Normalisation + connexion résiduelle", "s2", 40),
         ("Projection sur le vocabulaire", "s3", 40),
     ]
     y = 76
@@ -957,11 +957,11 @@ def architecture_transformeur() -> Dessin:
         y += h + 12
     d.boite(474, 196, 22, 160, teinte="trait", tirets=True)
     d.texte(520, 268, "x N", taille=13, gras=True, ancre="start")
-    d.texte(520, 288, "32 a 120 couches", taille=10, couleur="encre2", ancre="start")
-    d.texte(40, 52, "La meme brique, empilee, du texte a la probabilite du jeton suivant",
+    d.texte(520, 288, "32 à 120 couches", taille=10, couleur="encre2", ancre="start")
+    d.texte(40, 52, "La même brique, empilée, du texte à la probabilité du jeton suivant",
             taille=15, gras=True, ancre="start")
-    d.texte(690, 76, "A quoi regarde << il >> ?", taille=14, gras=True)
-    phrase = [("le", 2), ("trophee", 46), ("n'entre", 4), ("pas", 2), ("dans", 3), ("la", 4),
+    d.texte(690, 76, "À quoi regarde « il » ?", taille=14, gras=True)
+    phrase = [("le", 2), ("trophée", 46), ("n'entre", 4), ("pas", 2), ("dans", 3), ("la", 4),
               ("valise", 17), ("car", 4), ("il", 7), ("est", 3), ("trop", 4), ("grand", 4)]
     yy = 104
     for mot, poids in phrase:
@@ -970,23 +970,23 @@ def architecture_transformeur() -> Dessin:
         d.texte(594, yy + 12, mot, taille=10, ancre="end", couleur="encre2")
         d.texte(606 + largeur, yy + 12, f"{poids} %", taille=10, ancre="start", couleur="encre2")
         yy += 22
-    d.texte(740, 404, "Aucune regle de grammaire ne dit que << il >> designe le trophee :",
+    d.texte(740, 404, "Aucune règle de grammaire ne dit que « il » désigne le trophée :",
             taille=11, couleur="encre2")
-    d.texte(740, 422, "le modele l'a appris, et son attention le montre.", taille=11, couleur="encre2")
-    d.texte(470, 464, "La phrase entiere est traitee d'un bloc : l'entrainement se parallelise, et deux jetons distants se lient directement.",
+    d.texte(740, 422, "le modèle l'a appris, et son attention le montre.", taille=11, couleur="encre2")
+    d.texte(470, 464, "La phrase entière est traitée d'un bloc : l'entraînement se parallélise, et deux jetons distants se lient directement.",
             taille=11, gras=True, couleur="encre2")
     return d
 
 
 def methode_clair() -> Dessin:
     """Séance 3 : les cinq questions à poser avant d'écrire un prompt."""
-    d = Dessin(920, 440, "Cinq questions avant d'ecrire")
+    d = Dessin(920, 440, "Cinq questions avant d'écrire")
     lignes = [
-        ("C", "Contexte", "De quoi parle-t-on, pour qui, dans quel but ?", "Factures echues, lues par un comptable"),
+        ("C", "Contexte", "De quoi parle-t-on, pour qui, dans quel but ?", "Factures échues, lues par un comptable"),
         ("L", "Livrable", "Quelle forme, quelle longueur, quel support ?", "Un brouillon de relance, 150 mots au plus"),
-        ("A", "Action", "Un verbe precis, une seule tache a la fois.", "Rediger le brouillon, sans l'envoyer"),
-        ("I", "Illustrations", "Un exemple de ce qui est attendu ou refuse.", "Un brouillon valide, un cas de litige"),
-        ("R", "Regles", "Contraintes, interdits, critere de reussite.", "Aucun montant invente, arret si litige"),
+        ("A", "Action", "Un verbe précis, une seule tâche à la fois.", "Rédiger le brouillon, sans l'envoyer"),
+        ("I", "Illustrations", "Un exemple de ce qui est attendu ou refusé.", "Un brouillon validé, un cas de litige"),
+        ("R", "Règles", "Contraintes, interdits, critère de réussite.", "Aucun montant inventé, arrêt si litige"),
     ]
     d.texte(30, 48, "Cinq lettres, cinq questions, cinq lignes au brouillon",
             taille=15, gras=True, ancre="start")
@@ -1000,7 +1000,7 @@ def methode_clair() -> Dessin:
         d.boite(530, y, 360, 56, teinte="s3")
         d.texte(546, y + 34, exemple, taille=11, couleur="encre2", ancre="start")
     d.texte(460, 424,
-            "Si vous ne savez pas repondre a l'une des cinq, le modele ne le saura pas davantage que vous.",
+            "Si vous ne savez pas répondre à l'une des cinq, le modèle ne le saura pas davantage que vous.",
             taille=12, gras=True)
     return d
 
@@ -1009,10 +1009,10 @@ def chaine_de_prompts() -> Dessin:
     """Séance 3 : quatre prompts nets et quatre validations, au lieu d'un prompt qui s'allonge."""
     d = Dessin(940, 420, "Quatre prompts nets, quatre validations")
     etapes = [
-        ("1 Extraire", "lister les exigences,", "sans commentaire", "une liste verifiable"),
-        ("2 Analyser", "evaluer la couverture", "de chaque exigence", "une matrice d'ecarts"),
-        ("3 Rediger", "produire le texte a partir", "de la matrice", "un texte ancre"),
-        ("4 Reviser", "relire sous l'angle", "du destinataire", "un livrable relu"),
+        ("1 Extraire", "lister les exigences,", "sans commentaire", "une liste vérifiable"),
+        ("2 Analyser", "évaluer la couverture", "de chaque exigence", "une matrice d'écarts"),
+        ("3 Rédiger", "produire le texte à partir", "de la matrice", "un texte ancré"),
+        ("4 Réviser", "relire sous l'angle", "du destinataire", "un livrable relu"),
     ]
     for i, (titre, l1, l2, sortie) in enumerate(etapes):
         x = 30 + i * 228
@@ -1027,27 +1027,27 @@ def chaine_de_prompts() -> Dessin:
         if i < 3:
             d.fleche(x + 200, 265, x + 228, 265, teinte="attenue")
             d.fleche(x + 228, 150, x + 200, 150, teinte="attenue")
-    d.texte(30, 50, "Quand un prompt echoue, decoupez : n'allongez pas",
+    d.texte(30, 50, "Quand un prompt échoue, découpez : n'allongez pas",
             taille=15, gras=True, ancre="start")
-    d.texte(30, 72, "une tache par prompt, un format de sortie par prompt, un point de validation par etape",
+    d.texte(30, 72, "une tâche par prompt, un format de sortie par prompt, un point de validation par étape",
             taille=11, couleur="encre2", ancre="start")
-    d.texte(470, 346, "Une erreur vue a l'etape 1 coute une reformulation ; vue a l'etape 4, elle a contamine le livrable.",
+    d.texte(470, 346, "Une erreur vue à l'étape 1 coûte une reformulation ; vue à l'étape 4, elle a contaminé le livrable.",
             taille=12, gras=True)
-    d.texte(470, 372, "Une fois eprouvee, la chaine s'ecrit une fois, se rejoue, puis se code : c'est le graphe de la seance 10.",
+    d.texte(470, 372, "Une fois éprouvée, la chaîne s'écrit une fois, se rejoue, puis se code : c'est le graphe de la séance 10.",
             taille=11, couleur="encre2")
     return d
 
 
 def rag_six_etapes() -> Dessin:
     """Séance 9 : de la question à la réponse sourcée, et ce que la méthode ne répare pas."""
-    d = Dessin(940, 440, "De la question a la reponse sourcee")
+    d = Dessin(940, 440, "De la question à la réponse sourcée")
     etapes = [
-        ("1 Question", "<< quel est le delai", "de preavis ? >>"),
+        ("1 Question", "« quel est le délai", "de préavis ? »"),
         ("2 Vectorisation", "la question devient", "un vecteur"),
-        ("3 Recherche", "les passages proches", "sont retrouves"),
-        ("4 Extraits", "trois a cinq passages,", "avec leur reference"),
-        ("5 Prompt augmente", "question + extraits", "+ << reponds a partir de ceci >>"),
-        ("6 Reponse sourcee", "ancree, citant", "le document et la page"),
+        ("3 Recherche", "les passages proches", "sont retrouvés"),
+        ("4 Extraits", "trois à cinq passages,", "avec leur référence"),
+        ("5 Prompt augmenté", "question + extraits", "+ « réponds à partir de ceci »"),
+        ("6 Réponse sourcée", "ancrée, citant", "le document et la page"),
     ]
     for i, (titre, l1, l2) in enumerate(etapes):
         x = 24 + (i % 3) * 306
@@ -1060,18 +1060,18 @@ def rag_six_etapes() -> Dessin:
         if i % 3 < 2:
             d.fleche(x + 272, y + 43, x + 306, y + 43, teinte="attenue")
     d.fleche(160, 170, 160, 196, teinte="attenue")
-    d.texte(24, 52, "Aucun entrainement : on change seulement ce que le modele a sous les yeux",
+    d.texte(24, 52, "Aucun entraînement : on change seulement ce que le modèle a sous les yeux",
             taille=15, gras=True, ancre="start")
     d.boite(24, 320, 440, 96, teinte="bon", tirets=True)
-    d.texte(244, 344, "Ce que la methode resout", taille=13, gras=True)
-    d.lignes_de_texte(244, 366, ["repondre sur des documents prives ou recents",
-                                 "citer une source verifiable, page par page",
-                                 "mettre a jour la connaissance sans reentrainer"], taille=10)
+    d.texte(244, 344, "Ce que la méthode résout", taille=13, gras=True)
+    d.lignes_de_texte(244, 366, ["répondre sur des documents privés ou récents",
+                                 "citer une source vérifiable, page par page",
+                                 "mettre à jour la connaissance sans réentraîner"], taille=10)
     d.boite(490, 320, 426, 96, teinte="critique", tirets=True)
-    d.texte(703, 344, "Ce qu'elle ne repare pas", taille=13, gras=True)
-    d.lignes_de_texte(703, 366, ["une base documentaire mal rangee ou perimee",
-                                 "des documents scannes sans reconnaissance de texte",
-                                 "une question dont la reponse n'existe nulle part"], taille=10)
+    d.texte(703, 344, "Ce qu'elle ne répare pas", taille=13, gras=True)
+    d.lignes_de_texte(703, 366, ["une base documentaire mal rangée ou périmée",
+                                 "des documents scannés sans reconnaissance de texte",
+                                 "une question dont la réponse n'existe nulle part"], taille=10)
     return d
 
 

@@ -55,40 +55,40 @@ rect[class^='b-']{stroke-width:1.5}
 <text x="130" y="164" text-anchor="middle" font-size="10" fill="var(--encre2)">sans commentaire</text>
 <rect x="30" y="240" width="200" height="50" rx="8" class="b-s3" fill="var(--surface)" stroke-dasharray="5 4"/>
 <text x="130" y="262" text-anchor="middle" font-size="10" font-weight="600" fill="var(--encre)">validation humaine</text>
-<text x="130" y="280" text-anchor="middle" font-size="10" fill="var(--encre2)">une liste verifiable</text>
+<text x="130" y="280" text-anchor="middle" font-size="10" fill="var(--encre2)">une liste vérifiable</text>
 <path d="M 130 200 L 130 236" fill="none" stroke="var(--s3)" stroke-width="2" marker-end="url(#pointe-s3)"/>
 <path d="M 230 265 L 258 265" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
 <path d="M 258 150 L 230 150" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
 <rect x="258" y="96" width="200" height="104" rx="8" class="b-s1" fill="var(--surface)"/>
 <text x="358" y="124" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">2 Analyser</text>
-<text x="358" y="148" text-anchor="middle" font-size="10" fill="var(--encre2)">evaluer la couverture</text>
+<text x="358" y="148" text-anchor="middle" font-size="10" fill="var(--encre2)">évaluer la couverture</text>
 <text x="358" y="164" text-anchor="middle" font-size="10" fill="var(--encre2)">de chaque exigence</text>
 <rect x="258" y="240" width="200" height="50" rx="8" class="b-s3" fill="var(--surface)" stroke-dasharray="5 4"/>
 <text x="358" y="262" text-anchor="middle" font-size="10" font-weight="600" fill="var(--encre)">validation humaine</text>
-<text x="358" y="280" text-anchor="middle" font-size="10" fill="var(--encre2)">une matrice d&#x27;ecarts</text>
+<text x="358" y="280" text-anchor="middle" font-size="10" fill="var(--encre2)">une matrice d&#x27;écarts</text>
 <path d="M 358 200 L 358 236" fill="none" stroke="var(--s3)" stroke-width="2" marker-end="url(#pointe-s3)"/>
 <path d="M 458 265 L 486 265" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
 <path d="M 486 150 L 458 150" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
 <rect x="486" y="96" width="200" height="104" rx="8" class="b-s1" fill="var(--surface)"/>
-<text x="586" y="124" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">3 Rediger</text>
-<text x="586" y="148" text-anchor="middle" font-size="10" fill="var(--encre2)">produire le texte a partir</text>
+<text x="586" y="124" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">3 Rédiger</text>
+<text x="586" y="148" text-anchor="middle" font-size="10" fill="var(--encre2)">produire le texte à partir</text>
 <text x="586" y="164" text-anchor="middle" font-size="10" fill="var(--encre2)">de la matrice</text>
 <rect x="486" y="240" width="200" height="50" rx="8" class="b-s3" fill="var(--surface)" stroke-dasharray="5 4"/>
 <text x="586" y="262" text-anchor="middle" font-size="10" font-weight="600" fill="var(--encre)">validation humaine</text>
-<text x="586" y="280" text-anchor="middle" font-size="10" fill="var(--encre2)">un texte ancre</text>
+<text x="586" y="280" text-anchor="middle" font-size="10" fill="var(--encre2)">un texte ancré</text>
 <path d="M 586 200 L 586 236" fill="none" stroke="var(--s3)" stroke-width="2" marker-end="url(#pointe-s3)"/>
 <path d="M 686 265 L 714 265" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
 <path d="M 714 150 L 686 150" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
 <rect x="714" y="96" width="200" height="104" rx="8" class="b-s1" fill="var(--surface)"/>
-<text x="814" y="124" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">4 Reviser</text>
+<text x="814" y="124" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">4 Réviser</text>
 <text x="814" y="148" text-anchor="middle" font-size="10" fill="var(--encre2)">relire sous l&#x27;angle</text>
 <text x="814" y="164" text-anchor="middle" font-size="10" fill="var(--encre2)">du destinataire</text>
 <rect x="714" y="240" width="200" height="50" rx="8" class="b-s3" fill="var(--surface)" stroke-dasharray="5 4"/>
 <text x="814" y="262" text-anchor="middle" font-size="10" font-weight="600" fill="var(--encre)">validation humaine</text>
 <text x="814" y="280" text-anchor="middle" font-size="10" fill="var(--encre2)">un livrable relu</text>
 <path d="M 814 200 L 814 236" fill="none" stroke="var(--s3)" stroke-width="2" marker-end="url(#pointe-s3)"/>
-<text x="30" y="50" text-anchor="start" font-size="15" font-weight="600" fill="var(--encre)">Quand un prompt echoue, decoupez : n&#x27;allongez pas</text>
-<text x="30" y="72" text-anchor="start" font-size="11" fill="var(--encre2)">une tache par prompt, un format de sortie par prompt, un point de validation par etape</text>
-<text x="470" y="346" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">Une erreur vue a l&#x27;etape 1 coute une reformulation ; vue a l&#x27;etape 4, elle a contamine le livrable.</text>
-<text x="470" y="372" text-anchor="middle" font-size="11" fill="var(--encre2)">Une fois eprouvee, la chaine s&#x27;ecrit une fois, se rejoue, puis se code : c&#x27;est le graphe de la seance 10.</text>
+<text x="30" y="50" text-anchor="start" font-size="15" font-weight="600" fill="var(--encre)">Quand un prompt échoue, découpez : n&#x27;allongez pas</text>
+<text x="30" y="72" text-anchor="start" font-size="11" fill="var(--encre2)">une tâche par prompt, un format de sortie par prompt, un point de validation par étape</text>
+<text x="470" y="346" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">Une erreur vue à l&#x27;étape 1 coûte une reformulation ; vue à l&#x27;étape 4, elle a contaminé le livrable.</text>
+<text x="470" y="372" text-anchor="middle" font-size="11" fill="var(--encre2)">Une fois éprouvée, la chaîne s&#x27;écrit une fois, se rejoue, puis se code : c&#x27;est le graphe de la séance 10.</text>
 </svg>
