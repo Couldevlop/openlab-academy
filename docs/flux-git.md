@@ -34,9 +34,21 @@ git switch -c feat/mon-sujet
    L'auto-merge de GitHub n'est pas utilisable ici : il exige des contrôles requis, donc une protection de
    branche, indisponible sur ce plan. Un workflow `workflow_run` n'étant pris en compte que dans sa version
    présente sur `main`, la **première** promotion se lance à la main (`workflow_dispatch`).
-3. **`release.yml`** — après la fusion dans `main` : étiquette `v<version>` lue dans
+3. **`release.yml`** — appelé par la promotion (`workflow_call`), et déclenché par un push sur `main`
+   quand la fusion a été faite à la main : étiquette `v<version>` lue dans
    `openlab_academy/__init__.py` (`__version__`) et publie la release, puis ouvre la PR de **réalignement de
    `develop` sur `main`**, sans laquelle les commits de fusion feraient diverger les deux branches.
+
+### Ce que GITHUB_TOKEN ne déclenche pas
+
+Un push, ou une fusion, effectué avec `GITHUB_TOKEN` ne crée **aucun** événement de workflow : c'est le
+garde-fou anti-récursion de GitHub. Deux conséquences, assumées :
+
+- la fusion automatique dans `main` ne rejoue ni la CI de `main`, ni la release par l'événement `push` — d'où
+  l'appel direct de `release.yml` par la promotion. L'arbre livré est celui que la CI de `develop` vient de
+  valider, et la promotion vérifie que la branche n'a pas bougé entre-temps ;
+- les contrôles de la PR de promotion, ouverte par Actions, restent en attente d'approbation
+  (`action_required`). Le job `gardien` garde donc son sens pour une PR **humaine** vers `main`.
 
 Le déploiement n'est pas dans la chaîne : aucune cible de production n'est encore câblée pour l'Academy. La
 livraison s'arrête à l'étiquette de version, qui désignera l'artefact à déployer.

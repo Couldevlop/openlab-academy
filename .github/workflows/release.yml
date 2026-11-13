@@ -1,9 +1,14 @@
 # Après une fusion dans main : étiqueter la version livrée, puis ramener main dans develop.
+#
+# `workflow_call` est le chemin normal : la promotion fusionne avec GITHUB_TOKEN, et un push effectué avec ce
+# jeton ne déclenche aucun workflow — garde-fou anti-récursion de GitHub. La promotion appelle donc ce
+# workflow directement. Le déclencheur `push` ne sert qu'aux fusions faites à la main.
 name: Release
 
 on:
   push:
     branches: [main]
+  workflow_call:
   workflow_dispatch:
 
 concurrency:
@@ -25,6 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          ref: main # appelé depuis la promotion, le commit par défaut serait celui de develop
           fetch-depth: 0
 
       # version lue dans l'app : la source de vérité reste le code, pas un numéro saisi à la main
@@ -60,6 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          ref: main # appelé depuis la promotion, le commit par défaut serait celui de develop
           fetch-depth: 0
 
       # main porte les commits de fusion : sans ce retour, develop divergerait livraison après livraison
@@ -78,5 +85,11 @@ jobs:
             echo "PR de réalignement déjà ouverte : #$existante"
             exit 0
           fi
-          gh pr create --base develop --head main --title 'Réalignement de develop sur main' \
-            --body 'Retour automatique des commits de fusion de `main` dans `develop`, pour que les deux branches ne divergent pas.'
+          numero=$(gh pr create --base develop --head main --title 'Réalignement de develop sur main' \
+            --body 'Retour automatique des commits de fusion de `main` dans `develop`, pour que les deux branches ne divergent pas.' \
+            | grep -oE '[0-9]+$')
+          echo "PR de réalignement #$numero"
+          # seuls des commits de fusion reviennent : la fusion est immédiate. En cas de conflit, la PR
+          # reste ouverte et attend un arbitrage humain, plutôt que de laisser les branches diverger.
+          gh pr merge "$numero" --merge \
+            || echo "::warning::Réalignement non fusionné (conflit ?) ; PR #$numero laissée ouverte."
