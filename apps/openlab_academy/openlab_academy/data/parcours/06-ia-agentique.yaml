@@ -305,47 +305,164 @@ blocs:
             explication: "Une petite erreur au début oriente toute la suite : d'où l'intérêt de vérifier les résultats intermédiaires."
       - num: "02"
         title: Tool calling et boucle d'agent
-        figures:
-          - nom: appel-outil.svg
-            legende: "Le cycle d'un appel d'outil : qui parle, dans quel ordre, et où se valide le contrat."
-        tableaux:
-          - titre: Anatomie d'un contrat d'outil
-            entetes: ["Élément", "Ce qu'il sert", "Ce qui arrive s'il est bâclé"]
-            lignes:
-              - ["Nom", "ce que le modèle cite pour l'appeler", "deux outils confondus"]
-              - ["Description", "quand l'utiliser, et quand non", "appelé à contretemps"]
-              - ["Schéma des paramètres", "types, bornes, valeurs permises", "arguments absurdes acceptés"]
-              - ["Valeur de retour", "ce que le modèle va relire", "le modèle invente la suite"]
-              - ["Erreurs prévues", "refus lisibles, pas d'exception", "la boucle s'arrête net"]
-        code:
-          - titre: Le contrat, déclaré avant le code
-            langage: json
-            source: |
-              {
-                "name": "chercher_factures",
-                "description": "Liste les factures impayées. N'inclut jamais les litiges.",
-                "parameters": {
-                  "type": "object",
-                  "properties": {
-                    "age_min_jours": {"type": "integer", "minimum": 0, "maximum": 3650},
-                    "montant_min": {"type": "number", "minimum": 0}
-                  },
-                  "required": ["age_min_jours"],
-                  "additionalProperties": false
-                }
-              }
-          - titre: Le refus porté par le contrat, et l'erreur rendue au modèle
-            langage: python
-            source: |
-              def appeler(nom, arguments):
-                  if nom not in OUTILS_AUTORISES:            # liste blanche, pas liste noire
-                      journal.alerte("outil hors liste", outil=nom)
-                      return "Erreur : outil inconnu."
-                  try:
-                      valides = CONTRATS[nom].model_validate(arguments)
-                  except ValidationError as e:
-                      return f"Erreur d'arguments : {e.errors()[0]['msg']}"
-                  return OUTILS_AUTORISES[nom](valides)
+        cours:
+          - titre: Ce que vous saurez faire en sortant de cette séance
+            texte: >-
+              Décrire un outil par un contrat que le modèle peut lire : un nom, une description qui dit quand
+              l'employer et quand s'en abstenir, un schéma de paramètres avec ses types et ses bornes.
+
+              Écrire une boucle d'agent en Python, sans framework, bornée par un nombre maximal de tours, et
+              expliquer chacune de ses lignes à quelqu'un qui découvre le sujet.
+
+              Valider les arguments avant exécution, et transformer un refus en résultat lisible plutôt qu'en
+              exception qui interrompt la boucle.
+
+              Ajouter un paramètre à un outil existant de bout en bout : contrat, validation, implémentation,
+              tests du cas nominal et des cas invalides.
+          - titre: Ce qu'un modèle voit d'un outil
+            texte: >-
+              Un modèle ne voit pas votre fonction. Il voit une description textuelle et un schéma. Tout ce
+              qui n'est pas écrit dans ce contrat n'existe pas pour lui, et tout ce qui y est mal écrit
+              produira des appels mal formés.
+
+              La description est la partie que les développeurs bâclent le plus. « Cherche des factures » ne
+              dit pas si les litiges sont inclus, ni ce que « facture » recouvre ici. Une bonne description
+              tient en deux phrases : ce que l'outil fait, et la condition dans laquelle il ne faut pas
+              l'appeler.
+
+              Le schéma de paramètres porte les types, mais surtout les bornes. Un âge minimal en jours est
+              un entier positif, borné par une valeur raisonnable. Sans ce cadre, le modèle finira par
+              demander un âge de moins quatre-vingt-dix jours, et votre base répondra quelque chose.
+            figures:
+              - nom: appel-outil.svg
+                legende: "Le cycle complet d'un appel : qui parle, dans quel ordre, et où se valide le contrat."
+            tableaux:
+              - titre: Anatomie d'un contrat d'outil
+                entetes: ["Élément", "Ce qu'il sert", "Ce qui arrive s'il est bâclé"]
+                lignes:
+                  - ["Nom", "ce que le modèle cite pour l'appeler", "deux outils proches sont confondus"]
+                  - ["Description", "quand l'utiliser, et quand non", "l'outil est appelé à contretemps"]
+                  - ["Schéma des paramètres", "types, bornes, valeurs permises", "des arguments absurdes sont acceptés"]
+                  - ["Valeur de retour", "ce que le modèle va relire", "le modèle invente la suite"]
+                  - ["Erreurs prévues", "refus lisibles, pas d'exception", "la boucle s'arrête net"]
+          - titre: Le contrat, écrit avant le code
+            texte: >-
+              Voici le contrat de l'outil de recherche du fil rouge. Trois détails le rendent robuste. Les
+              bornes sont explicites, donc un âge négatif est refusé avant d'atteindre votre code. Le champ
+              « additionalProperties » vaut faux, donc un argument inventé est rejeté au lieu d'être ignoré
+              en silence. Et la description dit ce que l'outil ne fait pas.
+
+              Ce contrat est la seule documentation que le modèle lira. Il mérite la même attention qu'une
+              signature de fonction publique.
+            code:
+              - titre: Le contrat de chercher_factures
+                langage: json
+                source: |
+                  {
+                    "name": "chercher_factures",
+                    "description": "Liste les factures impayées. N'inclut jamais les litiges.",
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "age_min_jours": {"type": "integer", "minimum": 0, "maximum": 3650},
+                        "montant_min": {"type": "number", "minimum": 0}
+                      },
+                      "required": ["age_min_jours"],
+                      "additionalProperties": false
+                    }
+                  }
+          - titre: Où se place la validation, et pourquoi là
+            texte: >-
+              La validation appartient au point d'appel, pas au corps de l'outil. La différence paraît
+              mince ; elle décide de la qualité de vos messages d'erreur et de votre capacité à ajouter un
+              outil sans dupliquer les contrôles.
+
+              Trois barrières se posent dans cet ordre. La liste blanche d'abord : un nom d'outil absent du
+              registre est refusé et journalisé, car un modèle qui invente un nom d'outil est un signal, pas
+              un accident. Le contrat ensuite : les arguments sont validés par un modèle de données, et le
+              message d'erreur renvoyé au modèle décrit le problème en langage clair. L'exécution enfin,
+              seulement si les deux premières passent.
+
+              Notez ce que fait la fonction en cas de refus : elle renvoie une chaîne. Elle ne lève pas
+              d'exception. Un agent doit pouvoir lire « Erreur d'arguments : age_min_jours doit être
+              positif », corriger, et réessayer. Une exception remonte jusqu'à la boucle et tue la session
+              pour une faute de frappe.
+            code:
+              - titre: Les trois barrières, dans l'ordre
+                langage: python
+                source: |
+                  def appeler(nom, arguments):
+                      if nom not in OUTILS_AUTORISES:            # liste blanche, pas liste noire
+                          journal.alerte("outil hors liste", outil=nom)
+                          return "Erreur : outil inconnu."
+                      try:
+                          valides = CONTRATS[nom].model_validate(arguments)
+                      except ValidationError as e:
+                          return f"Erreur d'arguments : {e.errors()[0]['msg']}"
+                      return OUTILS_AUTORISES[nom](valides)
+          - titre: "Exemple travaillé : ajouter un filtre de montant minimal"
+            texte: >-
+              La directrice financière veut ignorer les petits montants, qui coûtent plus cher à relancer
+              qu'ils ne rapportent. Voici les quatre gestes, dans l'ordre, et aucun ne s'improvise.
+
+              Un : ajouter le paramètre au contrat JSON, avec son type et sa borne inférieure à zéro. Deux :
+              ajouter le champ au modèle de validation, avec sa valeur par défaut. Trois : utiliser
+              réellement le paramètre dans la requête, ce que l'on oublie plus souvent qu'on ne le croit.
+              Quatre : écrire les tests.
+
+              Les tests sont la partie qui distingue un prototype d'un logiciel. Trois cas suffisent ici : le
+              cas nominal, qui vérifie que le filtre élimine bien les petites factures ; le montant négatif,
+              qui doit produire une erreur d'arguments et non une exception ; l'argument supplémentaire, qui
+              doit être refusé par le contrat. Si le troisième test passe alors que vous avez oublié
+              « additionalProperties », c'est que vous le testez mal.
+            tableaux:
+              - titre: Les tests minimaux d'un paramètre d'outil
+                entetes: ["Cas", "Entrée", "Résultat attendu"]
+                lignes:
+                  - ["Nominal", "montant_min = 500000", "seules les factures au-dessus sont rendues"]
+                  - ["Borne basse", "montant_min = 0", "comportement identique à l'absence du paramètre"]
+                  - ["Valeur refusée", "montant_min = -5", "erreur d'arguments lisible, pas d'exception"]
+                  - ["Argument inventé", "trier_par = 'montant'", "refus par le contrat"]
+                  - ["Outil inconnu", "nom = 'supprimer_facture'", "refus et entrée au journal"]
+          - titre: Le plafond d'étapes, et ce qu'il révèle
+            texte: >-
+              Un agent qui atteint son plafond d'étapes n'a pas seulement échoué : il a manifesté un défaut
+              de conception, et le journal des tours vous dit lequel.
+
+              S'il a répété vingt fois le même appel avec les mêmes arguments, c'est que l'erreur renvoyée ne
+              lui disait pas quoi corriger. S'il a enchaîné des recherches de plus en plus larges, c'est que
+              la demande initiale était ambiguë. S'il a alterné entre deux outils sans conclure, c'est qu'il
+              lui manque un outil, ou une instruction d'arrêt.
+
+              Traitez donc le plafond comme un capteur et non comme un filet. Un agent bien conçu ne
+              l'atteint pour ainsi dire jamais ; un agent qui l'atteint souvent vous apprend quelque chose.
+          - titre: Erreurs fréquentes
+            texte: >-
+              Décrire l'outil dans le prompt système au lieu du contrat. Le prompt système se perd dans le
+              contexte à mesure que l'historique grossit ; le contrat est rappelé à chaque tour.
+
+              Lever une exception sur une mauvaise entrée. L'agent ne peut rien apprendre d'un programme qui
+              s'arrête. Renvoyez un texte d'erreur exploitable.
+
+              Valider dans le corps de l'outil. Chaque nouvel outil redevient alors un endroit où l'on peut
+              oublier un contrôle.
+
+              Accepter les arguments inconnus. Un modèle qui invente un paramètre se trompe peut-être
+              d'outil ; l'accepter en silence masque le problème jusqu'à ce qu'il coûte cher.
+
+              Mettre une règle métier dans la description de l'outil. « N'inclut jamais les litiges » doit
+              être vrai dans le code. La description ne fait que l'annoncer.
+          - titre: Mémo de la séance
+            texte: >-
+              Le modèle ne voit que le contrat : nom, description, schéma, retour, erreurs.
+
+              Trois barrières au point d'appel, dans cet ordre : liste blanche, contrat, exécution.
+
+              Un refus est un résultat, pas une exception.
+
+              Ajouter un paramètre, c'est quatre gestes : contrat, validation, usage réel, tests.
+
+              Le plafond d'étapes est un capteur de défauts de conception.
         contenu: >-
           Décrire un outil par un nom, une description et un schéma JSON de ses paramètres. Le cycle d'un appel :
           le modèle demande l'outil avec ses arguments, le code l'exécute, le résultat est renvoyé au modèle, qui
@@ -399,36 +516,132 @@ blocs:
             explication: "Une réponse sans appel d'outil marque la fin ; la borne protège contre les boucles infinies."
       - num: "03"
         title: Patterns d'orchestration
-        figures:
-          - nom: patterns-orchestration.svg
-            legende: "Chaînage, routage, parallélisation, réflexion : le pattern suit la dépendance entre étapes."
-        tableaux:
-          - titre: Choisir le pattern sur un signe, pas sur une préférence
-            entetes: ["Pattern", "Le signe dans le besoin", "Ce qu'il coûte", "Le piège"]
-            lignes:
-              - ["Chaînage", "chaque étape consomme la précédente", "latence cumulée", "une étape fausse pollue la suite"]
-              - ["Routage", "les cas se traitent différemment", "un appel de classement", "une classe oubliée tombe nulle part"]
-              - ["Parallélisation", "les lots sont indépendants", "appels simultanés", "la fusion masque un lot en échec"]
-              - ["Réflexion", "le premier jet est souvent perfectible", "une passe de plus par tour", "boucle sans borne de progrès"]
-          - titre: Quand ne pas prendre d'agent du tout
-            entetes: ["Situation", "Réponse honnête"]
-            lignes:
-              - ["Les étapes sont connues et ne varient jamais", "un workflow, plus rapide et testable"]
-              - ["Une seule recherche puis une réponse", "un RAG"]
-              - ["Décision à fort enjeu, sans relecture humaine", "ni agent ni automatisation"]
-        code:
-          - titre: Routage avec une classe par défaut, pour que rien ne tombe nulle part
-            langage: python
-            source: |
-              ROUTES = {"litige": traiter_litige, "relance": preparer_relance}
+        cours:
+          - titre: Ce que vous saurez faire en sortant de cette séance
+            texte: >-
+              Reconnaître, dans l'énoncé d'un besoin, le signe qui désigne un pattern plutôt qu'un autre, et
+              écarter l'agent quand un enchaînement fixe suffit.
 
-              def router(dossier):
-                  classe = modele.classer(dossier, classes=sorted(ROUTES))
-                  traitement = ROUTES.get(classe)
-                  if traitement is None:                 # classe inventée ou inconnue
-                      journal.alerte("classe hors routes", classe=classe)
-                      return escalader_vers_humain(dossier)
-                  return traitement(dossier)
+              Implémenter le chaînage, le routage, la parallélisation et la boucle de réflexion, chacun avec
+              sa borne et son chemin d'échec.
+
+              Nommer le coût de chaque pattern en latence, en jetons et en difficulté de relecture, pour
+              arbitrer avec des chiffres plutôt qu'avec des préférences.
+          - titre: Quatre patterns, quatre signes dans le besoin
+            texte: >-
+              Un pattern d'orchestration n'est pas un style de programmation : c'est la forme que prend la
+              dépendance entre vos étapes. Lisez le besoin, la dépendance apparaît, et le pattern avec elle.
+
+              Si chaque étape consomme le résultat de la précédente, c'est un chaînage. Si les cas se
+              traitent différemment selon leur nature, c'est un routage. Si les unités de travail sont
+              indépendantes, c'est une parallélisation. Si le premier jet gagne presque toujours à être
+              relu, c'est une boucle de réflexion.
+
+              Les patterns se combinent. Notre fil rouge en utilisera trois : routage pour séparer les
+              litiges des relances, parallélisation pour traiter les lots de factures, chaînage pour aller
+              du calcul au brouillon.
+            figures:
+              - nom: patterns-orchestration.svg
+                legende: "Les quatre patterns, et la dépendance entre étapes qui désigne chacun."
+            tableaux:
+              - titre: Choisir le pattern sur un signe, pas sur une préférence
+                entetes: ["Pattern", "Le signe dans le besoin", "Ce qu'il coûte", "Le piège"]
+                lignes:
+                  - ["Chaînage", "chaque étape consomme la précédente", "latence cumulée", "une étape fausse pollue toute la suite"]
+                  - ["Routage", "les cas se traitent différemment", "un appel de classement", "une classe oubliée tombe nulle part"]
+                  - ["Parallélisation", "les lots sont indépendants", "appels simultanés, pic de coût", "la fusion masque un lot en échec"]
+                  - ["Réflexion", "le premier jet est perfectible", "une passe de plus par tour", "boucle sans borne de progrès"]
+          - titre: Le routage, et la classe qui n'existe pas
+            texte: >-
+              Le routage demande au modèle de ranger un cas dans une catégorie, puis applique le traitement
+              de cette catégorie. C'est le pattern le plus utile et le plus mal implémenté.
+
+              Le défaut classique tient en une ligne : on écrit un dictionnaire de routes et on indexe
+              dessus. Le jour où le modèle renvoie « litige_commercial » au lieu de « litige », le programme
+              lève une erreur de clé, ou pire, prend une branche par défaut silencieuse.
+
+              La bonne version réserve toujours un chemin pour l'inconnu, et ce chemin remonte vers un
+              humain. Ce n'est pas de la prudence excessive : dans un processus de recouvrement, un dossier
+              mal classé qui disparaît coûte plus qu'un dossier escaladé à tort.
+            code:
+              - titre: Routage avec un chemin pour l'inattendu
+                langage: python
+                source: |
+                  ROUTES = {"litige": traiter_litige, "relance": preparer_relance}
+
+                  def router(dossier):
+                      classe = modele.classer(dossier, classes=sorted(ROUTES))
+                      traitement = ROUTES.get(classe)
+                      if traitement is None:                 # classe inventée ou inconnue
+                          journal.alerte("classe hors routes", classe=classe)
+                          return escalader_vers_humain(dossier)
+                      return traitement(dossier)
+          - titre: La parallélisation, et la fusion qui ment
+            texte: >-
+              Paralléliser est tentant : les douze factures se traitent indépendamment, donc en même temps.
+              Le gain en latence est réel. Le piège se situe à la fusion.
+
+              Si un lot échoue et que la fusion se contente de concaténer les résultats disponibles, votre
+              agent rendra un rapport d'apparence complète sur dix factures au lieu de douze, sans que
+              personne ne le remarque. Le total sera faux, et faux avec assurance.
+
+              La règle tient en une phrase : une fusion n'agrège que des lots dont le statut est connu. Un
+              lot en échec interrompt la fusion ou remonte explicitement, il ne disparaît jamais.
+          - titre: La boucle de réflexion, et sa borne de progrès
+            texte: >-
+              Faire relire un brouillon par le modèle améliore souvent le résultat. Faire relire la relecture
+              améliore rarement quoi que ce soit, et double la facture.
+
+              Une boucle de réflexion a donc deux bornes, pas une. La première est le nombre de passes,
+              comme toujours. La seconde est une borne de progrès : si la critique ne produit plus de
+              changement substantiel, on s'arrête, même s'il reste des passes autorisées.
+
+              Sans borne de progrès, la boucle tourne jusqu'à son plafond en reformulant indéfiniment. Avec
+              elle, le cas courant coûte une passe et demie en moyenne.
+          - titre: Quand ne pas prendre d'agent du tout
+            texte: >-
+              C'est la section la plus utile de cette séance, et la plus facile à oublier devant un client
+              qui a déjà choisi le mot « agent ».
+
+              Trois situations ne demandent pas d'agent. Quand les étapes sont connues et ne varient jamais,
+              un workflow est plus rapide, moins cher, et il se teste. Quand il s'agit d'une seule recherche
+              suivie d'une réponse, un RAG suffit. Quand la décision engage fortement et qu'aucune relecture
+              humaine n'est prévue, la bonne réponse n'est ni l'agent ni l'automatisation, c'est le refus
+              argumenté.
+
+              Savoir prononcer « pas d'agent ici » et l'écrire dans le cadrage fait partie du métier.
+            tableaux:
+              - titre: Quand ne pas prendre d'agent
+                entetes: ["Situation", "Réponse honnête", "Ce qu'on économise"]
+                lignes:
+                  - ["Étapes connues et stables", "un workflow", "latence, coût, et des tests enfin possibles"]
+                  - ["Une recherche puis une réponse", "un RAG", "la moitié de la complexité"]
+                  - ["Décision à fort enjeu sans relecture", "ni agent ni automatisation", "un incident"]
+          - titre: Erreurs fréquentes
+            texte: >-
+              Empiler les patterns parce que chacun paraît judicieux. Chaque couche ajoute une latence et un
+              endroit où déboguer.
+
+              Router sans classe par défaut. Le premier cas non prévu part en silence.
+
+              Fusionner des lots sans vérifier leur statut. Le rapport est complet en apparence et faux en
+              fait.
+
+              Réfléchir sans borne de progrès. La facture double pour une reformulation.
+
+              Choisir le pattern avant d'avoir lu le besoin. La dépendance entre étapes se trouve dans
+              l'énoncé, pas dans la documentation d'un framework.
+          - titre: Mémo de la séance
+            texte: >-
+              Le pattern se lit dans la dépendance entre les étapes.
+
+              Tout routage réserve un chemin pour l'inconnu, et ce chemin monte vers un humain.
+
+              Une fusion n'agrège que des lots dont le statut est connu.
+
+              Une boucle de réflexion a deux bornes : le nombre de passes et le progrès.
+
+              « Pas d'agent ici » est une conclusion professionnelle.
         contenu: >-
           Les patterns de base : chaînage (une étape nourrit la suivante), routage (une classification oriente
           vers le bon traitement), parallélisation (sous-tâches simultanées puis agrégation),
@@ -481,30 +694,135 @@ blocs:
             explication: "Un framework ajoute des abstractions ; pour un enchaînement simple, le code direct reste plus lisible et plus facile à déboguer."
       - num: "04"
         title: État, mémoire et reprise sur erreur
-        figures:
-          - nom: etat-reprise.svg
-            legende: "L'état écrit avant d'être annoncé : une reprise mène à l'état déjà atteint, sans doublon."
-        tableaux:
+        cours:
+          - titre: Ce que vous saurez faire en sortant de cette séance
+            texte: >-
+              Distinguer trois choses qu'on appelle toutes « mémoire » : le contexte envoyé au modèle, l'état
+              métier du traitement, et l'historique conservé pour audit. Elles ont trois durées de vie et
+              trois emplacements différents.
+
+              Écrire un état persistant qui survit à l'arrêt du programme, et reprendre un traitement
+              interrompu sans produire de doublon.
+
+              Poser une clé d'idempotence sur une action qui engage, et démontrer par un test qu'un rejeu ne
+              produit rien de nouveau.
+
+              Décider, pour chaque donnée, si elle se persiste ou se recalcule, avec un argument qui tient en
+              une phrase.
+          - titre: Trois mémoires qu'il ne faut pas confondre
+            texte: >-
+              Le contexte du modèle est la liste de messages envoyée à chaque tour. Il est volatile, il
+              grossit vite, et il coûte à chaque appel. Il ne doit contenir que ce qui sert à la décision
+              suivante.
+
+              L'état métier décrit où en est le traitement : quelles factures ont été vues, quel brouillon
+              attend une validation, quelle action a déjà été enregistrée. Il survit au programme, il se lit
+              après un redémarrage, et c'est lui qui rend la reprise possible.
+
+              L'historique d'audit raconte ce qui s'est passé : quelle décision, par quel outil, avec quels
+              arguments, validée par qui. Il ne sert pas à l'exécution, il sert à répondre plus tard à la
+              question « pourquoi cette relance est-elle partie ». La séance 7 lui est consacrée.
+
+              Confondre les trois produit les pannes les plus coûteuses : un contexte qui enfle jusqu'à la
+              limite du modèle, un état qui disparaît au premier incident, un audit impossible parce que la
+              seule trace était le contexte.
+          - titre: L'état écrit avant d'agir
+            texte: >-
+              Une transition s'écrit avant d'être annoncée, jamais après. L'ordre paraît anodin ; il décide
+              du comportement du système quand le courant saute entre les deux lignes.
+
+              Si vous enregistrez l'action puis écrivez l'état, une coupure entre les deux laisse une action
+              exécutée que le système croit à faire. Au redémarrage, il la refait. Dans notre cas, cela veut
+              dire deux relances pour le même client.
+
+              Si vous écrivez l'état « en cours » d'abord, une coupure laisse une action peut-être exécutée
+              et marquée comme telle. Au redémarrage, le système sait qu'il doit vérifier avant de refaire.
+              C'est inconfortable, mais c'est récupérable, et le premier cas ne l'est pas.
+            figures:
+              - nom: etat-reprise.svg
+                legende: "Chaque transition est écrite avant d'être annoncée : une reprise mène à l'état déjà atteint."
+          - titre: La clé d'idempotence
+            texte: >-
+              Une clé d'idempotence est une chaîne qui identifie une action métier, pas un appel. « Relance
+              de la facture F-2026-0412 pour la campagne du 12 novembre » est une clé. « Appel numéro
+              dix-sept » n'en est pas une.
+
+              La règle d'usage tient en trois lignes de code : on lit la clé, si elle existe on rend le
+              résultat d'origine, sinon on marque, on agit, on enregistre. Le rejeu devient alors sans
+              danger, et toute la logique de reprise se réduit à relancer le traitement.
+
+              Le test qui compte n'est pas que la fonction marche. C'est qu'en l'appelant deux fois avec la
+              même clé, le monde ne change qu'une fois. Écrivez ce test en premier.
+            code:
+              - titre: Idempotence en trois temps
+                langage: python
+                source: |
+                  def enregistrer(action, cle):
+                      deja = etat.lire(cle)
+                      if deja is not None:            # rejeu : on rend le résultat d'origine
+                          return deja
+                      etat.ecrire(cle, statut="en_cours")     # écrit AVANT d'agir
+                      resultat = action()
+                      etat.ecrire(cle, statut="fait", resultat=resultat)
+                      return resultat
           - titre: Ce qui se persiste, ce qui se recalcule
-            entetes: ["Donnée", "Persistée", "Pourquoi"]
-            lignes:
-              - ["Décisions prises et outils appelés", "oui", "la reprise doit savoir où elle en était"]
-              - ["Clés d'idempotence des actions", "oui", "sans elles, une reprise double l'action"]
-              - ["Approbations humaines", "oui", "on ne redemande pas un accord déjà donné"]
-              - ["Contexte complet du modèle", "non", "il se reconstruit, et il grossit sans fin"]
-              - ["Résultats d'outils de lecture", "non", "les relire coûte moins que les garder justes"]
-        code:
-          - titre: Une clé d'idempotence rend l'enregistrement rejouable sans risque
-            langage: python
-            source: |
-              def enregistrer(action, cle):
-                  deja = etat.lire(cle)
-                  if deja is not None:            # rejeu : on rend le résultat d'origine
-                      return deja
-                  etat.ecrire(cle, statut="en_cours")     # écrit AVANT d'agir
-                  resultat = action()
-                  etat.ecrire(cle, statut="fait", resultat=resultat)
-                  return resultat
+            texte: >-
+              Tout persister coûte cher et vieillit mal : une donnée enregistrée devient fausse dès que la
+              source change. Ne rien persister rend la reprise impossible. Le tri se fait avec une question
+              simple : « si je perds cette donnée, le traitement peut-il reprendre correctement ».
+
+              Les décisions prises, les clés d'idempotence et les approbations humaines répondent non : elles
+              se persistent. Le contexte complet du modèle et les résultats d'outils de lecture répondent
+              oui : ils se recalculent, et il vaut mieux les recalculer que les garder potentiellement faux.
+            tableaux:
+              - titre: Persister ou recalculer
+                entetes: ["Donnée", "Persistée", "Pourquoi"]
+                lignes:
+                  - ["Décisions prises et outils appelés", "oui", "la reprise doit savoir où elle en était"]
+                  - ["Clés d'idempotence des actions", "oui", "sans elles, une reprise double l'action"]
+                  - ["Approbations humaines", "oui", "on ne redemande pas un accord déjà donné"]
+                  - ["Contexte complet du modèle", "non", "il se reconstruit, et il grossit sans fin"]
+                  - ["Résultats d'outils de lecture", "non", "les relire coûte moins que les garder faux"]
+          - titre: "Exemple travaillé : couper le courant au bon moment"
+            texte: >-
+              L'exercice de la séance consiste à dérouler le parcours complet à la main, dans un shell
+              Python, en observant le fichier d'état après chaque appel. Puis à interrompre brutalement le
+              processus juste après la demande de validation, et à relancer.
+
+              Le comportement attendu est précis. Au redémarrage, l'état indique « validation demandée ».
+              Le traitement ne recrée pas de brouillon, ne redemande pas d'approbation déjà donnée, et ne
+              produit aucune seconde ligne dans le fichier de simulation. Le compteur de reprises
+              s'incrémente, et c'est la seule chose qui change.
+
+              Si votre relance produit un second brouillon, votre clé d'idempotence dépend du numéro d'appel
+              et non de l'action métier. C'est l'erreur la plus répandue, et elle se voit immédiatement à ce
+              test.
+          - titre: Erreurs fréquentes
+            texte: >-
+              Garder tout l'historique dans le contexte du modèle. Le coût croît plus vite que le nombre
+              d'étapes, et la qualité baisse quand le contexte se remplit de bruit.
+
+              Dériver la clé d'idempotence d'un horodatage ou d'un compteur. Deux exécutions légitimes de la
+              même action métier doivent produire la même clé.
+
+              Écrire l'état après l'action. Une coupure entre les deux produit un doublon invisible.
+
+              Persister des données qui vieillissent. Un montant de facture recopié dans l'état sera faux le
+              jour où la facture est corrigée.
+
+              Tester la reprise à la main, une fois, et conclure qu'elle marche. Ce test appartient à la
+              suite automatisée, parce qu'il casse discrètement.
+          - titre: Mémo de la séance
+            texte: >-
+              Trois mémoires : contexte du modèle, état métier, historique d'audit.
+
+              L'état s'écrit avant d'agir, jamais après.
+
+              Une clé d'idempotence identifie une action métier, pas un appel.
+
+              Persister ce dont la perte empêcherait la reprise, recalculer le reste.
+
+              Le test qui compte : appeler deux fois, le monde ne change qu'une fois.
         contenu: >-
           Décrire l'état de l'agent par un type explicite (factures retenues, exposition calculée, brouillons
           produits, demandes de validation en attente, relances déjà enregistrées) plutôt que par un historique de
@@ -559,29 +877,124 @@ blocs:
             explication: "L'exécution s'interrompt, l'état est sauvegardé, et elle reprend après accord : c'est l'un des usages des checkpoints."
       - num: "05"
         title: MCP et interopérabilité
-        figures:
-          - nom: chaine-mcp.svg
-            legende: "MCP déplace le contrat d'outil vers un serveur que l'agent interroge."
-        tableaux:
-          - titre: Outil écrit dans l'agent, ou serveur MCP
-            entetes: ["Critère", "Outil local", "Serveur MCP"]
-            lignes:
-              - ["Qui détient le contrat", "votre code", "le serveur"]
-              - ["Réutilisation par un autre agent", "copier-coller", "connexion"]
-              - ["Mise à jour de l'outil", "redéployer l'agent", "redéployer le serveur"]
-              - ["Surface d'attaque", "votre processus", "un processus de plus à cadrer"]
-              - ["À préférer", "un outil, un usage", "plusieurs agents, mêmes outils"]
-        code:
-          - titre: Déclarer un outil côté serveur, le contrat voyage avec lui
-            langage: python
-            source: |
-              @serveur.outil(
-                  description="Liste les factures impayées. N'inclut jamais les litiges.",
-              )
-              def chercher_factures(age_min_jours: int, montant_min: float = 0) -> list[dict]:
-                  if age_min_jours < 0:
-                      raise ValeurRefusee("age_min_jours doit être positif")
-                  return depot.impayees(age_min_jours, montant_min)
+        cours:
+          - titre: Ce que vous saurez faire en sortant de cette séance
+            texte: >-
+              Expliquer ce que MCP déplace exactement, et à qui cela profite, sans réciter une brochure.
+
+              Connecter un agent à un serveur d'outils, lire les contrats qu'il publie, et appeler l'un
+              d'eux.
+
+              Arbitrer entre un outil écrit dans l'agent et un serveur d'outils partagé, avec un critère
+              défendable.
+
+              Nommer ce qu'un serveur d'outils change pour la sécurité, et les trois mesures qui s'imposent
+              dès qu'un outil devient distant.
+          - titre: Ce que MCP déplace
+            texte: >-
+              Jusqu'ici, le contrat d'un outil vivait dans votre code : la description, le schéma, la
+              validation, l'implémentation, tout au même endroit. Cela fonctionne tant qu'un seul agent
+              utilise ces outils.
+
+              MCP déplace le contrat vers un serveur. L'agent ne connaît plus les outils à l'avance : il se
+              connecte, demande la liste, reçoit les descriptions et les schémas, et appelle. Le même
+              serveur sert alors plusieurs agents, et la mise à jour d'un outil ne demande plus de
+              redéployer chacun d'eux.
+
+              Le gain est réel mais borné. Si vous avez un agent et trois outils, MCP ajoute une pièce
+              mobile sans rien simplifier. Si vous avez quatre agents et les mêmes douze outils, il vous
+              épargne douze copies et autant d'occasions de divergence.
+            figures:
+              - nom: chaine-mcp.svg
+                legende: "Le contrat d'outil quitte l'agent et s'installe dans un serveur interrogeable."
+          - titre: Déclarer un outil côté serveur
+            texte: >-
+              Côté serveur, un outil ressemble à une fonction ordinaire avec une description. Le serveur
+              dérive le schéma des annotations de types, publie le contrat, et route les appels.
+
+              Deux points méritent attention. D'abord, les règles métier restent du code : le refus d'un âge
+              négatif est une exception levée par la fonction, pas une phrase dans la description. Ensuite,
+              la description continue de dire ce que l'outil ne fait pas, car c'est toujours le modèle qui
+              la lira.
+            code:
+              - titre: Un outil publié par un serveur MCP
+                langage: python
+                source: |
+                  @serveur.outil(
+                      description="Liste les factures impayées. N'inclut jamais les litiges.",
+                  )
+                  def chercher_factures(age_min_jours: int, montant_min: float = 0) -> list[dict]:
+                      if age_min_jours < 0:
+                          raise ValeurRefusee("age_min_jours doit être positif")
+                      return depot.impayees(age_min_jours, montant_min)
+          - titre: Outil local ou serveur partagé
+            texte: >-
+              Le critère n'est pas la modernité, c'est le nombre de consommateurs et la fréquence de
+              changement. Un outil utilisé par un seul agent et qui ne bouge pas reste mieux dans l'agent.
+              Un outil utilisé par plusieurs agents, ou qui change plus souvent qu'eux, appartient à un
+              serveur.
+
+              Pesez aussi ce que le serveur ajoute : un processus de plus à déployer, à surveiller et à
+              sécuriser. Ce coût est acceptable quand il remplace plusieurs copies ; il ne l'est pas quand
+              il n'en remplace aucune.
+            tableaux:
+              - titre: Outil écrit dans l'agent, ou serveur MCP
+                entetes: ["Critère", "Outil local", "Serveur MCP"]
+                lignes:
+                  - ["Qui détient le contrat", "votre code", "le serveur"]
+                  - ["Réutilisation par un autre agent", "copier-coller", "connexion"]
+                  - ["Mise à jour de l'outil", "redéployer l'agent", "redéployer le serveur"]
+                  - ["Surface d'attaque", "votre processus", "un processus de plus à cadrer"]
+                  - ["Débogage d'un appel", "une pile d'appels", "deux processus et un réseau"]
+                  - ["À préférer", "un outil, un usage", "plusieurs agents, mêmes outils"]
+          - titre: Un outil distant est une frontière de confiance
+            texte: >-
+              Dès qu'un outil quitte votre processus, trois choses deviennent vraies et doivent être
+              traitées.
+
+              La liste des outils vient d'ailleurs. Un serveur compromis, ou simplement mis à jour sans
+              prévenir, peut publier un outil que votre agent n'attendait pas. La liste blanche ne disparaît
+              donc pas avec MCP : elle se déplace côté agent, et elle porte désormais sur ce que l'agent
+              accepte d'appeler.
+
+              Les descriptions viennent d'ailleurs aussi. Une description est un texte que le modèle lira
+              comme une consigne. Un serveur hostile peut y glisser une instruction. Traitez les
+              descriptions distantes comme des données, exactement comme les notes de factures.
+
+              Le débit n'est plus le vôtre. Un appel local raté coûte une milliseconde ; un appel distant
+              raté coûte un aller-retour, et une boucle qui s'emballe devient une charge pour autrui. Posez
+              une limite de débit et un délai d'expiration.
+          - titre: A2A, et ce qu'il ne faut pas en attendre
+            texte: >-
+              MCP relie un agent à des outils. A2A vise autre chose : relier des agents entre eux, pour
+              qu'un agent délègue une tâche à un autre sans que leurs auteurs se soient entendus à l'avance.
+
+              La promesse est séduisante et la maturité limitée. En pratique, aujourd'hui, l'essentiel des
+              besoins se traite par des outils partagés et un superviseur que vous écrivez. Gardez A2A dans
+              votre vocabulaire, et dans vos veilles, plus que dans votre prochaine architecture.
+          - titre: Erreurs fréquentes
+            texte: >-
+              Adopter MCP pour un seul agent. Vous ajoutez un processus sans retirer de duplication.
+
+              Faire confiance aux descriptions publiées. Ce sont des textes venus du réseau, lus par un
+              modèle.
+
+              Retirer la liste blanche parce que le serveur est « interne ». Un serveur interne se met à
+              jour aussi.
+
+              Oublier le délai d'expiration. Un agent bloqué sur un appel distant ne consomme rien et ne
+              rend rien, ce qui est la panne la plus difficile à diagnostiquer.
+          - titre: Mémo de la séance
+            texte: >-
+              MCP déplace le contrat d'outil de l'agent vers un serveur.
+
+              Le gain apparaît à partir de plusieurs agents partageant les mêmes outils.
+
+              Une description distante est une donnée, pas une consigne.
+
+              La liste blanche se déplace côté agent, elle ne disparaît pas.
+
+              A2A relie des agents entre eux ; c'est une veille, pas encore une fondation.
         contenu: >-
           Le Model Context Protocol (MCP), protocole ouvert fondé sur JSON-RPC : un hôte (application d'IA)
           ouvre un client par serveur ; le serveur MCP expose des outils (fonctions que le modèle peut appeler),
@@ -639,28 +1052,124 @@ blocs:
             explication: "Un agent peut utiliser MCP pour ses outils et A2A pour déléguer une tâche à un autre agent, éventuellement d'un autre éditeur."
       - num: "06"
         title: Architectures multi-agents et A2A
-        figures:
-          - nom: topologies-multi-agents.svg
-            legende: "Superviseur, chaîne, pairs : trois assemblages, trois coûts."
-        tableaux:
-          - titre: Choisir la topologie
-            entetes: ["Topologie", "À préférer quand", "Ce qu'elle coûte", "Signe qu'elle est de trop"]
-            lignes:
-              - ["Agent seul", "la tâche tient en un rôle", "rien", "il tient déjà, et vous hésitez"]
-              - ["Superviseur", "des rôles nets et un arbitre", "un tour de décision de plus", "le superviseur ne fait que relayer"]
-              - ["Chaîne", "l'ordre est connu d'avance", "rigidité", "un workflow suffirait"]
-              - ["Pairs", "négociation réelle entre rôles", "traces difficiles à suivre", "personne ne sait qui a décidé"]
-        code:
+        cours:
+          - titre: Ce que vous saurez faire en sortant de cette séance
+            texte: >-
+              Justifier le passage à plusieurs agents par un besoin, et reconnaître les cas, nombreux, où un
+              agent unique bien outillé fait mieux.
+
+              Concevoir une topologie à superviseur avec des rôles décrits par des contrats, et non par des
+              conversations.
+
+              Nommer ce que chaque topologie coûte en jetons, en latence et en traçabilité.
+
+              Détecter les trois pannes propres au multi-agents : la boucle entre pairs, le superviseur qui
+              ne fait que relayer, et le rapport fusionné qui masque un échec.
+          - titre: Pourquoi plusieurs agents, et pourquoi rarement
+            texte: >-
+              Un deuxième agent se justifie quand deux rôles demandent des instructions, des outils ou des
+              niveaux d'autonomie franchement différents. Un analyste qui lit et calcule n'a pas besoin des
+              mêmes droits qu'un rédacteur qui produit des brouillons.
+
+              Hors de ce cas, un agent unique avec de bons outils gagne presque toujours. Il coûte moins, sa
+              trace est linéaire, et son débogage ne demande pas de reconstituer qui a dit quoi à qui.
+
+              La question à se poser avant d'ajouter un agent est donc : quel outil manquerait au premier
+              pour faire ce travail. Si la réponse est « aucun », vous n'avez pas besoin du second.
+            figures:
+              - nom: topologies-multi-agents.svg
+                legende: "Superviseur, chaîne, pairs : trois assemblages, trois coûts, trois pannes typiques."
           - titre: Le superviseur passe un contrat, pas une conversation
-            langage: python
-            source: |
-              def superviser(portefeuille):
-                  lots = segmenter(portefeuille)
-                  rapports = [analyste.traiter({"lot": lot, "attendu": "exposition et motif"})
-                              for lot in lots]
-                  if any(r.statut != "ok" for r in rapports):   # un lot en échec ne se fond pas
-                      return escalader_vers_humain(rapports)
-                  return redacteur.produire(rapports)
+            texte: >-
+              La façon la plus sûre d'assembler plusieurs agents est de les faire communiquer par des
+              structures, pas par du texte libre. Un superviseur envoie une tâche décrite par des champs, et
+              reçoit un rapport décrit par des champs, dont un statut.
+
+              Le texte libre entre agents paraît naturel et produit deux maux. Le premier est l'ambiguïté :
+              un agent interprète la demande d'un autre, et personne ne peut dire après coup ce qui a été
+              demandé. Le second est l'injection : un agent dont la sortie entre dans la consigne d'un autre
+              devient un vecteur d'attaque.
+
+              Observez le traitement de l'échec dans l'exemple : un lot dont le statut n'est pas « ok » fait
+              remonter l'ensemble vers un humain. C'est ce qui empêche un rapport de paraître complet alors
+              qu'il manque deux factures.
+            code:
+              - titre: Superviseur, contrat et échec explicite
+                langage: python
+                source: |
+                  def superviser(portefeuille):
+                      lots = segmenter(portefeuille)
+                      rapports = [analyste.traiter({"lot": lot, "attendu": "exposition et motif"})
+                                  for lot in lots]
+                      if any(r.statut != "ok" for r in rapports):   # un lot en échec ne se fond pas
+                          return escalader_vers_humain(rapports)
+                      return redacteur.produire(rapports)
+          - titre: Choisir la topologie
+            texte: >-
+              Quatre choix se présentent, et le premier est de ne rien ajouter. Les trois autres se
+              départagent par la nature de la coordination : un arbitre, un ordre fixe, ou une négociation.
+
+              Le signe qu'une topologie est de trop est toujours le même : elle n'apporte aucune décision.
+              Un superviseur qui transmet sans arbitrer est une couche de latence. Une chaîne dont l'ordre ne
+              varie jamais est un workflow déguisé.
+            tableaux:
+              - titre: Choisir la topologie
+                entetes: ["Topologie", "À préférer quand", "Ce qu'elle coûte", "Signe qu'elle est de trop"]
+                lignes:
+                  - ["Agent seul", "la tâche tient en un rôle", "rien", "il tient déjà, et vous hésitez"]
+                  - ["Superviseur", "des rôles nets et un arbitre", "un tour de décision de plus", "le superviseur ne fait que relayer"]
+                  - ["Chaîne", "l'ordre est connu d'avance", "rigidité", "un workflow suffirait"]
+                  - ["Pairs", "négociation réelle entre rôles", "traces difficiles à suivre", "personne ne sait qui a décidé"]
+          - titre: Les trois pannes propres au multi-agents
+            texte: >-
+              La boucle entre pairs. Deux agents se renvoient la main, chacun attendant de l'autre une
+              précision. Sans compteur global d'échanges, cette boucle consomme jusqu'au budget. La parade
+              est une borne commune à toute la session, pas une borne par agent.
+
+              Le superviseur transparent. Il relaie les demandes sans rien décider, et son seul effet mesurable
+              est d'ajouter un appel de modèle à chaque tour. La parade est de lui retirer son rôle, ou de lui
+              donner une vraie décision à prendre.
+
+              Le rapport fusionné qui ment. Déjà rencontré en séance 3, il est plus dangereux ici, car le
+              superviseur présente une synthèse qui paraît faire autorité. La parade est le statut obligatoire
+              par lot et le refus de fusionner un ensemble incomplet.
+          - titre: "Exemple travaillé : segmenter le portefeuille"
+            texte: >-
+              L'exercice conçoit un orchestrateur qui segmente les douze factures, confie les retards récents
+              à un premier analyste et les retards lourds à un second, puis passe au rédacteur.
+
+              Deux décisions font la qualité de cette conception. La première est le critère de segmentation :
+              il doit être du code, pas un jugement du modèle, sinon deux exécutions produisent des lots
+              différents et rien n'est reproductible. La seconde est la règle de fusion : le rédacteur ne reçoit
+              les rapports que si tous les lots sont en statut « ok ».
+
+              Mesurez ensuite le coût. Comparez le nombre d'appels de modèle entre cette version et un agent
+              unique traitant les douze factures. Si l'écart ne s'accompagne pas d'un gain de qualité
+              observable, votre conclusion professionnelle est de revenir à l'agent unique, et de l'écrire.
+          - titre: Erreurs fréquentes
+            texte: >-
+              Ajouter un agent pour un rôle que le premier pouvait tenir avec un outil de plus.
+
+              Faire dialoguer les agents en texte libre. Ambiguïté et injection entrent par là.
+
+              Borner les tours par agent sans borner la session. La boucle entre pairs passe entre les
+              mailles.
+
+              Laisser le superviseur fusionner sans statut. La synthèse devient fausse avec autorité.
+
+              Annoncer un système multi-agents sans avoir mesuré ce qu'il apporte par rapport à un agent
+              unique.
+          - titre: Mémo de la séance
+            texte: >-
+              Avant d'ajouter un agent, demandez quel outil manquait au premier.
+
+              Les agents se parlent par contrats, jamais en texte libre.
+
+              Une borne de tours vaut pour la session entière, pas par agent.
+
+              Un lot en échec remonte, il ne se fond pas dans la synthèse.
+
+              Une topologie qui ne prend aucune décision est une latence.
         contenu: >-
           Les topologies multi-agents : superviseur (un agent coordinateur répartit le travail), hiérarchie
           (superviseurs de superviseurs), réseau (chaque agent peut s'adresser aux autres) et transfert entre
@@ -713,35 +1222,157 @@ blocs:
             explication: "L'agent qui reçoit la main poursuit la conversation ou la tâche dans son domaine de compétence."
       - num: "07"
         title: Sécurité, évaluation et observabilité
-        figures:
-          - nom: cout-par-etapes.svg
-            legende: "Le coût et la latence suivent le nombre d'étapes ; la qualité, elle, plafonne."
-        tableaux:
-          - titre: Injection indirecte, et les trois défenses qui tiennent
-            entetes: ["Défense", "Ce qu'elle empêche", "Où elle vit"]
-            lignes:
-              - ["La donnée ne rentre jamais dans la consigne", "qu'une note devienne un ordre", "construction du prompt"]
-              - ["Les règles métier sont du code", "qu'un texte annule une règle", "fonctions de filtrage"]
-              - ["Liste blanche d'outils, et journal", "une action hors périmètre", "point d'appel des outils"]
-          - titre: Ce qu'une trace doit porter, et ce qu'elle ne doit jamais porter
-            entetes: ["À écrire", "À ne jamais écrire"]
-            lignes:
-              - ["étape, outil appelé, durée", "secrets, jetons, clés"]
-              - ["arguments, après filtrage", "données personnelles en clair"]
-              - ["résultat résumé et statut", "le contenu intégral d'un document privé"]
-              - ["décision humaine et son auteur", "la justification écrite par un tiers sans son accord"]
-        code:
-          - titre: Une trace structurée se relit par une machine comme par un humain
-            langage: python
-            source: |
-              journal.evenement(
-                  etape=tour,
-                  outil=decision.outil,
-                  arguments=filtrer(decision.arguments),   # jamais les valeurs brutes
-                  statut=resultat.statut,
-                  duree_ms=chrono.ecoule(),
-                  validation_humaine=approbation.auteur if approbation else None,
-              )
+        cours:
+          - titre: Ce que vous saurez faire en sortant de cette séance
+            texte: >-
+              Expliquer l'injection indirecte à un non-spécialiste, la retrouver dans un jeu de données, et
+              montrer dans le code les défenses qui la neutralisent.
+
+              Écrire des cas d'évaluation qui échouent quand une défense saute, au lieu de tests qui passent
+              toujours.
+
+              Produire une trace d'exécution lisible par un tiers, et dire ce qu'il est interdit d'y écrire.
+
+              Mesurer le coût et la latence d'une exécution, et tenir un registre des risques résiduels avec
+              leur atténuation.
+          - titre: L'injection indirecte, expliquée simplement
+            texte: >-
+              L'injection directe, c'est un utilisateur qui écrit « ignore tes instructions » dans la zone de
+              saisie. Elle est connue et relativement facile à contenir.
+
+              L'injection indirecte est plus discrète : l'instruction hostile n'est pas écrite par
+              l'utilisateur, elle est posée dans une donnée que l'agent va lire. Une note de facture, une
+              page web, le corps d'un courriel, un champ de commentaire. L'agent lit cette donnée, la verse
+              dans son contexte, et le modèle la traite comme du texte, sans distinguer ce qui est consigne
+              de ce qui est matière.
+
+              Dans le jeu de données du laboratoire, une note de facture contient une phrase de ce genre. Le
+              travail de la séance consiste à la trouver, puis à montrer pourquoi, dans ce dépôt, elle
+              n'obtient rien.
+          - titre: Les trois défenses qui tiennent
+            texte: >-
+              Il n'existe pas de filtre qui reconnaîtrait les instructions hostiles de façon fiable. Les
+              défenses qui tiennent sont architecturales, pas textuelles.
+
+              Première défense : la donnée n'entre jamais dans la consigne. Le texte d'une note est passé au
+              modèle comme contenu à résumer ou à ignorer, jamais concaténé dans le prompt système. Dans le
+              dépôt, la note est même retirée de la sortie de l'outil : ce que le modèle ne voit pas ne peut
+              pas l'influencer.
+
+              Deuxième défense : les règles métier sont du code. « Exclure les litiges » est une fonction de
+              filtrage. Aucune phrase, aussi persuasive soit-elle, ne peut annuler une condition écrite en
+              Python et couverte par un test.
+
+              Troisième défense : liste blanche d'outils et journalisation. Même si le modèle est convaincu
+              d'appeler un outil d'envoi, cet outil n'existe pas dans le registre, et la tentative laisse une
+              trace. La journalisation n'empêche rien, mais elle transforme un incident muet en incident
+              connu.
+            tableaux:
+              - titre: Les trois défenses, et où elles vivent
+                entetes: ["Défense", "Ce qu'elle empêche", "Où elle vit", "Comment la tester"]
+                lignes:
+                  - ["La donnée n'entre pas dans la consigne", "qu'une note devienne un ordre", "construction du prompt", "même brouillon avec et sans la note"]
+                  - ["Les règles métier sont du code", "qu'un texte annule une règle", "fonctions de filtrage", "un litige n'apparaît jamais en sortie"]
+                  - ["Liste blanche et journal", "une action hors périmètre", "point d'appel des outils", "un outil inconnu est refusé et journalisé"]
+          - titre: Évaluer un agent, c'est tester des propriétés
+            texte: >-
+              Un agent ne se teste pas comme une fonction pure : la même entrée peut produire deux
+              formulations. Testez donc des propriétés, pas des chaînes de caractères.
+
+              Une propriété s'écrit comme une phrase vérifiable. « Aucune facture en litige n'apparaît dans
+              les brouillons produits. » « Le brouillon est identique avec et sans la note hostile dans le
+              jeu de données. » « Un outil absent de la liste blanche n'est jamais exécuté, et sa tentative
+              figure au journal. » Chacune se traduit en un test qui échoue le jour où la défense saute.
+
+              Les douze critères d'acceptation du dépôt sont construits ainsi, et cinq d'entre eux sont
+              éliminatoires : une exécution qui les manque n'est pas une exécution perfectible, c'est une
+              exécution refusée.
+          - titre: La trace, et ce qu'elle ne doit pas contenir
+            texte: >-
+              Une trace répond à une question posée plus tard, souvent par quelqu'un d'autre : pourquoi
+              cette relance est-elle partie, qui l'a validée, sur quelles données. Elle doit donc être
+              structurée, pas imprimée en texte libre.
+
+              Ce qu'elle porte : l'étape, l'outil appelé, les arguments après filtrage, le statut, la durée,
+              et l'identité de la validation humaine s'il y en a eu une.
+
+              Ce qu'elle ne porte jamais : un secret, un jeton, une clé, une donnée personnelle en clair, le
+              contenu intégral d'un document privé. Une trace fuit plus facilement qu'une base de données :
+              elle part dans des fichiers, des agrégateurs, parfois des services tiers.
+            code:
+              - titre: Un événement de trace, structuré
+                langage: python
+                source: |
+                  journal.evenement(
+                      etape=tour,
+                      outil=decision.outil,
+                      arguments=filtrer(decision.arguments),   # jamais les valeurs brutes
+                      statut=resultat.statut,
+                      duree_ms=chrono.ecoule(),
+                      validation_humaine=approbation.auteur if approbation else None,
+                  )
+          - titre: Mesurer le coût et la latence
+            texte: >-
+              Trois mesures suffisent pour piloter un agent : le nombre d'étapes par exécution, la durée
+              totale, et les jetons consommés si un modèle est branché. Elles se relèvent dans la trace, pas
+              dans un outil séparé.
+
+              La forme de la courbe est la même partout : le coût et la latence suivent le nombre d'étapes,
+              tandis que la qualité plafonne vite. Au-delà d'un certain nombre de tours, vous payez sans
+              rien gagner, et c'est le signe qu'il manque un outil plutôt que des tours.
+
+              Relevez vos propres chiffres sur le dépôt. Un ordre de grandeur mesuré chez vous vaut mieux
+              qu'un chiffre lu ailleurs, et c'est lui que vous présenterez à un commanditaire.
+            figures:
+              - nom: cout-par-etapes.svg
+                legende: "La forme de la courbe : le coût suit les étapes, la qualité plafonne."
+          - titre: Le registre des risques résiduels
+            texte: >-
+              Un système sûr n'est pas un système sans risque, c'est un système dont les risques sont
+              nommés, atténués et acceptés par quelqu'un.
+
+              Chaque ligne du registre porte quatre choses : le risque, ce qui l'atténue, ce qui reste après
+              atténuation, et qui l'accepte. Trois lignes au minimum pour le projet final, et elles doivent
+              être vraies.
+
+              Un exemple de ligne honnête : « Le modèle peut rédiger un brouillon maladroit pour un client
+              sensible. Atténuation : toute relance passe par une validation humaine avant envoi. Risque
+              résiduel : le valideur approuve sans lire. Accepté par : la directrice financière. »
+            tableaux:
+              - titre: Ce qu'une trace écrit, et ce qu'elle n'écrit jamais
+                entetes: ["À écrire", "À ne jamais écrire"]
+                lignes:
+                  - ["étape, outil appelé, durée", "secrets, jetons, clés"]
+                  - ["arguments, après filtrage", "données personnelles en clair"]
+                  - ["résultat résumé et statut", "le contenu intégral d'un document privé"]
+                  - ["décision humaine et son auteur", "une justification écrite par un tiers sans son accord"]
+          - titre: Erreurs fréquentes
+            texte: >-
+              Chercher à filtrer les instructions hostiles par des mots-clés. Vous attraperez les tentatives
+              naïves et vous vous croirez protégé.
+
+              Écrire des tests qui comparent des chaînes produites par un modèle. Ils cassent à la première
+              reformulation et seront désactivés dans la semaine.
+
+              Journaliser généreusement. Une trace trop riche devient une fuite de données.
+
+              Mesurer la qualité sans mesurer le coût. Un agent qui réussit à quarante tours n'est pas une
+              réussite.
+
+              Tenir un registre des risques qui ne liste que des risques déjà traités. Le risque résiduel est
+              celui qui reste.
+          - titre: Mémo de la séance
+            texte: >-
+              L'injection indirecte entre par les données, pas par la zone de saisie.
+
+              Trois défenses architecturales : la donnée hors de la consigne, les règles en code, la liste
+              blanche avec journal.
+
+              On teste des propriétés vérifiables, pas des chaînes de caractères.
+
+              Une trace dit l'étape, l'outil, les arguments filtrés, le statut, la durée, le valideur.
+
+              Un risque résiduel est nommé, atténué, et accepté par quelqu'un.
         contenu: >-
           L'injection de prompt directe (l'utilisateur tente de détourner les consignes) et indirecte (les
           instructions malveillantes arrivent dans un document, une page web ou un résultat d'outil lu par
