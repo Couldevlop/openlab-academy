@@ -36,8 +36,11 @@ git switch -c feat/mon-sujet
    présente sur `main`, la **première** promotion se lance à la main (`workflow_dispatch`).
 3. **`release.yml`** — appelé par la promotion (`workflow_call`), et déclenché par un push sur `main`
    quand la fusion a été faite à la main : étiquette `v<version>` lue dans
-   `openlab_academy/__init__.py` (`__version__`) et publie la release, puis ouvre la PR de **réalignement de
-   `develop` sur `main`**, sans laquelle les commits de fusion feraient diverger les deux branches.
+   `openlab_academy/__init__.py` (`__version__`) et publie la release, puis **réaligne `develop` sur `main`**,
+   sans quoi les commits de fusion feraient diverger les deux branches. La promotion venant de fusionner
+   `develop` dans `main`, `main` descend de `develop` : le retour est une **avance rapide**, poussée
+   directement, sans PR. Si `develop` a avancé entre-temps, le réalignement est laissé à la livraison
+   suivante (avertissement) plutôt que forcé.
 
 ### Ce que GITHUB_TOKEN ne déclenche pas
 
@@ -50,6 +53,16 @@ garde-fou anti-récursion de GitHub. Deux conséquences, assumées :
 - les contrôles d'une PR ouverte par Actions restent en attente d'approbation (`action_required`), ce qui
   s'affiche comme un échec. C'est pourquoi `ci.yml` n'écoute plus les PR vers `main` : la PR de promotion
   n'ouvre plus de run de CI, et `gardien.yml` ne vise que la PR humaine.
+
+Deux artefacts rouges en découlaient, sans rapport avec le code livré :
+
+- la PR de réalignement `main` → `develop`, ouverte par Actions, déclenchait un run de CI bloqué en
+  `action_required`. **Supprimé** : le réalignement est désormais une avance rapide poussée directement ;
+- la PR de promotion `develop` → `main` crée un run de `Gardien` que la fusion immédiate conclut sans
+  qu'aucun job n'ait démarré — il s'affiche en échec. Le filtre `pull_request` de GitHub ne porte que sur
+  la branche **cible**, et l'état `action_required` est décidé avant toute condition `if:` : ce run ne peut
+  pas être évité tant que la promotion passe par une PR. **À ignorer** : le contrôle qui compte est celui de
+  la CI de `develop`, sur le même commit.
 
 Le déploiement n'est pas dans la chaîne : aucune cible de production n'est encore câblée pour l'Academy. La
 livraison s'arrête à l'étiquette de version, qui désignera l'artefact à déployer.

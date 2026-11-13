@@ -16,8 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: write # étiquette, release et réalignement de develop ; aucune PR n'est ouverte ici
 
 jobs:
   etiqueter:
@@ -69,8 +68,11 @@ jobs:
           ref: main # appelé depuis la promotion, le commit par défaut serait celui de develop
           fetch-depth: 0
 
-      # main porte les commits de fusion : sans ce retour, develop divergerait livraison après livraison
-      - name: Ouvrir la PR de réalignement si nécessaire
+      # main porte les commits de fusion : sans ce retour, develop divergerait livraison après livraison.
+      # La promotion vient de fusionner develop dans main : main descend donc de develop, et le retour est
+      # une avance rapide — aucun contenu n'est réécrit, aucune PR n'est nécessaire. Un push fait avec
+      # GITHUB_TOKEN ne déclenche aucun workflow : develop ne rejoue pas la CI sur un arbre déjà validé.
+      - name: Ramener main dans develop en avance rapide
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -80,16 +82,9 @@ jobs:
             echo "develop contient déjà main : aucun réalignement nécessaire."
             exit 0
           fi
-          existante=$(gh pr list --base develop --head main --state open --json number --jq '.[0].number')
-          if [ -n "$existante" ]; then
-            echo "PR de réalignement déjà ouverte : #$existante"
+          if [ -n "$(git log --oneline HEAD..origin/develop)" ]; then
+            echo "::warning::develop a avancé depuis la promotion : réalignement laissé à la prochaine livraison."
             exit 0
           fi
-          numero=$(gh pr create --base develop --head main --title 'Réalignement de develop sur main' \
-            --body 'Retour automatique des commits de fusion de `main` dans `develop`, pour que les deux branches ne divergent pas.' \
-            | grep -oE '[0-9]+$')
-          echo "PR de réalignement #$numero"
-          # seuls des commits de fusion reviennent : la fusion est immédiate. En cas de conflit, la PR
-          # reste ouverte et attend un arbitrage humain, plutôt que de laisser les branches diverger.
-          gh pr merge "$numero" --merge \
-            || echo "::warning::Réalignement non fusionné (conflit ?) ; PR #$numero laissée ouverte."
+          git push origin "HEAD:refs/heads/develop"
+          echo "develop réalignée sur main ($GITHUB_SHA)."
