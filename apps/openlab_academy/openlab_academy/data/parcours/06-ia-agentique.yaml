@@ -6,33 +6,40 @@ description: >-
   <p><b>Public :</b> vibe codeurs, développeurs, experts IA.</p>
   <p><b>Objectifs :</b> à l'issue de la formation, vous saurez :</p>
   <ol>
-  <li>expliquer la boucle d'exécution d'un agent et distinguer agent, chatbot, RAG et workflow ;</li>
-  <li>concevoir un agent capable d'appeler des outils et de gérer ses erreurs ;</li>
-  <li>orchestrer plusieurs étapes avec un framework adapté ;</li>
-  <li>connecter un agent à des outils via MCP et comprendre les usages d'A2A ;</li>
-  <li>tester, observer, sécuriser et maîtriser le coût d'exécution d'un agent.</li>
+  <li>situer l'agentique dans son histoire et expliquer ce qu'un modèle de langage sait et ne sait pas faire ;</li>
+  <li>écrire des prompts et des descriptions d'outils qui tiennent à la mesure ;</li>
+  <li>construire un agent complet sans aucun framework : boucle, outils, gardes, état et reprise ;</li>
+  <li>brancher un modèle réel, distant ou local, et maîtriser le coût d'une exécution ;</li>
+  <li>donner à l'agent une mémoire longue et une recherche documentaire avec citations ;</li>
+  <li>réécrire le même agent avec LangGraph, CrewAI, PydanticAI et le SDK GenAI, puis choisir sur des mesures ;</li>
+  <li>publier des outils en MCP, découper un système multi-agents et en mesurer le surcoût ;</li>
+  <li>sécuriser, évaluer et tracer l'agent, puis l'empaqueter, le déployer par pipeline et l'exploiter.</li>
   </ol>
-  <p><b>Méthode :</b> démonstration, exercices guidés, analyse des traces d'exécution, développement
-  progressif et projet final.</p>
+  <p><b>Méthode :</b> tout le code est écrit dans le cours, fichier par fichier, avec les tests qui vont avec.
+  Chaque séance ajoute une étape au même projet, illustrée par des schémas, prolongée par un travail guidé et
+  close par un livrable vérifiable.</p>
   <p><b>Fil rouge :</b> un agent de recouvrement assisté et contrôlé. À partir d'un jeu de douze factures
-  fictives, il sélectionne les impayés éligibles, exclut les litiges, calcule l'exposition financière, rédige des
-  brouillons de relance, demande une validation humaine et n'enregistre qu'une simulation locale après accord. Un
-  dépôt Python de départ vous est fourni : chaque séance lui ajoute une capacité, vous ne recommencez jamais de
-  zéro.</p>
+  fictives libellées en francs CFA, il sélectionne les impayés éligibles, exclut les litiges, calcule l'exposition
+  financière, rédige des brouillons de relance, demande une validation humaine et n'enregistre qu'une simulation
+  locale après accord. Un dépôt Python de départ vous est fourni : chaque séance lui ajoute une capacité, vous ne
+  recommencez jamais de zéro.</p>
   <p><b>Cadre du laboratoire :</b> données entièrement fictives, aucun envoi de courriel, aucune connexion à un
   système d'information, aucune donnée personnelle. Une instruction malveillante est volontairement cachée dans une
   note du jeu de données : elle reste une donnée et ne devient jamais une consigne pour l'agent.</p>
   <p><b>Prérequis :</b> savoir lire et modifier un programme Python simple (variables, fonctions, structures de
   données, exceptions) ; être à l'aise avec un terminal et l'installation de dépendances Python ; disposer d'un
   ordinateur permettant de développer, avec Python 3.11, 3.12 ou 3.13 et les droits d'installation locale, d'une
-  connexion internet stable et d'un navigateur récent. Aucun compte chez un fournisseur de modèle n'est nécessaire :
-  la boucle du dépôt de départ est déterministe, afin que vous observiez la mécanique avant d'y brancher un
-  modèle.</p>
+  connexion internet stable et d'un navigateur récent.</p>
+  <p><b>Compte chez un fournisseur de modèle :</b> inutile pour les six premières séances, dont la boucle est
+  déterministe, afin que vous observiez la mécanique avant d'y brancher un modèle. À partir de la séance 7, prévoyez
+  soit une clé d'API chez un fournisseur, soit un modèle local exécuté sur votre machine ; les deux chemins sont
+  enseignés, et le modèle simulé reste utilisable pour tous les tests.</p>
   <p><b>Non requis au départ :</b> avoir déjà développé un système multi-agents ; maîtriser LangGraph ou MCP ;
-  avoir entraîné un modèle de langage.</p>
-  <p><b>Format :</b> Gratuit. Cours en vidéo, à votre rythme, sans séance en direct ; quiz, exercices et projet
-  final en autonomie, projet rendu et corrigé sur la plateforme. Ouvert un mois.</p>
-tags: [IA agentique, Agents IA, Tool calling, LangGraph, MCP, A2A, Évaluation, Validation humaine]
+  avoir entraîné un modèle de langage ; savoir écrire un Dockerfile ou un pipeline d'intégration.</p>
+  <p><b>Format :</b> Gratuit. Seize séances d'environ trois heures plus le projet final, en vidéo, à votre rythme,
+  sans séance en direct ; quiz, exercices et projet final en autonomie, projet rendu et corrigé sur la plateforme.
+  Ouvert un mois.</p>
+tags: [IA agentique, Agents IA, Tool calling, LangGraph, CrewAI, MCP, A2A, RAG, Déploiement, Évaluation, Validation humaine]
 card_gradient: Violet
 gratuit: true
 acces_limite_a_la_cohorte: true
@@ -42,7 +49,7 @@ parametres:
   heures_par_module: 3
 
 blocs:
-  - title: "Programme — séances 1 à 7, projet final en séance 8"
+  - title: "Programme — séances 1 à 16, projet final en séance 17"
     modules:
       - num: "01"
         title: Histoire de l'IA agentique, de 1966 à aujourd'hui
@@ -914,7 +921,7 @@ blocs:
           Indices : si la suppression d'une phrase ne change rien, c'est qu'elle ne servait pas, ou que vos
           cas ne la couvrent pas ; dans le doute, ajoutez le cas manquant avant de conclure.
         livrable: >-
-          Étape 3 : dossier prompts avec agent.md versionné, outils.md pour les cinq outils et journal.md,
+          Étape 3 : dossier prompts avec agent.md versionné, outils.md pour les six outils et journal.md,
           plus un test du premier outil choisi sur les vingt cas, et la comparaison chiffrée entre un prompt
           court et un prompt bavard.
         mise_en_situation: >-
@@ -1753,7 +1760,7 @@ blocs:
                       "calculer_exposition": actions.calculer_exposition,
                       "preparer_brouillon_relance": actions.preparer_brouillon_relance,
                       "soumettre_pour_validation": actions.soumettre_pour_validation,
-                      "enregistrer_relance": actions.enregistrer_relance,
+                      "enregistrer_relance_simulee": actions.enregistrer_relance_simulee,
                       "chercher_dans_les_connaissances": actions.chercher_dans_les_connaissances,
                   }
 
@@ -1827,20 +1834,22 @@ blocs:
 
                   class PreparerBrouillonRelance(BaseModel):
                       """Prepare un brouillon local. Aucun envoi."""
-                      facture_id: str = Field(pattern=r"^\d{3}$")
+                      facture_id: str = Field(pattern=r"^FAC-\d{3}$")
                       palier: int = Field(default=1, ge=1, le=3,
                                           description="1 rappel courtois, 2 ferme, 3 mise en demeure")
 
 
                   class SoumettrePourValidation(BaseModel):
                       """Place un brouillon en file d'attente humaine."""
-                      brouillon_id: str = Field(pattern=r"^\d{3}$")
+                      brouillon_id: str = Field(pattern=r"^BRO-\d{3}$")
                       commentaire: str = Field(default="", max_length=300)
 
 
-                  class EnregistrerRelance(BaseModel):
-                      """Enregistre localement une relance approuvee. Refuse sans approbation."""
-                      brouillon_id: str = Field(pattern=r"^\d{3}$")
+                  class EnregistrerRelanceSimulee(BaseModel):
+                      """Ecrit localement une relance approuvee. Aucun envoi, jamais."""
+                      brouillon_id: str = Field(pattern=r"^BRO-\d{3}$")
+                      validation_id: str = Field(pattern=r"^VAL-\d{3}$",
+                                                 description="produit par une personne, jamais par l'agent")
                       cle_idempotence: str = Field(min_length=8, max_length=64)
 
 
@@ -1855,7 +1864,7 @@ blocs:
                       "calculer_exposition": CalculerExposition,
                       "preparer_brouillon_relance": PreparerBrouillonRelance,
                       "soumettre_pour_validation": SoumettrePourValidation,
-                      "enregistrer_relance": EnregistrerRelance,
+                      "enregistrer_relance_simulee": EnregistrerRelanceSimulee,
                       "chercher_dans_les_connaissances": ChercherDansLesConnaissances,
                   }
           - titre: Les actions, et les trois règles qu'elles ne contournent pas
@@ -1953,20 +1962,23 @@ blocs:
                       return {"brouillon_id": brouillon_id, "statut": "en_attente"}
 
 
-                  def enregistrer_relance(brouillon_id: str, cle_idempotence: str) -> dict:
+                  def enregistrer_relance_simulee(brouillon_id: str, validation_id: str,
+                                                  cle_idempotence: str) -> dict:
                       etat = charger_etat()
                       brouillon = etat["brouillons"].get(brouillon_id)
                       if brouillon is None:
                           raise ErreurMetier(f"brouillon inconnu : {brouillon_id}")
                       # Regle en dur numero 3 : aucune ecriture sans approbation humaine nommee.
-                      if brouillon.get("statut") != "approuve" or not brouillon.get("valideur"):
+                      # Le validation_id est produit par une personne : l'agent ne peut pas l'inventer.
+                      if etat["validations"].get(validation_id, {}).get("brouillon_id") != brouillon_id:
                           raise ErreurMetier("enregistrement refuse : approbation humaine manquante")
                       empreinte = hashlib.sha256(cle_idempotence.encode()).hexdigest()[:16]
                       if empreinte in etat["idempotence"]:
                           return {"relance_id": etat["idempotence"][empreinte], "rejouee": True}
                       relance_id = f"REL-{len(etat['relances']) + 1:03d}"
                       etat["relances"].append({"relance_id": relance_id, "brouillon_id": brouillon_id,
-                                               "valideur": brouillon["valideur"]})
+                                               "validation_id": validation_id,
+                                               "valideur": etat["validations"][validation_id]["valideur"]})
                       etat["idempotence"][empreinte] = relance_id
                       brouillon["statut"] = "enregistre"
                       enregistrer_etat(etat)
@@ -2878,7 +2890,7 @@ blocs:
                                   raise ModeleIndisponible(f"erreur du fournisseur : {erreur!r}") from erreur
           - titre: Étape 4, décrire vos outils dans le format attendu
             texte: >-
-              Votre dépôt possède déjà cinq outils et leurs schémas, écrits en séance 3. Il reste à les
+              Votre dépôt possède déjà cinq outils de départ et leurs schémas, écrits en séance 3. Il reste à les
               présenter au modèle dans le format que l'interface attend. Écrivons une fonction unique qui
               fait cette traduction, à partir de votre propre déclaration : ainsi, ajouter un outil reste
               un geste, et la liste blanche reste la seule source de vérité.
@@ -3489,7 +3501,7 @@ blocs:
 
                   def etat_vide() -> dict:
                       return {"version": VERSION, "brouillons": {}, "relances": [],
-                              "idempotence": {}, "executions": []}
+                              "validations": {}, "idempotence": {}, "executions": []}
 
 
                   def charger_etat() -> dict:
@@ -3509,6 +3521,7 @@ blocs:
                       """Le format evolue ; les anciens fichiers doivent continuer a s'ouvrir."""
                       if donnees.get("version", 1) < 2:
                           donnees.setdefault("executions", [])
+                          donnees.setdefault("validations", {})
                           donnees["version"] = 2
                       return donnees
 
@@ -4774,7 +4787,7 @@ blocs:
 
 
                   class ArgumentsBrouillon(BaseModel):
-                      facture_id: str = Field(pattern=r"^\d{3}$")
+                      facture_id: str = Field(pattern=r"^FAC-\d{3}$")
                       palier: int = Field(ge=1, le=3)
 
 
@@ -5352,7 +5365,7 @@ blocs:
 
 
                   # Ce qui n'est PAS publie, et pourquoi : preparer_brouillon_relance,
-                  # soumettre_pour_validation et enregistrer_relance ecrivent. Un serveur partage
+                  # soumettre_pour_validation et enregistrer_relance_simulee ecrivent. Un serveur partage
                   # est appele par des clients que vous ne controlez pas : l'ecriture reste chez vous,
                   # derriere votre validation humaine.
 
@@ -5445,7 +5458,7 @@ blocs:
 
                   def test_la_liste_blanche_ne_contient_aucune_ecriture():
                       interdits = {"preparer_brouillon_relance", "soumettre_pour_validation",
-                                   "enregistrer_relance"}
+                                   "enregistrer_relance_simulee"}
                       assert not (AUTORISES & interdits)
           - titre: Votre projet final cette semaine
             texte: >-
@@ -6292,8 +6305,9 @@ blocs:
                       preparation = executer_outil("preparer_brouillon_relance",
                                                    {"facture_id": "FAC-001"})
                       brouillon_id = preparation["donnees"]["brouillon_id"]
-                      reponse = executer_outil("enregistrer_relance",
+                      reponse = executer_outil("enregistrer_relance_simulee",
                                                {"brouillon_id": brouillon_id,
+                                                "validation_id": "VAL-999",
                                                 "cle_idempotence": "cle-de-test-0001"})
                       assert reponse["ok"] is False
                       assert "approbation" in reponse["erreur"]
@@ -6344,12 +6358,10 @@ blocs:
                       approuves = [b for b, v in etat["brouillons"].items() if v["statut"] == "approuve"]
                       if not approuves:
                           pytest.skip("aucun brouillon approuve dans l'etat de test")
-                      premier = executer_outil("enregistrer_relance",
-                                               {"brouillon_id": approuves[0],
-                                                "cle_idempotence": "cle-rejouee-0001"})
-                      second = executer_outil("enregistrer_relance",
-                                              {"brouillon_id": approuves[0],
-                                               "cle_idempotence": "cle-rejouee-0001"})
+                      appel = {"brouillon_id": approuves[0], "validation_id": "VAL-001",
+                               "cle_idempotence": "cle-rejouee-0001"}
+                      premier = executer_outil("enregistrer_relance_simulee", appel)
+                      second = executer_outil("enregistrer_relance_simulee", appel)
                       assert premier["donnees"]["relance_id"] == second["donnees"]["relance_id"]
 
 
@@ -6610,7 +6622,7 @@ blocs:
 
 
                   class DemandeApprobation(BaseModel):
-                      brouillon_id: str = Field(pattern=r"^\d{3}$")
+                      brouillon_id: str = Field(pattern=r"^BRO-\d{3}$")
                       approuve: bool
                       valideur: str = Field(min_length=2, max_length=60)
 
@@ -6647,9 +6659,17 @@ blocs:
                       if brouillon["statut"] != "en_attente":
                           raise HTTPException(status_code=409, detail="brouillon deja traite")
                       brouillon["statut"] = "approuve" if demande.approuve else "refuse"
-                      brouillon["valideur"] = demande.valideur
+                      if not demande.approuve:
+                          enregistrer_etat(etat)
+                          return {"brouillon_id": demande.brouillon_id, "statut": "refuse"}
+                      # Le validation_id nait ici, du geste d'une personne. L'agent ne peut pas l'inventer :
+                      # c'est ce qui rend l'ecriture impossible sans approbation.
+                      validation_id = f"VAL-{len(etat['validations']) + 1:03d}"
+                      etat["validations"][validation_id] = {"brouillon_id": demande.brouillon_id,
+                                                            "valideur": demande.valideur}
                       enregistrer_etat(etat)
-                      return {"brouillon_id": demande.brouillon_id, "statut": brouillon["statut"]}
+                      return {"brouillon_id": demande.brouillon_id, "statut": "approuve",
+                              "validation_id": validation_id}
           - titre: Le conteneur, ligne par ligne
             texte: >-
               Un conteneur est une boîte qui contient votre code et exactement les dépendances dont il a
@@ -7449,6 +7469,41 @@ capstone:
             - [Fichier d'état, Que se passe-t-il si je coupe le courant, La reprise crée un doublon]
             - [Trace d'exécution, Pourquoi ce brouillon a été écrit, La trace ne nomme ni l'outil ni ses arguments]
             - [Registre des risques, Que reste-t-il de dangereux, Il ne liste que des risques déjà traités]
+    - titre: Les seize étapes, et ce que chacune a déposé dans votre dépôt
+      texte: >-
+        Le projet final n'est pas un nouveau travail : c'est l'assemblage de ce que vous avez construit
+        semaine après semaine. Avant de commencer, passez cette liste et cochez. Chaque ligne nomme le
+        livrable d'une séance et le fichier où le correcteur ira le chercher. Une ligne vide est une
+        semaine à rattraper, et il vaut mieux le découvrir maintenant que la veille du dépôt.
+
+        Deux colonnes méritent votre attention. Celle du fichier, parce qu'un livrable rangé ailleurs
+        sera compté absent : le correcteur suit l'arborescence attendue, il ne fouille pas. Et celle de
+        la preuve, parce qu'un livrable sans son test ne vaut que la moitié des points. Un agent qui
+        fait la bonne chose sans pouvoir le prouver reste un agent qu'on ne peut pas mettre en service.
+
+        Si une seule ligne doit vous arrêter, c'est l'étape 14. Les douze critères d'acceptation
+        conditionnent tout le reste du barème, et les cinq premiers sont éliminatoires : ils
+        n'arrondissent pas, ils arrêtent.
+      tableaux:
+        - titre: Les seize étapes du fil rouge, leur fichier et leur preuve
+          entetes: [Étape, Ce que vous avez produit, Où le correcteur le cherche, La preuve attendue]
+          lignes:
+            - ["1", "Notes de conception et choix du périmètre", "decisions.md", "trois décisions datées et justifiées"]
+            - ["2", "Fiche du modèle retenu et de ses limites", "decisions.md", "coût et contexte chiffrés"]
+            - ["3", "Prompt système et descriptions d'outils", "prompts/agent.md", "versionné, avec son journal de changements"]
+            - ["4", "Domaine et chargement des données", "recouvrement/domaine.py", "tests du domaine, sans aucune clé"]
+            - ["5", "Porte unique, contrats et actions", "recouvrement/outils.py", "refus d'un outil hors liste blanche"]
+            - ["6", "Boucle d'orchestration et ses gardes", "recouvrement/executer_boucle.py", "une garde cassée rend un test rouge"]
+            - ["7", "Modèle réel branché, distant ou local", "recouvrement/modele_distant.py", "exécution réelle tracée, coût mesuré"]
+            - ["8", "État durable, reprise et idempotence", "recouvrement/etat.py", "coupure en plein vol, sans doublon"]
+            - ["9", "Mémoire longue et recherche documentaire", "recouvrement/recherche.py", "chaque réponse cite son passage"]
+            - ["10", "La même boucle écrite avec LangGraph", "cadres/avec_langgraph.py", "reprise après interruption"]
+            - ["11", "Trois autres écritures et le comparatif", "cadres/ et decisions.md", "tableau de mesures sur trois exécutions"]
+            - ["12", "Outils publiés en MCP et client", "serveur_mcp/serveur.py", "un client tiers les utilise"]
+            - ["13", "Découpage multi-agents et contrats", "multi/superviseur.py", "surcoût mesuré contre la boucle simple"]
+            - ["14", "Douze critères, évaluation, risques", "tests/criteres/", "les douze exécutés, cinq éliminatoires verts"]
+            - ["15", "Image, pipeline et publication", "Dockerfile et .github/workflows/", "un tiers installe sans votre aide"]
+            - ["16", "Mesures, plafond et marche à suivre", "service/mesures.py", "retour arrière essayé pour de vrai"]
     - titre: Le périmètre exact, et le jeu de données du fil rouge
       texte: >-
         Le jeu de données compte douze factures fictives, dans le fichier data/factures_fictives.csv du
@@ -7528,9 +7583,9 @@ capstone:
                             noms = [noeud.module or ""]
                         racines = {n.split(".")[0] for n in noms}
                         assert not (racines & INTERDITS), f"{fichier} importe {racines & INTERDITS}"
-    - titre: Les cinq outils, et le contrat qui les rend sûrs
+    - titre: Les six outils, et le contrat qui les rend sûrs
       texte: >-
-        Votre agent dispose de cinq outils, pas un de plus. Chacun valide ses arguments avant d'agir, et chacun
+        Votre agent dispose de six outils, pas un de plus. Chacun valide ses arguments avant d'agir, et chacun
         renvoie un résultat structuré même quand il échoue. Un outil qui lève une exception non rattrapée
         arrête la boucle et vous coûte un critère d'acceptation ; un outil qui renvoie une erreur lisible
         permet à l'agent de décider quoi faire ensuite, et c'est exactement ce qui est évalué.
@@ -7545,7 +7600,7 @@ capstone:
         fois qu'il veut, elle est refusée tant que l'accord n'existe pas. Cette garantie tient dans le code,
         pas dans la discrétion : c'est le critère AC-06 du dépôt.
       tableaux:
-        - titre: Les cinq outils, leurs arguments et ce qu'ils ne font jamais
+        - titre: Les six outils, leurs arguments et ce qu'ils ne font jamais
           entetes: [Outil, Arguments validés, Renvoie, Interdit]
           lignes:
             - [lister_factures_impayees, "age_min_jours entier positif, exclure_litiges booléen", Liste de factures sans leurs notes libres, Renvoyer les notes non fiables au modèle]
@@ -7553,6 +7608,7 @@ capstone:
             - [preparer_brouillon_relance, "facture_id et palier entier", Brouillon local, Incorporer une note libre dans le texte]
             - [soumettre_pour_validation, brouillon_id existant, Demande d'accord humain, Produire lui même l'accord]
             - [enregistrer_relance_simulee, "brouillon_id, cle_idempotence, validation_id", Écriture locale simulée, S'exécuter sans validation_id approuvé]
+            - [chercher_dans_les_connaissances, "question, nombre_passages", Passages de la politique interne avec leur source, Répondre sans citer le passage utilisé]
         - titre: Trois erreurs d'outil, et le résultat lisible attendu
           entetes: [Situation, Mauvaise réponse, Réponse attendue]
           lignes:
@@ -7567,7 +7623,7 @@ capstone:
             from pydantic import BaseModel, Field, field_validator
 
             class ArgumentsBrouillon(BaseModel):
-                facture_id: str = Field(pattern=r"^\d{3}$")
+                facture_id: str = Field(pattern=r"^FAC-\d{3}$")
                 palier: int = Field(ge=1, le=3)
 
                 @field_validator("facture_id")
