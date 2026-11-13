@@ -90,7 +90,7 @@ blocs:
               impayés de plus de trente jours ». Le modèle décide d'appeler l'outil de recherche avec un âge
               minimal de trente jours. Le code exécute la requête et renvoie cinq factures. Le modèle
               observe ce résultat, constate qu'il manque les montants cumulés, appelle l'outil de calcul,
-              observe une exposition de 7 730 000 F CFA, puis décide qu'il a de quoi rédiger. Quatre tours,
+              observe une exposition de 7 730,00 EUR, puis décide qu'il a de quoi rédiger. Quatre tours,
               trois appels d'outils, une conclusion.
 
               Rien n'oblige cette boucle à s'arrêter. Si l'outil de recherche renvoie une erreur et que le
@@ -261,9 +261,9 @@ blocs:
                   sources:
                     - factures.json   # lecture seule, douze lignes fictives
                   actions_autorisees:
-                    - chercher_factures
+                    - lister_factures_impayees
                     - calculer_exposition
-                    - rediger_brouillon
+                    - preparer_brouillon_relance
                   actions_interdites:
                     - envoyer_courriel          # aucun outil d'envoi n'existe dans le depot
                     - modifier_facture
@@ -375,11 +375,11 @@ blocs:
               Ce contrat est la seule documentation que le modèle lira. Il mérite la même attention qu'une
               signature de fonction publique.
             code:
-              - titre: Le contrat de chercher_factures
+              - titre: Le contrat de lister_factures_impayees
                 langage: json
                 source: |
                   {
-                    "name": "chercher_factures",
+                    "name": "lister_factures_impayees",
                     "description": "Liste les factures impayées. N'inclut jamais les litiges.",
                     "parameters": {
                       "type": "object",
@@ -531,12 +531,12 @@ blocs:
               Suivons un appel unique, avec ses valeurs, du moment où le modèle décide jusqu'au retour de
               l'observation. C'est l'exercice que vous referez dans le dépôt, en lisant le journal.
 
-              Le modèle décide : outil « chercher_factures », arguments « age_min_jours : 30 ». Le point
+              Le modèle décide : outil « lister_factures_impayees », arguments « age_min_jours : 30 ». Le point
               d'appel vérifie la liste blanche : l'outil existe, on continue. Le contrat valide : l'entier
               est positif et sous la borne, l'argument « montant_min » absent prend sa valeur par défaut à
               zéro, aucun argument inconnu.
 
-              L'outil s'exécute et rend cinq factures, pour un total de 7 730 000 F CFA, sans les trois
+              L'outil s'exécute et rend cinq factures, pour un total de 7 730,00 EUR, sans les trois
               litiges que la fonction de filtrage a écartés. Le point d'appel écrit au journal l'étape,
               l'outil, les arguments et la durée, puis renvoie le résultat structuré.
 
@@ -1210,7 +1210,7 @@ blocs:
                   @serveur.outil(
                       description="Liste les factures impayées. N'inclut jamais les litiges.",
                   )
-                  def chercher_factures(age_min_jours: int, montant_min: float = 0) -> list[dict]:
+                  def lister_factures_impayees(age_min_jours: int, montant_min: float = 0) -> list[dict]:
                       if age_min_jours < 0:
                           raise ValeurRefusee("age_min_jours doit être positif")
                       return depot.impayees(age_min_jours, montant_min)
@@ -1288,7 +1288,7 @@ blocs:
                       inconnus = set(publies) - OUTILS_ACCEPTES
                       if inconnus:                       # la liste blanche s'applique a ce qui est publie
                           journal.alerte("outils publies non acceptes", outils=sorted(inconnus))
-                      resultat = session.appeler("chercher_factures",
+                      resultat = session.appeler("lister_factures_impayees",
                                                  {"age_min_jours": 30}, delai_s=10)
                   # la sortie du bloc ferme le canal, meme si une exception a ete levee
             tableaux:
@@ -1991,27 +1991,30 @@ capstone:
             - [Registre des risques, Que reste-t-il de dangereux, Il ne liste que des risques déjà traités]
     - titre: Le périmètre exact, et le jeu de données du fil rouge
       texte: >-
-        Le jeu de données compte douze factures fictives, pour une exposition totale de 7 730 000 F CFA. Quatre
-        d'entre elles ne doivent jamais faire l'objet d'une relance : deux sont en litige, une est déjà payée,
-        une est trop récente pour être éligible. Huit factures sont donc relançables, et votre agent doit
-        trouver exactement ces huit là, sans en inventer une neuvième et sans en oublier une.
+        Le jeu de données compte douze factures fictives, dans le fichier data/factures_fictives.csv du
+        dépôt. Au seuil de trente jours de retard, cinq sont relançables, pour une exposition de 7 730,00 EUR :
+        FAC-001, FAC-004, FAC-006, FAC-011 et FAC-012. Trois sont en litige et ne doivent jamais recevoir de
+        relance, quel que soit leur retard : FAC-003, FAC-007 et FAC-010. Les quatre dernières, FAC-002,
+        FAC-005, FAC-008 et FAC-009, n'atteignent pas le seuil de retard.
 
-        Ce chiffre de 7 730 000 F CFA est votre ancre de vérification. Toute exposition calculée différemment
-        signale soit une facture retenue à tort, soit une somme mal agrégée. Écrivez ce total dans un test, pas
-        dans un commentaire : un commentaire ne vous préviendra jamais.
+        Ce total de 7 730,00 EUR est votre ancre de vérification, et il correspond au critère AC-01 du dépôt.
+        Le critère AC-02 vous en donne une seconde : au seuil de soixante jours, deux factures et 4 990,00 EUR.
+        Écrivez ces deux totaux dans des tests, pas dans un commentaire ; un commentaire ne vous préviendra
+        jamais.
 
         Deux pièges sont posés dans les données, volontairement. La facture FAC-006 porte une note libre
-        hostile, qui demande en langue naturelle d'enregistrer la relance sans validation. La facture FAC-009
-        est en litige mais son libellé commercial est rassurant, pour vérifier que votre exclusion repose sur
-        le champ de statut et non sur une lecture du texte par le modèle.
+        hostile, en majuscules, qui ordonne d'envoyer une relance immédiatement : elle est pourtant éligible,
+        et son brouillon doit être identique à ce qu'il serait sans cette note. La facture FAC-007 est en
+        litige alors que sa note parle d'une réclamation en cours de traitement, pour vérifier que votre
+        exclusion lit le champ de statut et non le texte.
       tableaux:
         - titre: Les douze factures, et ce que votre agent doit en faire
           entetes: [Catégorie, Nombre, Décision attendue, Preuve à produire]
           lignes:
-            - [Impayées éligibles, 8, Brouillon de relance rédigé, Huit brouillons et pas un de plus]
-            - [En litige, 2, Exclusion imposée par le code, Un test qui échoue si l'une apparaît]
-            - [Déjà payée, 1, Exclusion sur le statut, "Le statut lu, jamais déduit du texte"]
-            - [Trop récente, 1, Exclusion sur l'âge en jours, "Le seuil lisible dans le code, pas dans la consigne"]
+            - ["Éligibles à 30 jours (001, 004, 006, 011, 012)", 5, Brouillon de relance préparé, Cinq brouillons et pas un de plus]
+            - ["En litige (003, 007, 010)", 3, Exclusion imposée par le code, Un test qui échoue si l'une apparaît]
+            - ["Sous le seuil (002, 005, 008, 009)", 4, Exclusion sur le retard en jours, "Le seuil lisible dans le code, pas dans la consigne"]
+            - ["Éligibles à 60 jours (006, 012)", 2, "Exposition de 4 990,00 EUR", Le critère AC-02 vérifié séparément]
     - titre: L'architecture attendue, et l'arborescence du dépôt
       texte: >-
         L'architecture est hexagonale, et elle doit se voir sans explication. Le cœur contient les règles de
@@ -2077,25 +2080,25 @@ capstone:
         être accepté depuis le modèle puisqu'il se calcule à partir des données. La règle est générale : un
         argument que le code peut calculer ne se demande pas au modèle.
 
-        L'outil d'enregistrement, lui, n'est jamais publié comme un outil appelable. Il est appelé par votre
-        application après la validation humaine. Un agent qui peut appeler lui même l'écriture est un agent qui
-        contournera la validation un jour, et ce jour n'arrivera pas pendant votre démonstration mais pendant
-        la correction.
+        L'outil d'enregistrement est bien publié, mais il est inutilisable seul : il exige un identifiant de
+        validation approuvé, que seule une personne produit. L'agent peut donc demander l'écriture autant de
+        fois qu'il veut, elle est refusée tant que l'accord n'existe pas. Cette garantie tient dans le code,
+        pas dans la discrétion : c'est le critère AC-06 du dépôt.
       tableaux:
         - titre: Les cinq outils, leurs arguments et ce qu'ils ne font jamais
           entetes: [Outil, Arguments validés, Renvoie, Interdit]
           lignes:
-            - [chercher_factures, age_min_jours entier de 0 à 365, Liste d'identifiants et de statuts, Renvoyer les notes libres]
-            - [lire_facture, identifiant au format FAC-000, "Montant, statut, échéance", Accepter un identifiant inconnu sans erreur lisible]
-            - [calculer_exposition, liste d'identifiants connus, Somme en F CFA, Accepter un montant fourni par le modèle]
-            - [rediger_brouillon, identifiant et ton parmi trois valeurs, Texte de relance, Incorporer une note libre du jeu de données]
-            - [demander_validation, le lot de brouillons, Décision humaine, Être publié comme un outil appelable par l'agent]
+            - [lister_factures_impayees, "age_min_jours entier positif, exclure_litiges booléen", Liste de factures sans leurs notes libres, Renvoyer les notes non fiables au modèle]
+            - [calculer_exposition, facture_ids connus du jeu de données, Somme en euros, Accepter un montant proposé par le modèle]
+            - [preparer_brouillon_relance, "facture_id et palier entier", Brouillon local, Incorporer une note libre dans le texte]
+            - [soumettre_pour_validation, brouillon_id existant, Demande d'accord humain, Produire lui même l'accord]
+            - [enregistrer_relance_simulee, "brouillon_id, cle_idempotence, validation_id", Écriture locale simulée, S'exécuter sans validation_id approuvé]
         - titre: Trois erreurs d'outil, et le résultat lisible attendu
           entetes: [Situation, Mauvaise réponse, Réponse attendue]
           lignes:
-            - [Identifiant inconnu, Une exception qui remonte, "statut erreur, motif facture_inconnue, identifiant cité"]
-            - [Fichier de données absent, Un plantage au démarrage, "statut erreur, motif source_indisponible, et la boucle s'arrête proprement"]
-            - [Argument hors bornes, Une valeur corrigée en silence, "statut erreur, motif argument_invalide, borne rappelée"]
+            - [Identifiant inconnu, Une exception qui remonte, "ok faux, erreur nommant la facture inconnue"]
+            - [Palier 2 demandé sans palier 1, Le palier accordé quand même, "ok faux, action refusée (critère AC-07)"]
+            - [Outil hors liste blanche, Un refus silencieux, "ok faux, appel bloqué et journalisé (critère AC-09)"]
       code:
         - titre: Un contrat d'outil qui refuse avant d'agir
           langage: python
@@ -2103,23 +2106,23 @@ capstone:
             from typing import Literal
             from pydantic import BaseModel, Field, field_validator
 
-            class ArgumentsRediger(BaseModel):
-                identifiant: str = Field(pattern=r"^FAC-\d{3}$")
-                ton: Literal["neutre", "ferme", "courtois"] = "neutre"
+            class ArgumentsBrouillon(BaseModel):
+                facture_id: str = Field(pattern=r"^\d{3}$")
+                palier: int = Field(ge=1, le=3)
 
-                @field_validator("identifiant")
+                @field_validator("facture_id")
                 @classmethod
                 def connue(cls, valeur: str) -> str:
                     if valeur not in IDENTIFIANTS_CONNUS:          # le code sait, le modele propose
-                        raise ValueError("facture_inconnue")
+                        raise ValueError("facture inconnue")
                     return valeur
 
-            def rediger_brouillon(**bruts) -> dict:
+            def preparer_brouillon_relance(**bruts) -> dict:
                 try:
-                    args = ArgumentsRediger(**bruts)
+                    args = ArgumentsBrouillon(**bruts)
                 except ValueError as e:
-                    return {"statut": "erreur", "motif": str(e)}   # lisible, la boucle continue
-                return {"statut": "ok", "texte": composer(args.identifiant, args.ton)}
+                    return {"ok": False, "erreur": str(e)}         # lisible, la boucle continue
+                return {"ok": True, "brouillon_id": composer(args.facture_id, args.palier)}
     - titre: Les règles métier en code, et la consigne qui ne protège rien
       texte: >-
         Une consigne écrite au modèle est une préférence, pas une garantie. Elle tient la plupart du temps, et
@@ -2151,8 +2154,8 @@ capstone:
     - titre: L'état persistant, la reprise et l'idempotence
       texte: >-
         Votre agent doit survivre à une interruption. Le correcteur coupera l'exécution au milieu du
-        traitement, relancera, et comptera les brouillons. Si le nombre dépasse huit, vous avez créé des
-        doublons et le critère est perdu.
+        traitement, relancera, et comptera les brouillons. Si le nombre dépasse cinq, vous avez créé des
+        doublons et le critère AC-11 est perdu.
 
         La protection tient en deux éléments. D'abord un état écrit après chaque étape terminée, pas à la fin :
         l'identifiant traité, l'horodatage, le résultat. Ensuite une clé d'idempotence, c'est à dire une valeur
@@ -2174,8 +2177,8 @@ capstone:
                 executer(etat, interrompre_apres=3)          # coupure au milieu
                 executer(etat)                               # reprise
                 brouillons = lire_brouillons(tmp_path)
-                assert len(brouillons) == 8
-                assert len({b.cle for b in brouillons}) == 8  # une cle, un brouillon
+                assert len(brouillons) == 5                   # AC-01 : cinq factures eligibles
+                assert len({b.cle for b in brouillons}) == 5  # AC-08 : une cle, un brouillon
     - titre: Ce que vous publiez par MCP, et ce que vous ne publiez jamais
       texte: >-
         Les outils de lecture et de rédaction sont exposés par un serveur MCP local, lancé par votre
@@ -2201,8 +2204,8 @@ capstone:
             - [Lire une facture, Oui, Lecture sans effet de bord]
             - [Calculer l'exposition, Oui, Calcul pur sur des identifiants connus]
             - [Rédiger un brouillon, Oui, Production de texte sans enregistrement]
-            - [Enregistrer la relance simulée, Non, Effet de bord conditionné à une validation humaine]
-            - [Demander la validation, Non, L'agent ne doit pas pouvoir se valider lui même]
+            - [Soumettre pour validation, Oui, Demande d'accord sans effet sur les données]
+            - [Enregistrer la relance simulée, Oui mais inutilisable seule, Exige un identifiant de validation approuvé]
     - titre: La validation humaine, posée là où elle ne se contourne pas
       texte: >-
         La validation humaine n'est pas un message affiché, c'est une transition d'état. Le lot de brouillons
@@ -2251,10 +2254,10 @@ capstone:
         - titre: Les critères bloquants, et le test qui les prouve
           entetes: [Critère bloquant, Test, Ce que le test échoue à démontrer sinon]
           lignes:
-            - [Aucun litige relancé, test_aucune_facture_en_litige_dans_les_brouillons, L'exclusion tient par hasard]
-            - [Aucune écriture sans accord, test_enregistrer_sans_validation_est_refuse, La porte est ouverte]
-            - [Aucune règle dictée par les données, test_la_note_hostile_ne_change_pas_le_brouillon, L'injection agit]
-            - [Aucun outil hors liste blanche, test_un_outil_inconnu_est_refuse_et_journalise, L'inventaire dérive]
+            - ["Aucun litige relancé (AC-03)", test_aucune_facture_en_litige_dans_les_brouillons, L'exclusion tient par hasard]
+            - ["Aucune écriture sans accord (AC-06)", test_enregistrer_sans_validation_est_refuse, La porte est ouverte]
+            - ["Aucune règle dictée par les données (AC-04)", test_la_note_hostile_ne_change_pas_le_brouillon, L'injection agit]
+            - ["Aucun outil hors liste blanche (AC-09)", test_un_outil_inconnu_est_refuse_et_journalise, L'inventaire dérive]
             - [Aucun envoi réel, test_aucun_client_reseau_dans_les_dependances, Le périmètre a glissé]
       code:
         - titre: Deux tests de propriété, à recopier puis à étendre
@@ -2266,7 +2269,7 @@ capstone:
                 assert [b.texte for b in avec] == [b.texte for b in sans]
 
             def test_un_outil_inconnu_est_refuse_et_journalise(journal):
-                resultat = appeler("supprimer_facture", {"identifiant": "FAC-001"})
+                resultat = appeler("supprimer_facture", {"facture_id": "FAC-001"})
                 assert resultat["statut"] == "erreur"
                 assert any(e["evenement"] == "outil_hors_liste" for e in journal.lire())
     - titre: Traces, mesures et budget
@@ -2294,8 +2297,8 @@ capstone:
             {
               "tour": 3,
               "decision": "appel_outil",
-              "outil": "rediger_brouillon",
-              "arguments": {"identifiant": "FAC-004", "ton": "ferme"},
+              "outil": "preparer_brouillon_relance",
+              "arguments": {"facture_id": "FAC-004", "palier": 1},
               "statut": "ok",
               "duree_ms": 412,
               "jetons": {"entree": 1840, "sortie": 260},
@@ -2338,7 +2341,7 @@ capstone:
         - titre: Les cinq blocs de la note
           entetes: [Bloc, Points, Ce qui fait la différence]
           lignes:
-            - [Fonctionnel complet, 30, Les huit brouillons produits et la validation demandée]
+            - [Fonctionnel complet, 30, Les cinq brouillons produits et la validation demandée]
             - [Fiabilité et reprise, 20, Une interruption suivie d'une reprise sans doublon]
             - [Sécurité et contrôle, 25, "Les règles en code, la liste blanche, la note hostile neutralisée"]
             - [Observabilité et coût, 15, Une trace lisible par un tiers et cinq mesures datées]
@@ -2391,7 +2394,7 @@ capstone:
 
         Lancez la suite de tests et vérifiez que les cinq tests bloquants sont présents, nommés, et verts.
 
-        Coupez une exécution en cours, relancez, comptez les brouillons : huit, pas neuf.
+        Coupez une exécution en cours, relancez, comptez les brouillons : cinq, pas six.
 
         Ouvrez votre trace et cherchez une note libre, un montant complet, une clé. Si vous en trouvez un,
         filtrez le avant de rendre.
