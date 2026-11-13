@@ -46,42 +46,211 @@ blocs:
     modules:
       - num: "01"
         title: Anatomie d'un agent IA
-        figures:
-          - nom: boucle-agent.svg
-            legende: "La boucle d'un agent : percevoir, raisonner, agir, observer, et ce qui l'arrête."
-          - nom: quatre-familles.svg
-            legende: "Chatbot, RAG, workflow, agent : ce qui change est qui décide de l'étape suivante."
-          - nom: echelle-risque.svg
-            legende: "Classer les actions par risque, puis placer la frontière d'autonomie acceptable."
-        tableaux:
-          - titre: Quatre familles de systèmes, départagées par trois questions
-            entetes: ["Famille", "Qui choisit l'étape suivante", "Nombre de passages", "À préférer quand"]
-            lignes:
-              - ["Chatbot", "personne, il répond", "un par message", "la réponse est le livrable"]
-              - ["RAG", "le code, toujours le même ordre", "un seul", "la réponse vit dans vos documents"]
-              - ["Workflow", "le code, écrit à l'avance", "fixe", "les étapes sont connues et stables"]
-              - ["Agent", "le modèle, à chaque tour", "variable, borné", "le chemin dépend de ce qu'on trouve"]
-          - titre: Les quatre composants d'un agent, et ce qui casse quand l'un manque
-            entetes: ["Composant", "Rôle", "S'il manque"]
-            lignes:
-              - ["Modèle", "décide de l'action suivante", "il reste un workflow"]
-              - ["Outils", "agissent sur le monde", "l'agent parle sans rien faire"]
-              - ["Mémoire", "transporte le contexte entre les tours", "l'agent refait deux fois le même appel"]
-              - ["Contrôle", "borne, filtre, fait valider", "la boucle tourne jusqu'au budget"]
-        code:
-          - titre: La boucle, réduite à ce qui la définit
-            langage: python
-            source: |
-              def executer(objectif, outils, etapes_max=8):
-                  historique = [{"role": "user", "content": objectif}]
-                  for tour in range(etapes_max):          # le plafond est du code, pas une consigne
-                      decision = modele.decider(historique, outils)
-                      if decision.terminee:
-                          return decision.reponse
-                      resultat = outils.appeler(decision.outil, decision.arguments)
-                      historique.append({"role": "tool", "content": resultat})
-                  raise PlafondAtteint(f"{etapes_max} étapes sans conclure")
-        archive: socle-ia-agentique-v0.2.0.zip
+        cours:
+          - titre: Ce que vous saurez faire en sortant de cette séance
+            texte: >-
+              Nommer, devant un commanditaire, la famille de système qui répond à son besoin, et défendre ce
+              choix avec deux arguments vérifiables plutôt qu'avec une impression.
+
+              Décrire la boucle d'exécution d'un agent, étape par étape, et désigner dans un programme
+              existant la ligne qui l'arrête. Si vous ne trouvez pas cette ligne, le programme n'a pas de
+              condition d'arrêt, et c'est le premier défaut à corriger.
+
+              Classer les actions d'un projet par risque, puis placer la frontière au-delà de laquelle une
+              action ne s'exécute pas sans accord humain. Cette frontière est une décision d'ingénierie, pas
+              une préférence : elle se justifie par le coût d'une annulation.
+
+              Rédiger le cadrage écrit d'un agent : mission, sources de données, actions autorisées, actions
+              interdites, critères de réussite. Ce document d'une page est le livrable de la séance, et il
+              servira de référence jusqu'au projet final.
+          - titre: Le cas qui servira de fil rouge
+            texte: >-
+              Une PME d'Abidjan vend du matériel à des clients professionnels. Sa directrice financière
+              suit douze factures, dont une partie est en retard de paiement. Elle veut réduire le temps
+              passé à relancer, sans jamais envoyer une relance à un client en litige, et sans qu'un
+              courriel parte sans qu'elle l'ait lu.
+
+              Le jeu de données du laboratoire contient ces douze factures : un identifiant, un client, un
+              montant, une date d'échéance, un statut, et une note libre. Les montants vont de quelques
+              dizaines de milliers à plusieurs millions de francs CFA. Trois factures portent la mention
+              « litige », et l'une des notes contient une phrase rédigée pour tromper un modèle. Vous la
+              rencontrerez en séance 7 ; pour l'instant, retenez qu'une note est une donnée, jamais une
+              consigne.
+
+              Tout au long du parcours, la question posée sera la même : qu'est-ce qui, dans ce besoin,
+              justifie un agent plutôt qu'un programme ordinaire, et où placer la main humaine.
+          - titre: La boucle percevoir, raisonner, agir, observer
+            texte: >-
+              Un agent n'est pas un modèle qui parle mieux. C'est une boucle : le modèle lit le contexte,
+              choisit une action, le code exécute cette action, le résultat revient dans le contexte, et le
+              tour recommence. Ce qui distingue un agent, c'est que le choix de l'étape suivante appartient
+              au modèle, pas au développeur.
+
+              Déroulons un tour sur notre cas. Le contexte contient la demande : « prépare les relances des
+              impayés de plus de trente jours ». Le modèle décide d'appeler l'outil de recherche avec un âge
+              minimal de trente jours. Le code exécute la requête et renvoie cinq factures. Le modèle
+              observe ce résultat, constate qu'il manque les montants cumulés, appelle l'outil de calcul,
+              observe une exposition de 7 730 000 F CFA, puis décide qu'il a de quoi rédiger. Quatre tours,
+              trois appels d'outils, une conclusion.
+
+              Rien n'oblige cette boucle à s'arrêter. Si l'outil de recherche renvoie une erreur et que le
+              modèle réessaie à l'identique, le même tour se répète jusqu'à épuisement du budget. La
+              condition d'arrêt n'est donc pas un détail de confort : c'est le composant qui rend la boucle
+              utilisable en production.
+            figures:
+              - nom: boucle-agent.svg
+                legende: "La boucle d'un agent, et les trois conditions qui l'arrêtent."
+          - titre: Les quatre composants, et ce qui casse quand l'un manque
+            texte: >-
+              Un agent se décrit entièrement par quatre composants. Les énumérer n'a d'intérêt que si l'on
+              sait ce que leur absence provoque : c'est ainsi qu'on reconnaît un système incomplet en le
+              lisant.
+
+              Le modèle décide. Les outils agissent. La mémoire transporte le contexte entre les tours. Le
+              contrôle borne, filtre et fait valider. Les trois premiers sont visibles dans toute
+              démonstration ; le quatrième ne se voit que lorsqu'il manque, et il manque souvent.
+            tableaux:
+              - titre: Les quatre composants d'un agent
+                entetes: ["Composant", "Rôle", "S'il manque", "Où le chercher dans un code"]
+                lignes:
+                  - ["Modèle", "décide de l'action suivante", "il reste un workflow", "l'appel qui produit une décision"]
+                  - ["Outils", "agissent sur le monde", "l'agent parle sans rien faire", "le registre des fonctions appelables"]
+                  - ["Mémoire", "transporte le contexte entre les tours", "l'agent refait deux fois le même appel", "la liste d'historique passée au modèle"]
+                  - ["Contrôle", "borne, filtre, fait valider", "la boucle tourne jusqu'au budget", "le plafond d'étapes et la liste blanche"]
+          - titre: Agent, chatbot, RAG, workflow
+            texte: >-
+              Ces quatre mots désignent des systèmes différents, et les confondre coûte cher : on paie la
+              complexité d'un agent pour un besoin qu'un workflow traitait mieux, ou l'inverse.
+
+              Une seule question les départage : qui choisit l'étape suivante. Dans un chatbot, la question
+              ne se pose pas, il répond. Dans un RAG classique, le code impose toujours le même ordre,
+              chercher puis rédiger. Dans un workflow, le développeur a écrit l'enchaînement à l'avance.
+              Dans un agent, le modèle décide à chaque tour.
+
+              Une seconde question affine le diagnostic : combien de passages. Un RAG en fait un seul. Un
+              workflow en fait un nombre connu. Un agent en fait un nombre variable, qu'il faut donc borner.
+            figures:
+              - nom: quatre-familles.svg
+                legende: "Les quatre familles, départagées par la question de savoir qui choisit l'étape suivante."
+            tableaux:
+              - titre: Quatre familles, trois questions
+                entetes: ["Famille", "Qui choisit l'étape suivante", "Nombre de passages", "À préférer quand"]
+                lignes:
+                  - ["Chatbot", "personne, il répond", "un par message", "la réponse est le livrable"]
+                  - ["RAG", "le code, toujours le même ordre", "un seul", "la réponse vit dans vos documents"]
+                  - ["Workflow", "le code, écrit à l'avance", "fixe", "les étapes sont connues et stables"]
+                  - ["Agent", "le modèle, à chaque tour", "variable, borné", "le chemin dépend de ce qu'on trouve"]
+          - titre: La même demande, traitée par les quatre familles
+            texte: >-
+              « Prépare les relances des impayés de plus de trente jours, sauf les litiges. » Voici ce que
+              chaque famille en fait, sur nos douze factures.
+
+              Le chatbot répond : « Voici un modèle de courriel de relance que vous pourrez adapter. » Il ne
+              lit aucune facture. Utile pour rédiger, inutile pour traiter le portefeuille.
+
+              Le RAG cherche dans vos documents ce qui ressemble à la demande, trouve la procédure de
+              recouvrement et un ancien courriel, et rédige une réponse qui s'en inspire. Il n'ouvre pas la
+              base des factures et ne calcule rien. Il répond sur ce que vous savez, pas sur ce que vous avez.
+
+              Le workflow exécute l'enchaînement écrit par le développeur : requête SQL sur les factures de
+              plus de trente jours, exclusion des litiges, calcul du total, génération d'un brouillon par
+              client. Résultat exact, reproductible, testable. Tant que la demande ne change pas, c'est la
+              meilleure réponse, et de loin la moins chère.
+
+              L'agent fait la même chose, mais décide lui-même. Il lit la demande, appelle la recherche,
+              observe que trois factures portent une mention de litige, appelle l'outil de vérification,
+              constate qu'une des trois a été résolue la semaine dernière, l'inclut, recalcule, puis rédige.
+              Cette initiative est exactement ce qu'on achète en choisissant un agent, et c'est aussi ce qui
+              rend sa trace indispensable : personne n'a écrit cet enchaînement à l'avance.
+          - titre: Degrés d'autonomie et frontière de validation
+            texte: >-
+              L'autonomie n'est pas un interrupteur. Entre l'assistant qui propose et l'agent qui agit seul,
+              il existe une échelle, et le travail d'ingénierie consiste à placer un curseur sur cette
+              échelle, action par action.
+
+              Le critère n'est pas la difficulté technique, c'est le coût d'une annulation. Lire une facture
+              ne coûte rien à annuler, puisqu'il n'y a rien à annuler. Envoyer un courriel à un client ne
+              s'annule pas : il faudra un autre courriel, et la confiance aura bougé. Entre les deux, écrire
+              une ligne dans un fichier de simulation s'annule en supprimant la ligne.
+
+              Une action est irréversible si son annulation demande un geste humain hors du système. Cette
+              définition est opérationnelle : elle se vérifie en se demandant qui devra décrocher son
+              téléphone. Appliquée à notre cas, elle trace la frontière sans discussion.
+            figures:
+              - nom: echelle-risque.svg
+                legende: "Les cinq actions du projet, classées par coût d'annulation."
+          - titre: Lire une boucle d'agent
+            texte: >-
+              Voici la boucle réduite à ce qui la définit. Elle tient en une dizaine de lignes, et tout le
+              parcours consistera à l'enrichir sans jamais la perdre de vue.
+
+              Trois lignes méritent votre attention. Le plafond d'étapes est un argument de la fonction, donc
+              du code, et non une phrase adressée au modèle : un modèle à qui l'on demande de ne pas
+              dépasser huit tours en dépassera huit un jour. Le résultat d'outil entre dans l'historique
+              comme un message, c'est par là que l'observation revient au modèle. Et l'épuisement du
+              plafond lève une erreur explicite plutôt que de rendre une réponse incomplète en silence.
+            code:
+              - titre: La boucle, réduite à ce qui la définit
+                langage: python
+                source: |
+                  def executer(objectif, outils, etapes_max=8):
+                      historique = [{"role": "user", "content": objectif}]
+                      for tour in range(etapes_max):          # le plafond est du code, pas une consigne
+                          decision = modele.decider(historique, outils)
+                          if decision.terminee:
+                              return decision.reponse
+                          resultat = outils.appeler(decision.outil, decision.arguments)
+                          historique.append({"role": "tool", "content": resultat})
+                      raise PlafondAtteint(f"{etapes_max} étapes sans conclure")
+          - titre: Les limites qu'il faut connaître avant de promettre
+            texte: >-
+              Les erreurs se cumulent. Chaque décision s'appuie sur les résultats des étapes précédentes, y
+              compris sur ceux qui étaient faux. Une recherche mal filtrée au deuxième tour oriente tous les
+              suivants, et l'agent conclut avec assurance sur des données qu'il n'aurait pas dû retenir.
+              C'est la raison pour laquelle on vérifie les résultats intermédiaires, et pas seulement la
+              réponse finale.
+
+              Le coût suit le nombre d'étapes. Chaque tour renvoie au modèle tout l'historique accumulé : la
+              facture ne croît pas linéairement avec le nombre d'étapes, elle croît plus vite. Un agent qui
+              prend vingt tours là où cinq suffisaient coûte bien plus de quatre fois le prix.
+
+              La latence s'additionne, et elle se voit. Un enchaînement de dix appels, même rapides,
+              fabrique une attente que l'utilisateur ressent comme une panne. Un agent qui travaille en
+              arrière-plan et rend sa copie plus tard est souvent un meilleur produit qu'un agent qui fait
+              patienter.
+
+              Les actions irréversibles ne pardonnent pas. C'est le seul point de cette liste où une erreur
+              ne se rattrape pas par une relance du programme, et c'est pourquoi il occupe une séance
+              entière en fin de parcours.
+          - titre: Erreurs fréquentes en cadrage
+            texte: >-
+              Confondre une règle métier et une consigne au modèle. « Exclure les litiges » écrit dans un
+              prompt est une suggestion ; écrit dans une fonction de filtrage, c'est une garantie. Toute
+              règle qui engage l'entreprise appartient au code.
+
+              Écrire des critères de réussite invérifiables. « L'agent doit être pertinent » ne se teste
+              pas. « L'agent ne propose jamais de relance pour une facture marquée en litige » se teste, et
+              ce test tombera en panne le jour où quelqu'un cassera la règle.
+
+              Oublier de nommer les actions interdites. Un cadrage qui ne liste que ce que l'agent peut
+              faire laisse le reste à l'interprétation. La liste des interdits est plus courte à écrire et
+              plus utile à relire.
+
+              Choisir un agent parce que le sujet est à la mode. Si l'enchaînement est connu d'avance, un
+              workflow sera plus rapide, moins cher et plus facile à tester. Savoir le dire est une
+              compétence du métier, pas un aveu de faiblesse.
+          - titre: Mémo de la séance
+            texte: >-
+              Un agent est une boucle dans laquelle le modèle choisit l'étape suivante ; le code la borne.
+
+              Quatre composants : modèle, outils, mémoire, contrôle. Le contrôle est celui qu'on oublie.
+
+              Qui choisit l'étape suivante, et combien de passages : ces deux questions départagent chatbot,
+              RAG, workflow et agent.
+
+              Une action est irréversible si son annulation demande un geste humain hors du système.
+
+              Une règle qui engage l'entreprise est du code, jamais une phrase dans un prompt.
         contenu: >-
           La boucle percevoir, raisonner, agir : le modèle lit le contexte, décide d'une action, observe son
           résultat et recommence jusqu'à atteindre l'objectif ou une condition d'arrêt. Les quatre composants d'un

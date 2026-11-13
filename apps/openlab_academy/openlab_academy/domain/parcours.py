@@ -158,6 +158,15 @@ class Module:
     figures: tuple[Figure, ...] = ()  # schémas de la séance, servis comme l'archive
     tableaux: tuple[Tableau, ...] = ()
     extraits: tuple[Extrait, ...] = ()
+    @property
+    def toutes_les_figures(self) -> tuple[Figure, ...]:
+        """Les figures du module et celles de ses sections, dédoublonnées en conservant l'ordre de lecture."""
+        vues: dict[str, Figure] = {}
+        for porteur in (self, *self.cours):
+            for figure in porteur.figures:
+                vues.setdefault(figure.nom, figure)
+        return tuple(vues.values())
+
     grille_cas: Grille | None = None  # grille propre à la mise en situation (sinon grille générique)
     correction_cas: Chaine | None = None
     grille_livrable: Grille | None = None

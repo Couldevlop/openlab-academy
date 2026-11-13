@@ -160,11 +160,12 @@ class _Lecteur:
 
     def sections(self, brut, chemin: str) -> tuple[Section, ...]:
         """Clé facultative `cours:` : le chapitre en sections titrées. Le texte d'une section se découpe en
-        paragraphes sur les lignes vides, comme les travaux pratiques."""
+        paragraphes sur les sauts de ligne, comme les travaux pratiques : un scalaire YAML replié (>-)
+        réduit déjà une ligne vide à un simple saut."""
         resultat = []
         for i, s in enumerate(self._entrees(brut, chemin)):
             ou = f"{chemin}[{i}]"
-            paragraphes = tuple(p.strip() for p in re.split(r"\n\s*\n", str(s.get("texte") or "")) if p.strip())
+            paragraphes = tuple(p.strip() for p in re.split(r"\n+", str(s.get("texte") or "")) if p.strip())
             resultat.append(self._construire(
                 Section, ou, titre=str(s.get("titre") or ""), paragraphes=paragraphes,
                 figures=self.figures(s.get("figures"), f"{ou}.figures"),

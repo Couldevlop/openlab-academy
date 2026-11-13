@@ -190,12 +190,13 @@ class DepotFrappe:
         titre = f"{m.num} · {m.title}"
         # un média ne se joint qu'à une leçon existante : la première passe écrit le contenu sans les médias,
         # la seconde le réécrit une fois les adresses connues
-        sans_media = dataclasses.replace(m, figures=())
+        sans_media = dataclasses.replace(
+            m, figures=(), cours=tuple(dataclasses.replace(s, figures=()) for s in m.cours))
         lecon = self._nouvelle_lecon(cours_id, chapitre, titre,
                                      editorjs.lecon_module(sans_media, devoir, heures),
                                      evaluations, videos.get(titre, ""))
         url = ressources_frappe.joindre(lecon.name, m.archive) if m.archive else None
-        figures = {f.nom: ressources_frappe.joindre(lecon.name, f.nom) for f in m.figures}
+        figures = {f.nom: ressources_frappe.joindre(lecon.name, f.nom) for f in m.toutes_les_figures}
         if m.quiz:
             quiz = self._quiz(cours_id, lecon.name, m)
             cas = self._devoir(cours_id, f"Mise en situation {m.num} — {m.title}", editorjs.consigne_cas(m),
@@ -205,7 +206,7 @@ class DepotFrappe:
             lecon.set("assessments", evaluations + [{"assessment_type": "LMS Quiz", "assessment_name": quiz},
                                                     {"assessment_type": "LMS Assignment", "assessment_name": cas}])
             lecon.save(ignore_permissions=True)
-        elif url or figures:
+        elif url or figures:  # seules les images manquent à la première passe
             lecon.content = editorjs.lecon_module(m, devoir, heures, archive_url=url, figures_urls=figures)
             lecon.save(ignore_permissions=True)
         return lecon.name

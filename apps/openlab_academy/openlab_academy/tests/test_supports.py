@@ -172,7 +172,7 @@ class TestFiguresLivrees(unittest.TestCase):
             for bloc in parcours.blocs:
                 for m in bloc.modules:
                     manquantes += [f"{parcours.title} / {m.num} : {f.nom}"
-                                   for f in m.figures if not (ressources / f.nom).is_file()]
+                                   for f in m.toutes_les_figures if not (ressources / f.nom).is_file()]
         self.assertEqual(manquantes, [], "\n".join(manquantes))
 
 

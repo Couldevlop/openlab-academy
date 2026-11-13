@@ -30,6 +30,12 @@ def _textes_du_parcours(p: Parcours):
     for bloc in p.blocs:
         for m in bloc.modules:
             yield from (m.contenu, m.livrable, m.mise_en_situation, m.travaux_pratiques or "")
+            for section in m.cours:
+                yield from (section.titre, *section.paragraphes)
+                for t in section.tableaux:
+                    yield from (t.titre, *t.entetes, *(c for ligne in t.lignes for c in ligne))
+                for f in section.figures:
+                    yield f.legende
             for q in m.quiz:
                 yield from (q.enonce, q.explication, *q.options)
     for projet in (*(p.portfolio or ()), p.capstone):
@@ -43,7 +49,8 @@ def _prose_rendue(p: Parcours, reglages: Reglages):
     """Les phrases que le rendu ajoute de lui-même, invisibles dans le YAML."""
     modules = [m for bloc in p.blocs for m in bloc.modules]
     # les figures exigent une adresse servie par le site ; la prose ne dépend pas de laquelle
-    urls = {f.nom: f"/private/files/{f.nom}" for m in modules for f in m.figures}
+    porteurs = [*modules, *(section for m in modules for section in m.cours)]
+    urls = {f.nom: f"/private/files/{f.nom}" for porteur in porteurs for f in porteur.figures}
     documents = [editorjs.lecon_module(m, "D", p.heures_par_module, figures_urls=urls) for m in modules]
     documents += [editorjs.lecon_projet(p.capstone, "D", reglages)]
     for document in documents:
