@@ -272,9 +272,141 @@ def _couper(texte: str, largeur: int) -> list[str]:
     if courante:
         lignes.append(courante)
     return lignes
+def frise_agentique() -> Dessin:
+    """Séance 1 : les cinq âges de l'agentique, et ce que chacun a laissé derrière lui."""
+    d = Dessin(900, 420, "De 1966 à aujourd'hui : cinq âges de l'agentique")
+    ages = [
+        ("1966\u20131985", "Programmes\nsymboliques", ["ELIZA, SHRDLU,", "systèmes experts"],
+         "règles écrites à la main", "attenue"),
+        ("1986\u20132005", "Agents\nlogiciels", ["agents BDI,", "systèmes multi-agents"],
+         "autonomie théorisée", "attenue"),
+        ("2006\u20132016", "Apprentissage", ["apprentissage profond,", "renforcement, AlphaGo"],
+         "l'agent apprend sa politique", "s3"),
+        ("2017\u20132021", "Transformeur", ["attention, GPT,", "prompting"],
+         "le langage devient interface", "s3"),
+        ("2022\u20132026", "Agents outillés", ["ReAct, tool calling,", "MCP, A2A"],
+         "le modèle agit sur le monde", "s1"),
+    ]
+    for i, (periode, titre, lignes, apport, teinte) in enumerate(ages):
+        x = 24 + i * 176
+        d.texte(x + 80, 84, periode, taille=12, gras=True, couleur="encre2")
+        d.boite(x, 96, 160, 108, teinte=teinte)
+        for j, ligne in enumerate(titre.split("\n")):
+            d.texte(x + 80, 124 + j * 18, ligne, taille=14, gras=True)
+        d.lignes_de_texte(x + 80, 168, lignes, taille=11)
+        d.lignes_de_texte(x + 80, 232, _couper(apport, 20), taille=11, couleur="encre2")
+        if i < len(ages) - 1:
+            d.fleche(x + 160, 150, x + 172, 150, teinte="attenue")
+    d.texte(450, 40, "Rien n'a commencé en 2022 : chaque âge a légué une idée qui sert encore.",
+            taille=14, gras=True)
+    d.texte(450, 62, "La boucle percevoir, décider, agir date des agents logiciels ; le modèle n'a fait "
+                     "que remplacer les règles.", taille=12, couleur="encre2")
+    d.boite(140, 296, 620, 68, teinte="s2", tirets=True)
+    d.texte(450, 320, "Ce qui est vraiment nouveau depuis 2022", taille=13, gras=True, couleur="s2")
+    d.texte(450, 342, "un seul modèle généraliste sait choisir l'outil, lire le résultat et "
+                      "recommencer, sans code spécifique.", taille=11, couleur="encre2")
+    d.texte(450, 392, "Les échecs de chaque âge sont instructifs : ils reviennent dès qu'on retire "
+                      "une borne.", taille=12, gras=True, couleur="encre2")
+    return d
+
+
+def anatomie_llm() -> Dessin:
+    """Séance 2 : du texte à la distribution de probabilité, et ce qui se règle à chaque étape."""
+    d = Dessin(880, 400, "Ce qu'un modèle de langage fait d'un texte")
+    etapes = [
+        ("Découpage", ["le texte devient", "des jetons"], "s3", "un mot rare coûte plusieurs jetons"),
+        ("Plongement", ["chaque jeton devient", "un vecteur"], "s3", "le sens devient une position"),
+        ("Attention", ["chaque jeton regarde", "les précédents"], "s1", "coût quadratique du contexte"),
+        ("Distribution", ["un score par jeton", "du vocabulaire"], "s1", "le modèle ne choisit pas encore"),
+        ("Échantillonnage", ["un jeton est tiré,", "puis tout recommence"], "s2",
+         "température et top-p agissent ici"),
+    ]
+    for i, (nom, lignes, teinte, note) in enumerate(etapes):
+        x = 20 + i * 172
+        d.boite(x, 110, 158, 92, teinte=teinte)
+        d.texte(x + 79, 138, nom, taille=14, gras=True)
+        d.lignes_de_texte(x + 79, 160, lignes, taille=11)
+        d.lignes_de_texte(x + 79, 224, _couper(note, 24), taille=11, couleur="encre2")
+        if i < len(etapes) - 1:
+            d.fleche(x + 158, 156, x + 168, 156, teinte=teinte)
+    d.ajouter('<path d="M 790 202 L 790 274 L 99 274 L 99 206" fill="none" stroke="var(--s2)"'
+              ' stroke-width="2" marker-end="url(#pointe-s2)"/>')
+    d.texte(445, 292, "un jeton à la fois : la réponse entière est cette boucle répétée",
+            taille=12, couleur="s2")
+    d.texte(440, 40, "Un modèle prédit le jeton suivant. Tout le reste en découle.", taille=14, gras=True)
+    d.texte(440, 62, "Il ne consulte rien, ne vérifie rien et ne sait pas qu'il ignore : d'où les outils.",
+            taille=12, couleur="encre2")
+    d.boite(120, 316, 640, 64, teinte="critique", tirets=True)
+    d.texte(440, 340, "Conséquence pour un agent", taille=12, gras=True, couleur="critique")
+    d.texte(440, 362, "la fenêtre de contexte est une mémoire de travail payante, pas un disque dur.",
+            taille=11, couleur="encre2")
+    return d
+
+
+def familles_modeles() -> Dessin:
+    """Séance 2 : propriétaire, poids ouverts, pleinement ouvert, et ce que chacun vous laisse faire."""
+    d = Dessin(860, 380, "Trois familles de modèles, et ce que vous recevez vraiment")
+    familles = [
+        ("Propriétaire", "s2", ["une API et une facture"],
+         ["Pas de poids, pas de données", "Mise à jour subie", "Données envoyées au fournisseur"],
+         "le meilleur niveau, le moins de maîtrise"),
+        ("Poids ouverts", "s1", ["les poids, pas la recette"],
+         ["Exécution locale possible", "Réglage fin autorisé", "Licence parfois restrictive"],
+         "le compromis le plus fréquent"),
+        ("Pleinement ouvert", "s3", ["poids, données et code"],
+         ["Reproductible et auditable", "Souveraineté réelle", "Niveau souvent en retrait"],
+         "le seul vérifiable de bout en bout"),
+    ]
+    for i, (nom, teinte, recu, points, note) in enumerate(familles):
+        x = 24 + i * 278
+        d.boite(x, 86, 262, 196, teinte=teinte)
+        d.texte(x + 131, 116, nom, taille=16, gras=True)
+        d.texte(x + 131, 140, recu[0], taille=12, couleur="encre2")
+        for j, point in enumerate(points):
+            d.texte(x + 131, 172 + j * 24, point, taille=11, couleur="encre2")
+        d.lignes_de_texte(x + 131, 306, _couper(note, 30), taille=12, couleur=teinte)
+    d.texte(430, 40, "« Open source » recouvre trois réalités très différentes.", taille=14, gras=True)
+    d.texte(430, 62, "La question utile n'est pas le nom de la licence, mais ce que vous pouvez "
+                     "exécuter, vérifier et garder.", taille=12, couleur="encre2")
+    d.texte(430, 358, "Pour un agent : la famille choisie décide de l'endroit où vont vos données "
+                      "et du coût par exécution.", taille=12, gras=True, couleur="encre2")
+    return d
+
+
+def anatomie_prompt() -> Dessin:
+    """Séance 3 : les couches d'un prompt d'agent, et la frontière entre consigne et donnée."""
+    d = Dessin(820, 440, "Les couches d'un prompt d'agent")
+    couches = [
+        ("Rôle et mission", "ce que l'agent est et ce qu'il doit obtenir", "s1"),
+        ("Contraintes dures", "ce qui est interdit, en toutes lettres", "s1"),
+        ("Outils disponibles", "nom, usage, arguments, effet de bord", "s3"),
+        ("Format de sortie", "la forme exacte attendue, montrée", "s3"),
+        ("Exemples", "deux cas, dont un cas limite", "s3"),
+    ]
+    for i, (nom, detail, teinte) in enumerate(couches):
+        y = 92 + i * 52
+        d.boite(140, y, 540, 44, teinte=teinte)
+        d.texte(170, y + 27, nom, taille=13, gras=True, ancre="start")
+        d.texte(660, y + 27, detail, taille=11, ancre="end", couleur="encre2")
+    d.boite(140, 360, 540, 56, teinte="critique", tirets=True)
+    d.texte(170, 382, "Données lues par l'agent", taille=13, gras=True, ancre="start", couleur="critique")
+    d.texte(170, 402, "factures, documents, résultats d'outils : citées, jamais fusionnées avec les consignes",
+            taille=11, ancre="start", couleur="encre2")
+    d.fleche(410, 352, 410, 358, teinte="critique")
+    d.texte(410, 40, "Un prompt d'agent s'écrit en couches, de la plus stable à la plus volatile.",
+            taille=14, gras=True)
+    d.texte(410, 62, "Les quatre premières changent rarement ; la dernière change à chaque exécution.",
+            taille=12, couleur="encre2")
+    d.texte(410, 434, "Une consigne et une donnée qui se ressemblent à l'écran se confondront "
+                      "aussi dans le modèle.", taille=12, gras=True, couleur="encre2")
+    return d
 
 
 FIGURES = {
+    "frise-agentique.svg": frise_agentique,
+    "anatomie-llm.svg": anatomie_llm,
+    "familles-modeles.svg": familles_modeles,
+    "anatomie-prompt.svg": anatomie_prompt,
     "boucle-agent.svg": boucle_agent,
     "appel-outil.svg": appel_outil,
     "quatre-familles.svg": quatre_familles,
