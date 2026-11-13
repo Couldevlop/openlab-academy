@@ -17,7 +17,7 @@ client — sans jamais déplacer les règles métier hors du code. La délégati
 3. 55–70 min : vérifier la découverte des outils par un client (l'inspecteur du SDK suffit).
 4. 70–80 min : pause.
 5. 80–115 min : brancher la boucle du socle sur le serveur : l'agent appelle désormais l'outil *à travers* MCP, et
-   le résultat reste identique (5 factures, 7 730,00 EUR).
+   le résultat reste identique (5 factures, 7 730 000 F CFA).
 6. 115–145 min : moindre privilège. Ne jamais exposer `enregistrer_relance_simulee` ni `approve` ; démontrer qu'un
    client MCP ne peut donc pas déclencher l'action finale.
 7. 145–170 min : A2A sur le papier. Rédiger la fiche d'Agent Card d'un « agent conformité » à qui l'on

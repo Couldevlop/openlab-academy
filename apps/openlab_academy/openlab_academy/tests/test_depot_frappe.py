@@ -16,7 +16,7 @@ from openlab_academy.infrastructure.depot_frappe import DepotFrappe
 from openlab_academy.tests.fabriques import parcours, parcours_brut, projet
 
 TITRE = "Parcours de test seed"
-ARCHIVE = "socle-ia-agentique-v0.2.0.zip"
+ARCHIVE = "socle-ia-agentique-v0.3.0.zip"
 
 
 def compter(cours):

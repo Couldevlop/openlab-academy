@@ -708,7 +708,7 @@ blocs:
               dans la phrase : un entier entre zéro et trois cent soixante cinq se déclare, il ne se
               demande pas poliment.
 
-              Nommez les unités dans les noms de champs. Un champ montant_eur empêche l'erreur d'échelle
+              Nommez les unités dans les noms de champs. Un champ montant_fcfa empêche l'erreur d'échelle
               qu'un champ montant autorise. Déclarez enfin les effets de bord : un outil qui écrit quelque
               part doit le dire, pour que vous puissiez décider, en lisant la seule liste des outils, ce qui
               mérite une validation humaine.
@@ -990,7 +990,7 @@ blocs:
               impayés de plus de trente jours ». Le modèle décide d'appeler l'outil de recherche avec un âge
               minimal de trente jours. Le code exécute la requête et renvoie cinq factures. Le modèle
               observe ce résultat, constate qu'il manque les montants cumulés, appelle l'outil de calcul,
-              observe une exposition de 7 730,00 EUR, puis décide qu'il a de quoi rédiger. Quatre tours,
+              observe une exposition de 7 730 000 F CFA, puis décide qu'il a de quoi rédiger. Quatre tours,
               trois appels d'outils, une conclusion.
 
               Rien n'oblige cette boucle à s'arrêter. Si l'outil de recherche renvoie une erreur et que le
@@ -1365,7 +1365,7 @@ blocs:
               liste de dictionnaires se relit sans ambiguïté, un paragraphe se réinterprète. Bornez la
               taille : un outil qui rend trois cents factures remplit le contexte et fait perdre au modèle
               ce qu'il cherchait ; rendez les cinquante premières et dites combien il y en a au total.
-              Nommez les unités : « montant_eur » vaut mieux que « montant », parce qu'un modèle qui
+              Nommez les unités : « montant_fcfa » vaut mieux que « montant », parce qu'un modèle qui
               hésite sur l'unité se trompe d'ordre de grandeur en toute confiance.
 
               Une quatrième règle concerne la troncature : si vous coupez, dites-le dans la réponse. Un
@@ -1377,7 +1377,7 @@ blocs:
                 lignes:
                   - ["Structure", "« J'ai trouvé cinq factures »", "liste d'objets avec champs nommés", "moins de réinterprétation"]
                   - ["Taille", "les 312 lignes", "50 lignes et « total : 312 »", "contexte préservé"]
-                  - ["Unités", "montant : 7730", "montant_eur : 7730.00", "pas d'erreur d'échelle"]
+                  - ["Unités", "montant : 7730", "montant_fcfa : 7730.00", "pas d'erreur d'échelle"]
                   - ["Troncature", "coupe silencieuse", "champ « tronque : true »", "le modèle sait qu'il manque des données"]
                   - ["Vide", "chaîne vide", "« aucune facture ne correspond »", "le modèle ne croit pas à une panne"]
           - titre: Les erreurs d'outil, classées par ce qu'il faut en faire
@@ -1436,7 +1436,7 @@ blocs:
               est positif et sous la borne, l'argument « montant_min » absent prend sa valeur par défaut à
               zéro, aucun argument inconnu.
 
-              L'outil s'exécute et rend cinq factures, pour un total de 7 730,00 EUR, sans les trois
+              L'outil s'exécute et rend cinq factures, pour un total de 7 730 000 F CFA, sans les trois
               litiges que la fonction de filtrage a écartés. Le point d'appel écrit au journal l'étape,
               l'outil, les arguments et la durée, puis renvoie le résultat structuré.
 
@@ -1490,6 +1490,7 @@ blocs:
           bornée par un nombre maximal de tours. Valider les arguments avant exécution (types, bornes, chemins
           autorisés) et renvoyer au modèle les erreurs d'outil sous forme de résultat lisible plutôt que
           d'interrompre le programme.
+        archive: socle-ia-agentique-v0.3.0.zip
         livrable: >-
           Étape 5 : dépôt de départ installé et tests verts, filtre de montant minimal ajouté à l'outil de recherche,
           contrat JSON et modèle de validation mis à jour, trois tests dont deux cas invalides.
@@ -1500,7 +1501,7 @@ blocs:
           d'étapes.
         travaux_pratiques: >-
           Travail guidé, environ 3 h. Installez le dépôt de départ dans un environnement virtuel et vérifiez que la suite
-          de tests passe et que la démonstration annonce bien 5 factures et 7 730,00 EUR. Lisez ensuite la boucle, le
+          de tests passe et que la démonstration annonce bien 5 factures et 7 730 000 F CFA. Lisez ensuite la boucle, le
           registre d'outils et les contrats de validation, puis tracez un appel de recherche et son observation du départ
           jusqu'au retour. Ajoutez un filtre de montant minimal à l'outil de recherche, écrivez des tests nominaux et des
           cas invalides, éprouvez un outil absent de la liste blanche et le plafond d'étapes, et terminez par la lecture
@@ -1944,7 +1945,7 @@ blocs:
                   # ...on y verse un agregat, et l'agent lit le detail par un outil quand il en a besoin
                   historique.append({"role": "tool", "content": json.dumps({
                       "nombre": len(factures),
-                      "exposition_eur": total,
+                      "exposition_fcfa": total,
                       "identifiants": [f.id for f in factures],     # le detail reste dans l'etat
                   })})
             tableaux:
@@ -2892,13 +2893,13 @@ capstone:
     - titre: Le périmètre exact, et le jeu de données du fil rouge
       texte: >-
         Le jeu de données compte douze factures fictives, dans le fichier data/factures_fictives.csv du
-        dépôt. Au seuil de trente jours de retard, cinq sont relançables, pour une exposition de 7 730,00 EUR :
+        dépôt. Au seuil de trente jours de retard, cinq sont relançables, pour une exposition de 7 730 000 F CFA :
         FAC-001, FAC-004, FAC-006, FAC-011 et FAC-012. Trois sont en litige et ne doivent jamais recevoir de
         relance, quel que soit leur retard : FAC-003, FAC-007 et FAC-010. Les quatre dernières, FAC-002,
         FAC-005, FAC-008 et FAC-009, n'atteignent pas le seuil de retard.
 
-        Ce total de 7 730,00 EUR est votre ancre de vérification, et il correspond au critère AC-01 du dépôt.
-        Le critère AC-02 vous en donne une seconde : au seuil de soixante jours, deux factures et 4 990,00 EUR.
+        Ce total de 7 730 000 F CFA est votre ancre de vérification, et il correspond au critère AC-01 du dépôt.
+        Le critère AC-02 vous en donne une seconde : au seuil de soixante jours, deux factures et 4 990 000 F CFA.
         Écrivez ces deux totaux dans des tests, pas dans un commentaire ; un commentaire ne vous préviendra
         jamais.
 
@@ -2914,7 +2915,7 @@ capstone:
             - ["Éligibles à 30 jours (001, 004, 006, 011, 012)", 5, Brouillon de relance préparé, Cinq brouillons et pas un de plus]
             - ["En litige (003, 007, 010)", 3, Exclusion imposée par le code, Un test qui échoue si l'une apparaît]
             - ["Sous le seuil (002, 005, 008, 009)", 4, Exclusion sur le retard en jours, "Le seuil lisible dans le code, pas dans la consigne"]
-            - ["Éligibles à 60 jours (006, 012)", 2, "Exposition de 4 990,00 EUR", Le critère AC-02 vérifié séparément]
+            - ["Éligibles à 60 jours (006, 012)", 2, "Exposition de 4 990 000 F CFA", Le critère AC-02 vérifié séparément]
     - titre: L'architecture attendue, et l'arborescence du dépôt
       texte: >-
         L'architecture est hexagonale, et elle doit se voir sans explication. Le cœur contient les règles de
@@ -2989,7 +2990,7 @@ capstone:
           entetes: [Outil, Arguments validés, Renvoie, Interdit]
           lignes:
             - [lister_factures_impayees, "age_min_jours entier positif, exclure_litiges booléen", Liste de factures sans leurs notes libres, Renvoyer les notes non fiables au modèle]
-            - [calculer_exposition, facture_ids connus du jeu de données, Somme en euros, Accepter un montant proposé par le modèle]
+            - [calculer_exposition, facture_ids connus du jeu de données, Somme en francs CFA, Accepter un montant proposé par le modèle]
             - [preparer_brouillon_relance, "facture_id et palier entier", Brouillon local, Incorporer une note libre dans le texte]
             - [soumettre_pour_validation, brouillon_id existant, Demande d'accord humain, Produire lui même l'accord]
             - [enregistrer_relance_simulee, "brouillon_id, cle_idempotence, validation_id", Écriture locale simulée, S'exécuter sans validation_id approuvé]

@@ -7,13 +7,16 @@ from openlab_academy.infrastructure.yaml_source import PARCOURS_DIR, charger_dos
 
 TITRE = TITRE_LANCEMENT
 MODULES = [
-    ("01", "Anatomie d'un agent IA"),
-    ("02", "Tool calling et boucle d'agent"),
-    ("03", "Patterns d'orchestration"),
-    ("04", "État, mémoire et reprise sur erreur"),
-    ("05", "MCP et interopérabilité"),
-    ("06", "Architectures multi-agents et A2A"),
-    ("07", "Sécurité, évaluation et observabilité"),
+    ("01", "Histoire de l'IA agentique, de 1966 à aujourd'hui"),
+    ("02", "Les modèles de langage, de l'intérieur"),
+    ("03", "Le prompting, pratiques qui tiennent à la mesure"),
+    ("04", "Anatomie d'un agent IA"),
+    ("05", "Tool calling et boucle d'agent"),
+    ("06", "L'orchestrateur sans framework"),
+    ("08", "État, mémoire et reprise sur erreur"),
+    ("12", "MCP et interopérabilité"),
+    ("13", "Architectures multi-agents et A2A"),
+    ("14", "Sécurité, évaluation et observabilité"),
 ]
 
 
@@ -43,16 +46,17 @@ class TestParcoursIaAgentique(unittest.TestCase):
     def test_cles_de_lancement(self):
         self.assertEqual((self.p.gratuit, self.p.acces_limite_a_la_cohorte, self.p.mise_en_avant), (True, True, True))
 
-    def test_sept_modules_dans_l_ordre(self):
+    def test_modules_dans_l_ordre(self):
         modules = [(m.num, m.title) for b in self.p.blocs for m in b.modules]
         self.assertEqual(modules, MODULES)
 
     def test_exercices_et_fil_rouge(self):
-        for n, m in enumerate((m for b in self.p.blocs for m in b.modules), start=1):
+        for m in (m for b in self.p.blocs for m in b.modules):
             with self.subTest(m.num):
                 self.assertEqual(len(m.quiz), 5)
                 self.assertTrue(m.mise_en_situation.strip())
-                self.assertTrue(m.livrable.startswith(f"Étape {n} :"), m.livrable)
+                # le livrable porte le numéro de la séance : les séances se lisent dans l'ordre du dépôt
+                self.assertTrue(m.livrable.startswith(f"Étape {int(m.num)} :"), m.livrable)
                 for q in m.quiz:
                     self.assertEqual(len(q.options), 4)
                     self.assertEqual(len(q.bonnes), 1)
@@ -60,7 +64,7 @@ class TestParcoursIaAgentique(unittest.TestCase):
     def test_charge_et_capstone(self):
         self.assertEqual(self.p.portfolio, ())
         self.assertEqual(self.p.heures_par_module, 3)
-        self.assertEqual(self.p.charge_horaire(), 24)
+        self.assertEqual(self.p.charge_horaire(), 3 * len(MODULES) + self.p.capstone.duree_h)
         self.assertEqual(self.p.capstone.titre, "Projet final et revue technique")
 
     def test_aucun_texte_inacheve(self):

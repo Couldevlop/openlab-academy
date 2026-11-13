@@ -25,7 +25,7 @@ def test_ac01_search_30_days_excluding_disputes(tmp_path):
     assert result["ok"] is True
     assert result["nombre"] == 5
     exposure = wf.calculate_exposure({"facture_ids": [x["facture_id"] for x in result["factures"]]})
-    assert exposure["total_eur"] == 7730.00
+    assert exposure["total_fcfa"] == 7_730_000
 
 
 def test_ac02_search_60_days_excluding_disputes(tmp_path):
@@ -33,7 +33,7 @@ def test_ac02_search_60_days_excluding_disputes(tmp_path):
     result = wf.list_invoices({"age_min_jours": 60, "exclure_litiges": True})
     assert result["nombre"] == 2
     exposure = wf.calculate_exposure({"facture_ids": [x["facture_id"] for x in result["factures"]]})
-    assert exposure["total_eur"] == 4990.00
+    assert exposure["total_fcfa"] == 4_990_000
 
 
 def test_ac03_dispute_cannot_be_drafted(tmp_path):
