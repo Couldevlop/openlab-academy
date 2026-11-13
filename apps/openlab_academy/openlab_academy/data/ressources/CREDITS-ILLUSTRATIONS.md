@@ -55,6 +55,6 @@ Licence : https://unsplash.com/license
 | ouverture-15.jpg | `photo-1606185540834-d6e7483ee1a4` |
 | ouverture-16.jpg | `photo-1708807472445-d33589e6b090` |
 | ouverture-17.jpg | `photo-1511376868136-742c0de8c9a8` |
-| ouverture-18.jpg | `photo-1560439514-0fc9d2cd5e1b` |
+| ouverture-18.jpg | `photo-1681949222860-9cb3b0329878` |
 
 Chaque image est servie en fichier privé de leçon : elle suit le contrôle d'accès du parcours.
