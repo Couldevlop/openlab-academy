@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 460" width="920" height="460" role="img" aria-label="Quatre niveaux emboites, et deux questions">
+<title>Quatre niveaux emboites, et deux questions</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="920" height="460" fill="var(--surface)"/>
+<rect x="30" y="70" width="500" height="46" rx="8" class="b-trait" fill="var(--surface)"/>
+<text x="46" y="90" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Intelligence artificielle</text>
+<text x="46" y="107" text-anchor="start" font-size="10" fill="var(--encre2)">automatiser une tache qui demande de l&#x27;intelligence, depuis 1956</text>
+<rect x="52" y="124" width="456" height="46" rx="8" class="b-trait" fill="var(--surface)"/>
+<text x="68" y="144" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Apprentissage automatique</text>
+<text x="68" y="161" text-anchor="start" font-size="10" fill="var(--encre2)">le systeme deduit ses regles des donnees</text>
+<rect x="74" y="178" width="412" height="46" rx="8" class="b-trait" fill="var(--surface)"/>
+<text x="90" y="198" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Apprentissage profond</text>
+<text x="90" y="215" text-anchor="start" font-size="10" fill="var(--encre2)">des couches de neurones, des representations abstraites</text>
+<rect x="96" y="232" width="368" height="46" rx="8" class="b-trait" fill="var(--surface)"/>
+<text x="112" y="252" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">IA generative</text>
+<text x="112" y="269" text-anchor="start" font-size="10" fill="var(--encre2)">produire un contenu nouveau, pas une etiquette</text>
+<rect x="118" y="286" width="324" height="46" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="134" y="306" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Modeles de langage</text>
+<text x="134" y="323" text-anchor="start" font-size="10" fill="var(--encre2)">la specialisation texte : notre sujet</text>
+<text x="30" y="44" text-anchor="start" font-size="15" font-weight="600" fill="var(--encre)">Quatre niveaux qui s&#x27;emboitent, et qu&#x27;on confond souvent</text>
+<rect x="580" y="70" width="310" height="130" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="735" y="96" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Modele discriminatif</text>
+<text x="735" y="122" text-anchor="middle" font-size="11" fill="var(--encre2)">A quelle categorie appartient</text>
+<text x="735" y="137" text-anchor="middle" font-size="11" fill="var(--encre2)">cette entree ?</text>
+<text x="735" y="152" text-anchor="middle" font-size="11" fill="var(--encre2)">Sortie : une etiquette, un score</text>
+<text x="735" y="188" text-anchor="middle" font-size="11" font-weight="600" fill="var(--encre2)">espace des reponses ferme</text>
+<rect x="580" y="226" width="310" height="130" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="735" y="252" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Modele generatif</text>
+<text x="735" y="278" text-anchor="middle" font-size="11" fill="var(--encre2)">Quelle suite plausible</text>
+<text x="735" y="293" text-anchor="middle" font-size="11" fill="var(--encre2)">puis-je produire ?</text>
+<text x="735" y="308" text-anchor="middle" font-size="11" fill="var(--encre2)">Sortie : un contenu inedit</text>
+<text x="735" y="344" text-anchor="middle" font-size="11" font-weight="600" fill="var(--encre2)">espace des reponses ouvert</text>
+<text x="460" y="410" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">Aucun des deux ne comprend : tous deux exploitent des regularites statistiques apprises.</text>
+<text x="460" y="436" text-anchor="middle" font-size="11" fill="var(--encre2)">L&#x27;ouverture du second fait sa puissance et tout son risque : c&#x27;est a vous de la borner.</text>
+</svg>

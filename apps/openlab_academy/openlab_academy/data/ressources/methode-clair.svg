@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 440" width="920" height="440" role="img" aria-label="Cinq questions avant d&#x27;ecrire">
+<title>Cinq questions avant d&#x27;ecrire</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="920" height="440" fill="var(--surface)"/>
+<text x="30" y="48" text-anchor="start" font-size="15" font-weight="600" fill="var(--encre)">Cinq lettres, cinq questions, cinq lignes au brouillon</text>
+<rect x="30" y="76" width="56" height="56" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="58" y="112" text-anchor="middle" font-size="24" font-weight="600" fill="var(--encre)">C</text>
+<rect x="98" y="76" width="420" height="56" rx="8" class="b-trait" fill="var(--surface)"/>
+<text x="114" y="100" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Contexte</text>
+<text x="114" y="118" text-anchor="start" font-size="10" fill="var(--encre2)">De quoi parle-t-on, pour qui, dans quel but ?</text>
+<rect x="530" y="76" width="360" height="56" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="546" y="110" text-anchor="start" font-size="11" fill="var(--encre2)">Factures echues, lues par un comptable</text>
+<rect x="30" y="142" width="56" height="56" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="58" y="178" text-anchor="middle" font-size="24" font-weight="600" fill="var(--encre)">L</text>
+<rect x="98" y="142" width="420" height="56" rx="8" class="b-trait" fill="var(--surface)"/>
+<text x="114" y="166" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Livrable</text>
+<text x="114" y="184" text-anchor="start" font-size="10" fill="var(--encre2)">Quelle forme, quelle longueur, quel support ?</text>
+<rect x="530" y="142" width="360" height="56" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="546" y="176" text-anchor="start" font-size="11" fill="var(--encre2)">Un brouillon de relance, 150 mots au plus</text>
+<rect x="30" y="208" width="56" height="56" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="58" y="244" text-anchor="middle" font-size="24" font-weight="600" fill="var(--encre)">A</text>
+<rect x="98" y="208" width="420" height="56" rx="8" class="b-trait" fill="var(--surface)"/>
+<text x="114" y="232" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Action</text>
+<text x="114" y="250" text-anchor="start" font-size="10" fill="var(--encre2)">Un verbe precis, une seule tache a la fois.</text>
+<rect x="530" y="208" width="360" height="56" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="546" y="242" text-anchor="start" font-size="11" fill="var(--encre2)">Rediger le brouillon, sans l&#x27;envoyer</text>
+<rect x="30" y="274" width="56" height="56" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="58" y="310" text-anchor="middle" font-size="24" font-weight="600" fill="var(--encre)">I</text>
+<rect x="98" y="274" width="420" height="56" rx="8" class="b-trait" fill="var(--surface)"/>
+<text x="114" y="298" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Illustrations</text>
+<text x="114" y="316" text-anchor="start" font-size="10" fill="var(--encre2)">Un exemple de ce qui est attendu ou refuse.</text>
+<rect x="530" y="274" width="360" height="56" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="546" y="308" text-anchor="start" font-size="11" fill="var(--encre2)">Un brouillon valide, un cas de litige</text>
+<rect x="30" y="340" width="56" height="56" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="58" y="376" text-anchor="middle" font-size="24" font-weight="600" fill="var(--encre)">R</text>
+<rect x="98" y="340" width="420" height="56" rx="8" class="b-trait" fill="var(--surface)"/>
+<text x="114" y="364" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Regles</text>
+<text x="114" y="382" text-anchor="start" font-size="10" fill="var(--encre2)">Contraintes, interdits, critere de reussite.</text>
+<rect x="530" y="340" width="360" height="56" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="546" y="374" text-anchor="start" font-size="11" fill="var(--encre2)">Aucun montant invente, arret si litige</text>
+<text x="460" y="424" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">Si vous ne savez pas repondre a l&#x27;une des cinq, le modele ne le saura pas davantage que vous.</text>
+</svg>

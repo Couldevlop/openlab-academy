@@ -345,6 +345,42 @@ blocs:
                 legende: "Un réseau de neurones, vu de loin : des poids, des couches, aucune base de données"
               - nom: anatomie-llm.svg
                 legende: Du texte au jeton suivant, et la boucle qui recommence à chaque jeton produit
+          - titre: Situer l'IA générative, et les deux questions que posent les modèles
+            texte: >-
+              Le vocabulaire courant mélange quatre niveaux qui s'emboîtent. L'intelligence artificielle
+              désigne tout système qui automatise une tâche demandant de l'intelligence, et elle existe
+              depuis 1956, y compris sans aucun apprentissage, comme vous l'avez vu à la séance 1.
+              L'apprentissage automatique en est la branche où le système déduit ses règles des données au
+              lieu qu'on les lui écrive. L'apprentissage profond en est la branche qui empile des couches
+              de neurones et apprend ainsi des représentations abstraites. L'IA générative en est la
+              branche qui produit un contenu nouveau plutôt qu'une étiquette. Les modèles de langage en
+              sont la spécialisation textuelle, et c'est tout ce dont parle ce parcours.
+
+              Savoir où l'on se trouve dans cet emboîtement évite deux erreurs de conversation. La
+              première consiste à vendre un modèle de langage là où un modèle de classification ferait
+              mieux, moins cher et de façon vérifiable. La seconde consiste à répondre « c'est de l'IA »
+              à une question qui portait sur l'architecture : la réponse utile nomme toujours le niveau,
+              le modèle et ce qu'il produit.
+
+              La différence de fond tient à la question posée. Un modèle discriminatif répond à « à
+              quelle catégorie appartient cette entrée », et son espace de réponses est fermé et connu
+              d'avance : un courriel est licite ou non, un dossier passe ou ne passe pas. Un modèle
+              génératif répond à « quelle suite plausible puis-je produire », et son espace de réponses
+              est ouvert. Cette ouverture fait sa puissance et tout son risque : rien ne borne a priori
+              ce qu'il peut écrire, c'est à vous de le borner. Aucun des deux ne comprend quoi que ce
+              soit ; tous deux exploitent des régularités statistiques apprises.
+            figures:
+              - nom: famille-ia.svg
+                legende: "Quatre niveaux emboîtés, et la question que pose chaque famille de modèles"
+            tableaux:
+              - titre: Deux familles, deux usages, deux façons de les contrôler
+                entetes: [Critère, Modèle discriminatif, Modèle génératif]
+                lignes:
+                  - [Question posée, À quelle catégorie appartient cette entrée, Quelle suite plausible produire]
+                  - [Sortie, "Une étiquette, un score", Un contenu inédit]
+                  - [Espace des réponses, "Fermé, connu d'avance", Ouvert]
+                  - [Évaluation, "Exactitude, rappel, précision", Propriétés vérifiées sur la sortie]
+                  - [Pour un agent, Utile en filtre avant appel, Le moteur de décision de la boucle]
           - titre: Les jetons, et pourquoi ils décident de votre facture
             texte: >-
               Un jeton n'est ni un mot ni un caractère : c'est un fragment fréquent, appris sur un grand
@@ -373,6 +409,31 @@ blocs:
                   - [Une ligne de facture en JSON, 40 à 60, Douze factures tiennent largement dans le contexte]
                   - [Un identifiant comme FAC-011, 3 à 5, Le modèle le recopie mal plus souvent qu'un mot]
                   - [Une trace d'exécution complète, Plusieurs milliers, Ne la renvoyez jamais entière au modèle]
+          - titre: Les plongements, quand le sens devient de la géométrie
+            texte: >-
+              Un jeton n'est qu'un identifiant numérique, et un identifiant ne porte aucun sens. La
+              première couche du modèle convertit donc chaque jeton en un vecteur de plusieurs centaines
+              de dimensions, son plongement, c'est à dire son adresse dans un espace où la proximité
+              traduit une parenté de sens et d'usage. Chien, chat et cheval y sont voisins ; Abidjan,
+              Lyon et Paris forment un autre voisinage ; et la direction qui va de homme à femme ressemble
+              à celle qui va de roi à reine. Ces régularités ne sont écrites nulle part, elles émergent de
+              l'entraînement.
+
+              Comme ce sont des vecteurs, la proximité se mesure. La similarité cosinus donne un nombre
+              entre moins un et un, qui dit si deux textes parlent de la même chose sans qu'ils partagent
+              le moindre mot. C'est elle qui permet de retrouver « congé de maternité » à partir de
+              « arrêt après accouchement », et c'est exactement le socle de la recherche documentaire que
+              vous construirez à la séance 9.
+
+              Deux précisions évitent les malentendus. Le plongement d'entrée est fixe pour un jeton
+              donné, mais dans un transformeur le vecteur est recalculé couche après couche en fonction du
+              voisinage : avocat ne finit pas au même endroit selon qu'on parle d'un fruit ou d'un
+              conseil. Et la proximité géométrique n'est pas la vérité : deux énoncés contraires sur le
+              même sujet sont très proches dans cet espace, ce qui explique qu'une recherche par vecteurs
+              seuls remonte parfois le passage qui dit l'inverse de ce que vous cherchiez.
+            figures:
+              - nom: plongements-geometrie.svg
+                legende: "Des mots proches par le sens, proches dans l'espace, et des relations qui ont une direction"
           - titre: Attention et fenêtre de contexte, le coût caché
             texte: >-
               Le mécanisme d'attention compare chaque jeton à tous les précédents. Le coût de calcul croît
@@ -394,6 +455,35 @@ blocs:
             figures:
               - nom: corps-02a.jpg
                 legende: "La fenêtre de contexte est ce que le modèle peut relire d'un coup, pas ce qu'il sait"
+          - titre: Dans le moteur, l'architecture d'un transformeur
+            texte: >-
+              L'architecture publiée en 2017 tient en peu de pièces, et elle n'a pas fondamentalement
+              changé depuis : ce sont l'échelle, la qualité des données et l'alignement qui ont produit le
+              saut d'usage. Le texte est découpé en jetons, chaque jeton reçoit son plongement et une
+              information de position, puis le même bloc est traversé de trente à cent vingt fois. Chaque
+              bloc enchaîne une attention multi-tête, où chaque jeton regarde les autres, un réseau
+              dense qui transforme le résultat, une normalisation et une connexion résiduelle qui laisse
+              passer le signal d'origine. La dernière couche projette sur le vocabulaire et donne la
+              probabilité de chaque jeton suivant.
+
+              Quatre propriétés de ce montage expliquent presque tout le reste. La phrase entière est
+              traitée d'un bloc, ce qui rend l'entraînement massivement parallélisable sur accélérateurs,
+              là où les réseaux récurrents antérieurs devaient avancer mot par mot. L'attention crée un
+              lien direct entre deux jetons distants de trois ou de trois mille positions, ce qui met fin
+              à la mémoire qui s'efface. L'empilement des mêmes briques permet des représentations de plus
+              en plus abstraites, de la syntaxe vers le sens puis vers l'intention apparente. Et la
+              recette monte en échelle de façon régulière, ce qui a justifié la course aux paramètres.
+
+              Un exemple rend l'attention concrète. Dans « le trophée n'entre pas dans la valise car il
+              est trop grand », le modèle doit savoir que « il » désigne le trophée et non la valise.
+              Aucune règle de grammaire ne le lui dit : il a appris à porter l'essentiel de l'attention de
+              « il » sur « trophée », et bien moins sur « valise ». Chaque jeton émet une requête, la
+              compare aux clés de tous les autres, et les scores obtenus pondèrent l'information
+              récupérée. Plusieurs têtes travaillent en parallèle, l'une sur la syntaxe, l'autre sur les
+              références, l'autre sur le thème, et leurs résultats sont fusionnés.
+            figures:
+              - nom: architecture-transformeur.svg
+                legende: "Du texte au vocabulaire, le même bloc empilé, et ce que l'attention résout"
           - titre: L'échantillonnage, ou comment on règle le hasard
             texte: >-
               La dernière couche donne des scores ; elle ne choisit pas. Le choix revient à
@@ -474,6 +564,54 @@ blocs:
                   - [Ignore ce qu'il ignore, Affirme avec aplomb, Vérification par le code et mention des réserves]
                   - [Aucune mémoire, Recommence le même appel, État persistant et clé d'idempotence]
                   - [Consigne et donnée confondues, Obéit à une note de facture, "Données citées, jamais fusionnées"]
+          - titre: Quatre limites structurelles, et la parade de chacune
+            texte: >-
+              Les limites qui suivent ne sont pas des défauts de jeunesse que la prochaine version
+              corrigera : elles découlent du mécanisme lui-même. Les énoncer sans détour vous évitera de
+              promettre ce qu'un modèle ne peut pas tenir, et la parade de chacune est l'une des raisons
+              d'être des outils que vous écrirez dans ce parcours.
+
+              Une hallucination est un énoncé faux produit avec la même assurance qu'un énoncé vrai,
+              parce que rien dans le mécanisme ne distingue les deux. La date de connaissance est la fin
+              de l'entraînement : au delà, le modèle ignore tout, ou invente. Les biais reproduisent les
+              régularités des données d'entraînement, stéréotypes et angles morts culturels compris. Le
+              calcul et la logique longue sont simulés, non exécutés, parce que le modèle produit du
+              texte plausible et non le résultat d'une opération.
+
+              Aucune de ces limites ne se corrige par un meilleur prompt seul. Elles se compensent par
+              une méthode de travail et par de l'architecture : fournir la donnée dans le contexte, la
+              faire citer, déléguer le calcul, et laisser la décision finale à un humain sur tout ce qui
+              est irréversible.
+            tableaux:
+              - titre: Les quatre limites et ce qui les compense
+                entetes: [Limite, Ce qui se produit, La parade qui tient]
+                lignes:
+                  - [Hallucination, Un énoncé faux énoncé avec aplomb, "Fournir les documents, exiger les citations, vérifier les chiffres"]
+                  - [Date de connaissance, "Le modèle ignore l'actualité, ou l'invente", Un outil de recherche ou la donnée collée dans le contexte]
+                  - [Biais, Les stéréotypes du corpus se retrouvent en sortie, "Varier les formulations, demander les contre-arguments, relire"]
+                  - [Calcul et logique longue, "Un résultat plausible et faux, sans trace", Déléguer à une fonction et décomposer la tâche]
+          - titre: Une même mécanique, quatre familles d'usages
+            texte: >-
+              Le même principe, prédire la suite la plus probable, se décline sur quatre matières, et il
+              est utile de savoir laquelle vous appelez. Les modèles de langage traitent le texte :
+              rédaction, synthèse, traduction, extraction, classification, dialogue. Les modèles de
+              diffusion produisent des images à partir d'une description, et savent retoucher, étendre ou
+              transposer un style. La transcription et la synthèse vocale couvrent l'audio, de la réunion
+              retranscrite à la voix de synthèse. Les modèles spécialisés dans le code complètent,
+              relisent, migrent, testent et documentent.
+
+              Les modèles multimodaux réunissent plusieurs de ces entrées dans un seul modèle : on leur
+              parle, on leur montre un document, ils répondent en texte. Pour un agent, c'est une
+              commodité, pas un changement de nature : une image reçue reste une entrée que votre code
+              doit borner, journaliser et traiter comme non fiable, exactement comme un texte.
+            tableaux:
+              - titre: Quatre matières, et ce qu'il faut en attendre
+                entetes: [Matière, Type de modèle, Usages courants]
+                lignes:
+                  - [Texte, Modèle de langage, "Rédiger, synthétiser, traduire, extraire, classer, dialoguer"]
+                  - [Image, Modèle de diffusion, "Générer à partir d'une description, retoucher, étendre"]
+                  - [Audio, Transcription et synthèse, "Retranscrire une réunion, doubler, produire une voix"]
+                  - [Code, Modèle spécialisé, "Compléter, relire, migrer, tester, documenter"]
           - titre: Propriétaire, poids ouverts, pleinement ouvert
             texte: >-
               Trois familles cohabitent, et l'expression « open source » les mélange souvent à tort. Un
@@ -688,6 +826,28 @@ blocs:
                 legende: "Un prompt s'écrit, se relit et se corrige comme un composant du logiciel"
               - nom: anatomie-prompt.svg
                 legende: Les couches d'un prompt d'agent, de la plus stable à la plus volatile
+          - titre: Ce que le modèle reçoit vraiment, et ce que vous écrivez
+            texte: >-
+              Avant d'écrire une ligne de prompt, il faut voir ce qui arrive réellement au modèle. Trois
+              parties sont concaténées à chaque appel : les instructions de l'application, qui fixent le
+              rôle, les règles et le ton et que l'utilisateur ne voit pas ; l'historique de l'échange,
+              renvoyé intégralement à chaque tour ; puis le message courant. Le modèle lit cet ensemble en
+              une passe, sans mémoire et sans intention, et produit la suite jeton par jeton. Prompter,
+              c'est composer un contexte dans lequel la bonne réponse devient la plus probable, rien de
+              plus et rien de moins.
+
+              Quatre conséquences découlent de cette mécanique, et ce sont celles que l'on oublie le plus
+              souvent. Vous n'interrogez aucune base : écrire « selon la source officielle » ne déclenche
+              aucune recherche, et une information qui doit être exacte doit être présente dans le
+              contexte ou rapportée par un outil. Le modèle ne devine aucun implicite : votre secteur,
+              votre lecteur, votre nomenclature et vos obligations n'existent que si vous les écrivez. Le
+              prompt est un livrable, qui se garde, se versionne et se partage dans l'équipe. Et une
+              conversation est un prompt qui grossit : un échange parti de travers se répare en repartant
+              d'un message propre, jamais en insistant par dessus les couches déjà posées.
+
+              Pour un agent, cette dernière remarque devient une règle d'architecture. L'historique n'est
+              pas un dossier où l'on accumule : il se borne, se résume et se reconstruit. C'est ce que
+              vous mettrez en place aux séances 8 et 9.
           - titre: Les cinq couches, et ce qu'on écrit dans chacune
             texte: >-
               Le rôle et la mission tiennent en deux ou trois phrases. Elles disent ce que l'agent produit
@@ -720,6 +880,36 @@ blocs:
             figures:
               - nom: corps-03a.jpg
                 legende: "Cinq couches, écrites et versionnées, plutôt qu'un paragraphe réécrit chaque jour"
+          - titre: La trame C.L.A.I.R., cinq questions avant d'écrire
+            texte: >-
+              Les cinq couches disent ce qu'un prompt contient. La trame suivante dit dans quel ordre y
+              penser, et elle sert autant pour un prompt d'agent que pour une consigne ponctuelle adressée
+              à un assistant. Cinq lettres, cinq questions, cinq lignes au brouillon. Si vous ne savez
+              pas répondre à l'une des cinq, le modèle ne le saura pas davantage que vous, et c'est
+              précisément le signal qu'il faut aller chercher l'information avant d'écrire.
+
+              Le contexte situe le sujet, le lecteur et le but. Le livrable fixe la forme, la longueur et
+              le support. L'action tient en un verbe précis et une seule tâche. Les illustrations
+              montrent ce que vous attendez, ou ce que vous refusez. Les règles énoncent les contraintes,
+              les interdits et le critère de réussite, y compris le cas où une donnée manque.
+
+              Appliquée au fil rouge, la trame donne ceci : le contexte est le recouvrement de factures
+              échues d'une PME, le lecteur de la sortie est un comptable ; le livrable est un brouillon de
+              relance de moins de cent cinquante mots ; l'action est de rédiger, pas d'analyser ni
+              d'envoyer ; l'illustration est un brouillon validé la semaine passée ; la règle est de
+              n'écrire aucun montant absent de la facture et de s'arrêter si le client est en litige.
+            tableaux:
+              - titre: La trame C.L.A.I.R., appliquée au fil rouge du parcours
+                entetes: [Lettre, La question à poser, Réponse pour l'agent de recouvrement]
+                lignes:
+                  - [Contexte, "De quoi parle-t-on, pour qui, dans quel but", "Factures échues d'une PME, lues par un comptable"]
+                  - [Livrable, "Quelle forme, quelle longueur, quel support", Un brouillon de relance de 150 mots maximum]
+                  - [Action, Un verbe précis et une seule tâche, "Rédiger le brouillon, sans l'envoyer"]
+                  - [Illustrations, Un exemple de ce qui est attendu ou refusé, Un brouillon validé et un cas de litige écarté]
+                  - [Règles, "Contraintes, interdits, critère de réussite", "Aucun montant inventé, arrêt si litige"]
+            figures:
+              - nom: methode-clair.svg
+                legende: "Cinq questions avant d'écrire, et ce qu'on perd quand on en saute une"
           - titre: La description d'un outil est le texte le plus rentable du projet
             texte: >-
               Le modèle ne voit pas votre code : il voit un nom, une description et un schéma d'arguments.
@@ -833,6 +1023,43 @@ blocs:
 
                   [format attendu]
                   un appel d'outil, ou un objet {"conclusion": "...", "factures": ["FAC-001"]}
+          - titre: Zéro, un ou plusieurs exemples, le levier le plus rentable
+            texte: >-
+              Donner un exemple coûte quelques jetons et change davantage la sortie que trois paragraphes
+              d'explication. Sans exemple, le modèle choisit seul son interprétation de votre consigne, et
+              ce choix varie d'un appel à l'autre : c'est la première cause d'instabilité d'un prompt qui
+              « marchait hier ». Avec un exemple, la forme est fixée par imitation. Avec trois à cinq, les
+              cas limites sont cadrés eux aussi.
+
+              Pour un agent, le dosage est simple. Deux exemples suffisent dans le prompt système, un cas
+              courant et un cas qu'il faut refuser, parce qu'ils sont relus et payés à chaque tour. Les
+              exemples plus nombreux appartiennent au jeu d'évaluation de la séance 14, pas au prompt.
+
+              Un dernier point, souvent négligé : un exemple est aussi une spécification. Si vos deux
+              exemples se contredisent sur la forme des dates ou sur la casse des identifiants, vous avez
+              injecté le défaut vous même, et aucune phrase de contrainte ne le rattrapera.
+            tableaux:
+              - titre: Combien d'exemples, et pour quel effet
+                entetes: [Approche, Ce qu'on écrit, Ce que ça apporte]
+                lignes:
+                  - [Sans exemple, La consigne seule, "Rapide à écrire, interprétation variable"]
+                  - [Un exemple, Un couple entrée et sortie, Le format est fixé par imitation]
+                  - [Trois à cinq exemples, Des couples qui couvrent les cas limites, La référence pour une tâche répétitive]
+                  - [Dans un prompt d'agent, "Deux exemples, un courant et un refusé", Le meilleur rapport entre effet et coût par tour]
+          - titre: Le rôle cadre le registre, il n'invoque pas une compétence
+            texte: >-
+              Écrire « tu es expert mondial en droit social » ne rend pas le modèle expert. Un rôle oriente
+              la statistique : le modèle privilégie les formulations qui accompagnent ce registre dans ses
+              données. C'est utile, et c'est tout. La fiabilité factuelle, elle, ne bouge pas d'un pouce.
+
+              Ce qui agit beaucoup plus que le titre, c'est le destinataire. « Explique à un chef de projet
+              non juriste ce qu'il doit vérifier » contraint le vocabulaire, le niveau de détail et
+              l'angle, et transforme une réponse encyclopédique en livrable adressé. Nommez donc le
+              lecteur avant de nommer l'expert.
+
+              Pour un agent, le rôle reste court et porte sur la mission, pas sur un prestige. Et sur tout
+              sujet réglementaire ou chiffré, l'exigence de source et la vérification restent requises,
+              quel que soit le rôle annoncé.
           - titre: Ce qui agit, et ce qui relève du folklore
             texte: >-
               Beaucoup de recettes circulent, et peu survivent à une mesure. Agissent réellement : un
@@ -856,6 +1083,75 @@ blocs:
             figures:
               - nom: techniques-prompting.svg
                 legende: Les techniques qui résistent à la mesure, et celles qui n'y résistent pas
+          - titre: Faire raisonner, c'est décomposer, pas demander plus fort
+            texte: >-
+              Demandez le résultat d'un enchaînement de calculs et vous obtiendrez un nombre plausible,
+              souvent faux, et invérifiable. Un atelier produit trois lots de deux cent quarante pièces,
+              douze pour cent sont rebutées, puis cinq pour cent du reste partent en retouche : le modèle
+              répond un chiffre d'un trait, parce qu'il ne dispose que d'une passe de calcul pour tout
+              enchaîner. Demandez les étapes écrites, et chaque étape devient le contexte de la suivante :
+              sept cent vingt, puis six cent trente-trois virgule six, puis six cent un virgule neuf.
+              Surtout, l'erreur devient visible et localisable.
+
+              Les modèles de raisonnement récents font cette décomposition d'eux mêmes, et facturent les
+              jetons correspondants. La consigne de décomposition garde son intérêt ailleurs, sur les
+              modèles ordinaires et sur les tâches d'analyse. Dans les deux cas, la vérification humaine
+              reste requise : une suite d'étapes bien écrites peut être fausse de bout en bout.
+
+              Pour un agent, la conclusion est encore plus nette. Un calcul qui a une conséquence
+              financière ne se demande pas au modèle, il se délègue à une fonction. Le raisonnement
+              affiché sert à choisir l'outil et à tracer la décision, jamais à produire le chiffre.
+          - titre: Découper, parce qu'un prompt long vaut moins que quatre prompts nets
+            texte: >-
+              Quand un prompt échoue, le réflexe est d'ajouter une phrase. Au bout de cinq échecs, le
+              prompt contient cinq consignes dont deux se contredisent, et plus personne ne sait laquelle
+              agit. La bonne réaction est inverse : découper la tâche en étapes courtes, chacune avec son
+              prompt, son format de sortie et son point de validation.
+
+              Sur un livrable documentaire, la chaîne type tient en quatre temps. Extraire d'abord la
+              matière brute, sous une forme vérifiable par quelqu'un qui connaît le sujet. Analyser
+              ensuite, en produisant une matrice ou un tableau d'écarts. Rédiger à partir de cette analyse
+              validée. Réviser enfin, sous un autre angle, par exemple celui du destinataire. Une erreur
+              détectée au premier temps coûte une reformulation ; détectée au dernier, elle a contaminé
+              tout le livrable.
+
+              C'est exactement le chemin qui mène du prompt au graphe d'états de la séance 10. Une chaîne
+              éprouvée à la main s'écrit une fois, se rejoue, puis se code.
+            tableaux:
+              - titre: Une chaîne de quatre prompts, et ce que chacun produit
+                entetes: [Étape, La consigne, La sortie attendue]
+                lignes:
+                  - [Extraire, Lister les exigences du document sans commentaire, Une liste vérifiable par le sachant]
+                  - [Analyser, Évaluer la couverture actuelle de chaque exigence, Une matrice couverture et écarts]
+                  - [Rédiger, Produire le texte à partir de la matrice, Un texte ancré sur l'analyse validée]
+                  - [Réviser, "Relire sous l'angle du destinataire, puis corriger", Un livrable relu selon un autre angle]
+            figures:
+              - nom: chaine-de-prompts.svg
+                legende: "Quatre prompts nets, quatre validations, au lieu d'un prompt qui s'allonge"
+          - titre: Trois techniques pour fiabiliser un résultat
+            texte: >-
+              L'autocritique consiste à faire produire, puis à faire relire selon des critères explicites,
+              puis à faire corriger. Elle est efficace sur la forme et sur la cohérence interne, et sans
+              effet sur une erreur factuelle que le modèle ne peut pas détecter seul. Les critères doivent
+              être nommés : exactitude des chiffres, absence de jargon, respect du format, et non
+              « améliore ».
+
+              Le multi-tirage consiste à poser la même question plusieurs fois, ou à demander plusieurs
+              analyses indépendantes, puis à comparer. Les divergences signalent les zones incertaines :
+              c'est un détecteur d'approximation peu coûteux et redoutablement efficace, et il se prête
+              bien à l'automatisation.
+
+              La boucle avec outils, enfin, laisse le modèle alterner raisonnement, appel d'outil et
+              lecture du résultat. Le calcul et la recherche sont délégués à des composants
+              déterministes : le modèle décide, l'outil exécute. C'est le principe même de l'agent, et
+              c'est l'objet de toutes les séances qui suivent.
+            tableaux:
+              - titre: Trois techniques, leur portée et leur limite
+                entetes: [Technique, Ce qu'elle corrige, Ce qu'elle ne corrige pas]
+                lignes:
+                  - [Autocritique, "La forme, le format, la cohérence interne", Une erreur factuelle invisible au modèle]
+                  - [Multi-tirage, Elle révèle les zones incertaines, "Elle signale, elle ne tranche pas"]
+                  - [Boucle avec outils, "Le calcul, la recherche, l'accès aux systèmes", La nécessité de borner les droits et de valider]
           - titre: Versionner, tester et faire évoluer un prompt
             texte: >-
               Rangez vos prompts dans des fichiers, un par rôle, avec un en-tête qui porte la version et la
@@ -888,6 +1184,72 @@ blocs:
                           if decision.outil != attendu:
                               echecs.append((demande, decision.outil, attendu))
                       assert not echecs, echecs        # le message nomme la demande, pas un diff de chaine
+          - titre: "Refonte d'un prompt réel, ligne à ligne"
+            texte: >-
+              Rien ne vaut un avant et un après sur un cas banal. La demande d'origine était : « fais moi
+              un compte rendu de cette réunion, quelque chose de propre et complet ». Le résultat a été un
+              résumé linéaire de neuf cents mots, sans décision identifiée, sans responsable, sans
+              échéance. Inutilisable, et pourtant bien écrit : c'est le piège.
+
+              La version refondue ne change pas de modèle et n'ajoute aucune politesse. Elle pose le rôle
+              et l'enjeu, nomme la tâche en un verbe, borne la longueur, interdit l'interprétation, prévoit
+              explicitement le cas de la donnée manquante et impose la structure de sortie. Cinq
+              changements, chacun vérifiable à la relecture.
+
+              Regardez la ligne « aucune interprétation : si un point est resté ouvert, écris non
+              tranché ». C'est elle qui fait le plus de travail. Sans elle, le modèle comble le vide,
+              parce que combler le vide est la suite la plus probable du texte. Prévoir la valeur de repli
+              est la contrainte la plus rentable de tout le prompt, et c'est la même règle que pour les
+              sorties structurées vues plus haut.
+            code:
+              - titre: La version refondue du même prompt
+                langage: text
+                source: |
+                  Tu es chef de projet dans une société de services.
+
+                  Contexte : réunion hebdomadaire de suivi du projet Atlas. Le compte rendu est
+                  diffusé au client et fait foi en cas de litige.
+
+                  À partir de la transcription ci-dessous, produis le compte rendu.
+
+                  Contraintes : 400 mots maximum. Aucune interprétation : si un point est resté
+                  ouvert, écris « non tranché ». Ne cite aucun montant absent de la transcription.
+
+                  Format :
+                  1. Décisions actées (décision | responsable | échéance)
+                  2. Points ouverts (sujet | ce qui bloque | prochaine étape)
+                  3. Actions pour la semaine, à la première personne du pluriel
+            tableaux:
+              - titre: Les cinq changements, et ce que chacun règle
+                entetes: [Changement, Avant, Ce que l'après garantit]
+                lignes:
+                  - [Rôle et enjeu posés, Aucun destinataire nommé, Le registre et le niveau de détail sont contraints]
+                  - [Tâche unique, "« Propre et complet »", Un seul verbe d'action et un objectif vérifiable]
+                  - [Interdits explicites, Interprétation libre, Aucun montant ni aucune décision inventés]
+                  - [Format imposé, Résumé linéaire, Trois sections exploitables telles quelles]
+                  - [Cas manquant prévu, Le vide était comblé, "Un point ouvert est écrit « non tranché »"]
+          - titre: La grille de contrôle avant d'envoyer un prompt
+            texte: >-
+              Huit questions, trente secondes, et le meilleur rapport entre temps investi et qualité
+              obtenue de toute cette séance. Passez la grille avant d'envoyer une consigne qui compte, et
+              avant de committer une modification du prompt d'agent.
+
+              Les deux dernières questions ne portent pas sur le style. La donnée nécessaire absente du
+              contexte produit une invention, et la donnée sensible présente dans le contexte produit une
+              fuite : ce sont les deux seuls points de cette liste dont les conséquences sortent du
+              périmètre du logiciel. La séance 14 y revient en détail.
+            tableaux:
+              - titre: Huit questions à se poser avant d'envoyer
+                entetes: [Question, Ce qu'elle évite]
+                lignes:
+                  - [Le destinataire de la réponse est-il nommé, Une réponse encyclopédique adressée à personne]
+                  - [La tâche tient-elle en un seul verbe d'action, Un livrable qui mélange deux attentes]
+                  - [Le format de sortie est-il décrit précisément, Une sortie que le code suivant ne sait pas lire]
+                  - [Les contraintes sont-elles vérifiables, Des exigences qu'on ne peut pas contrôler]
+                  - [Ai-je donné au moins un exemple, Une interprétation différente à chaque appel]
+                  - [Le cas de la donnée manquante est-il prévu, Un vide comblé par une invention]
+                  - [Toutes les données nécessaires sont-elles dans le contexte, Une réponse inventée faute de matière]
+                  - [Aucune donnée sensible n'est-elle exposée, Une fuite hors de votre système d'information]
           - titre: Erreurs fréquentes
             texte: >-
               Écrire la règle métier uniquement dans le prompt. Elle tiendra jusqu'au jour où une donnée la
@@ -4260,6 +4622,63 @@ blocs:
             figures:
               - nom: corps-09b.jpg
                 legende: "Mesurer la recherche, c'est vérifier que le bon passage remonte, et qu'il est cité"
+          - titre: Le RAG de bout en bout, et ce qu'il résout vraiment
+            texte: >-
+              Les sept étapes que vous venez d'écrire forment ce qu'on appelle la génération augmentée par
+              la recherche. Vue de loin, la chaîne tient en six temps. Une question arrive. Elle est
+              convertie en vecteur, ou en termes pour l'index lexical. Les passages les plus proches sont
+              retrouvés dans votre base. Trois à cinq extraits sont retenus, avec leur référence. Ils sont
+              placés dans le prompt, accompagnés de la consigne de ne répondre qu'à partir de ceux là. Le
+              modèle produit une réponse ancrée, qui cite le document et la page.
+
+              Aucun entraînement n'a lieu, aucun paramètre du modèle ne change. On modifie seulement ce
+              qu'il a sous les yeux au moment de répondre, et c'est ce qui rend l'approche si rentable :
+              la connaissance se met à jour en une nuit, document par document, droit d'accès par droit
+              d'accès.
+
+              Reste à savoir ce que la méthode ne répare pas, parce que c'est là que les projets échouent.
+              Une base documentaire mal rangée ou périmée produira des réponses mal rangées et périmées.
+              Des documents scannés sans reconnaissance de texte sont invisibles à la recherche. Une
+              question dont la réponse n'est écrite nulle part restera sans réponse, et le modèle
+              extrapolera si vous ne lui avez pas imposé de dire qu'il ne sait pas. La vérification reste
+              requise, c'est pour cela que la citation est obligatoire dans votre outil.
+            figures:
+              - nom: rag-six-etapes.svg
+                legende: "De la question à la réponse sourcée, et ce que la méthode ne répare pas"
+            tableaux:
+              - titre: Ce que la recherche augmentée résout, et ce qu'elle ne résout pas
+                entetes: [Elle résout, Elle ne résout pas]
+                lignes:
+                  - [Répondre sur des documents privés ou récents, Une base mal rangée ou périmée]
+                  - [Citer une source vérifiable page par page, Des documents scannés sans reconnaissance de texte]
+                  - [Mettre la connaissance à jour sans réentraîner, Une question dont la réponse n'existe nulle part]
+                  - [Gérer les droits document par document, Le besoin de vérifier la réponse produite]
+          - titre: Prompt, recherche ou réglage fin, comment arbitrer
+            texte: >-
+              Trois leviers existent, et on les confond souvent. Changer le prompt, c'est changer la
+              consigne : effet immédiat, coût nul, et aucune connaissance nouvelle n'entre dans le
+              modèle. Mettre en place une recherche augmentée, c'est changer ce que le modèle a sous les
+              yeux : quelques semaines de travail, coût maîtrisé, et une dépendance totale à la qualité et
+              à la fraîcheur du corpus. Faire un réglage fin, c'est changer les paramètres : plusieurs
+              mois, coût élevé, à refaire à chaque nouveau modèle, et cela n'ajoute aucune connaissance
+              fiable ni aucune source.
+
+              La règle d'arbitrage est courte : n'engagez l'étape suivante qu'après avoir épuisé la
+              précédente. Neuf besoins sur dix se traitent par un prompt bien écrit, de meilleurs outils,
+              ou de la recherche sur vos documents. Le réglage fin se justifie quand il faut imposer un
+              style, un format très particulier ou un jargon métier de façon systématique, et il se décide
+              sur une mesure, pas sur une intuition.
+
+              Pour un agent, cette hiérarchie a une conséquence pratique : avant d'envisager un réglage
+              fin, relisez vos descriptions d'outils. Une description mal écrite coûte plus d'erreurs
+              qu'un modèle mal réglé, et se corrige en dix minutes.
+            tableaux:
+              - titre: Trois leviers, trois coûts, trois limites
+                entetes: [Levier, Ce que vous changez, Délai et coût, La limite]
+                lignes:
+                  - [Prompt, La consigne, Immédiat et coût nul, N'apporte aucune connaissance absente]
+                  - [Recherche augmentée, Ce que le modèle a sous les yeux, Quelques semaines et coût maîtrisé, Dépend de la qualité du corpus]
+                  - [Réglage fin, Les paramètres du modèle, Plusieurs mois et coût élevé, "Ni connaissance fiable, ni source"]
           - titre: Les pièges de la recherche documentaire
             texte: >-
               Le premier piège est le découpage. Trop fin, les passages perdent leur contexte et la
@@ -6248,6 +6667,58 @@ blocs:
             figures:
               - nom: cout-par-etapes.svg
                 legende: "La forme de la courbe : le coût suit les étapes, la qualité plafonne."
+          - titre: Quatre risques à traiter avant tout déploiement
+            texte: >-
+              L'injection indirecte vue plus haut est le risque le plus spécifique aux agents, ce n'est pas
+              le seul. Quatre familles doivent être traitées avant la première mise en service, et chacune
+              se règle par une décision d'organisation autant que par du code.
+
+              La confidentialité d'abord : tout ce qui part dans un prompt sort de votre système
+              d'information, et selon le contrat les données peuvent être conservées ou servir à
+              l'entraînement. Cela se traite en vérifiant les conditions du service, en retenant une offre
+              professionnelle qui exclut la réutilisation, en anonymisant ce qui peut l'être, et en
+              publiant la liste des outils autorisés. L'injection ensuite, traitée par les trois défenses
+              de cette séance. Les droits et la propriété des contenus produits, qui varient selon les
+              pays et exigent de documenter l'usage de l'IA dans les livrables. La conformité enfin :
+              décision automatisée, information des personnes, obligations sectorielles, le cadre
+              s'applique même quand l'agent n'est qu'un assistant, et il impose une décision humaine
+              identifiable.
+
+              Ces quatre points se consignent par écrit, au même endroit que le registre des risques
+              résiduels. Un risque connu et accepté par une personne nommée est une décision ; le même
+              risque non écrit est un accident en attente.
+            tableaux:
+              - titre: Quatre risques, et ce qu'on met en place
+                entetes: [Risque, Ce qui se produit, Ce qu'on met en place]
+                lignes:
+                  - [Confidentialité, Les données sortent du système d'information, "Conditions vérifiées, offre professionnelle, anonymisation, liste d'outils autorisés"]
+                  - [Injection de prompt, Un contenu lu porte des instructions cachées, "Aucun droit d'écriture sans validation, tout contenu externe traité comme non fiable"]
+                  - [Propriété et droits, Une sortie proche d'une œuvre protégée, "Usage de l'IA documenté, pas de marques ni de personnages, usages commerciaux validés"]
+                  - [Conformité et traçabilité, Une décision automatisée non justifiable, "Prompts et réponses journalisés, décision humaine identifiable"]
+          - titre: Cinq contrôles avant de signer une production
+            texte: >-
+              Les douze critères d'acceptation portent sur le système. Les cinq contrôles qui suivent
+              portent sur ce qui sort du système et qui va être publié, signé ou envoyé. Ils sont humains,
+              ils ne s'automatisent pas, et aucune case cochée ne transfère la responsabilité.
+
+              Contrôlez un par un les faits vérifiables, chiffres, dates, noms propres, articles de loi et
+              références bibliographiques : ce sont exactement les éléments les plus souvent inventés.
+              Ouvrez chaque source citée et vérifiez que le document existe et dit bien ce qui lui est
+              attribué, car une référence bien formée n'est pas une référence réelle. Relisez en cherchant
+              les contradictions entre paragraphes, puisque le modèle optimise la phrase suivante et non
+              la cohésion de l'ensemble. Reprenez le prompt et cochez chaque contrainte, parce qu'une
+              réponse fluide qui ignore trois exigences sur cinq reste un échec. Demandez vous enfin ce
+              qui manque : le contre-argument, le risque, le cas particulier, l'objection du client. Le
+              modèle produit le consensus, rarement l'exception.
+            tableaux:
+              - titre: Les cinq contrôles humains
+                entetes: [Contrôle, Ce qu'on vérifie, Pourquoi]
+                lignes:
+                  - [Les faits vérifiables, "Chiffres, dates, noms, références", Ce sont les éléments les plus souvent inventés]
+                  - [Les sources citées, Que le document existe et dit bien cela, Une référence bien formée n'est pas une référence réelle]
+                  - [La cohérence interne, Les contradictions entre paragraphes, Le modèle optimise la phrase et non l'ensemble]
+                  - [Le respect de la consigne, Chaque contrainte du prompt cochée, Une réponse fluide peut ignorer l'essentiel]
+                  - [L'angle mort, "Le contre-argument, le risque, l'exception", Le modèle produit le consensus]
           - titre: Le registre des risques résiduels
             texte: >-
               Un système sûr n'est pas un système sans risque, c'est un système dont les risques sont
