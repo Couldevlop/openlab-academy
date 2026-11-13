@@ -35,6 +35,9 @@ Licence : https://unsplash.com/license
 | corps-17a.jpg | `photo-1587293852726-70cdb56c2866` |
 | corps-17b.jpg | `photo-1648770664367-54d43741edf1` |
 | corps-17c.jpg | `photo-1573164574511-73c773193279` |
+| corps-18a.jpg | `photo-1568716353609-12ddc5c67f04` |
+| corps-18b.jpg | `photo-1754548930574-6a995e5eb5a7` |
+| corps-18c.jpg | `photo-1586281380117-5a60ae2050cc` |
 | ouverture-01.jpg | `photo-1677022725616-91e41d36db21` |
 | ouverture-02.jpg | `photo-1674027444485-cec3da58eef4` |
 | ouverture-03.jpg | `photo-1612367980327-7454a7276aa7` |
@@ -52,5 +55,6 @@ Licence : https://unsplash.com/license
 | ouverture-15.jpg | `photo-1606185540834-d6e7483ee1a4` |
 | ouverture-16.jpg | `photo-1708807472445-d33589e6b090` |
 | ouverture-17.jpg | `photo-1511376868136-742c0de8c9a8` |
+| ouverture-18.jpg | `photo-1560439514-0fc9d2cd5e1b` |
 
 Chaque image est servie en fichier privé de leçon : elle suit le contrôle d'accès du parcours.

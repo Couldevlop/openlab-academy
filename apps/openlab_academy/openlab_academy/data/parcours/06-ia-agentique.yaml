@@ -8848,6 +8848,9 @@ capstone:
             - [Fichier d'état, Que se passe-t-il si je coupe le courant, La reprise crée un doublon]
             - [Trace d'exécution, Pourquoi ce brouillon a été écrit, La trace ne nomme ni l'outil ni ses arguments]
             - [Registre des risques, Que reste-t-il de dangereux, Il ne liste que des risques déjà traités]
+      figures:
+        - nom: ouverture-18.jpg
+          legende: "La revue technique est le moment où le projet quitte votre machine"
     - titre: Les dix-sept étapes, et ce que chacune a déposé dans votre dépôt
       texte: >-
         Le projet final n'est pas un nouveau travail : c'est l'assemblage de ce que vous avez construit
@@ -8963,6 +8966,9 @@ capstone:
                             noms = [noeud.module or ""]
                         racines = {n.split(".")[0] for n in noms}
                         assert not (racines & INTERDITS), f"{fichier} importe {racines & INTERDITS}"
+      figures:
+        - nom: corps-18a.jpg
+          legende: "Le correcteur ouvre un dépôt, pas une présentation"
     - titre: Les six outils, et le contrat qui les rend sûrs
       texte: >-
         Votre agent dispose de six outils, pas un de plus. Chacun valide ses arguments avant d'agir, et chacun
@@ -9168,6 +9174,9 @@ capstone:
                 resultat = appeler("supprimer_facture", {"facture_id": "FAC-001"})
                 assert resultat["statut"] == "erreur"
                 assert any(e["evenement"] == "outil_hors_liste" for e in journal.lire())
+      figures:
+        - nom: corps-18b.jpg
+          legende: "Douze critères cochés un par un, et la preuve à côté de chacun"
     - titre: Traces, mesures et budget
       texte: >-
         Une trace se lit par un tiers qui n'a pas écrit le code. Elle contient, pour chaque étape, le numéro de
@@ -9215,6 +9224,8 @@ capstone:
         Reliez chaque risque à une décision prise ailleurs dans le projet. Un risque sans décision associée est
         une observation ; un risque relié à un choix d'architecture est une analyse.
       figures:
+        - nom: corps-18c.jpg
+          legende: "Le registre des risques se rend avec le code, jamais après"
         - nom: echelle-risque.svg
           legende: Du risque traité par le code au risque accepté par une personne, l'échelle que votre registre couvre
       tableaux:
