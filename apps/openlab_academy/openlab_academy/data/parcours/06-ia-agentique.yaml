@@ -766,6 +766,7 @@ blocs:
 
           Indices : les cas qui départagent sont rarement les plus difficiles, ce sont ceux où la consigne
           est ambiguë ; pour le comptage de jetons, une bibliothèque locale évite d'envoyer vos données.
+        archive: carnet-seance-02.zip
         livrable: >-
           Étape 2 : fichier modele.md avec le modèle principal, le modèle de secours local et les réglages
           justifiés, jeu d'évaluation de vingt cas et résultats comparés de deux modèles.
@@ -1303,6 +1304,7 @@ blocs:
 
           Indices : si la suppression d'une phrase ne change rien, c'est qu'elle ne servait pas, ou que vos
           cas ne la couvrent pas ; dans le doute, ajoutez le cas manquant avant de conclure.
+        archive: carnet-seance-03.zip
         livrable: >-
           Étape 3 : dossier prompts avec agent.md versionné, outils.md pour les six outils et journal.md,
           plus un test du premier outil choisi sur les vingt cas, et la comparaison chiffrée entre un prompt
@@ -1849,6 +1851,7 @@ blocs:
           (recherche puis génération, en un seul passage) et d'un workflow (étapes fixées à l'avance par le
           code). Les degrés d'autonomie, de l'assistant qui propose à l'agent qui agit seul, et les limites
           actuelles : erreurs qui se cumulent, coût, latence, actions irréversibles.
+        archive: carnet-seance-04.zip
         livrable: >-
           Étape 4 : cadrage de l'agent de recouvrement, soit sa mission, ses sources de données, ses outils, ses règles
           métier vérifiables et ses conditions d'arrêt, accompagné du schéma de sa boucle et du classement des cinq
@@ -3005,6 +3008,7 @@ blocs:
           plan-and-execute (planifier d'abord, exécuter ensuite). Choisir un framework : quand le code seul
           suffit, et ce qu'apporte LangGraph (graphe de nœuds et d'arêtes, état partagé, arêtes
           conditionnelles).
+        archive: carnet-seance-06.zip
         livrable: >-
           Étape 6 : le même traitement en deux versions, workflow fixé par le code et boucle d'agent, routage des factures
           par âge du retard, litige et montant, test d'équivalence de l'exposition et note de décision.
@@ -4161,6 +4165,7 @@ blocs:
           demande). Checkpoints : enregistrer l'état après chaque étape pour reprendre une exécution interrompue
           sans tout refaire. Idempotence des outils, nouvelles tentatives avec délai croissant pour les erreurs
           transitoires, et validation humaine avant une action sensible.
+        archive: carnet-seance-08.zip
         livrable: >-
           Étape 8 : état persistant, démonstration d'une interruption puis d'une reprise sans doublon, et tests de
           l'enregistrement refusé sans accord humain, du rejeu par clé d'idempotence et de la reprise.
@@ -4575,8 +4580,9 @@ blocs:
 
 
                   class ArgumentsRecherche(BaseModel):
+                      # Les memes noms que le contrat JSON et que contrats.py : un seul vocabulaire.
                       question: str = Field(min_length=3, max_length=300)
-                      k: int = Field(default=3, ge=1, le=5)
+                      nombre_passages: int = Field(default=3, ge=1, le=5)
 
 
                   def chercher_procedure(recherche: RechercheHybride, **bruts: Any) -> dict:
@@ -4585,16 +4591,18 @@ blocs:
                       except ValidationError as erreur:
                           return {"ok": False, "erreur": "Arguments invalides",
                                   "details": erreur.errors(include_url=False)}
-                      trouves = recherche.chercher(args.question, k=args.k)
+                      trouves = recherche.chercher(args.question, k=args.nombre_passages)
                       if not trouves:
                           # dire qu'on n'a rien trouve vaut mieux que renvoyer le moins mauvais passage
-                          return {"ok": True, "passages": [], "message": "aucune procedure ne repond"}
-                      return {"ok": True, "passages": [
+                          return {"ok": True, "donnees": {"passages": []},
+                                  "message": "aucune procedure ne repond"}
+                      # Meme forme de reponse que les cinq autres outils : ok, puis donnees.
+                      return {"ok": True, "donnees": {"passages": [
                           {"identifiant": passage.identifiant,
                            "source": passage.citable,
                            "extrait": passage.texte[:EXTRAIT_MAX],
                            "score": score}
-                          for passage, score in trouves]}
+                          for passage, score in trouves]}}
               - titre: "contracts/contrats_outils.json, l'entree a ajouter au tableau tools"
                 langage: json
                 source: |
@@ -4793,6 +4801,7 @@ blocs:
           Indices : si une question échoue, affichez les scores des cinq premiers passages, l'écart vous
           dira si le problème vient du corpus ou de la question ; un passage trop long se tronque, mais un
           passage sans titre ne se rattrape pas.
+        archive: carnet-seance-09.zip
         livrable: >-
           Étape 9 : dossier connaissances de trois documents, découpeur, index lexical, recherche
           fusionnée, outil de consultation branché avec citations, et mesure sur vingt questions annotées.
@@ -7147,6 +7156,7 @@ blocs:
           grille explicite et contrôlé par échantillonnage humain. Observabilité : traces de chaque étape (appels
           au modèle, appels d'outils, durées, tokens), coût par exécution et budget qui interrompt l'agent quand
           il est dépassé.
+        archive: carnet-seance-14.zip
         livrable: >-
           Étape 14 : les douze critères d'acceptation exécutés, deux cas d'évaluation ajoutés sur la note malveillante et
           l'outil hors liste blanche, trace d'une exécution complète et registre des risques résiduels.

@@ -44,7 +44,7 @@ def _lien_archive(nom: str, url: str) -> dict:
     d'accès des médias de leçon ; toute autre adresse est refusée (OWASP A03, échec fermé)."""
     if not isinstance(url, str) or not _ARCHIVE_PRIVEE.fullmatch(url):
         raise ValueError(f"adresse d'archive non servie par le site : {url!r}")
-    return _bloc("paragraph", text=f'Archive de départ : <a href="{url}">{_e(nom)}</a>')
+    return _bloc("paragraph", text=f'À télécharger : <a href="{url}">{_e(nom)}</a>')
 
 
 _FIGURE_PRIVEE = re.compile(r"/private/files/[a-z0-9][a-z0-9-]{0,79}\.(?:svg|jpg|png|webp)")

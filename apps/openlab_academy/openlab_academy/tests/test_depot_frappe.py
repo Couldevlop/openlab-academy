@@ -107,7 +107,7 @@ class TestDepotFrappe(FrappeTestCase):
                                           "attached_to_name": la_lecon.name, "file_name": ARCHIVE})
         self.assertEqual((fichier.is_private, fichier.attached_to_field), (1, "content"))
         liens = [b["data"]["text"] for b in json.loads(la_lecon.content)["blocks"] if b["type"] == "paragraph"]
-        self.assertIn(f'Archive de départ : <a href="{fichier.file_url}">{ARCHIVE}</a>', liens)
+        self.assertIn(f'À télécharger : <a href="{fichier.file_url}">{ARCHIVE}</a>', liens)
         # cette leçon avoue l'archive, et aucune référence ne la réserve aux instructeurs : l'apprenant du
         # parcours ouvert y a droit. Les mêmes octets servent plusieurs parcours (le socle du parcours livré) :
         # les autres leçons qui la citent sont donc attendues, seule la réserve aux instructeurs est interdite.
