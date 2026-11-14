@@ -64,7 +64,8 @@ permission_query_conditions = {
 }
 doc_events = {
     "User": {"after_insert": "openlab_academy.entrypoints.langue.initialiser_langue"},
-    "LMS Course": {"on_update": "openlab_academy.entrypoints.paiement.parcours_enregistre"},
+    "LMS Course": {"on_update": ["openlab_academy.entrypoints.paiement.parcours_enregistre",
+                                 "openlab_academy.infrastructure.retouches_frappe.retouche"]},
     # inscription directe à un parcours payant refusée hors cohorte (le dossier naît de l'inscription à la cohorte)
     # puis rattachée à la cohorte-fenêtre d'un parcours limité à ses dates
     "LMS Enrollment": {
@@ -75,6 +76,10 @@ doc_events = {
         "before_insert": "openlab_academy.entrypoints.paiement.avant_inscription",
         "after_insert": "openlab_academy.entrypoints.paiement.apres_inscription",
     },
+    # une pièce retouchée dans l'application n'est plus réécrite par le fichier de parcours
+    "Course Lesson": {"on_update": "openlab_academy.infrastructure.retouches_frappe.retouche"},
+    "LMS Assignment": {"on_update": "openlab_academy.infrastructure.retouches_frappe.retouche"},
+    "LMS Question": {"on_update": "openlab_academy.infrastructure.retouches_frappe.retouche"},
     "LMS Quiz Submission": {"before_insert": "openlab_academy.entrypoints.lms.avant_soumission_quiz"},
     "LMS Certificate": {"before_insert": "openlab_academy.entrypoints.lms.avant_certificat"},
     "LMS Assignment Submission": {

@@ -10,7 +10,7 @@ from openlab_academy.domain.grilles_derivees import grille_par_defaut
 from openlab_academy.domain.parcours import Annonce, Chapitre, Module, Parcours, Question
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.domain.reglages_evaluation import Chaine, ReglagesEvaluation, TypeExercice
-from openlab_academy.infrastructure import depot_copies_frappe, editorjs, ressources_frappe
+from openlab_academy.infrastructure import depot_copies_frappe, editorjs, ressources_frappe, retouches_frappe
 from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
 from openlab_academy.infrastructure.visibilite_frappe import CHAMP_LIMITE, CHAMP_VIDEO
 
@@ -30,6 +30,10 @@ class DepotFrappe:
         return bool(frappe.db.count("LMS Enrollment", {"course": cours_id}))
 
     def creer(self, parcours: Parcours | Annonce) -> str:
+        with retouches_frappe.publication():
+            return self._creer(parcours)
+
+    def _creer(self, parcours: Parcours | Annonce) -> str:
         cours = frappe.get_doc({"doctype": "LMS Course", "instructors": [{"instructor": self._reglages.formateur}],
                                 **self._champs(parcours)}).insert(ignore_permissions=True)
         if isinstance(parcours, Parcours):
@@ -37,16 +41,26 @@ class DepotFrappe:
         return cours.name
 
     def remplacer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
+        """Ce qui a été retouché dans l'application est conservé : séances, challenges, questions de quiz et
+        fiche du parcours. Le fichier réécrit tout le reste, et ne reprend une pièce retouchée que lorsque sa
+        case est décochée."""
+        with retouches_frappe.publication():
+            self._remplacer(cours_id, parcours)
+
+    def _remplacer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
         videos = self._videos(cours_id)
+        retouchees = retouches_frappe.relever(cours_id)
+        anciens = retouches_frappe.exercices(cours_id)
         self._purger(cours_id)
         # lecture verrouillante : l'instantané de la transaction date d'avant la purge et ne voit pas le `modified`
         # qu'une tâche planifiée du LMS (statistiques horaires) a validé entre-temps ; le verrou la fait attendre
         cours = frappe.get_doc("LMS Course", cours_id, for_update=True)
-        cours.update(self._champs(parcours))
+        cours.update(retouches_frappe.champs_du_parcours(cours_id, self._champs(parcours)))
         cours.set("chapters", [])
         cours.save(ignore_permissions=True)
         if isinstance(parcours, Parcours):
             self._ecrire_chapitres(cours_id, parcours, videos)
+            retouches_frappe.reconduire(cours_id, retouchees, anciens)
 
     @contextlib.contextmanager
     def unite_de_travail(self):
