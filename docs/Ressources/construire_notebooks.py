@@ -1,4 +1,4 @@
-"""Construit les carnets d'exercices du parcours agentique, et leur archive.
+"""Construit les archives du fil rouge : les carnets d'exercices, et le dépôt des autres séances.
 
 Un carnet est du code, pas une pièce jointe : son contenu vit dans
 `docs/Ressources/notebooks/cellules.py`, le dépôt qui l'accompagne est rejoué depuis le
@@ -9,9 +9,10 @@ besoin d'un compte ni d'un outil extérieur pour rouvrir un carnet dans deux ans
     python docs/Ressources/construire_notebooks.py            # écrit les archives
     python docs/Ressources/construire_notebooks.py --verifier  # échoue si elles ont bougé
 
-Le dépôt livré à côté du carnet est extrait des blocs de code du parcours dont le titre
-nomme un fichier, jusqu'à la séance concernée : ce que l'apprenant ouvre est exactement
-ce que le cours lui a fait écrire.
+Le dépôt livré est extrait des blocs de code du parcours dont le titre nomme un fichier,
+jusqu'à la séance concernée : ce que l'apprenant ouvre est exactement ce que le cours lui a
+fait écrire. Toute séance qui écrit une partie du fil rouge repart donc avec un
+téléchargement : son carnet quand elle en a un, son dépôt sinon.
 """
 from __future__ import annotations
 
@@ -41,8 +42,11 @@ DEPUIS_LE_SOCLE = ["data/factures_fictives.csv", "contracts/contrats_outils.json
 # Le cours ecrit parfois un fichier avant celui dont il depend : actions.py, ecrit en
 # seance 5, importe l'etat ecrit en seance 8. Le carnet livre donc ces dependances,
 # sans quoi le depot ne s'importe pas.
-COMPLEMENTS = {"06": ["recouvrement/etat.py", "recouvrement/trace.py"]}
+COMPLEMENTS = {"06": ["recouvrement/etat.py", "recouvrement/trace.py"],
+               "07": ["recouvrement/etat.py", "recouvrement/trace.py"]}
 HORODATAGE = (2026, 1, 1, 0, 0, 0)  # date fixe : l'archive ne doit pas changer avec l'heure
+# La séance 5 garde l'archive de départ du socle : son dépôt de fin de séance en est le sous-ensemble.
+SANS_DEPOT = {"05"}
 
 
 def _parcours() -> dict:
@@ -91,6 +95,18 @@ def _contrats_complets(donnees: dict, brut: str) -> str:
                     contrats["tools"].append(ajout)
                     connus.add(ajout["name"])
     return json.dumps(contrats, ensure_ascii=False, indent=2) + "\n"
+
+
+def seances_du_fil_rouge(donnees: dict) -> dict[str, str]:
+    """{num: titre} des séances qui écrivent un fichier du fil rouge : chacune a droit à un téléchargement."""
+    seances = {}
+    for module in _modules(donnees):
+        ecrit = any(CHEMIN_FICHIER.match(code["titre"])
+                    for section in module.get("cours") or []
+                    for code in section.get("code") or [])
+        if ecrit:
+            seances[module["num"]] = module["title"]
+    return seances
 
 
 def carnet(num: str, titre_module: str) -> str:
@@ -154,14 +170,47 @@ def lisezmoi(num: str, titre: str) -> str:
             "Rien n'est envoyé : la seule écriture possible est une relance simulée, locale.\n")
 
 
+def lisezmoi_depot(num: str, titre: str) -> str:
+    windows = "# Windows : .venv" + chr(92) + "Scripts" + chr(92) + "activate"
+    return "\n".join([
+        f"# Dépôt du fil rouge — séance {int(num)}", "",
+        titre, "",
+        "Le code de l'agent de recouvrement, dans l'état où le cours le laisse à la fin de la "
+        f"séance {int(num)} : ni plus, ni moins que ce que la séance vous a fait écrire.", "",
+        "## Pour l'ouvrir", "",
+        "```bash",
+        f"python -m venv .venv && . .venv/bin/activate   {windows}",
+        "pip install pydantic pytest",
+        "python -m pytest",
+        "```", "",
+        "Lancez les commandes depuis cette racine : les chemins `data/`, `connaissances/` et "
+        "`contracts/` en dépendent. Certaines séances ajoutent une dépendance (LangGraph, CrewAI, "
+        "le client MCP) : le cours le dit au moment où elle sert.", "",
+        "Aucun appel à un service distant n'est nécessaire, et aucune clé : les données sont fictives.",
+        "",
+    ])
+
+
+def archive_depot(num: str, donnees: dict) -> bytes:
+    """Le dépôt seul, pour une séance du fil rouge sans carnet d'exercices rédigé."""
+    titre = next(m["title"] for m in _modules(donnees) if m["num"] == num)
+    contenu = {"LISEZMOI.md": lisezmoi_depot(num, titre)}
+    contenu.update(depot(donnees, int(num)))
+    return _zip(f"depot-seance-{num}", contenu)
+
+
 def archive(num: str, donnees: dict) -> bytes:
     titre = next(m["title"] for m in _modules(donnees) if m["num"] == num)
     contenu = {f"seance-{num}.ipynb": carnet(num, titre), "LISEZMOI.md": lisezmoi(num, titre)}
     contenu.update(depot(donnees, int(num)))
+    return _zip(f"carnet-seance-{num}", contenu)
+
+
+def _zip(racine: str, contenu: dict[str, str]) -> bytes:
     tampon = io.BytesIO()
     with zipfile.ZipFile(tampon, "w", zipfile.ZIP_DEFLATED) as zip_:
         for chemin in sorted(contenu):
-            info = zipfile.ZipInfo(f"carnet-seance-{num}/{chemin}", HORODATAGE)
+            info = zipfile.ZipInfo(f"{racine}/{chemin}", HORODATAGE)
             info.external_attr = 0o644 << 16
             info.compress_type = zipfile.ZIP_DEFLATED
             zip_.writestr(info, contenu[chemin].encode("utf-8"))
@@ -172,9 +221,11 @@ def main() -> int:
     verifier = "--verifier" in sys.argv
     donnees = _parcours()
     ecarts = 0
-    for num in sorted(SEANCES):
-        contenu = archive(num, donnees)
-        cible = DESTINATION / f"carnet-seance-{num}.zip"
+    autres = sorted(set(seances_du_fil_rouge(donnees)) - set(SEANCES) - SANS_DEPOT)
+    travaux = [(f"carnet-seance-{num}.zip", archive(num, donnees)) for num in sorted(SEANCES)]
+    travaux += [(f"depot-seance-{num}.zip", archive_depot(num, donnees)) for num in autres]
+    for nom, contenu in travaux:
+        cible = DESTINATION / nom
         empreinte = hashlib.sha256(contenu).hexdigest()[:12]
         if verifier:
             actuel = cible.read_bytes() if cible.exists() else b""

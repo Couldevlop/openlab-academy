@@ -107,9 +107,9 @@ jobs:
       - name: Schémas SVG à jour
         run: python docs/Ressources/construire_schemas.py --verifier
 
-      # même règle pour les carnets d'exercices : l'archive livrée doit être celle que le
+      # même règle pour les archives du fil rouge : l'archive livrée doit être celle que le
       # script rend à partir du parcours, sinon un carnet servirait du code déjà corrigé
-      - name: Carnets d'exercices à jour
+      - name: Archives du fil rouge à jour
         run: |
           pip install --quiet pyyaml
           python docs/Ressources/construire_notebooks.py --verifier

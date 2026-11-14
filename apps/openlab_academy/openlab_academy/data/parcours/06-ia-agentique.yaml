@@ -3709,6 +3709,7 @@ blocs:
           Indices : pour le modèle local, un modèle de sept à huit milliards de paramètres suffit si vos
           descriptions d'outils sont précises ; si les arguments arrivent souvent invalides, c'est la
           description qu'il faut corriger avant le modèle.
+        archive: depot-seance-07.zip
         livrable: >-
           Étape 7 : dépôt exécutant le fil rouge avec un vrai modèle, bascule distant et local par variables
           d'environnement, quatre tests de boucle verts sans réseau, trace complète et coût mesuré sur trois
@@ -5243,6 +5244,7 @@ blocs:
 
           Indices : si le graphe boucle, regardez votre arête conditionnelle avant d'accuser le cadre ; si
           la reprise recommence tout, vérifiez que vous invoquez bien avec une entrée vide.
+        archive: depot-seance-10.zip
         livrable: >-
           Étape 10 : le fil rouge réécrit avec le cadre, point de sauvegarde actif, pause de validation
           fonctionnelle, reprise sans doublon démontrée, tests de nœuds verts, et comparaison chiffrée des
@@ -5585,8 +5587,6 @@ blocs:
                   """Les memes criteres passent sur les cinq ecritures, sinon la comparaison ne vaut rien."""
                   import pytest
 
-                  from recouvrement.workflow_local import charger_factures
-
                   LITIGES = {"FAC-003", "FAC-007", "FAC-010"}
                   TOTAL_ATTENDU = 7_730_000
 
@@ -5677,6 +5677,7 @@ blocs:
           Indices : si un cadre refuse de s'installer à côté d'un autre, un environnement virtuel par cadre
           règle le problème en deux minutes ; si une implémentation échoue sur le total, regardez d'abord
           si le modèle a calculé lui même au lieu d'appeler l'outil.
+        archive: depot-seance-11.zip
         livrable: >-
           Étape 11 : trois écritures supplémentaires du fil rouge, les douze critères passés sur les cinq,
           tableau de mesures comparatives dans decisions.md et choix argumenté par trois raisons chiffrées.
@@ -6089,6 +6090,7 @@ blocs:
           (Agent Card) décrivant ses compétences, son adresse et son authentification ; un autre agent lui confie
           des tâches dotées d'un cycle de vie (en cours, en attente d'information, terminée, échouée) et en
           reçoit des artefacts. MCP relie un agent à ses outils, A2A relie des agents entre eux.
+        archive: depot-seance-12.zip
         livrable: >-
           Étape 12 : serveur MCP local n'exposant que les outils de lecture et de brouillon, consommé par l'agent avec un
           résultat métier identique, test de non-exposition de l'outil d'écriture, fiche d'Agent Card A2A.
@@ -6571,6 +6573,7 @@ blocs:
           récents ou retards lourds) et un agrégateur (réconcilie les constats et produit l'exposition totale). Le coût d'une architecture multi-agents : plus d'appels, plus de tokens, plus de
           latence, débogage plus difficile ; reconnaître les cas où un seul agent bien outillé suffit. Brancher
           un agent externe par A2A quand il relève d'une autre équipe ou d'un autre éditeur.
+        archive: depot-seance-13.zip
         livrable: >-
           Étape 13 : un orchestrateur et deux analystes sur des segments disjoints, invariant d'exposition vérifié par un
           test, et rapport comparatif qualité, coût et latence face à l'agent unique.
@@ -7251,7 +7254,7 @@ blocs:
                   from fastapi import FastAPI, HTTPException
                   from pydantic import BaseModel, Field
 
-                  from recouvrement.config import charger_configuration
+                  from recouvrement.configuration import charger_configuration
                   from recouvrement.etat import charger_etat, enregistrer_etat
                   from recouvrement.executer_boucle import executer_analyse
                   from recouvrement.trace import Trace
@@ -7381,11 +7384,11 @@ blocs:
               de secrets de votre hébergeur, la variable d'environnement du conteneur au démarrage, et
               votre fichier .env local, lui même ignoré par Git.
 
-              Le code ci-dessous refuse de démarrer si un secret obligatoire manque. Ce refus est une
+              Le module ci-dessous est celui du service déployé : il vit à côté des réglages de la boucle, écrits en séance 7, qu'il ne remplace pas. Il refuse de démarrer si un secret obligatoire manque. Ce refus est une
               fonctionnalité : un service qui démarre sans clé répondra à la première requête par une
               erreur incompréhensible, trois heures plus tard, pendant une démonstration.
             code:
-              - titre: recouvrement/config.py, la version de production
+              - titre: recouvrement/configuration.py, le module de configuration du service
                 langage: python
                 source: |
                   """Configuration lue a l'environnement, verifiee au demarrage, jamais journalisee."""
@@ -7635,6 +7638,7 @@ blocs:
           Indices : si l'image pèse plus de 400 Mo, votre .dockerignore est probablement incomplet ; si
           le pipeline réclame une clé réelle, c'est que vos tests appellent le vrai modèle au lieu du
           modèle simulé.
+        archive: depot-seance-15.zip
         livrable: >-
           Étape 15 : interface HTTP à trois routes, Dockerfile et fichier de composition, configuration
           par variables d'environnement avec refus au démarrage, pipeline à cinq travaux dont le
@@ -7767,7 +7771,7 @@ blocs:
                               lignes.append(f"{nom}_p50_secondes {_centile(valeurs, 0.50):.3f}")
                               lignes.append(f"{nom}_p95_secondes {_centile(valeurs, 0.95):.3f}")
                       return "\n".join(lignes) + "\n"
-              - titre: service/api.py, les deux ajouts à faire
+              - titre: Les deux ajouts à faire dans service/api.py
                 langage: python
                 source: |
                   from fastapi import Response
@@ -8049,6 +8053,7 @@ blocs:
           Indices : si vos compteurs portent un identifiant de facture en étiquette, corrigez avant
           d'aller plus loin ; si le filtre du journal laisse passer une note libre, c'est souvent parce
           qu'elle est imbriquée dans une liste de dictionnaires.
+        archive: depot-seance-16.zip
         livrable: >-
           Étape 16 : agent instrumenté avec sa route de mesures, plafond de dépense journalier qui
           refuse explicitement, journal structuré filtré à l'écriture avec ses trois tests, tableau des
@@ -8848,6 +8853,7 @@ blocs:
           Indices : si votre adaptateur ramène des milliers de lignes, c'est que le filtre est appliqué
           chez vous au lieu de l'être côté serveur ; si les montants ne tombent pas juste, regardez où
           vous arrondissez.
+        archive: depot-seance-17.zip
         livrable: >-
           Étape 17 : port unique et trois adaptateurs ERP, bac à sable reproductible, jeu de tests passant
           à l'identique en mémoire et sur l'ERP réel, rapprochement des paiements, validation adossée à
