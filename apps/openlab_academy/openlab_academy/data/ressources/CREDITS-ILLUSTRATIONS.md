@@ -9,6 +9,7 @@ Licence : https://unsplash.com/license
 
 | Fichier | Identifiant Unsplash |
 |---|---|
+| couverture-ia-agentique.jpg | `photo-1684369175809-f9642140a1bd` |
 | corps-01b.jpg | `photo-1603037833672-35f4d722d5db` |
 | corps-02a.jpg | `photo-1622555473213-4fc6bc77d1d7` |
 | corps-02b.jpg | `photo-1562408590-e32931084e23` |
@@ -57,4 +58,6 @@ Licence : https://unsplash.com/license
 | ouverture-17.jpg | `photo-1511376868136-742c0de8c9a8` |
 | ouverture-18.jpg | `photo-1681949222860-9cb3b0329878` |
 
-Chaque image est servie en fichier privé de leçon : elle suit le contrôle d'accès du parcours.
+Chaque image de leçon est servie en fichier privé : elle suit le contrôle d'accès du parcours.
+L'image de couverture fait exception : elle est publique, puisque la vignette s'affiche au catalogue,
+donc avant toute inscription.

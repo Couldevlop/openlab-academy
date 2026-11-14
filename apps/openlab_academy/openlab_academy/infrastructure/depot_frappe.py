@@ -36,6 +36,7 @@ class DepotFrappe:
     def _creer(self, parcours: Parcours | Annonce) -> str:
         cours = frappe.get_doc({"doctype": "LMS Course", "instructors": [{"instructor": self._reglages.formateur}],
                                 **self._champs(parcours)}).insert(ignore_permissions=True)
+        self._couverture(cours.name, parcours)
         if isinstance(parcours, Parcours):
             self._ecrire_chapitres(cours.name, parcours)
         return cours.name
@@ -58,9 +59,18 @@ class DepotFrappe:
         cours.update(retouches_frappe.champs_du_parcours(cours_id, self._champs(parcours)))
         cours.set("chapters", [])
         cours.save(ignore_permissions=True)
+        self._couverture(cours_id, parcours)
         if isinstance(parcours, Parcours):
             self._ecrire_chapitres(cours_id, parcours, videos)
             retouches_frappe.reconduire(cours_id, retouchees, anciens)
+
+    @staticmethod
+    def _couverture(cours_id: str, parcours: Parcours | Annonce) -> None:
+        """L'image de couverture est jointe après la création : un média ne se joint qu'à un document existant."""
+        if not parcours.couverture:
+            return
+        adresse = ressources_frappe.joindre_couverture(cours_id, parcours.couverture)
+        frappe.db.set_value("LMS Course", cours_id, "image", adresse)
 
     @contextlib.contextmanager
     def unite_de_travail(self):

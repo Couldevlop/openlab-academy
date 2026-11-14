@@ -42,6 +42,7 @@ description: >-
   Ouvert un mois.</p>
 tags: [IA agentique, Agents IA, Tool calling, LangGraph, CrewAI, MCP, A2A, RAG, Déploiement, Évaluation, Validation humaine]
 card_gradient: Violet
+couverture: couverture-ia-agentique.jpg
 gratuit: true
 acces_limite_a_la_cohorte: true
 mise_en_avant: true

@@ -12,6 +12,7 @@ from openlab_academy.domain.reglages_evaluation import Chaine
 
 PARCOURS_DIR = pathlib.Path(__file__).parents[1] / "data" / "parcours"
 _NOM_ARCHIVE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.zip")
+_NOM_IMAGE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.(?:jpg|jpeg|png|webp|svg)")
 _LISTES_PROJET = ("objectifs", "fonctionnalites", "stack", "criteres_acceptation", "livrables")
 # Paramètres qu'un parcours peut surcharger : clé YAML -> champ du domaine Parcours
 _PARAMETRES = {"projets_par_portfolio": "projets_attendus", "heures_par_module": "heures_par_module"}
@@ -116,6 +117,17 @@ class _Lecteur:
         nom = str(brut)
         if not _NOM_ARCHIVE.fullmatch(nom):
             raise FormatInvalide(f"{self.source}: {chemin} doit être un nom de fichier .zip sans chemin")
+        return nom
+
+    def couverture(self, brut, chemin: str = "couverture") -> str:
+        """Clé facultative `couverture:` : nom de fichier seul d'une image livrée avec l'application. Jamais un
+        chemin (OWASP A01 : l'image est lue dans le dossier des ressources, pas où le texte l'indique)."""
+        if brut is None:
+            return ""
+        nom = str(brut)
+        if not _NOM_IMAGE.fullmatch(nom):
+            raise FormatInvalide(f"{self.source}: {chemin} doit être un nom d'image sans chemin "
+                                 "(.jpg, .jpeg, .png, .webp ou .svg)")
         return nom
 
     def _entrees(self, brut, chemin: str) -> list[dict]:
@@ -225,6 +237,7 @@ class _Lecteur:
             short_introduction=str(self.exiger(d, "short_introduction", "")),
             description=str(self.exiger(d, "description", "")),
             tags=self.textes(d.get("tags") or (), "tags"), card_gradient=str(d.get("card_gradient", "Blue")),
+            couverture=self.couverture(d.get("couverture")),
         )
 
     def element(self, d) -> "Parcours | Annonce":
@@ -251,6 +264,7 @@ class _Lecteur:
             short_introduction=str(self.exiger(d, "short_introduction", "")),
             description=str(self.exiger(d, "description", "")),
             tags=self.textes(d.get("tags") or (), "tags"), card_gradient=str(d.get("card_gradient", "Blue")),
+            couverture=self.couverture(d.get("couverture")),
             blocs=blocs, portfolio=portfolio,
             capstone=self.projet(self.exiger(d, "capstone", ""), "capstone.", False),
             gratuit=self.booleen(d, "gratuit"),

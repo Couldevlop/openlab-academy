@@ -27,6 +27,25 @@ def chemin(nom: str) -> pathlib.Path:
     return fichier
 
 
+def joindre_couverture(cours: str, nom: str) -> str:
+    """Joint l'image de couverture au parcours en fichier public et renvoie son adresse.
+
+    Publique, à l'inverse des archives et des figures : la vignette s'affiche au catalogue, donc avant
+    toute inscription. Une couverture déjà jointe est réutilisée, pour qu'une republication ne laisse
+    pas derrière elle une collection de doublons.
+    """
+    deja = frappe.db.get_value("File", {"attached_to_doctype": "LMS Course", "attached_to_name": cours,
+                                        "file_name": nom, "is_private": 0}, "file_url")
+    if deja:
+        return deja
+    fichier = chemin(nom)
+    return frappe.get_doc({
+        "doctype": "File", "file_name": nom, "is_private": 0, "decode": False,
+        "attached_to_doctype": "LMS Course", "attached_to_name": cours, "attached_to_field": "image",
+        "content": fichier.read_bytes(),
+    }).insert(ignore_permissions=True).file_url
+
+
 def joindre(lecon: str, nom: str) -> str:
     """Joint l'archive à la leçon en fichier privé et renvoie son adresse ; une archive déjà jointe est réutilisée."""
     deja = frappe.db.get_value("File", {"attached_to_doctype": "Course Lesson", "attached_to_name": lecon,

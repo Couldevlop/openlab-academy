@@ -241,6 +241,7 @@ class Annonce:
     description: str
     tags: tuple[str, ...]
     card_gradient: str
+    couverture: str = ""  # nom de fichier de l'image de couverture, jointe au parcours et publique
 
     def __post_init__(self):
         _verifier_textes(self)
@@ -256,6 +257,7 @@ class Parcours:
     blocs: tuple[Bloc, ...]
     portfolio: tuple[Projet, ...]
     capstone: Projet
+    couverture: str = ""  # nom de fichier de l'image de couverture, jointe au parcours et publique
     projets_attendus: int = 10
     heures_par_module: int = 8
     questions_par_quiz: int = 0  # 0 = exercices de fin de leçon non exigés
