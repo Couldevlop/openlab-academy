@@ -402,7 +402,7 @@ def anatomie_prompt() -> Dessin:
     return d
 def jetons_decoupage() -> Dessin:
     """Séance 2 : une même phrase découpée en jetons, et ce que le découpage coûte."""
-    d = Dessin(860, 340, "Le découpage en jetons, et son coût")
+    d = Dessin(860, 392, "Le découpage en jetons, et son coût")
     exemples = [
         ("Anglais", ["The", " invoice", " is", " late"], "4 jetons", "s3"),
         ("Français", ["La", " fact", "ure", " est", " en", " ret", "ard"], "7 jetons", "s1"),
@@ -422,9 +422,9 @@ def jetons_decoupage() -> Dessin:
             taille=14, gras=True)
     d.texte(430, 64, "La même phrase coûte plus cher en français, et un identifiant coûte "
                      "plus cher qu'un mot courant.", taille=12, couleur="encre2")
-    d.boite(150, 258, 560, 60, teinte="critique", tirets=True)
-    d.texte(430, 282, "Ce que le modèle ne voit pas", taille=12, gras=True, couleur="critique")
-    d.texte(430, 303, "les lettres à l'intérieur d'un jeton : d'où les erreurs de comptage et "
+    d.boite(150, 310, 560, 60, teinte="critique", tirets=True)
+    d.texte(430, 334, "Ce que le modèle ne voit pas", taille=12, gras=True, couleur="critique")
+    d.texte(430, 355, "les lettres à l'intérieur d'un jeton : d'où les erreurs de comptage et "
                       "de recopie d'identifiants.", taille=11, couleur="encre2")
     return d
 
