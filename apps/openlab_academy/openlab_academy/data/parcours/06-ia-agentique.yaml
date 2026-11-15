@@ -8495,10 +8495,14 @@ blocs:
               fois. ERPNext se monte séparément, avec son propre fichier de composition, pour la même
               raison.
 
-              Un détail qui vous servira : les mots de passe de ce fichier sont des mots de passe de
-              bac à sable, et ils ne doivent exister nulle part ailleurs. Le jour où vous brancherez un
-              vrai système, les identifiants viendront du gestionnaire de secrets de la séance 15, et
-              ce fichier restera inchangé.
+              Un détail qui vous servira : aucun mot de passe n'est écrit dans ce fichier, pas même
+              pour un bac à sable. Chaque valeur est lue dans l'environnement, et la composition refuse
+              de démarrer si elle manque. Vous tirez les vôtres au hasard dans un fichier .env que Git
+              ignore, à partir du modèle fourni juste après. Prenez l'habitude ici : un mot de passe
+              écrit dans un fichier suivi par Git est un mot de passe publié, et les outils d'analyse
+              de votre futur employeur le signaleront. Le jour où vous brancherez un vrai système, les
+              identifiants viendront du gestionnaire de secrets de la séance 15, et ces deux fichiers
+              resteront inchangés.
             code:
               - titre: integrations/docker-compose.bac-a-sable.yml, le fichier complet
                 langage: yaml
@@ -8510,7 +8514,7 @@ blocs:
                       image: postgres:15
                       environment:
                         POSTGRES_USER: odoo
-                        POSTGRES_PASSWORD: bac-a-sable-odoo       # bac a sable uniquement
+                        POSTGRES_PASSWORD: ${ODOO_MOTDEPASSE:?absent de votre .env}
                         POSTGRES_DB: postgres
                       volumes:
                         - odoo-db:/var/lib/postgresql/data
@@ -8524,17 +8528,17 @@ blocs:
                       environment:
                         HOST: odoo-db
                         USER: odoo
-                        PASSWORD: bac-a-sable-odoo
+                        PASSWORD: ${ODOO_MOTDEPASSE:?absent de votre .env}
                       volumes:
                         - odoo-donnees:/var/lib/odoo
 
                     dolibarr-db:
                       image: mariadb:11
                       environment:
-                        MYSQL_ROOT_PASSWORD: bac-a-sable-root
+                        MYSQL_ROOT_PASSWORD: ${DOLI_MOTDEPASSE_ROOT:?absent de votre .env}
                         MYSQL_DATABASE: dolibarr
                         MYSQL_USER: dolibarr
-                        MYSQL_PASSWORD: bac-a-sable-doli
+                        MYSQL_PASSWORD: ${DOLI_MOTDEPASSE:?absent de votre .env}
                       volumes:
                         - doli-db:/var/lib/mysql
 
@@ -8547,7 +8551,7 @@ blocs:
                       environment:
                         DOLI_DB_HOST: dolibarr-db
                         DOLI_DB_USER: dolibarr
-                        DOLI_DB_PASSWORD: bac-a-sable-doli
+                        DOLI_DB_PASSWORD: ${DOLI_MOTDEPASSE:?absent de votre .env}
                         DOLI_DB_NAME: dolibarr
                         DOLI_URL_ROOT: "http://localhost:8070"
 
@@ -8555,6 +8559,15 @@ blocs:
                     odoo-db:
                     odoo-donnees:
                     doli-db:
+              - titre: integrations/.env.exemple, le modele a recopier en .env
+                langage: bash
+                source: |
+                  # Copiez ce fichier en integrations/.env, puis remplacez chaque valeur par une chaine
+                  # tiree au hasard : python -c "import secrets; print(secrets.token_urlsafe(24))"
+                  # Le fichier .env n'entre jamais dans Git ; .env.exemple ne contient aucune valeur reelle.
+                  ODOO_MOTDEPASSE=a-remplacer
+                  DOLI_MOTDEPASSE_ROOT=a-remplacer
+                  DOLI_MOTDEPASSE=a-remplacer
               - titre: integrations/semer_bac_a_sable.py, les douze factures dans l'ERP
                 langage: python
                 source: |
