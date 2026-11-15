@@ -278,5 +278,7 @@ class TestRubriques(unittest.TestCase):
         self.assertEqual([r.cle for r in rubriques],
                          ["entete", "contexte", "section-1", "objectifs", "fonctionnalites", "stack",
                           "criteres", "exigences", "livrables", "bareme", "devoir"])
+        # une rubrique sans en-tête affiché garde un nom lisible dans la liste des parties
+        self.assertEqual([rubriques[0].titre, rubriques[-1].titre], ["Présentation", "Devoir final"])
         self.assertEqual([b for r in rubriques for b in r.blocs],
                          blocs(editorjs.lecon_projet(p, "D", REGLAGES)))

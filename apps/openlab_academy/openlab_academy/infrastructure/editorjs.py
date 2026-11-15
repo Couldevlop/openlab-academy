@@ -157,6 +157,9 @@ def _consigne_exercices(module: Module, exercices: ReglagesExercices) -> str:
 
 
 # intitulés des rubriques rendues ci-dessus, pour retrouver la clé d'une leçon publiée avant les parties
+PRESENTATION = "Présentation"  # rubrique d'ouverture, sans titre affiché dans la leçon
+DEVOIR_FINAL = "Devoir final"  # rubrique du seul bloc de devoir, en fin d'énoncé de projet
+
 _CLES_PAR_TITRE = {
     "Contenu du module": "contenu", "Travaux pratiques": "travaux-pratiques", "Livrable": "livrable",
     "Exercices": "exercices", "Mise en situation": "mise-en-situation", "Contexte": "contexte",
@@ -174,7 +177,7 @@ def decouper(blocs) -> list[Rubrique]:
     bout à bout redonne donc exactement la leçon."""
     rubriques: list[Rubrique] = []
     courants: list[dict] = []
-    titre, cle, sections = "", "entete", 0
+    titre, cle, sections = PRESENTATION, "entete", 0
 
     def fermer():
         if courants:
@@ -246,12 +249,12 @@ def rubriques_projet(projet: Projet, devoir: str, reglages: Reglages,
         ("bareme", "Barème /20", [f"{c.nom} : {c.poids} %" for c in reglages.bareme]),
     ]
     rubriques = [
-        _rubrique("entete", "", [_bloc("paragraph",
+        _rubrique("entete", PRESENTATION, [_bloc("paragraph",
                                        text=f"<b>{projet.niveau.libelle}</b> · ~{projet.duree_h} h")]),
         _rubrique("contexte", "Contexte", contexte),
         *_sections(projet, urls),
         *(_rubrique(cle, titre, [_titre(titre), _liste(items)]) for cle, titre, items in listes),
-        _rubrique("devoir", "", [_bloc("assignment", assignment=devoir)]),
+        _rubrique("devoir", DEVOIR_FINAL, [_bloc("assignment", assignment=devoir)]),
     ]
     return [r for r in rubriques if r is not None]
 

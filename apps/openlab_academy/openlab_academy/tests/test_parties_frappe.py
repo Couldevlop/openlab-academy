@@ -221,3 +221,31 @@ class TestRattrapage(_Socle):
         noms = {p.name for p in self.parties()}
         parties_frappe.rattraper()
         self.assertEqual({p.name for p in self.parties()}, noms)
+
+
+class TestChampsFiges(_Socle):
+    """Les blocs du fichier et l'identité d'une partie ne s'écrivent qu'à la publication : l'écran les affiche en
+    lecture seule, mais c'est le document lui-même qui doit refuser, l'API écrivant ce qu'on lui donne."""
+
+    def test_blocs_non_modifiables_hors_publication(self):
+        partie = self.partie("contenu")
+        avant = partie.blocs
+        partie.blocs = json.dumps([{"type": "paragraph", "data": {"text": "<img src=x onerror=alert(1)>"}}])
+        partie.save(ignore_permissions=True)
+        self.assertEqual(frappe.db.get_value(DOCTYPE, partie.name, "blocs"), avant)
+        self.assertNotIn("onerror", self.lecon().content)
+
+    def test_cle_rang_et_lecon_non_modifiables(self):
+        partie = self.partie("contenu")
+        avant = (partie.cle, partie.rang, partie.lecon)
+        partie.cle, partie.rang = "livrable", 99
+        partie.save(ignore_permissions=True)
+        partie.reload()
+        self.assertEqual((partie.cle, partie.rang, partie.lecon), avant)
+
+    def test_le_texte_et_le_titre_restent_modifiables(self):
+        partie = self.partie("contenu")
+        partie.contenu, partie.titre = "<p>Nouveau</p>", "Ouverture"
+        partie.save(ignore_permissions=True)
+        partie.reload()
+        self.assertEqual((partie.titre, partie.contenu), ("Ouverture", "<p>Nouveau</p>"))

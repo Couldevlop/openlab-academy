@@ -168,7 +168,8 @@ class TestDecoupage(unittest.TestCase):
     def test_blocs_avant_le_premier_titre(self):
         from openlab_academy.infrastructure import editorjs
         rubriques = editorjs.decouper([PARAGRAPHE, bloc("header", text="Contexte", level=2), PARAGRAPHE])
-        self.assertEqual([r.cle for r in rubriques], ["entete", "contexte"])
+        self.assertEqual([(r.cle, r.titre) for r in rubriques],
+                         [("entete", "Présentation"), ("contexte", "Contexte")])
 
     def test_contenu_vide(self):
         from openlab_academy.infrastructure import editorjs
