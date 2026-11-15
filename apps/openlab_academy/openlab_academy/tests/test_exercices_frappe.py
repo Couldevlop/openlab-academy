@@ -13,8 +13,8 @@ from openlab_academy.tests.test_exercices import question
 TITRE = "Parcours exercices test"
 
 
-def module(n_questions=5, **q):
-    return Module("01", "M", "c", "l", quiz=tuple(question(**q) for _ in range(n_questions)),
+def module(n_questions=5, num="01", **q):
+    return Module(num, "M", "c", "l", quiz=tuple(question(**q) for _ in range(n_questions)),
                   mise_en_situation="Votre client vous appelle <b>urgence</b>")
 
 
@@ -85,6 +85,20 @@ class TestPublicationExercices(FrappeTestCase):
         dans l'application parcours par parcours."""
         cours = self.depot.creer(self.p)
         self.assertEqual(frappe.db.get_value("LMS Course", cours, CHAMP_DELAI), 60)
+
+    def test_seance_sans_exercices_publiee_sans_quiz(self):
+        """Séance déclarée sans exercices : leçon publiée, aucun quiz ni mise en situation, livrable conservé."""
+        p = parcours(title=TITRE, questions_par_quiz=5,
+                     blocs=(Bloc("B1", (Module("01", "M", "c", "l", sans_exercices=True), module(num="02"))),))
+        cours = self.depot.creer(p)
+        self.assertEqual(len(quiz_du_cours(cours)), 1)
+        lecon = self.lecon(cours)
+        types = [b["type"] for b in json.loads(lecon.content)["blocks"]]
+        self.assertNotIn("quiz", types)
+        self.assertEqual([a.assessment_type for a in lecon.assessments], ["LMS Assignment"])
+        self.assertTrue(frappe.db.exists("LMS Assignment", {"course": cours, "title": "Livrable 01 — M"}))
+        self.assertFalse(frappe.db.exists("LMS Assignment", {"course": cours,
+                                                             "title": ["like", "Mise en situation 01%"]}))
 
     def test_choix_multiple(self):
         p = parcours(title=TITRE, questions_par_quiz=5, blocs=(Bloc("B1", (module(bonnes=(1, 3)),)),))

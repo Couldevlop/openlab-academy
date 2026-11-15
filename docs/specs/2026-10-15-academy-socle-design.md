@@ -184,6 +184,10 @@ Décision utilisateur : après chaque module, un quiz obligatoire et une mise en
 - Verrou d'1 h **côté serveur** : la première ouverture d'une leçon par un apprenant est enregistrée
   (surcharge de `lms.lms.utils.get_lesson`) ; toute réponse au quiz ou à la mise en situation avant
   `ouverture + délai` est refusée avec le temps restant. Formateurs et administrateurs ne sont pas bloqués.
+- Séance sans exercices (ajout du 2026-11-15) : clé `sans_exercices: true` du module. La leçon est publiée avec son
+  livrable, sans quiz ni mise en situation, dans un parcours qui en exige partout ailleurs (révision, atelier,
+  challenge). La déclaration est explicite et refusée si un quiz ou une mise en situation l'accompagne : un quiz
+  oublié reste une erreur de publication.
 - Réglages propres à un parcours (ajout du 2026-11-15) : `delai_exercices_minutes`, `tentatives_max` et `score_min`
   se règlent parcours par parcours sous `parametres:`. Le value object `ReglagesExercices` porte les invariants, et
   `Reglages.exercices` comme `Parcours.exercices` le livrent. Le quiz LMS et la phrase de la leçon prennent les

@@ -66,6 +66,43 @@ class TestExercicesDuParcours(unittest.TestCase):
         self.assertEqual(parcours().questions_par_quiz, 0)
 
 
+class TestSeanceSansExercices(unittest.TestCase):
+    """Révision, atelier, challenge : une séance se déclare sans exercices, les autres gardent les leurs."""
+
+    def seance(self, **champs):
+        return parcours(questions_par_quiz=5, blocs=(Bloc("B1", (Module("01", "M", "c", "l", **champs),
+                                                                 module_complet("02"))),))
+
+    def test_declaration_explicite_acceptee(self):
+        p = self.seance(sans_exercices=True)
+        self.assertEqual((p.blocs[0].modules[0].quiz, len(p.blocs[0].modules[1].quiz)), ((), 5))
+
+    def test_quiz_oublie_toujours_refuse(self):
+        with self.assertRaisesRegex(ParcoursInvalide, "module 01 : 5 questions attendues, 0 trouvées"):
+            self.seance()
+
+    def test_declaration_contredite_par_un_quiz(self):
+        with self.assertRaisesRegex(ParcoursInvalide, "module 01 : séance déclarée sans exercices"):
+            self.seance(sans_exercices=True, quiz=tuple(question() for _ in range(5)))
+
+    def test_declaration_contredite_par_une_mise_en_situation(self):
+        with self.assertRaisesRegex(ParcoursInvalide, "module 01 : séance déclarée sans exercices"):
+            self.seance(sans_exercices=True, mise_en_situation="Un cas")
+
+    def test_cle_yaml_lue(self):
+        brut = parcours_brut()
+        module = brut["blocs"][0]["modules"][0]
+        module.update(sans_exercices=True, quiz=[], mise_en_situation="")
+        p = depuis_dict(brut, "t.yaml", Reglages())
+        self.assertTrue(p.blocs[0].modules[0].sans_exercices)
+
+    def test_cle_yaml_non_booleenne_refusee(self):
+        brut = parcours_brut()
+        brut["blocs"][0]["modules"][0]["sans_exercices"] = "oui"
+        with self.assertRaisesRegex(FormatInvalide, "sans_exercices doit être un booléen"):
+            depuis_dict(brut, "t.yaml")
+
+
 class TestExercicesYaml(unittest.TestCase):
     def test_lecture_du_quiz_et_du_cas(self):
         p = depuis_dict(parcours_brut(), "t.yaml", Reglages())

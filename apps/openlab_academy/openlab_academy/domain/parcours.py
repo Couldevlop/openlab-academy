@@ -171,6 +171,9 @@ class Module(AvecCours):
     livrable: str
     quiz: tuple[Question, ...] = ()
     mise_en_situation: str = ""
+    # séance de révision, d'atelier ou de challenge : ni quiz ni mise en situation, même dans un parcours qui en
+    # exige partout ailleurs. Déclaration explicite, pour qu'un quiz oublié reste une erreur.
+    sans_exercices: bool = False
     travaux_pratiques: str = ""  # support de la séance : déroulé et défi, affiché dans la leçon
     archive: str = ""  # nom de fichier de l'archive de départ, jointe à la leçon et citée par elle
     cours: tuple[Section, ...] = ()  # le chapitre proprement dit, en sections titrées
@@ -306,6 +309,11 @@ class Parcours:
 
     def _verifier_exercices(self) -> None:
         for module in (m for b in self.blocs for m in b.modules):
+            if module.sans_exercices:
+                if module.quiz or module.mise_en_situation.strip():
+                    raise ParcoursInvalide(f"module {module.num} : séance déclarée sans exercices, mais un quiz "
+                                           "ou une mise en situation est fourni")
+                continue
             if len(module.quiz) != self.questions_par_quiz:
                 raise ParcoursInvalide(f"module {module.num} : {self.questions_par_quiz} questions attendues, "
                                        f"{len(module.quiz)} trouvées")

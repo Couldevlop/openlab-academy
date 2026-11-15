@@ -204,6 +204,7 @@ class _Lecteur:
         return Module(*(str(self.exiger(m, c, chemin)) for c in ("num", "title", "contenu", "livrable")),
                       quiz=tuple(self.question(q, f"{chemin}quiz[{i}].") for i, q in enumerate(quiz)),
                       mise_en_situation=str(m.get("mise_en_situation") or ""),
+                      sans_exercices=self.booleen(m, "sans_exercices"),
                       travaux_pratiques=str(m.get("travaux_pratiques") or ""),
                       archive=self.archive(m.get("archive"), f"{chemin}archive"),
                       cours=self.sections(m.get("cours"), f"{chemin}cours"),
