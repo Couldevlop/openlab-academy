@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from openlab_academy.domain.parcours import Extrait, Figure, Module, Section, Tableau
+from openlab_academy.domain.parcours import Extrait, Figure, Module, Question, Section, Tableau
 from openlab_academy.domain.reglages import CritereBareme, Reglages
 from openlab_academy.infrastructure import editorjs
 from openlab_academy.tests.fabriques import projet
@@ -221,3 +221,58 @@ class TestBlocVideo(unittest.TestCase):
             with self.subTest(brut=brut):
                 self.assertEqual(editorjs.avec_video_en_tete(brut, bloc), brut)
         self.assertEqual(editorjs.avec_video_en_tete("{}", None), "{}")
+
+
+class TestRubriques(unittest.TestCase):
+    """Une séance se rend rubrique par rubrique : chacune s'édite seule dans l'application, et leur mise bout à
+    bout redonne exactement la leçon."""
+
+    MODULE = Module("03", "M", "Le contenu", "Le livrable",
+                    quiz=(Question("Q ?", ("a", "b"), (1,), "Parce que a."),),
+                    mise_en_situation="Un cas", travaux_pratiques="Déroulé.\nDéfi : agir.",
+                    archive="socle.zip",
+                    cours=(Section("Première partie", ("Un paragraphe.",)),
+                           Section("Deuxième partie", ("Un autre.",),
+                                   extraits=(Extrait("E", "python", "x = 1"),))),
+                    tableaux=(Tableau("T", ("A",), (("1",),)),))
+
+    def _lecon(self):
+        return editorjs.lecon_module(self.MODULE, "DEV-1", 8, "QUIZ-1", "CAS-1", REGLAGES.exercices,
+                                     archive_url="/private/files/socle.zip")
+
+    def test_cles_des_rubriques_d_une_seance(self):
+        rubriques = editorjs.rubriques_module(self.MODULE, "DEV-1", 8, "QUIZ-1", "CAS-1", REGLAGES.exercices,
+                                              archive_url="/private/files/socle.zip")
+        self.assertEqual([r.cle for r in rubriques],
+                         ["contenu", "section-1", "section-2", "travaux-pratiques", "livrable", "exercices",
+                          "mise-en-situation"])
+        self.assertEqual([r.titre for r in rubriques],
+                         ["Contenu du module", "Première partie", "Deuxième partie", "Travaux pratiques",
+                          "Livrable", "Exercices", "Mise en situation"])
+
+    def test_les_rubriques_bout_a_bout_redonnent_la_lecon(self):
+        rubriques = editorjs.rubriques_module(self.MODULE, "DEV-1", 8, "QUIZ-1", "CAS-1", REGLAGES.exercices,
+                                              archive_url="/private/files/socle.zip")
+        self.assertEqual([b for r in rubriques for b in r.blocs], blocs(self._lecon()))
+
+    def test_aucune_rubrique_vide(self):
+        for rubrique in editorjs.rubriques_module(Module("01", "M", "c", "l"), "DEV-1", 8):
+            self.assertTrue(rubrique.blocs, rubrique.cle)
+
+    def test_seance_sans_exercices_ni_travaux_pratiques(self):
+        rubriques = editorjs.rubriques_module(Module("01", "M", "c", "l"), "DEV-1", 8)
+        self.assertEqual([r.cle for r in rubriques], ["contenu", "livrable"])
+
+    def test_assemblage_d_une_lecon_depuis_des_rubriques(self):
+        rubriques = editorjs.rubriques_module(self.MODULE, "DEV-1", 8, "QUIZ-1", "CAS-1", REGLAGES.exercices,
+                                              archive_url="/private/files/socle.zip")
+        self.assertEqual(editorjs.assembler(rubriques), self._lecon())
+
+    def test_cles_des_rubriques_d_un_projet(self):
+        p = projet(cours=(Section("Cadrer", ("p",)),), figures=())
+        rubriques = editorjs.rubriques_projet(p, "D", REGLAGES)
+        self.assertEqual([r.cle for r in rubriques],
+                         ["entete", "contexte", "section-1", "objectifs", "fonctionnalites", "stack",
+                          "criteres", "exigences", "livrables", "bareme", "devoir"])
+        self.assertEqual([b for r in rubriques for b in r.blocs],
+                         blocs(editorjs.lecon_projet(p, "D", REGLAGES)))
