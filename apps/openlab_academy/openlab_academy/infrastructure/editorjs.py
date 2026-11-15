@@ -13,7 +13,9 @@ from openlab_academy.domain.reglages import Reglages, ReglagesExercices
 
 
 def _e(texte: str) -> str:
-    return html.escape(texte)
+    """Guillemets et apostrophes laissés tels quels : un texte de leçon ne sert jamais de valeur d'attribut, et
+    la même convention vaut pour `html_blocs`, qui relit ce que l'éditeur riche a enregistré."""
+    return html.escape(texte, quote=False)
 
 
 def _bloc(type_: str, **data) -> dict:

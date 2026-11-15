@@ -236,6 +236,10 @@ class TestRubriques(unittest.TestCase):
                                    extraits=(Extrait("E", "python", "x = 1"),))),
                     tableaux=(Tableau("T", ("A",), (("1",),)),))
 
+    def rubriques(self):
+        return editorjs.rubriques_module(self.MODULE, "DEV-1", 8, "QUIZ-1", "CAS-1", REGLAGES.exercices,
+                                         archive_url="/private/files/socle.zip")
+
     def _lecon(self):
         return editorjs.lecon_module(self.MODULE, "DEV-1", 8, "QUIZ-1", "CAS-1", REGLAGES.exercices,
                                      archive_url="/private/files/socle.zip")

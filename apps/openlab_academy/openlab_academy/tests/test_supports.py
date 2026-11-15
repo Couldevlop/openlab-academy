@@ -206,7 +206,7 @@ class TestSectionsDeCours(unittest.TestCase):
         self.assertIn("La boucle", titres)
         self.assertIn("Les composants", titres)
         textes = [b["data"].get("text", "") for b in rendu if b["type"] == "paragraph"]
-        self.assertIn("Sans contrôle, la boucle ne s&#x27;arrête pas.", textes)
+        self.assertIn("Sans contrôle, la boucle ne s'arrête pas.", textes)
 
     def test_section_porte_ses_propres_supports(self):
         section = self._section(figures=(Figure("boucle-agent.svg", "La boucle"),),
