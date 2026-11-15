@@ -171,6 +171,13 @@ class TestDecoupage(unittest.TestCase):
         self.assertEqual([(r.cle, r.titre) for r in rubriques],
                          [("entete", "Présentation"), ("contexte", "Contexte")])
 
+    def test_titre_de_rubrique_en_texte_lisible(self):
+        from openlab_academy.infrastructure import editorjs
+        rubriques = editorjs.decouper([bloc("header", text="Ce que vous venez d&#x27;écrire", level=3),
+                                       bloc("paragraph", text="p")])
+        self.assertEqual(rubriques[0].titre, "Ce que vous venez d'écrire")
+        self.assertEqual(rubriques[0].blocs[0]["data"]["text"], "Ce que vous venez d&#x27;écrire")
+
     def test_contenu_vide(self):
         from openlab_academy.infrastructure import editorjs
         self.assertEqual(editorjs.decouper([]), [])

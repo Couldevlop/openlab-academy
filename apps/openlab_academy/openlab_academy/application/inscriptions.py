@@ -24,10 +24,12 @@ class InscriptionDirecte:
     membre_exempte: bool  # rôle jamais bloqué (équipe)
     par_administrateur: bool  # l'administrateur en session inscrit lui-même l'apprenant
     via_cohorte: bool  # créée par l'inscription à une cohorte qui porte ce parcours
+    gratuite_accordee: bool = False  # parcours offert à cet apprenant : il s'inscrit seul, et ne paie pas
 
 
 def verifier_inscription_directe(gratuits: ParcoursGratuits, demande: InscriptionDirecte) -> None:
-    if demande.membre_exempte or demande.par_administrateur or demande.via_cohorte:
+    if (demande.membre_exempte or demande.par_administrateur or demande.via_cohorte
+            or demande.gratuite_accordee):
         return
     if not gratuits.gratuit(demande.cours):
         raise InscriptionRefusee(HORS_COHORTE)

@@ -187,7 +187,8 @@ def decouper(blocs) -> list[Rubrique]:
         if bloc.get("type") == "header":
             fermer()
             courants = []
-            titre = bloc.get("data", {}).get("text", "")
+            # le titre du bloc est du HTML échappé ; la fiche de la partie, elle, affiche du texte
+            titre = html.unescape(bloc.get("data", {}).get("text", ""))
             cle = _CLES_PAR_TITRE.get(titre)
             if cle is None:
                 sections += 1
