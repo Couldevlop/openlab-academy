@@ -16,14 +16,15 @@ MODULES = [
     ("07", "Brancher un vrai modèle sur votre boucle"),
     ("08", "État, mémoire et reprise sur erreur"),
     ("09", "Mémoire longue et recherche documentaire"),
-    ("10", "Le même orchestrateur avec LangGraph"),
-    ("11", "CrewAI, PydanticAI et GenAI, puis le comparatif"),
-    ("12", "MCP et interopérabilité"),
-    ("13", "Architectures multi-agents et A2A"),
-    ("14", "Sécurité, évaluation et observabilité"),
-    ("15", "Empaqueter et déployer par pipeline"),
-    ("16", "Exploiter l'agent en production"),
-    ("17", "Brancher l'agent sur un système d'information réel"),
+    ("10", "Les chaînes LangChain, et la recherche documentaire refaite avec le cadre"),
+    ("11", "Le même orchestrateur avec LangGraph"),
+    ("12", "CrewAI, PydanticAI et GenAI, puis le comparatif"),
+    ("13", "MCP et interopérabilité"),
+    ("14", "Architectures multi-agents et A2A"),
+    ("15", "Sécurité, évaluation et observabilité"),
+    ("16", "Empaqueter et déployer par pipeline"),
+    ("17", "Exploiter l'agent en production"),
+    ("18", "Brancher l'agent sur un système d'information réel"),
 ]
 
 

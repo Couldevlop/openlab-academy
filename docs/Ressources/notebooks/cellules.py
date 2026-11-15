@@ -213,7 +213,7 @@ for facture in factures:
           f"{facture.retard_jours:3} j  palier {facture.dernier_palier}  {etat}")'''),
 
             ("## 2. L'exposition, calculée par le code\n\nLe total ne se demande jamais au "
-             "modèle : c'est le critère AC-06 de la séance 14.",
+             "modèle : c'est le critère AC-06 de la séance 15.",
              '''retenues = [f for f in factures if f.est_relancable()]
 print("retenues :", [f.facture_id for f in retenues])
 print("exposition :", montant_lisible(exposition(retenues)))
@@ -470,7 +470,7 @@ print("arguments refuses :", refus["ok"], "|", refus["erreur"])'''),
              ""),
         ],
     ),
-    "14": (
+    "15": (
         "Sécurité, évaluation et observabilité",
         "Évaluer un agent, c'est vérifier des propriétés. Ce carnet exécute les douze critères "
         "d'acceptation, montre ce que la trace laisse passer, et prouve qu'une note de facture "

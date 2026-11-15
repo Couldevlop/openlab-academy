@@ -1,4 +1,4 @@
-# Progression du projet fil rouge — 17 séances et un projet final
+# Progression du projet fil rouge — 18 séances et un projet final
 
 Le fil rouge est un agent de recouvrement assisté et contrôlé, construit sur un jeu de douze factures
 fictives libellées en francs CFA. Chaque séance ajoute une capacité au même dépôt : rien n'est
@@ -15,14 +15,15 @@ recommencé de zéro, et chaque livrable est vérifiable par un test ou par une 
 | 7 — Brancher un vrai modèle | Clés, interface de modèle, streaming, modèle local, coût par exécution | Brancher un modèle distant puis local derrière la même interface | Exécution réelle tracée, coût mesuré en F CFA |
 | 8 — État et reprise | Trois mémoires, écriture atomique, idempotence, reprise | Rendre l'état durable et la reprise sûre | Coupure en plein vol, reprise sans doublon |
 | 9 — Mémoire longue et RAG | Découpage, index lexical, index vectoriel, fusion, citations | Ajouter le sixième outil, la recherche dans la politique interne | Chaque réponse cite le passage utilisé |
-| 10 — LangGraph | Graphe d'états, points de sauvegarde, pause humaine | Réécrire la même boucle en graphe | Reprise après interruption, validation en pause |
-| 11 — CrewAI, PydanticAI, GenAI | Rôles, sorties typées, SDK au plus près du modèle | Trois écritures de plus, puis le comparatif | Tableau de mesures sur trois exécutions et choix argumenté |
-| 12 — MCP | Serveur, client, frontière de confiance, cycle de vie | Publier les outils de lecture, consommer par le client | Un client tiers utilise vos outils |
-| 13 — Multi-agents et A2A | Superviseur, contrats d'échange, topologies, trois pannes | Découper le portefeuille en lots et agréger | Surcoût mesuré contre la boucle simple |
-| 14 — Sécurité et évaluation | Injection indirecte, propriétés vérifiables, traces, risques résiduels | Écrire les douze critères et le jeu d'évaluation | Douze critères exécutés, cinq éliminatoires verts |
-| 15 — Empaqueter et déployer | Interface HTTP, conteneur, secrets, pipeline, retour arrière | Rendre le projet installable et déployable sans vous | Un tiers installe et exécute sans votre aide |
-| 16 — Exploiter | Mesures, seuils, plafond de dépense, journal, incidents, dérive | Instrumenter, plafonner, préparer la marche à suivre | Retour arrière déclenché pour de vrai |
-| 17 — Système d'information réel | Port unique et adaptateurs, bac à sable, lecture seule, rapprochement des paiements, identité opposable | Brancher Odoo, Dolibarr ou ERPNext derrière un port ; justificatifs Nextcloud, valideur Keycloak, pilotage Metabase, n8n et Grafana | Mêmes tests en mémoire et sur l'ERP réel, sans toucher au domaine |
+| 10 — Chaînes LangChain | Composants et composition, chargeurs, découpeur, récupérateurs, fusion, citations | Refaire la recherche documentaire avec le cadre, à côté de la vôtre | Mêmes citations, prompt envoyé capturé, tableau comparatif chiffré |
+| 11 — LangGraph | Graphe d'états, points de sauvegarde, pause humaine | Réécrire la même boucle en graphe | Reprise après interruption, validation en pause |
+| 12 — CrewAI, PydanticAI, GenAI | Rôles, sorties typées, SDK au plus près du modèle | Trois écritures de plus, puis le comparatif | Tableau de mesures sur trois exécutions et choix argumenté |
+| 13 — MCP | Serveur, client, frontière de confiance, cycle de vie | Publier les outils de lecture, consommer par le client | Un client tiers utilise vos outils |
+| 14 — Multi-agents et A2A | Superviseur, contrats d'échange, topologies, trois pannes | Découper le portefeuille en lots et agréger | Surcoût mesuré contre la boucle simple |
+| 15 — Sécurité et évaluation | Injection indirecte, propriétés vérifiables, traces, risques résiduels | Écrire les douze critères et le jeu d'évaluation | Douze critères exécutés, cinq éliminatoires verts |
+| 16 — Empaqueter et déployer | Interface HTTP, conteneur, secrets, pipeline, retour arrière | Rendre le projet installable et déployable sans vous | Un tiers installe et exécute sans votre aide |
+| 17 — Exploiter | Mesures, seuils, plafond de dépense, journal, incidents, dérive | Instrumenter, plafonner, préparer la marche à suivre | Retour arrière déclenché pour de vrai |
+| 18 — Système d'information réel | Port unique et adaptateurs, bac à sable, lecture seule, rapprochement des paiements, identité opposable | Brancher Odoo, Dolibarr ou ERPNext derrière un port ; justificatifs Nextcloud, valideur Keycloak, pilotage Metabase, n8n et Grafana | Mêmes tests en mémoire et sur l'ERP réel, sans toucher au domaine |
 | Projet final | Intégration, démonstration et revue technique | Exécuter le parcours complet jusqu'à la demande de validation ; l'action finale reste simulée | Dépôt documenté, démonstration de 7 minutes et dossier de preuves |
 
 ## Livrable final attendu

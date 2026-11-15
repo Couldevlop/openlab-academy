@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 470" width="940" height="470" role="img" aria-label="Les maillons d&#x27;une chaîne, et la chaîne de recherche augmentée">
+<title>Les maillons d&#x27;une chaîne, et la chaîne de recherche augmentée</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="940" height="470" fill="var(--surface)"/>
+<text x="24" y="44" text-anchor="start" font-size="15" font-weight="600" fill="var(--encre)">Un composant prend une entrée, rend une sortie : il se compose</text>
+<text x="24" y="66" text-anchor="start" font-size="11" fill="var(--encre2)">la barre verticale enchaîne les maillons, et le résultat est lui même un composant</text>
+<rect x="24" y="92" width="272" height="84" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="160" y="118" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">gabarit de prompt</text>
+<text x="160" y="140" text-anchor="middle" font-size="10" fill="var(--encre2)">entrée : dictionnaire</text>
+<text x="160" y="158" text-anchor="middle" font-size="10" fill="var(--encre2)">sortie : messages</text>
+<text x="313" y="139" text-anchor="middle" font-size="20" font-weight="600" fill="var(--encre2)">|</text>
+<rect x="330" y="92" width="272" height="84" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="466" y="118" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">modèle</text>
+<text x="466" y="140" text-anchor="middle" font-size="10" fill="var(--encre2)">entrée : messages</text>
+<text x="466" y="158" text-anchor="middle" font-size="10" fill="var(--encre2)">sortie : message</text>
+<text x="619" y="139" text-anchor="middle" font-size="20" font-weight="600" fill="var(--encre2)">|</text>
+<rect x="636" y="92" width="272" height="84" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="772" y="118" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">parseur de sortie</text>
+<text x="772" y="140" text-anchor="middle" font-size="10" fill="var(--encre2)">entrée : message</text>
+<text x="772" y="158" text-anchor="middle" font-size="10" fill="var(--encre2)">sortie : texte validé</text>
+<text x="24" y="212" text-anchor="start" font-size="14" font-weight="600" fill="var(--encre)">La même chaîne, appliquée à la recherche documentaire</text>
+<rect x="24" y="240" width="164" height="76" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="106" y="266" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">question</text>
+<text x="106" y="288" text-anchor="middle" font-size="10" fill="var(--encre2)">posée par l&#x27;agent</text>
+<path d="M 188 278 L 207 278" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="207" y="240" width="164" height="76" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="289" y="266" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">récupérateurs</text>
+<text x="289" y="288" text-anchor="middle" font-size="10" fill="var(--encre2)">lexical et vectoriel</text>
+<path d="M 371 278 L 390 278" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="390" y="240" width="164" height="76" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="472" y="266" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">fusion</text>
+<text x="472" y="288" text-anchor="middle" font-size="10" fill="var(--encre2)">par rang réciproque</text>
+<path d="M 554 278 L 573 278" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="573" y="240" width="164" height="76" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="655" y="266" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">contexte balisé</text>
+<text x="655" y="288" text-anchor="middle" font-size="10" fill="var(--encre2)">passages et identifiants</text>
+<path d="M 737 278 L 756 278" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="756" y="240" width="164" height="76" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="838" y="266" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">réponse citée</text>
+<text x="838" y="288" text-anchor="middle" font-size="10" fill="var(--encre2)">chaque fait, sa source</text>
+<rect x="24" y="348" width="440" height="100" rx="8" class="b-bon" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="244" y="372" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">Ce que le cadre fournit</text>
+<text x="244" y="394" text-anchor="middle" font-size="10" fill="var(--encre2)">chargeurs, découpeur, index et récupérateurs</text>
+<text x="244" y="409" text-anchor="middle" font-size="10" fill="var(--encre2)">une interface unique vers les modèles</text>
+<text x="244" y="424" text-anchor="middle" font-size="10" fill="var(--encre2)">le lot, le flux et les rappels, sans rien écrire</text>
+<rect x="490" y="348" width="426" height="100" rx="8" class="b-critique" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="703" y="372" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">Ce qui reste à votre charge</text>
+<text x="703" y="394" text-anchor="middle" font-size="10" fill="var(--encre2)">la citation obligatoire et sa vérification</text>
+<text x="703" y="409" text-anchor="middle" font-size="10" fill="var(--encre2)">la liste blanche des outils et le journal des refus</text>
+<text x="703" y="424" text-anchor="middle" font-size="10" fill="var(--encre2)">le budget en jetons, et le prompt réellement envoyé</text>
+</svg>

@@ -1033,7 +1033,7 @@ def chaine_de_prompts() -> Dessin:
             taille=11, couleur="encre2", ancre="start")
     d.texte(470, 346, "Une erreur vue à l'étape 1 coûte une reformulation ; vue à l'étape 4, elle a contaminé le livrable.",
             taille=12, gras=True)
-    d.texte(470, 372, "Une fois éprouvée, la chaîne s'écrit une fois, se rejoue, puis se code : c'est le graphe de la séance 10.",
+    d.texte(470, 372, "Une fois éprouvée, la chaîne s'écrit une fois, se rejoue, puis se code : c'est le graphe de la séance 11.",
             taille=11, couleur="encre2")
     return d
 
@@ -1075,6 +1075,52 @@ def rag_six_etapes() -> Dessin:
     return d
 
 
+def chaines_langchain() -> Dessin:
+    """Séance 10 : les maillons d'une chaîne, puis la chaîne de recherche augmentée au complet."""
+    d = Dessin(940, 470, "Les maillons d'une chaîne, et la chaîne de recherche augmentée")
+    d.texte(24, 44, "Un composant prend une entrée, rend une sortie : il se compose",
+            taille=15, gras=True, ancre="start")
+    d.texte(24, 66, "la barre verticale enchaîne les maillons, et le résultat est lui même un composant",
+            taille=11, couleur="encre2", ancre="start")
+    maillons = [("gabarit de prompt", "dictionnaire", "messages"),
+                ("modèle", "messages", "message"),
+                ("parseur de sortie", "message", "texte validé")]
+    for i, (titre, entree, sortie) in enumerate(maillons):
+        x = 24 + i * 306
+        d.boite(x, 92, 272, 84, teinte="s1")
+        d.texte(x + 136, 118, titre, taille=13, gras=True)
+        d.texte(x + 136, 140, f"entrée : {entree}", taille=10, couleur="encre2")
+        d.texte(x + 136, 158, f"sortie : {sortie}", taille=10, couleur="encre2")
+        if i < 2:
+            d.texte(x + 289, 139, "|", taille=20, gras=True, couleur="encre2")
+    d.texte(24, 212, "La même chaîne, appliquée à la recherche documentaire",
+            taille=14, gras=True, ancre="start")
+    etapes = [("question", "posée par l'agent"),
+              ("récupérateurs", "lexical et vectoriel"),
+              ("fusion", "par rang réciproque"),
+              ("contexte balisé", "passages et identifiants"),
+              ("réponse citée", "chaque fait, sa source")]
+    for i, (titre, dessous) in enumerate(etapes):
+        x = 24 + i * 183
+        teinte = "s3" if i == 4 else "s2" if i in (1, 2) else "s1"
+        d.boite(x, 240, 164, 76, teinte=teinte)
+        d.texte(x + 82, 266, titre, taille=12, gras=True)
+        d.texte(x + 82, 288, dessous, taille=10, couleur="encre2")
+        if i < 4:
+            d.fleche(x + 164, 278, x + 183, 278, teinte="attenue")
+    d.boite(24, 348, 440, 100, teinte="bon", tirets=True)
+    d.texte(244, 372, "Ce que le cadre fournit", taille=13, gras=True)
+    d.lignes_de_texte(244, 394, ["chargeurs, découpeur, index et récupérateurs",
+                                 "une interface unique vers les modèles",
+                                 "le lot, le flux et les rappels, sans rien écrire"], taille=10)
+    d.boite(490, 348, 426, 100, teinte="critique", tirets=True)
+    d.texte(703, 372, "Ce qui reste à votre charge", taille=13, gras=True)
+    d.lignes_de_texte(703, 394, ["la citation obligatoire et sa vérification",
+                                 "la liste blanche des outils et le journal des refus",
+                                 "le budget en jetons, et le prompt réellement envoyé"], taille=10)
+    return d
+
+
 FIGURES = {
     "famille-ia.svg": famille_ia,
     "plongements-geometrie.svg": plongements_geometrie,
@@ -1082,6 +1128,7 @@ FIGURES = {
     "methode-clair.svg": methode_clair,
     "chaine-de-prompts.svg": chaine_de_prompts,
     "rag-six-etapes.svg": rag_six_etapes,
+    "chaines-langchain.svg": chaines_langchain,
     "port-et-adaptateurs.svg": port_et_adaptateurs,
     "ecosysteme-ouvert.svg": ecosysteme_ouvert,
     "pipeline-deploiement.svg": pipeline_deploiement,

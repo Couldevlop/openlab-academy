@@ -90,5 +90,5 @@ rect[class^='b-']{stroke-width:1.5}
 <text x="30" y="50" text-anchor="start" font-size="15" font-weight="600" fill="var(--encre)">Quand un prompt échoue, découpez : n&#x27;allongez pas</text>
 <text x="30" y="72" text-anchor="start" font-size="11" fill="var(--encre2)">une tâche par prompt, un format de sortie par prompt, un point de validation par étape</text>
 <text x="470" y="346" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">Une erreur vue à l&#x27;étape 1 coûte une reformulation ; vue à l&#x27;étape 4, elle a contaminé le livrable.</text>
-<text x="470" y="372" text-anchor="middle" font-size="11" fill="var(--encre2)">Une fois éprouvée, la chaîne s&#x27;écrit une fois, se rejoue, puis se code : c&#x27;est le graphe de la séance 10.</text>
+<text x="470" y="372" text-anchor="middle" font-size="11" fill="var(--encre2)">Une fois éprouvée, la chaîne s&#x27;écrit une fois, se rejoue, puis se code : c&#x27;est le graphe de la séance 11.</text>
 </svg>
