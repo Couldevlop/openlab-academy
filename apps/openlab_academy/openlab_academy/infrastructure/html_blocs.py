@@ -11,11 +11,11 @@ blocs EditorJS. Deux sens, deux usages :
   texte réechappé (OWASP A03, échec fermé).
 
 Les blocs qui citent un exercice (`assignment`, `quiz`) deviennent un repère : l'administrateur voit où le
-devoir ou le quiz s'insère, et le repère revient en bloc à la relecture. Un type de bloc inattendu voyage dans
-un attribut JSON plutôt que de disparaître.
+devoir ou le quiz s'insère, et le repère revient en bloc à la relecture, pour ces deux types seulement et avec
+un identifiant contrôlé. Aucun autre type de bloc ne traverse l'éditeur : un repère libre rouvrirait la porte
+que la liste blanche vient de fermer, puisque le LMS rend le texte d'un bloc sans l'échapper.
 """
 import html
-import json
 import re
 from html.parser import HTMLParser
 
@@ -26,8 +26,7 @@ INLINE = {"b", "strong", "i", "em", "code", "a", "br"}
 TITRES = {"h2": 2, "h3": 3, "h4": 4}
 _LIEN = re.compile(r"/(?!/)[A-Za-z0-9._~+@%&=?/-]{0,400}")
 _MEDIA = re.compile(r"/private/files/[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.(?:svg|jpg|png|webp)")
-_TYPE_DE_BLOC = re.compile(r"[a-zA-Z]{1,30}")
-_CLE = re.compile(r"[a-z_]{1,30}")
+_IDENTIFIANT = re.compile(r"[A-Za-z0-9_-]{1,140}")  # nom de document Frappe
 _MARQUEURS = {"assignment": "Devoir", "quiz": "Quiz"}
 
 
@@ -105,15 +104,14 @@ def _html_image(data: dict) -> str:
 
 
 def _html_marqueur(type_: str, data: dict) -> str:
-    """Repère non rédactionnel : un exercice cité par son identifiant, ou tout autre bloc, porté en JSON."""
-    if not isinstance(type_, str) or not _TYPE_DE_BLOC.fullmatch(type_):
-        return ""
+    """Repère d'un exercice cité par son identifiant. Tout autre type de bloc n'est pas du texte à éditer : il
+    n'entre pas dans l'éditeur, et reste porté par les blocs du fichier que la partie conserve."""
     libelle = _MARQUEURS.get(type_)
-    valeur = data.get(type_)
-    if libelle and isinstance(valeur, str) and valeur:
-        return (f'<p data-bloc="{type_}" data-cle="{type_}" data-valeur="{html.escape(valeur)}">'
-                f'{libelle} : {_e(valeur)}</p>')
-    return f'<p data-bloc="{type_}" data-json="{html.escape(json.dumps(data, ensure_ascii=False))}">Bloc {type_}</p>'
+    valeur = data.get(type_) if libelle else None
+    if not libelle or not isinstance(valeur, str) or not _IDENTIFIANT.fullmatch(valeur):
+        return ""
+    return (f'<p data-bloc="{type_}" data-cle="{type_}" data-valeur="{valeur}">'
+            f'{libelle} : {valeur}</p>')
 
 
 # --- HTML vers blocs ---------------------------------------------------------------------------------------------
@@ -308,20 +306,12 @@ class _Lecteur(HTMLParser):
             self._poser_image()
 
     def _marqueur(self, a: dict) -> None:
+        """Seuls les deux repères d'exercice reviennent en bloc, avec leur clé et un identifiant contrôlé : un
+        type libre permettrait de forger un bloc dont le texte échapperait à la liste blanche."""
         type_ = a.get("data-bloc", "")
-        if not _TYPE_DE_BLOC.fullmatch(type_):
-            return
-        if "data-json" in a:
-            try:
-                data = json.loads(a["data-json"])
-            except ValueError:
-                return
-            if isinstance(data, dict) and all(isinstance(c, str) for c in data):
-                self.blocs.append({"type": type_, "data": data})
-            return
-        cle, valeur = a.get("data-cle", ""), a.get("data-valeur", "")
-        if _CLE.fullmatch(cle) and valeur:
-            self.blocs.append({"type": type_, "data": {cle: valeur}})
+        valeur = a.get("data-valeur", "")
+        if type_ in _MARQUEURS and a.get("data-cle") == type_ and _IDENTIFIANT.fullmatch(valeur):
+            self.blocs.append({"type": type_, "data": {type_: valeur}})
 
     def handle_data(self, donnees):
         if self._ignore:

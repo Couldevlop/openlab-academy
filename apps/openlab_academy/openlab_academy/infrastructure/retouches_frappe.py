@@ -139,14 +139,19 @@ def champs_du_parcours(cours_id: str, champs: dict) -> dict:
     return {cle: valeur for cle, valeur in champs.items() if cle not in SUIVIS[PARCOURS]}
 
 
+def remplacements(cours_id: str, anciens: dict[str, str]) -> dict[str, str]:
+    """{ancien identifiant d'exercice: nouveau} après une republication, appariés par titre : un contenu retouché
+    cite ses exercices par identifiant, et la republication les a recréés."""
+    nouveaux = {titre: nom for nom, titre in exercices(cours_id).items()}
+    return {ancien: nouveaux[titre] for ancien, titre in anciens.items()
+            if titre in nouveaux and nouveaux[titre] != ancien}
+
+
 def reconduire(cours_id: str, retouches: Retouches, anciens: dict[str, str]) -> None:
     """Repose les retouches sur les documents que la republication vient de recréer."""
     if not retouches:
         return
-    nouveaux = {titre: nom for nom, titre in exercices(cours_id).items()}
-    remplacements = {ancien: nouveaux[titre] for ancien, titre in anciens.items()
-                     if titre in nouveaux and nouveaux[titre] != ancien}
-    _reposer_lecons(cours_id, retouches.lecons, remplacements)
+    _reposer_lecons(cours_id, retouches.lecons, remplacements(cours_id, anciens))
     _reposer_devoirs(cours_id, retouches.devoirs)
     _reposer_questions(cours_id, retouches.questions)
 

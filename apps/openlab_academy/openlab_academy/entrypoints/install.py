@@ -4,7 +4,7 @@ import frappe
 
 from openlab_academy.domain.reglages import TITRE_LANCEMENT
 from openlab_academy.entrypoints import cohorte, lancement, seed
-from openlab_academy.infrastructure import (reglages_evaluation_frappe, reglages_frappe,
+from openlab_academy.infrastructure import (parties_frappe, reglages_evaluation_frappe, reglages_frappe,
                                             reglages_source_frappe)
 from openlab_academy.infrastructure.retouches_frappe import CHAMP as CHAMP_RETOUCHE
 from openlab_academy.infrastructure.retouches_frappe import SUIVIS
@@ -133,6 +133,11 @@ def after_install(commit: bool = True) -> None:
     preparer_champs_lancement()
     reglages_frappe.appliquer()
     seed.run(commit=commit)
+    # leçons publiées avant les parties, ou qu'une cohorte en cours interdit de republier : leurs rubriques sont
+    # découpées depuis le contenu en base, pour qu'elles s'éditent une par une sans rien changer à l'affichage
+    parties_frappe.rattraper()
+    if commit:
+        frappe.db.commit()
     preparer_lancement(commit=commit)
 
 
@@ -146,5 +151,10 @@ def after_migrate(commit: bool = True) -> None:
     preparer_champs_lancement()
     reglages_frappe.appliquer()
     seed.run(commit=commit)
+    # leçons publiées avant les parties, ou qu'une cohorte en cours interdit de republier : leurs rubriques sont
+    # découpées depuis le contenu en base, pour qu'elles s'éditent une par une sans rien changer à l'affichage
+    parties_frappe.rattraper()
+    if commit:
+        frappe.db.commit()
     preparer_lancement(commit=commit)
     lancement.retirer_parcours_echus(commit=commit)

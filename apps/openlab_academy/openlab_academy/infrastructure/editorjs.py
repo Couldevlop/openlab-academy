@@ -120,7 +120,12 @@ class Rubrique:
 
 def assembler(rubriques) -> str:
     """Contenu de leçon (JSON EditorJS) obtenu en mettant les rubriques bout à bout, dans leur ordre."""
-    return _doc([bloc for rubrique in rubriques for bloc in rubrique.blocs])
+    return document([bloc for rubrique in rubriques for bloc in rubrique.blocs])
+
+
+def document(blocs) -> str:
+    """Contenu de leçon (JSON EditorJS) pour une suite de blocs déjà prête."""
+    return _doc(list(blocs))
 
 
 def _rubrique(cle: str, titre: str, blocs: list[dict]) -> Rubrique | None:
@@ -149,6 +154,44 @@ def _consigne_exercices(module: Module, exercices: ReglagesExercices) -> str:
             f"Quiz de {len(module.quiz)} questions : {exercices.score_min} % de bonnes réponses exigé pour valider "
             f"la leçon, {exercices.tentatives_max} tentatives au maximum. Après {exercices.tentatives_max} échecs, "
             "relisez le cours puis demandez à votre formateur de rouvrir le quiz.")
+
+
+# intitulés des rubriques rendues ci-dessus, pour retrouver la clé d'une leçon publiée avant les parties
+_CLES_PAR_TITRE = {
+    "Contenu du module": "contenu", "Travaux pratiques": "travaux-pratiques", "Livrable": "livrable",
+    "Exercices": "exercices", "Mise en situation": "mise-en-situation", "Contexte": "contexte",
+    "Objectifs": "objectifs", "Fonctionnalités attendues": "fonctionnalites", "Stack": "stack",
+    "Critères d'acceptation": "criteres", "Exigences qualité": "exigences", "Livrables": "livrables",
+    "Barème /20": "bareme",
+}
+
+
+def decouper(blocs) -> list[Rubrique]:
+    """Rubriques d'une leçon déjà en base, découpée à ses titres.
+
+    Sert aux parcours publiés avant les parties, et à ceux qu'une cohorte en cours interdit de republier : leur
+    contenu est repris tel quel, jamais régénéré depuis le fichier, qui a pu changer entre-temps. Les mettre
+    bout à bout redonne donc exactement la leçon."""
+    rubriques: list[Rubrique] = []
+    courants: list[dict] = []
+    titre, cle, sections = "", "entete", 0
+
+    def fermer():
+        if courants:
+            rubriques.append(Rubrique(cle, titre, tuple(courants)))
+
+    for bloc in blocs:
+        if bloc.get("type") == "header":
+            fermer()
+            courants = []
+            titre = bloc.get("data", {}).get("text", "")
+            cle = _CLES_PAR_TITRE.get(titre)
+            if cle is None:
+                sections += 1
+                cle = f"section-{sections}"
+        courants.append(bloc)
+    fermer()
+    return rubriques
 
 
 def rubriques_module(module: Module, devoir: str, heures: int, quiz: str | None = None,

@@ -10,7 +10,8 @@ from openlab_academy.domain.grilles_derivees import grille_par_defaut
 from openlab_academy.domain.parcours import Annonce, Chapitre, Module, Parcours, Question
 from openlab_academy.domain.reglages import Reglages, ReglagesExercices
 from openlab_academy.domain.reglages_evaluation import Chaine, ReglagesEvaluation, TypeExercice
-from openlab_academy.infrastructure import depot_copies_frappe, editorjs, ressources_frappe, retouches_frappe
+from openlab_academy.infrastructure import (depot_copies_frappe, editorjs, parties_frappe, ressources_frappe,
+                                            retouches_frappe)
 from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
 from openlab_academy.infrastructure.depot_ouvertures_frappe import CHAMP_DELAI
 from openlab_academy.infrastructure.visibilite_frappe import CHAMP_LIMITE, CHAMP_VIDEO
@@ -52,6 +53,7 @@ class DepotFrappe:
     def _remplacer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
         videos = self._videos(cours_id)
         retouchees = retouches_frappe.relever(cours_id)
+        parties_retouchees = parties_frappe.relever(cours_id)
         anciens = retouches_frappe.exercices(cours_id)
         self._purger(cours_id)
         # lecture verrouillante : l'instantané de la transaction date d'avant la purge et ne voit pas le `modified`
@@ -64,6 +66,8 @@ class DepotFrappe:
         if isinstance(parcours, Parcours):
             self._ecrire_chapitres(cours_id, parcours, videos)
             retouches_frappe.reconduire(cours_id, retouchees, anciens)
+            parties_frappe.reconduire(cours_id, parties_retouchees,
+                                      retouches_frappe.remplacements(cours_id, anciens))
 
     @staticmethod
     def _couverture(cours_id: str, parcours: Parcours | Annonce) -> None:
@@ -212,9 +216,8 @@ class DepotFrappe:
                                      [{"assessment_type": "LMS Assignment", "assessment_name": devoir}],
                                      videos.get(titre, ""))
         figures = {f.nom: ressources_frappe.joindre(lecon.name, f.nom) for f in ch.projet.toutes_les_figures}
-        if figures:
-            lecon.content = editorjs.lecon_projet(ch.projet, devoir, self._reglages, figures)
-            lecon.save(ignore_permissions=True)
+        rubriques = editorjs.rubriques_projet(ch.projet, devoir, self._reglages, figures)
+        self._poser_parties(lecon, rubriques)
         return lecon.name
 
     def _lecon_module(self, cours_id: str, chapitre: str, m: Module, parcours: Parcours,
@@ -238,14 +241,21 @@ class DepotFrappe:
             cas = self._devoir(cours_id, f"Mise en situation {m.num} — {m.title}", editorjs.consigne_cas(m),
                                TypeExercice.MISE_EN_SITUATION, grille=m.grille_cas, chaine=m.correction_cas,
                                type_="Text")
-            lecon.content = editorjs.lecon_module(m, devoir, heures, quiz, cas, parcours.exercices, url, figures)
+            rubriques = editorjs.rubriques_module(m, devoir, heures, quiz, cas, parcours.exercices, url, figures)
             lecon.set("assessments", evaluations + [{"assessment_type": "LMS Quiz", "assessment_name": quiz},
                                                     {"assessment_type": "LMS Assignment", "assessment_name": cas}])
-            lecon.save(ignore_permissions=True)
-        elif url or figures:  # seules les images manquent à la première passe
-            lecon.content = editorjs.lecon_module(m, devoir, heures, archive_url=url, figures_urls=figures)
-            lecon.save(ignore_permissions=True)
+        else:
+            rubriques = editorjs.rubriques_module(m, devoir, heures, archive_url=url, figures_urls=figures)
+        self._poser_parties(lecon, rubriques)
         return lecon.name
+
+    @staticmethod
+    def _poser_parties(lecon, rubriques) -> None:
+        """Dépose les parties de la leçon, puis écrit son contenu assemblé depuis elles : la leçon que lit
+        l'apprenant et les parties qu'édite l'administrateur ne peuvent pas diverger."""
+        lecon.content = editorjs.assembler(rubriques)
+        lecon.save(ignore_permissions=True)
+        parties_frappe.ecrire(lecon.name, rubriques)
 
     def _quiz(self, cours_id: str, lecon: str, m: Module, exercices: ReglagesExercices) -> str:
         questions = [self._question(q) for q in m.quiz]

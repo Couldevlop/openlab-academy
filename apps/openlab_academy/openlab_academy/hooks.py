@@ -77,9 +77,12 @@ doc_events = {
         "after_insert": "openlab_academy.entrypoints.paiement.apres_inscription",
     },
     # une pièce retouchée dans l'application n'est plus réécrite par le fichier de parcours
-    "Course Lesson": {"on_update": "openlab_academy.infrastructure.retouches_frappe.retouche"},
+    "Course Lesson": {"on_update": "openlab_academy.infrastructure.retouches_frappe.retouche",
+                      "on_trash": "openlab_academy.infrastructure.parties_frappe.oublier"},
     "LMS Assignment": {"on_update": "openlab_academy.infrastructure.retouches_frappe.retouche"},
     "LMS Question": {"on_update": "openlab_academy.infrastructure.retouches_frappe.retouche"},
+    # une partie de séance enregistrée met la leçon à jour, sans toucher aux autres parties
+    "Partie Lecon OpenLab": {"on_update": "openlab_academy.infrastructure.parties_frappe.marquer"},
     "LMS Quiz Submission": {"before_insert": "openlab_academy.entrypoints.lms.avant_soumission_quiz"},
     "LMS Certificate": {"before_insert": "openlab_academy.entrypoints.lms.avant_certificat"},
     "LMS Assignment Submission": {

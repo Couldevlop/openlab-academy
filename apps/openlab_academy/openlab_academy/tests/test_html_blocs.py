@@ -20,7 +20,7 @@ IMAGE = bloc("image", url="/private/files/schema.svg", caption="Une légende",
 DEVOIR = bloc("assignment", assignment="DEV-1")
 QUIZ = bloc("quiz", quiz="QUIZ-1")
 
-TOUS = [TITRE, PARAGRAPHE, LISTE, LISTE_ORDONNEE, TABLEAU, CODE, IMAGE, DEVOIR, QUIZ]
+TOUS = [TITRE, PARAGRAPHE, LISTE, LISTE_ORDONNEE, TABLEAU, CODE, IMAGE, DEVOIR, QUIZ]  # tout ce qu'une rubrique produit
 
 
 class TestAllerRetour(unittest.TestCase):
@@ -32,9 +32,20 @@ class TestAllerRetour(unittest.TestCase):
     def test_une_rubriques_entiere_revient_identique(self):
         self.assertEqual(html_blocs.vers_blocs(html_blocs.vers_html(TOUS)), TOUS)
 
-    def test_bloc_inconnu_conserve(self):
+    def test_bloc_hors_rubrique_n_entre_pas_dans_l_editeur(self):
+        """Un type de bloc qu'une rubrique ne produit pas (vidéo d'ouverture, intégration) n'est pas du texte à
+        éditer : il ne traverse pas l'éditeur, faute de quoi un repère libre permettrait de forger un bloc dont
+        le texte échapperait à la liste blanche."""
         inattendu = bloc("embed", service="youtube", source="https://www.youtube.com/watch?v=aaaaaaaaaaa")
-        self.assertEqual(html_blocs.vers_blocs(html_blocs.vers_html([inattendu])), [inattendu])
+        self.assertEqual(html_blocs.vers_html([inattendu]), "")
+        self.assertEqual(html_blocs.vers_blocs(html_blocs.vers_html([inattendu])), [])
+
+    def test_repere_forge_sur_un_type_rendu_refuse(self):
+        forge = ('<p data-bloc="paragraph" data-cle="paragraph" '
+                 'data-valeur="&lt;img src=x onerror=alert(1)&gt;">x</p>')
+        self.assertEqual(html_blocs.vers_blocs(forge), [])
+        self.assertEqual(html_blocs.vers_blocs('<p data-bloc="quiz" data-cle="text" data-valeur="Q1">x</p>'), [])
+        self.assertEqual(html_blocs.vers_blocs('<p data-bloc="quiz" data-cle="quiz" data-valeur="Q 1 &lt;b&gt;">x</p>'), [])
 
 
 class TestVersHtml(unittest.TestCase):
@@ -132,3 +143,33 @@ class TestRubriquesReelles(unittest.TestCase):
             with self.subTest(rubrique.cle):
                 blocs = list(rubrique.blocs)
                 self.assertEqual(html_blocs.vers_blocs(html_blocs.vers_html(blocs)), blocs)
+
+
+class TestDecoupage(unittest.TestCase):
+    """Un parcours publié avant les parties garde son contenu : ses rubriques se retrouvent en découpant la
+    leçon telle qu'elle est en base, jamais en la régénérant depuis le fichier, qui a pu bouger depuis."""
+
+    def test_une_rubrique_par_titre(self):
+        from openlab_academy.infrastructure import editorjs
+        rubriques = editorjs.decouper([
+            TITRE, PARAGRAPHE,
+            bloc("header", text="Première partie", level=3), bloc("paragraph", text="p"),
+            bloc("header", text="Livrable", level=2), DEVOIR,
+        ])
+        self.assertEqual([(r.cle, r.titre) for r in rubriques],
+                         [("contenu", "Contenu du module"), ("section-1", "Première partie"),
+                          ("livrable", "Livrable")])
+
+    def test_les_blocs_sont_conserves_a_l_identique(self):
+        from openlab_academy.infrastructure import editorjs
+        blocs = [TITRE, PARAGRAPHE, bloc("header", text="Livrable", level=2), DEVOIR]
+        self.assertEqual([b for r in editorjs.decouper(blocs) for b in r.blocs], blocs)
+
+    def test_blocs_avant_le_premier_titre(self):
+        from openlab_academy.infrastructure import editorjs
+        rubriques = editorjs.decouper([PARAGRAPHE, bloc("header", text="Contexte", level=2), PARAGRAPHE])
+        self.assertEqual([r.cle for r in rubriques], ["entete", "contexte"])
+
+    def test_contenu_vide(self):
+        from openlab_academy.infrastructure import editorjs
+        self.assertEqual(editorjs.decouper([]), [])
