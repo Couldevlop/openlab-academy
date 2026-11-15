@@ -74,6 +74,10 @@ class DepotDossiersFrappe:
     def dispenser(self, nom: str) -> None:
         frappe.db.set_value(DOSSIER, nom, "dispense", 1)
 
+    def retablir(self, nom: str) -> None:
+        """Dispense retirée : le dossier redevient dû tel qu'il est, échéances d'origine comprises."""
+        frappe.db.set_value(DOSSIER, nom, "dispense", 0)
+
     def client(self, apprenant: str) -> Client:
         u = frappe.db.get_value("User", apprenant, ["first_name", "last_name", "email"], as_dict=True) or {}
         return Client(nom=u.get("last_name") or "", prenom=u.get("first_name") or "", email=u.get("email") or "")

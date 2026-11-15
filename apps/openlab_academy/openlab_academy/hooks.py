@@ -13,6 +13,8 @@ after_request = ["openlab_academy.entrypoints.http.after_request"]
 before_request = ["openlab_academy.entrypoints.http.before_request"]
 app_include_css = ["/assets/openlab_academy/css/openlab.css"]
 app_include_js = ["/assets/openlab_academy/js/simulateur_impact.js"]
+# fiche d'un parcours : bouton « Inscrits et gratuités » (offrir le parcours à un apprenant, ou le rendre payant)
+doctype_js = {"LMS Course": "public/js/gratuites_parcours.js"}
 web_include_css = ["/assets/openlab_academy/css/openlab.css"]
 
 # écrans d'évaluation (relecture, correcteur, retour) : une page, routée côté navigateur
@@ -70,7 +72,9 @@ doc_events = {
     # puis rattachée à la cohorte-fenêtre d'un parcours limité à ses dates
     "LMS Enrollment": {
         "before_insert": "openlab_academy.entrypoints.paiement.avant_inscription_parcours",
-        "after_insert": "openlab_academy.entrypoints.lancement.rejoindre_cohorte",
+        "after_insert": ["openlab_academy.entrypoints.lancement.rejoindre_cohorte",
+                         # parcours offert : le dossier naît quand même, puis se dispense
+                         "openlab_academy.entrypoints.paiement.apres_inscription_parcours"],
     },
     "LMS Batch Enrollment": {
         "before_insert": "openlab_academy.entrypoints.paiement.avant_inscription",

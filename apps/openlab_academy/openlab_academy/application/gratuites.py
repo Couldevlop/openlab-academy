@@ -84,6 +84,23 @@ class AccorderGratuite(_Cas):
         return True
 
 
+class DispenserDossierOffert(_Cas):
+    """Dossier qui vient de naître sur un parcours offert : dispensé aussitôt, et journalisé comme tel.
+
+    L'inscription a bien eu lieu, avec sa donnée et son tarif figé ; c'est le paiement qui saute. Rejouable :
+    un dossier déjà dispensé ou soldé n'est pas touché."""
+
+    def executer(self, acteur: str, apprenant: str, cours: str) -> bool:
+        if not self.gratuites.accordee(apprenant, cours):
+            return False
+        enregistre = self.dossiers.charger(apprenant, cours)
+        if enregistre is None or reste_du(enregistre.dossier) <= 0:
+            return False
+        self.dossiers.dispenser(enregistre.nom)
+        self._journaliser(enregistre, acteur, ACTION_OFFERT, True, MOTIF_OFFERT)
+        return True
+
+
 class RetirerGratuite(_Cas):
     """Rend le parcours payant pour cet apprenant : son dossier dispensé redevient dû, tel qu'il est."""
 

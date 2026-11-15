@@ -10,6 +10,7 @@ from frappe.email.doctype.email_account.email_account import EmailAccount
 from frappe.utils import getdate, nowdate, now_datetime
 from rq.timeouts import JobTimeoutException
 
+from openlab_academy.application.gratuites import DispenserDossierOffert
 from openlab_academy.application.inscriptions import (
     InscriptionDirecte, InscriptionRefusee, parcours_facture, verifier_inscription_directe)
 from openlab_academy.application.paiements import (
@@ -29,6 +30,7 @@ from openlab_academy.infrastructure.cinetpay import PasserelleCinetPay
 from openlab_academy.infrastructure.depot_dossiers_frappe import (
     CHAMP_GRATUIT, DepotDossiersFrappe, InscriptionsFrappe, PagesPaiementFrappe, ParcoursGratuitsFrappe,
     ReglagesPaiementFrappe, TarifsFrappe)
+from openlab_academy.infrastructure.gratuites_frappe import GratuitesFrappe
 from openlab_academy.infrastructure.journal_paiement_frappe import journaliser
 from openlab_academy.infrastructure.rappels_frappe import DepotRappelsFrappe, RegistreRappelsFrappe
 from openlab_academy.infrastructure.tableaux_paiement_frappe import TableauxPaiementFrappe
@@ -86,6 +88,30 @@ def apres_inscription(doc, method=None) -> None:
     lot = _cohorte(doc)
     if lot is not None:
         _ouvrir().executer(doc.member, lot[0], doc.batch, lot[1], lot[2])
+        _dispenser_si_offert(doc.member, lot[0])
+
+
+def _gratuites() -> GratuitesFrappe:
+    return GratuitesFrappe()
+
+
+def _dispenser_si_offert(apprenant: str, cours: str) -> None:
+    DispenserDossierOffert(_gratuites(), DepotDossiersFrappe(), journaliser, jour_courant).executer(
+        frappe.session.user, apprenant, cours)
+
+
+def apres_inscription_parcours(doc, method=None) -> None:
+    """Inscription à un parcours offert : le dossier naît comme pour tout inscrit, tarif du jour figé, puis se
+    dispense. La donnée de l'inscription est donc complète dans l'intendance, et rien ne bloque. Sans tarif,
+    rien à facturer : aucun dossier."""
+    if not _gratuites().accordee(doc.member, doc.course):
+        return
+    aujourd_hui = jour_courant()
+    try:
+        _ouvrir().executer(doc.member, doc.course, doc.enrollment_from_batch or "", aujourd_hui, aujourd_hui)
+    except (TarifAbsent, InscriptionTardive, InscriptionRefusee):
+        return
+    _dispenser_si_offert(doc.member, doc.course)
 
 
 ADMINISTRATEUR = "System Manager"
@@ -103,7 +129,8 @@ def avant_inscription_parcours(doc, method=None) -> None:
     demande = InscriptionDirecte(
         doc.course, _exempte(doc.member), ADMINISTRATEUR in frappe.get_roles(frappe.session.user),
         InscriptionsFrappe().via_cohorte(doc.member, doc.course, doc.enrollment_from_batch,
-                                         par_cohorte))
+                                         par_cohorte),
+        gratuite_accordee=_gratuites().accordee(doc.member, doc.course))
     try:
         verifier_inscription_directe(ParcoursGratuitsFrappe(), demande)
     except InscriptionRefusee as e:
