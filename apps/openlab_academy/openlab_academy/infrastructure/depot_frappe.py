@@ -8,10 +8,11 @@ import frappe
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.grilles_derivees import grille_par_defaut
 from openlab_academy.domain.parcours import Annonce, Chapitre, Module, Parcours, Question
-from openlab_academy.domain.reglages import Reglages
+from openlab_academy.domain.reglages import Reglages, ReglagesExercices
 from openlab_academy.domain.reglages_evaluation import Chaine, ReglagesEvaluation, TypeExercice
 from openlab_academy.infrastructure import depot_copies_frappe, editorjs, ressources_frappe, retouches_frappe
 from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
+from openlab_academy.infrastructure.depot_ouvertures_frappe import CHAMP_DELAI
 from openlab_academy.infrastructure.visibilite_frappe import CHAMP_LIMITE, CHAMP_VIDEO
 
 
@@ -95,9 +96,9 @@ class DepotFrappe:
 
     @staticmethod
     def _drapeaux(p: Parcours) -> dict:
-        """Accès limité toujours écrit ; gratuit et mise en avant seulement s'ils sont demandés : absents, la
-        décision de l'administrateur n'est pas écrasée."""
-        drapeaux = {CHAMP_LIMITE: int(p.acces_limite_a_la_cohorte)}
+        """Accès limité et délai des exercices toujours écrits ; gratuit et mise en avant seulement s'ils sont
+        demandés : absents, la décision de l'administrateur n'est pas écrasée."""
+        drapeaux = {CHAMP_LIMITE: int(p.acces_limite_a_la_cohorte), CHAMP_DELAI: p.exercices.delai_minutes}
         if p.gratuit:
             drapeaux[CHAMP_GRATUIT] = 1
         if p.mise_en_avant:
@@ -132,16 +133,16 @@ class DepotFrappe:
 
     def _ecrire_chapitres(self, cours_id: str, parcours: Parcours, videos: dict[str, str] | None = None) -> None:
         videos = videos or {}
-        noms = [self._chapitre(cours_id, c, parcours.heures_par_module, videos) for c in parcours.chapitres()]
+        noms = [self._chapitre(cours_id, c, parcours, videos) for c in parcours.chapitres()]
         cours = frappe.get_doc("LMS Course", cours_id)
         cours.set("chapters", [{"chapter": n} for n in noms])
         cours.save(ignore_permissions=True)
 
-    def _chapitre(self, cours_id: str, chapitre: Chapitre, heures_module: int, videos: dict[str, str]) -> str:
+    def _chapitre(self, cours_id: str, chapitre: Chapitre, parcours: Parcours, videos: dict[str, str]) -> str:
         doc = frappe.get_doc({"doctype": "Course Chapter", "course": cours_id, "title": chapitre.titre}).insert(
             ignore_permissions=True)
         if chapitre.projet is None:
-            noms = [self._lecon_module(cours_id, doc.name, m, heures_module, videos) for m in chapitre.modules]
+            noms = [self._lecon_module(cours_id, doc.name, m, parcours, videos) for m in chapitre.modules]
         else:
             noms = [self._lecon_projet(cours_id, doc.name, chapitre, videos)]
         doc.reload()
@@ -216,7 +217,9 @@ class DepotFrappe:
             lecon.save(ignore_permissions=True)
         return lecon.name
 
-    def _lecon_module(self, cours_id: str, chapitre: str, m: Module, heures: int, videos: dict[str, str]) -> str:
+    def _lecon_module(self, cours_id: str, chapitre: str, m: Module, parcours: Parcours,
+                      videos: dict[str, str]) -> str:
+        heures = parcours.heures_par_module
         devoir = self._devoir(cours_id, f"Livrable {m.num} — {m.title}", editorjs.consigne_module(m),
                               TypeExercice.LIVRABLE, grille=m.grille_livrable, chaine=m.correction_livrable)
         evaluations = [{"assessment_type": "LMS Assignment", "assessment_name": devoir}]
@@ -231,11 +234,11 @@ class DepotFrappe:
         url = ressources_frappe.joindre(lecon.name, m.archive) if m.archive else None
         figures = {f.nom: ressources_frappe.joindre(lecon.name, f.nom) for f in m.toutes_les_figures}
         if m.quiz:
-            quiz = self._quiz(cours_id, lecon.name, m)
+            quiz = self._quiz(cours_id, lecon.name, m, parcours.exercices)
             cas = self._devoir(cours_id, f"Mise en situation {m.num} — {m.title}", editorjs.consigne_cas(m),
                                TypeExercice.MISE_EN_SITUATION, grille=m.grille_cas, chaine=m.correction_cas,
                                type_="Text")
-            lecon.content = editorjs.lecon_module(m, devoir, heures, quiz, cas, self._reglages, url, figures)
+            lecon.content = editorjs.lecon_module(m, devoir, heures, quiz, cas, parcours.exercices, url, figures)
             lecon.set("assessments", evaluations + [{"assessment_type": "LMS Quiz", "assessment_name": quiz},
                                                     {"assessment_type": "LMS Assignment", "assessment_name": cas}])
             lecon.save(ignore_permissions=True)
@@ -244,11 +247,11 @@ class DepotFrappe:
             lecon.save(ignore_permissions=True)
         return lecon.name
 
-    def _quiz(self, cours_id: str, lecon: str, m: Module) -> str:
+    def _quiz(self, cours_id: str, lecon: str, m: Module, exercices: ReglagesExercices) -> str:
         questions = [self._question(q) for q in m.quiz]
         return frappe.get_doc({
             "doctype": "LMS Quiz", "title": f"Quiz {m.num} — {m.title}", "course": cours_id, "lesson": lecon,
-            "max_attempts": self._reglages.tentatives_max, "passing_percentage": self._reglages.score_min,
+            "max_attempts": exercices.tentatives_max, "passing_percentage": exercices.score_min,
             "show_answers": 1, "show_submission_history": 1,
             "questions": [{"question": q, "marks": 1} for q in questions],
         }).insert(ignore_permissions=True).name

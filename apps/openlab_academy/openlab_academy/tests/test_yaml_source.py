@@ -30,6 +30,31 @@ class TestConversion(unittest.TestCase):
         p = depuis_dict(brut, "t.yaml", Reglages())
         self.assertEqual((p.projets_attendus, p.heures_par_module, len(p.portfolio)), (3, 10, 3))
 
+    def test_reglages_des_exercices_injectes_par_defaut(self):
+        p = depuis_dict(parcours_brut(), "t.yaml",
+                        Reglages(delai_exercices_minutes=45, tentatives_max=2, score_min=80))
+        e = p.exercices
+        self.assertEqual((e.delai_minutes, e.tentatives_max, e.score_min), (45, 2, 80))
+
+    def test_exercices_regles_par_le_parcours(self):
+        brut = parcours_brut()
+        brut["parametres"] = {"delai_exercices_minutes": 15, "tentatives_max": 5, "score_min": 70}
+        e = depuis_dict(brut, "t.yaml", Reglages()).exercices
+        self.assertEqual((e.delai_minutes, e.tentatives_max, e.score_min), (15, 5, 70))
+
+    def test_delai_nul_refuse_au_profit_du_reglage_global(self):
+        brut = parcours_brut()
+        brut["parametres"] = {"delai_exercices_minutes": 0}
+        with self.assertRaisesRegex(FormatInvalide,
+                                    r"parametres\.delai_exercices_minutes doit valoir au moins 1"):
+            depuis_dict(brut, "t.yaml")
+
+    def test_score_hors_bornes_refuse(self):
+        brut = parcours_brut()
+        brut["parametres"] = {"score_min": 120}
+        with self.assertRaisesRegex(FormatInvalide, "score_min entre 1 et 100"):
+            depuis_dict(brut, "t.yaml")
+
     def test_parametre_inconnu_refuse(self):
         brut = parcours_brut()
         brut["parametres"] = {"bonus": 1}

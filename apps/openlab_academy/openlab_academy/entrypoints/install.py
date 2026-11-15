@@ -9,6 +9,7 @@ from openlab_academy.infrastructure import (reglages_evaluation_frappe, reglages
 from openlab_academy.infrastructure.retouches_frappe import CHAMP as CHAMP_RETOUCHE
 from openlab_academy.infrastructure.retouches_frappe import SUIVIS
 from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
+from openlab_academy.infrastructure.depot_ouvertures_frappe import CHAMP_DELAI
 from openlab_academy.infrastructure.visibilite_frappe import CHAMP_LIMITE, CHAMP_VIDEO
 
 ROLE_INTENDANT = "Intendant OpenLab"
@@ -91,6 +92,11 @@ def preparer_champs_lancement() -> None:
     _champ_personnalise(PARCOURS, CHAMP_LIMITE, {
         "fieldtype": "Check", "label": "Accès limité aux dates de la cohorte", "default": "0",
         "insert_after": CHAMP_GRATUIT, "permlevel": NIVEAU_GRATUIT})
+    _champ_personnalise(PARCOURS, CHAMP_DELAI, {
+        "fieldtype": "Int", "label": "Délai avant les exercices (minutes)", "default": "0",
+        "insert_after": CHAMP_LIMITE, "permlevel": NIVEAU_GRATUIT,
+        "description": "Temps d'étude exigé entre l'ouverture d'une leçon de ce parcours et l'accès à ses "
+                       "exercices. 0 : appliquer le délai réglé pour la plateforme entière."})
     for doctype in SUIVIS:
         _champ_personnalise(doctype, CHAMP_RETOUCHE, {
             "fieldtype": "Check", "label": "Retouché dans l'application", "default": "0",

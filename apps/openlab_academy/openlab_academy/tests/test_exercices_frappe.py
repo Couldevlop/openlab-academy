@@ -6,6 +6,7 @@ from frappe.tests.utils import FrappeTestCase
 from openlab_academy.domain.parcours import Bloc, Module
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
+from openlab_academy.infrastructure.depot_ouvertures_frappe import CHAMP_DELAI
 from openlab_academy.tests.fabriques import parcours
 from openlab_academy.tests.test_exercices import question
 
@@ -64,6 +65,26 @@ class TestPublicationExercices(FrappeTestCase):
         self.assertIn({"assessment_type": "LMS Quiz", "assessment_name": quiz_du_cours(cours)[0]},
                       [{"assessment_type": a.assessment_type, "assessment_name": a.assessment_name}
                        for a in lecon.assessments])
+
+    def test_reglages_propres_au_parcours_appliques(self):
+        """Le parcours règle ses exercices : le quiz LMS, la phrase de la leçon et le champ lu par le verrou."""
+        p = parcours(title=TITRE, questions_par_quiz=5, blocs=(Bloc("B1", (module(),)),),
+                     delai_exercices_minutes=15, tentatives_max=5, score_min=70)
+        cours = self.depot.creer(p)
+        [nom] = quiz_du_cours(cours)
+        quiz = frappe.get_doc("LMS Quiz", nom)
+        self.assertEqual((quiz.max_attempts, quiz.passing_percentage), (5, 70))
+        texte = json.dumps(json.loads(self.lecon(cours).content)["blocks"], ensure_ascii=False)
+        self.assertIn("15 minutes", texte)
+        self.assertIn("5 tentatives", texte)
+        self.assertIn("70 %", texte)
+        self.assertEqual(frappe.db.get_value("LMS Course", cours, CHAMP_DELAI), 15)
+
+    def test_delai_global_pose_sur_le_parcours_a_la_publication(self):
+        """Fichier sans réglage propre : le délai de la plateforme est posé sur le parcours, modifiable ensuite
+        dans l'application parcours par parcours."""
+        cours = self.depot.creer(self.p)
+        self.assertEqual(frappe.db.get_value("LMS Course", cours, CHAMP_DELAI), 60)
 
     def test_choix_multiple(self):
         p = parcours(title=TITRE, questions_par_quiz=5, blocs=(Bloc("B1", (module(bonnes=(1, 3)),)),))

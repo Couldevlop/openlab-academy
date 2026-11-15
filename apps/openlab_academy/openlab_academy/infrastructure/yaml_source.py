@@ -15,7 +15,12 @@ _NOM_ARCHIVE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.zip")
 _NOM_IMAGE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.(?:jpg|jpeg|png|webp|svg)")
 _LISTES_PROJET = ("objectifs", "fonctionnalites", "stack", "criteres_acceptation", "livrables")
 # Paramètres qu'un parcours peut surcharger : clé YAML -> champ du domaine Parcours
-_PARAMETRES = {"projets_par_portfolio": "projets_attendus", "heures_par_module": "heures_par_module"}
+_PARAMETRES = {"projets_par_portfolio": "projets_attendus", "heures_par_module": "heures_par_module",
+               "delai_exercices_minutes": "delai_exercices_minutes", "tentatives_max": "tentatives_max",
+               "score_min": "score_min"}
+# Un délai nul se règle pour la plateforme entière, jamais parcours par parcours : sur un parcours, 0 veut dire
+# « appliquer le réglage global », et laisser le fichier l'écrire ferait croire à un déblocage immédiat.
+_MINIMUMS = {"delai_exercices_minutes": 1}
 
 
 def _entier(valeur) -> bool:
@@ -34,7 +39,10 @@ class _Lecteur:
     def parametres(self, d: dict) -> dict:
         valeurs = {"projets_attendus": self.reglages.projets_par_portfolio,
                    "heures_par_module": self.reglages.heures_par_module,
-                   "questions_par_quiz": self.reglages.questions_par_quiz}
+                   "questions_par_quiz": self.reglages.questions_par_quiz,
+                   "delai_exercices_minutes": self.reglages.delai_exercices_minutes,
+                   "tentatives_max": self.reglages.tentatives_max,
+                   "score_min": self.reglages.score_min}
         surcharges = d.get("parametres") or {}
         if not isinstance(surcharges, dict):
             raise FormatInvalide(f"{self.source}: parametres doit être un dictionnaire")
@@ -43,6 +51,10 @@ class _Lecteur:
                 raise FormatInvalide(f"{self.source}: parametres.{cle} inconnu ({sorted(_PARAMETRES)})")
             if not _entier(valeur):
                 raise FormatInvalide(f"{self.source}: parametres.{cle} doit être un entier")
+            minimum = _MINIMUMS.get(cle)
+            if minimum is not None and valeur < minimum:
+                raise FormatInvalide(f"{self.source}: parametres.{cle} doit valoir au moins {minimum} "
+                                     "(sans cette clé, le réglage de la plateforme s'applique)")
             valeurs[_PARAMETRES[cle]] = valeur
         return valeurs
 

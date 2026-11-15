@@ -166,8 +166,10 @@ Décision utilisateur : tout paramètre métier est réglable sans développeur 
   - Plateforme : `nom` (OpenLab Academy), `logo`, `langue` (fr), `devise` (XOF).
 - Domaine : value object `Reglages` (défauts = valeurs actuelles) portant les invariants ; `Rythme` devient une donnée
   (plus une énumération). Le contrôleur du DocType valide en construisant `Reglages` : une incohérence est refusée.
-- Surcharge par parcours : clé YAML facultative `parametres:` (`projets_par_portfolio`, `heures_par_module`) ;
-  toute autre clé est refusée.
+- Surcharge par parcours : clé YAML facultative `parametres:` (`projets_par_portfolio`, `heures_par_module`,
+  `delai_exercices_minutes`, `tentatives_max`, `score_min`) ; toute autre clé est refusée. Les trois réglages
+  d'exercices valent, sans surcharge, ceux de la plateforme ; `delai_exercices_minutes` exige au moins 1 minute,
+  car sur un parcours la valeur 0 signifie « appliquer le réglage global » (ajout du 2026-11-15).
 - Port applicatif `SourceReglages.charger() -> Reglages` ; adaptateur Frappe. Un changement de réglages s'applique aux
   prochaines publications et cohortes, jamais rétroactivement.
 
@@ -182,3 +184,9 @@ Décision utilisateur : après chaque module, un quiz obligatoire et une mise en
 - Verrou d'1 h **côté serveur** : la première ouverture d'une leçon par un apprenant est enregistrée
   (surcharge de `lms.lms.utils.get_lesson`) ; toute réponse au quiz ou à la mise en situation avant
   `ouverture + délai` est refusée avec le temps restant. Formateurs et administrateurs ne sont pas bloqués.
+- Réglages propres à un parcours (ajout du 2026-11-15) : `delai_exercices_minutes`, `tentatives_max` et `score_min`
+  se règlent parcours par parcours sous `parametres:`. Le value object `ReglagesExercices` porte les invariants, et
+  `Reglages.exercices` comme `Parcours.exercices` le livrent. Le quiz LMS et la phrase de la leçon prennent les
+  valeurs du parcours ; le délai est en plus posé sur le parcours (champ personnalisé `delai_exercices_minutes` de
+  `LMS Course`, niveau administrateur) pour que le verrou le lise à chaque soumission, avec repli sur le réglage
+  global quand le champ vaut 0.

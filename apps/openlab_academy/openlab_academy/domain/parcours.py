@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from openlab_academy.domain.grille import Grille
+from openlab_academy.domain.reglages import ReglagesExercices, ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import Chaine
 
 TITRE_MAX = 120  # laisse la place aux préfixes (« Projet 10 — ») sous la limite LMS de 140
@@ -264,10 +265,18 @@ class Parcours:
     gratuit: bool = False  # parcours MOOC : aucun tarif ni blocage pour paiement
     acces_limite_a_la_cohorte: bool = False  # ouvert seulement entre les dates de sa cohorte
     mise_en_avant: bool = False  # « featured » du LMS
+    # exercices de fin de leçon : valeurs de la plateforme, qu'un parcours peut redéfinir pour ses apprenants
+    delai_exercices_minutes: int = 60
+    tentatives_max: int = 3
+    score_min: int = 100
 
     def __post_init__(self):
         if self.heures_par_module <= 0:
             raise ParcoursInvalide("heures_par_module doit être positif")
+        try:
+            self.exercices
+        except ReglagesInvalides as e:
+            raise ParcoursInvalide(str(e)) from None
         _verifier_textes(self)
         for bloc in self.blocs:
             _titre_court(bloc.title)
@@ -289,6 +298,11 @@ class Parcours:
                 raise ParcoursInvalide(f"portfolio[{i}].apres_module: module '{p.apres_module}' inexistant")
         if self.capstone.apres_module is not None:
             raise ParcoursInvalide("capstone.apres_module doit être vide")
+
+    @property
+    def exercices(self) -> ReglagesExercices:
+        """Réglages des exercices appliqués aux leçons de ce parcours."""
+        return ReglagesExercices(self.delai_exercices_minutes, self.tentatives_max, self.score_min)
 
     def _verifier_exercices(self) -> None:
         for module in (m for b in self.blocs for m in b.modules):

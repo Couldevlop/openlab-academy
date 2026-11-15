@@ -136,7 +136,8 @@ class TestChampsLancement(FrappeTestCase):
         frappe.db.commit()
 
     def test_champs_de_lancement_crees(self):
-        frappe.db.delete("Custom Field", {"fieldname": ["in", ["acces_limite_cohorte", "video_lecon"]]})
+        frappe.db.delete("Custom Field", {"fieldname": ["in", ["acces_limite_cohorte", "video_lecon",
+                                                               "delai_exercices_minutes"]]})
         install.preparer_champs_lancement()
         install.preparer_champs_lancement()
         (limite,) = frappe.get_all("Custom Field", {"dt": "LMS Course", "fieldname": "acces_limite_cohorte"},
@@ -148,6 +149,10 @@ class TestChampsLancement(FrappeTestCase):
         self.assertEqual((video.fieldtype, video.label, video.description, video.insert_after),
                          ("Attach", "Vidéo de la leçon",
                           "Lien YouTube, Vimeo ou fichier vidéo ; affichée en tête de la leçon.", "title"))
+        (delai,) = frappe.get_all("Custom Field", {"dt": "LMS Course", "fieldname": "delai_exercices_minutes"},
+                                  ["fieldtype", "label", "permlevel"])
+        self.assertEqual((delai.fieldtype, delai.label, delai.permlevel),
+                         ("Int", "Délai avant les exercices (minutes)", 1))
 
     def test_champs_remis_a_jour_et_appel_a_l_installation(self):
         nom = frappe.db.get_value("Custom Field", {"dt": "LMS Course", "fieldname": "acces_limite_cohorte"})

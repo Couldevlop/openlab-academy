@@ -84,3 +84,22 @@ class TestPlanDesChapitres(unittest.TestCase):
 
     def test_libelle_niveau(self):
         self.assertEqual([n.libelle for n in Niveau], ["Guidé", "Semi-guidé", "Autonome"])
+
+
+class TestExercicesDuParcours(unittest.TestCase):
+    """Chaque parcours règle le délai, les tentatives et le score de ses exercices."""
+
+    def test_valeurs_par_defaut(self):
+        e = parcours().exercices
+        self.assertEqual((e.delai_minutes, e.tentatives_max, e.score_min), (60, 3, 100))
+
+    def test_valeurs_propres_au_parcours(self):
+        e = parcours(delai_exercices_minutes=15, tentatives_max=5, score_min=70).exercices
+        self.assertEqual((e.delai_minutes, e.tentatives_max, e.score_min), (15, 5, 70))
+
+    def test_reglage_incoherent_refuse(self):
+        for champ, valeur, message in (("delai_exercices_minutes", -1, "négatif"),
+                                       ("tentatives_max", 0, "tentatives_max doit être positif"),
+                                       ("score_min", 101, "score_min entre 1 et 100")):
+            with self.subTest(champ), self.assertRaisesRegex(ParcoursInvalide, message):
+                parcours(**{champ: valeur})

@@ -21,7 +21,7 @@ from openlab_academy.infrastructure import contenus_parcours_frappe as contenus
 from openlab_academy.infrastructure import editorjs
 from openlab_academy.infrastructure import reglages_source_frappe
 from openlab_academy.infrastructure.depot_dossiers_frappe import DOSSIER, DepotDossiersFrappe
-from openlab_academy.infrastructure.depot_ouvertures_frappe import DepotOuverturesFrappe
+from openlab_academy.infrastructure.depot_ouvertures_frappe import DelaiExercicesFrappe, DepotOuverturesFrappe
 from openlab_academy.infrastructure.visibilite_frappe import CHAMP_VIDEO, SourceVisibiliteFrappe
 
 ROLES_NON_BLOQUES = {"System Manager", "Moderator", "Course Creator", "Batch Evaluator", "Intendant OpenLab"}
@@ -447,8 +447,8 @@ def _verifier(apprenant: str, lecon: str | None) -> None:
     if not lecon or ROLES_NON_BLOQUES & set(frappe.get_roles(apprenant)):
         return
     try:
-        VerifierAccesExercices(DepotOuverturesFrappe(), reglages_source_frappe.charger(), now_datetime).executer(
-            apprenant, lecon)
+        VerifierAccesExercices(DepotOuverturesFrappe(), reglages_source_frappe.charger(), now_datetime,
+                               DelaiExercicesFrappe()).executer(apprenant, lecon)
     except ExercicesVerrouilles as e:
         frappe.throw(str(e), title="Exercices verrouillés")
 

@@ -8,7 +8,7 @@ import re
 from urllib.parse import parse_qs, urlsplit
 
 from openlab_academy.domain.parcours import AvecCours, Extrait, Figure, Module, Projet, Section, Tableau
-from openlab_academy.domain.reglages import Reglages
+from openlab_academy.domain.reglages import Reglages, ReglagesExercices
 
 
 def _e(texte: str) -> str:
@@ -92,7 +92,7 @@ def _section(section: Section, figures_urls: dict[str, str]) -> list[dict]:
 
 
 def lecon_module(module: Module, devoir: str, heures: int, quiz: str | None = None,
-                 devoir_cas: str | None = None, reglages: Reglages | None = None,
+                 devoir_cas: str | None = None, exercices: ReglagesExercices | None = None,
                  archive_url: str | None = None, figures_urls: dict[str, str] | None = None) -> str:
     blocs = [
         _titre("Contenu du module"),
@@ -114,13 +114,13 @@ def lecon_module(module: Module, devoir: str, heures: int, quiz: str | None = No
         _bloc("paragraph", text=f"<b>{_e(module.livrable)}</b>"),
         _bloc("assignment", assignment=devoir),
     ]
-    if quiz and devoir_cas and reglages:
+    if quiz and devoir_cas and exercices:
         blocs += [
             _titre("Exercices"),
             _bloc("paragraph", text=(
-                f"Les exercices s'ouvrent {reglages.delai_exercices_minutes} minutes après l'ouverture de la leçon. "
-                f"Quiz de {len(module.quiz)} questions : {reglages.score_min} % de bonnes réponses exigé pour valider "
-                f"la leçon, {reglages.tentatives_max} tentatives au maximum. Après {reglages.tentatives_max} échecs, "
+                f"Les exercices s'ouvrent {exercices.delai_minutes} minutes après l'ouverture de la leçon. "
+                f"Quiz de {len(module.quiz)} questions : {exercices.score_min} % de bonnes réponses exigé pour valider "
+                f"la leçon, {exercices.tentatives_max} tentatives au maximum. Après {exercices.tentatives_max} échecs, "
                 "relisez le cours puis demandez à votre formateur de rouvrir le quiz.")),
             _bloc("quiz", quiz=quiz),
             _titre("Mise en situation"),
