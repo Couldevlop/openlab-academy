@@ -78,3 +78,118 @@ a:hover { color: var(--ol-lien-survol); }
 .ol-parcours-ferme .ol-bouton { display: inline-block; margin-top: 0.5rem; padding: 0.75rem 1.25rem;
   background: var(--ol-orange-deep); color: #fff; border-radius: 6px; font-weight: 600; text-decoration: none; }
 .ol-parcours-ferme .ol-bouton:hover { background: var(--ol-orange-deeper); color: #fff; }
+
+/* Écran « Inscrits et gratuités » d'un parcours (bureau) : filet du logo, titres Montserrat, pastilles d'état.
+   Le bleu nuit porte l'action principale, l'orange reste un accent — jamais de texte blanc sur l'orange vif. */
+.ol-gratuites .ol-filet { height: 3px; background: var(--ol-filet); border-radius: 2px; margin-bottom: 1rem; }
+.ol-gratuites table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-family: var(--ol-font-body); }
+.ol-gratuites thead th { font-family: var(--ol-font-display); font-size: 0.75rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em; color: var(--ol-slate); text-align: left;
+  padding: 0.5rem 0.75rem; border-bottom: 2px solid var(--ol-mist); }
+.ol-gratuites tbody td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--ol-mist); vertical-align: middle; }
+.ol-gratuites tbody tr:hover { background: var(--ol-ivory); }
+.ol-gratuites .ol-nom { font-weight: 600; color: var(--ol-navy); }
+.ol-gratuites .ol-courriel { font-size: 0.8125rem; color: var(--ol-slate); }
+.ol-gratuites .ol-montant { font-family: var(--ol-font-mono); text-align: right; white-space: nowrap; }
+.ol-gratuites .ol-etat { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px;
+  font-size: 0.75rem; font-weight: 600; background: var(--ol-mist); color: var(--ol-navy); }
+.ol-gratuites .ol-etat-offert { background: #e6f3ea; color: #1d6b3a; }
+.ol-gratuites .ol-etat-du { background: #fdf0e4; color: var(--ol-orange-dark); }
+.ol-gratuites .ol-actions { text-align: right; white-space: nowrap; }
+.ol-gratuites .ol-action { border: 1px solid var(--ol-navy); background: #fff; color: var(--ol-navy);
+  border-radius: 6px; padding: 0.3rem 0.7rem; font-size: 0.8125rem; font-weight: 600; }
+.ol-gratuites .ol-action:hover { background: var(--ol-mist); }
+.ol-gratuites .ol-action-forte { background: var(--ol-navy); color: #fff; border-color: var(--ol-navy); }
+.ol-gratuites .ol-action-forte:hover { background: var(--ol-navy-soft); color: #fff; }
+.ol-gratuites .ol-action + .ol-action { margin-left: 0.4rem; }
+.ol-gratuites .ol-vide { color: var(--ol-slate); font-style: italic; margin-top: 0.75rem; }
+[data-theme="dark"] .ol-gratuites .ol-nom { color: var(--ol-ivory); }
+[data-theme="dark"] .ol-gratuites tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
+[data-theme="dark"] .ol-gratuites .ol-action { background: transparent; color: var(--ol-ivory);
+  border-color: var(--ol-slate); }
+[data-theme="dark"] .ol-gratuites .ol-action-forte { background: var(--ol-orange-deep); color: #fff;
+  border-color: var(--ol-orange-deep); }
+
+/* ---------------------------------------------------------------------------
+   Portail apprenant (application LMS) : la charte au-delà des polices.
+   Les composants d'espresso-ui lisent des jetons (--surface-*, --ink-*, --outline-*) : on les repeint aux
+   couleurs du logo, puis on ajoute le peu de règles de forme que les jetons ne portent pas (ombres bleutées,
+   filet quatre couleurs, cartes qui se soulèvent). Aucune classe du LMS n'est renommée : la mise à jour de
+   l'application n'efface pas la charte.
+   --------------------------------------------------------------------------- */
+:root,
+[data-theme="light"] {
+  --surface-gray-10: var(--ol-navy); /* boutons principaux : bleu nuit, jamais noir */
+  --surface-gray-9: var(--ol-navy-soft); /* survol */
+  --surface-sidebar: var(--ol-ivory);
+  --surface-gray-2: #f3f5f9;
+  --surface-gray-3: var(--ol-mist);
+  --outline-gray-2: #dfe4ee;
+  --ink-gray-8: var(--ol-navy);
+  --ol-ombre: 0 2px 8px rgba(0, 30, 72, 0.08);
+  --ol-ombre-haute: 0 10px 24px rgba(0, 30, 72, 0.14);
+}
+
+[data-theme="dark"] {
+  --surface-gray-10: var(--ol-orange-deep);
+  --surface-gray-9: var(--ol-orange-deeper);
+  --ol-ombre: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --ol-ombre-haute: 0 10px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* Surtitres et libellés en capitales : Montserrat espacé, comme « ACADEMY » du logo */
+.uppercase { font-family: var(--ol-font-display); letter-spacing: 0.12em; }
+
+/* Cartes (parcours, cohortes, encadrés) : coins francs, ombre bleutée, et un léger soulèvement au survol */
+.bg-surface-elevation-1,
+.bg-surface-modal {
+  box-shadow: var(--ol-ombre);
+  border-radius: 14px;
+}
+a > .bg-surface-elevation-1 { transition: box-shadow 0.18s ease, transform 0.18s ease; }
+a:hover > .bg-surface-elevation-1 { box-shadow: var(--ol-ombre-haute); transform: translateY(-2px); }
+
+/* Jauges de progression : le filet du logo plutôt qu'une barre grise */
+[role="progressbar"] > div,
+.bg-surface-gray-7.rounded-full,
+.rounded-full > .bg-surface-gray-7 { background: var(--ol-filet); }
+
+/* Pastilles de statut : vert pour acquis, jaune soleil pour en cours, bleu ciel pour informatif */
+.bg-surface-green-2 { color: #1d6b3a; }
+.bg-surface-amber-2 { color: var(--ol-orange-dark); }
+
+/* Fonds : le blanc est réservé aux cartes, la page respire en ivoire (60 % de neutres, charte §2).
+   Le sélecteur est doublé pour passer devant l'utilitaire du LMS sans recourir à !important. */
+main.bg-surface-base.bg-surface-base { background-color: var(--ol-ivory); }
+
+/* Titres de page en bleu nuit */
+main h1, main h2,
+main .text-2xl, main .text-xl, main .text-lg.font-semibold { color: var(--ol-navy); }
+
+/* Vignette d'un parcours : le filet du logo court sous l'image, comme sous un en-tête (charte §4) */
+a > .bg-surface-elevation-1 > img:first-child,
+a > .bg-surface-elevation-1 > div:first-child { border-bottom: 3px solid transparent;
+  border-image: var(--ol-filet) 1; }
+
+/* Barre latérale : séparateur du filet sous l'identité, item actif marqué d'un liseré orange */
+.bg-surface-sidebar { border-right: 1px solid var(--outline-gray-2); }
+.bg-surface-sidebar .bg-surface-gray-3,
+.bg-surface-sidebar .bg-surface-selected {
+  box-shadow: inset 3px 0 0 var(--ol-orange);
+  color: var(--ol-navy);
+}
+
+/* Listes de leçons et de séances : la ligne survolée s'éclaire, jamais de gris sourd */
+main li:hover > a,
+main a:hover > .rounded-md { background-color: rgba(40, 144, 200, 0.07); }
+
+/* En-tête de page : le filet quatre couleurs dessous, comme sur les supports imprimés (charte §5) */
+header.header-frame { border-bottom: 3px solid transparent; border-image: var(--ol-filet) 1; }
+
+/* Barre d'avancement d'un parcours (trait fin sous le résumé d'une carte) */
+.bg-surface-gray-3.rounded-full > div,
+.bg-surface-gray-2.rounded-full > div { background: var(--ol-filet); border-radius: 999px; }
+
+/* Jeu d'onglets et filtres : l'onglet choisi prend le bleu nuit, les autres restent sobres */
+.bg-surface-gray-2 > button[aria-selected="true"],
+.bg-surface-white.shadow-sm { color: var(--ol-navy); font-weight: 600; }
