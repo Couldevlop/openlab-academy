@@ -1,7 +1,7 @@
 """Fabriques de données de test (domaine et format YAML brut)."""
 import copy
 
-from openlab_academy.domain.parcours import Bloc, Module, Niveau, Parcours, Projet
+from openlab_academy.domain.parcours import Bloc, Module, Niveau, Parcours, Projet, Question
 
 
 def projet(titre="P", apres_module="01", niveau=Niveau.GUIDE, **autres) -> Projet:
@@ -23,6 +23,17 @@ def parcours(**autres) -> Parcours:
     )
     champs.update(autres)
     return Parcours(**champs)
+
+
+def question(**autres) -> Question:
+    champs = dict(enonce="Q ?", options=("a", "b", "c"), bonnes=(2,), explication="Parce que b.")
+    champs.update(autres)
+    return Question(**champs)
+
+
+def module_complet(num="01", n=5) -> Module:
+    """Séance qui porte tout : quiz au complet, mise en situation et livrable."""
+    return Module(num, "M", "c", "l", quiz=tuple(question() for _ in range(n)), mise_en_situation="Cas pratique")
 
 
 def _projet_brut(num="01"):

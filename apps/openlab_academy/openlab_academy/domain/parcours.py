@@ -24,6 +24,33 @@ class ParcoursInvalide(ValueError):
     """Un invariant du parcours n'est pas respecté."""
 
 
+class Evaluations(str, Enum):
+    """Pièces d'évaluation d'une séance.
+
+    Par défaut une séance porte tout : le quiz, la mise en situation et le livrable. Un parcours qui alterne
+    un rappel (quiz seul) et une leçon à challenge (livrable seul) choisit séance par séance ; une séance de
+    révision ou d'atelier n'évalue rien. Le choix est explicite : un quiz oublié reste une erreur.
+    """
+
+    COMPLETES = "completes"
+    QUIZ = "quiz"
+    LIVRABLE = "livrable"
+    AUCUNE = "aucune"
+
+    @property
+    def veut_quiz(self) -> bool:
+        return self in (Evaluations.COMPLETES, Evaluations.QUIZ)
+
+    @property
+    def veut_livrable(self) -> bool:
+        return self in (Evaluations.COMPLETES, Evaluations.LIVRABLE)
+
+
+# comment nommer la séance dans un refus, pour que le message dise ce qui a été déclaré
+_SEANCE = {Evaluations.COMPLETES: "séance complète", Evaluations.QUIZ: "séance de quiz seul",
+           Evaluations.LIVRABLE: "séance de livrable seul", Evaluations.AUCUNE: "séance sans évaluation"}
+
+
 def _titre_court(titre: str) -> None:
     if len(titre) > TITRE_MAX:
         raise ParcoursInvalide(f"titre trop long ({len(titre)} > {TITRE_MAX}) : « {titre[:40]}… »")
@@ -171,9 +198,7 @@ class Module(AvecCours):
     livrable: str
     quiz: tuple[Question, ...] = ()
     mise_en_situation: str = ""
-    # séance de révision, d'atelier ou de challenge : ni quiz ni mise en situation, même dans un parcours qui en
-    # exige partout ailleurs. Déclaration explicite, pour qu'un quiz oublié reste une erreur.
-    sans_exercices: bool = False
+    evaluations: Evaluations = Evaluations.COMPLETES  # ce que la séance évalue (voir Evaluations)
     travaux_pratiques: str = ""  # support de la séance : déroulé et défi, affiché dans la leçon
     archive: str = ""  # nom de fichier de l'archive de départ, jointe à la leçon et citée par elle
     cours: tuple[Section, ...] = ()  # le chapitre proprement dit, en sections titrées
@@ -184,6 +209,15 @@ class Module(AvecCours):
     correction_cas: Chaine | None = None
     grille_livrable: Grille | None = None
     correction_livrable: Chaine | None = None
+
+
+    @property
+    def veut_quiz(self) -> bool:
+        return self.evaluations.veut_quiz
+
+    @property
+    def veut_livrable(self) -> bool:
+        return self.evaluations.veut_livrable
 
 
 @dataclass(frozen=True)
@@ -308,17 +342,39 @@ class Parcours:
         return ReglagesExercices(self.delai_exercices_minutes, self.tentatives_max, self.score_min)
 
     def _verifier_exercices(self) -> None:
+        """Chaque séance porte exactement les pièces qu'elle annonce : ni plus (un rendu que le LMS attendrait
+        en vain), ni moins (un quiz oublié)."""
         for module in (m for b in self.blocs for m in b.modules):
-            if module.sans_exercices:
-                if module.quiz or module.mise_en_situation.strip():
-                    raise ParcoursInvalide(f"module {module.num} : séance déclarée sans exercices, mais un quiz "
-                                           "ou une mise en situation est fourni")
-                continue
+            self._verifier_quiz(module)
+            self._verifier_livrable(module)
+            self._verifier_mise_en_situation(module)
+
+    def _verifier_quiz(self, module: Module) -> None:
+        if module.veut_quiz:
             if len(module.quiz) != self.questions_par_quiz:
                 raise ParcoursInvalide(f"module {module.num} : {self.questions_par_quiz} questions attendues, "
                                        f"{len(module.quiz)} trouvées")
-            if not module.mise_en_situation.strip():
-                raise ParcoursInvalide(f"module {module.num} : mise en situation manquante")
+        elif module.quiz:
+            raise ParcoursInvalide(f"module {module.num} : {_SEANCE[module.evaluations]}, mais un quiz est "
+                                   "fourni")
+
+    def _verifier_livrable(self, module: Module) -> None:
+        if module.veut_livrable:
+            if not module.livrable.strip():
+                raise ParcoursInvalide(f"module {module.num} : livrable manquant")
+        elif module.livrable.strip():
+            raise ParcoursInvalide(f"module {module.num} : {_SEANCE[module.evaluations]}, mais un livrable est "
+                                   "fourni")
+
+    def _verifier_mise_en_situation(self, module: Module) -> None:
+        """La mise en situation accompagne le quiz d'une séance complète ; ailleurs elle n'a personne pour la
+        corriger."""
+        complete = module.evaluations is Evaluations.COMPLETES
+        if complete and not module.mise_en_situation.strip():
+            raise ParcoursInvalide(f"module {module.num} : mise en situation manquante")
+        if not complete and module.mise_en_situation.strip():
+            raise ParcoursInvalide(f"module {module.num} : {_SEANCE[module.evaluations]}, mais une mise en "
+                                   "situation est fournie")
 
     def charge_horaire(self) -> int:
         """Heures de travail apprenant : modules hebdomadaires + portfolio + capstone."""

@@ -3,17 +3,8 @@ import unittest
 from openlab_academy.domain.parcours import Bloc, Module, ParcoursInvalide, Question
 from openlab_academy.infrastructure.yaml_source import FormatInvalide, depuis_dict
 from openlab_academy.domain.reglages import Reglages
-from openlab_academy.tests.fabriques import parcours, parcours_brut, question_brute
-
-
-def question(**autres):
-    champs = dict(enonce="Q ?", options=("a", "b", "c"), bonnes=(2,), explication="Parce que b.")
-    champs.update(autres)
-    return Question(**champs)
-
-
-def module_complet(num="01", n=5):
-    return Module(num, "M", "c", "l", quiz=tuple(question() for _ in range(n)), mise_en_situation="Cas pratique")
+from openlab_academy.tests.fabriques import (module_complet, parcours, parcours_brut, question,
+                                              question_brute)
 
 
 class TestQuestion(unittest.TestCase):
@@ -64,43 +55,6 @@ class TestExercicesDuParcours(unittest.TestCase):
 
     def test_sans_exercices_si_non_regles(self):
         self.assertEqual(parcours().questions_par_quiz, 0)
-
-
-class TestSeanceSansExercices(unittest.TestCase):
-    """Révision, atelier, challenge : une séance se déclare sans exercices, les autres gardent les leurs."""
-
-    def seance(self, **champs):
-        return parcours(questions_par_quiz=5, blocs=(Bloc("B1", (Module("01", "M", "c", "l", **champs),
-                                                                 module_complet("02"))),))
-
-    def test_declaration_explicite_acceptee(self):
-        p = self.seance(sans_exercices=True)
-        self.assertEqual((p.blocs[0].modules[0].quiz, len(p.blocs[0].modules[1].quiz)), ((), 5))
-
-    def test_quiz_oublie_toujours_refuse(self):
-        with self.assertRaisesRegex(ParcoursInvalide, "module 01 : 5 questions attendues, 0 trouvées"):
-            self.seance()
-
-    def test_declaration_contredite_par_un_quiz(self):
-        with self.assertRaisesRegex(ParcoursInvalide, "module 01 : séance déclarée sans exercices"):
-            self.seance(sans_exercices=True, quiz=tuple(question() for _ in range(5)))
-
-    def test_declaration_contredite_par_une_mise_en_situation(self):
-        with self.assertRaisesRegex(ParcoursInvalide, "module 01 : séance déclarée sans exercices"):
-            self.seance(sans_exercices=True, mise_en_situation="Un cas")
-
-    def test_cle_yaml_lue(self):
-        brut = parcours_brut()
-        module = brut["blocs"][0]["modules"][0]
-        module.update(sans_exercices=True, quiz=[], mise_en_situation="")
-        p = depuis_dict(brut, "t.yaml", Reglages())
-        self.assertTrue(p.blocs[0].modules[0].sans_exercices)
-
-    def test_cle_yaml_non_booleenne_refusee(self):
-        brut = parcours_brut()
-        brut["blocs"][0]["modules"][0]["sans_exercices"] = "oui"
-        with self.assertRaisesRegex(FormatInvalide, "sans_exercices doit être un booléen"):
-            depuis_dict(brut, "t.yaml")
 
 
 class TestExercicesYaml(unittest.TestCase):

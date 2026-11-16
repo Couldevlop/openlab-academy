@@ -3,12 +3,11 @@ import json
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from openlab_academy.domain.parcours import Bloc, Module
+from openlab_academy.domain.parcours import Bloc, Evaluations, Module
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
 from openlab_academy.infrastructure.depot_ouvertures_frappe import CHAMP_DELAI
-from openlab_academy.tests.fabriques import parcours
-from openlab_academy.tests.test_exercices import question
+from openlab_academy.tests.fabriques import parcours, question
 
 TITRE = "Parcours exercices test"
 
@@ -86,10 +85,11 @@ class TestPublicationExercices(FrappeTestCase):
         cours = self.depot.creer(self.p)
         self.assertEqual(frappe.db.get_value("LMS Course", cours, CHAMP_DELAI), 60)
 
-    def test_seance_sans_exercices_publiee_sans_quiz(self):
-        """Séance déclarée sans exercices : leçon publiée, aucun quiz ni mise en situation, livrable conservé."""
+    def test_seance_de_livrable_seul_publiee_sans_quiz(self):
+        """Séance de livrable seul : leçon publiée, aucun quiz ni mise en situation, livrable conservé."""
         p = parcours(title=TITRE, questions_par_quiz=5,
-                     blocs=(Bloc("B1", (Module("01", "M", "c", "l", sans_exercices=True), module(num="02"))),))
+                     blocs=(Bloc("B1", (Module("01", "M", "c", "l", evaluations=Evaluations.LIVRABLE),
+                                        module(num="02"))),))
         cours = self.depot.creer(p)
         self.assertEqual(len(quiz_du_cours(cours)), 1)
         lecon = self.lecon(cours)
@@ -99,6 +99,30 @@ class TestPublicationExercices(FrappeTestCase):
         self.assertTrue(frappe.db.exists("LMS Assignment", {"course": cours, "title": "Livrable 01 — M"}))
         self.assertFalse(frappe.db.exists("LMS Assignment", {"course": cours,
                                                              "title": ["like", "Mise en situation 01%"]}))
+
+    def test_seance_de_quiz_seul_publiee_sans_devoir(self):
+        """Rappel du matin : le quiz est posé, et aucun devoir n'attend un rendu que la séance ne demande pas."""
+        p = parcours(title=TITRE, questions_par_quiz=5,
+                     blocs=(Bloc("B1", (Module("01", "M", "c", "",
+                                               quiz=tuple(question() for _ in range(5)),
+                                               evaluations=Evaluations.QUIZ),)),))
+        cours = self.depot.creer(p)
+        self.assertEqual(len(quiz_du_cours(cours)), 1)
+        lecon = self.lecon(cours)
+        self.assertEqual([a.assessment_type for a in lecon.assessments], ["LMS Quiz"])
+        self.assertFalse(frappe.db.exists("LMS Assignment", {"course": cours, "title": ["like", "%01 — M"]}))
+        self.assertNotIn("Livrable", lecon.content)
+        self.assertNotIn("Format :", lecon.content)
+
+    def test_seance_sans_evaluation_publiee_nue(self):
+        """Lecture du soir : ni quiz ni devoir, et la leçon reste publiée."""
+        p = parcours(title=TITRE, questions_par_quiz=5,
+                     blocs=(Bloc("B1", (Module("01", "M", "c", "", evaluations=Evaluations.AUCUNE),
+                                        module(num="02"))),))
+        cours = self.depot.creer(p)
+        lecon = self.lecon(cours)
+        self.assertEqual(list(lecon.assessments), [])
+        self.assertFalse(frappe.db.exists("LMS Assignment", {"course": cours, "title": ["like", "%01 — M"]}))
 
     def test_choix_multiple(self):
         p = parcours(title=TITRE, questions_par_quiz=5, blocs=(Bloc("B1", (module(bonnes=(1, 3)),)),))

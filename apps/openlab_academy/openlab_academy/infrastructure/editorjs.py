@@ -94,7 +94,7 @@ def _section(section: Section, figures_urls: dict[str, str]) -> list[dict]:
     return blocs + _supports(section, figures_urls)
 
 
-def lecon_module(module: Module, devoir: str, heures: int, quiz: str | None = None,
+def lecon_module(module: Module, devoir: str | None, heures: int, quiz: str | None = None,
                  devoir_cas: str | None = None, exercices: ReglagesExercices | None = None,
                  archive_url: str | None = None, figures_urls: dict[str, str] | None = None) -> str:
     return assembler(rubriques_module(module, devoir, heures, quiz, devoir_cas, exercices, archive_url,
@@ -198,7 +198,7 @@ def decouper(blocs) -> list[Rubrique]:
     return rubriques
 
 
-def rubriques_module(module: Module, devoir: str, heures: int, quiz: str | None = None,
+def rubriques_module(module: Module, devoir: str | None, heures: int, quiz: str | None = None,
                      devoir_cas: str | None = None, exercices: ReglagesExercices | None = None,
                      archive_url: str | None = None,
                      figures_urls: dict[str, str] | None = None) -> list[Rubrique]:
@@ -206,32 +206,34 @@ def rubriques_module(module: Module, devoir: str, heures: int, quiz: str | None 
     contenu = [
         _titre("Contenu du module"),
         _bloc("paragraph", text=_e(module.contenu)),
-        _bloc("paragraph", text=f"Format : ~{heures} h, 40 % de théorie et 60 % de pratique."),
     ]
+    # la répartition théorie/pratique parle du travail à rendre : sans livrable, elle promettrait un exercice absent
+    if devoir:
+        contenu.append(_bloc("paragraph", text=f"Format : ~{heures} h, 40 % de théorie et 60 % de pratique."))
     contenu += _supports(module, urls)
     rubriques = [
         _rubrique("contenu", "Contenu du module", contenu),
         *_sections(module, urls),
         _travaux_pratiques(module, archive_url),
-        _rubrique("livrable", "Livrable", [
+    ]
+    if devoir:
+        rubriques.append(_rubrique("livrable", "Livrable", [
             _titre("Livrable"),
             _bloc("paragraph", text=f"<b>{_e(module.livrable)}</b>"),
             _bloc("assignment", assignment=devoir),
-        ]),
-    ]
-    if quiz and devoir_cas and exercices:
-        rubriques += [
-            _rubrique("exercices", "Exercices", [
-                _titre("Exercices"),
-                _bloc("paragraph", text=_consigne_exercices(module, exercices)),
-                _bloc("quiz", quiz=quiz),
-            ]),
-            _rubrique("mise-en-situation", "Mise en situation", [
-                _titre("Mise en situation"),
-                _bloc("paragraph", text=_e(module.mise_en_situation)),
-                _bloc("assignment", assignment=devoir_cas),
-            ]),
-        ]
+        ]))
+    if quiz and exercices:
+        rubriques.append(_rubrique("exercices", "Exercices", [
+            _titre("Exercices"),
+            _bloc("paragraph", text=_consigne_exercices(module, exercices)),
+            _bloc("quiz", quiz=quiz),
+        ]))
+    if devoir_cas:
+        rubriques.append(_rubrique("mise-en-situation", "Mise en situation", [
+            _titre("Mise en situation"),
+            _bloc("paragraph", text=_e(module.mise_en_situation)),
+            _bloc("assignment", assignment=devoir_cas),
+        ]))
     return [r for r in rubriques if r is not None]
 
 

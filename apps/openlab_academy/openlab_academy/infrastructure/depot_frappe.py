@@ -202,7 +202,9 @@ class DepotFrappe:
                 p = chapitre.projet
                 yield chapitre.titre, self._type_projet(p), p, p.grille, p.correction
             for m in chapitre.modules:
-                yield f"Livrable {m.num} — {m.title}", TypeExercice.LIVRABLE, None, m.grille_livrable, m.correction_livrable
+                if m.veut_livrable:
+                    yield (f"Livrable {m.num} — {m.title}", TypeExercice.LIVRABLE, None, m.grille_livrable,
+                           m.correction_livrable)
                 if m.quiz:
                     yield (f"Mise en situation {m.num} — {m.title}", TypeExercice.MISE_EN_SITUATION, None,
                            m.grille_cas, m.correction_cas)
@@ -235,9 +237,11 @@ class DepotFrappe:
     def _lecon_module(self, cours_id: str, chapitre: str, m: Module, parcours: Parcours,
                       videos: dict[str, str]) -> str:
         heures = parcours.heures_par_module
-        devoir = self._devoir(cours_id, f"Livrable {m.num} — {m.title}", editorjs.consigne_module(m),
-                              TypeExercice.LIVRABLE, grille=m.grille_livrable, chaine=m.correction_livrable)
-        evaluations = [{"assessment_type": "LMS Assignment", "assessment_name": devoir}]
+        # une séance de quiz seul (rappel) ne crée pas de devoir : le LMS attendrait un rendu qui n'existe pas
+        devoir = (self._devoir(cours_id, f"Livrable {m.num} — {m.title}", editorjs.consigne_module(m),
+                               TypeExercice.LIVRABLE, grille=m.grille_livrable, chaine=m.correction_livrable)
+                  if m.veut_livrable else None)
+        evaluations = ([{"assessment_type": "LMS Assignment", "assessment_name": devoir}] if devoir else [])
         titre = f"{m.num} · {m.title}"
         # un média ne se joint qu'à une leçon existante : la première passe écrit le contenu sans les médias,
         # la seconde le réécrit une fois les adresses connues
@@ -248,16 +252,18 @@ class DepotFrappe:
                                      evaluations, videos.get(titre, ""))
         url = ressources_frappe.joindre(lecon.name, m.archive) if m.archive else None
         figures = {f.nom: ressources_frappe.joindre(lecon.name, f.nom) for f in m.toutes_les_figures}
-        if m.quiz:
-            quiz = self._quiz(cours_id, lecon.name, m, parcours.exercices)
-            cas = self._devoir(cours_id, f"Mise en situation {m.num} — {m.title}", editorjs.consigne_cas(m),
-                               TypeExercice.MISE_EN_SITUATION, grille=m.grille_cas, chaine=m.correction_cas,
-                               type_="Text")
-            rubriques = editorjs.rubriques_module(m, devoir, heures, quiz, cas, parcours.exercices, url, figures)
-            lecon.set("assessments", evaluations + [{"assessment_type": "LMS Quiz", "assessment_name": quiz},
-                                                    {"assessment_type": "LMS Assignment", "assessment_name": cas}])
-        else:
-            rubriques = editorjs.rubriques_module(m, devoir, heures, archive_url=url, figures_urls=figures)
+        quiz = self._quiz(cours_id, lecon.name, m, parcours.exercices) if m.veut_quiz and m.quiz else None
+        # la mise en situation accompagne le quiz d'une séance complète ; seule, personne ne la corrigerait
+        cas = (self._devoir(cours_id, f"Mise en situation {m.num} — {m.title}", editorjs.consigne_cas(m),
+                            TypeExercice.MISE_EN_SITUATION, grille=m.grille_cas, chaine=m.correction_cas,
+                            type_="Text")
+               if quiz and m.mise_en_situation.strip() else None)
+        rubriques = editorjs.rubriques_module(m, devoir, heures, quiz, cas, parcours.exercices, url, figures)
+        if quiz:
+            evaluations = evaluations + [{"assessment_type": "LMS Quiz", "assessment_name": quiz}]
+        if cas:
+            evaluations = evaluations + [{"assessment_type": "LMS Assignment", "assessment_name": cas}]
+        lecon.set("assessments", evaluations)
         self._poser_parties(lecon, rubriques)
         return lecon.name
 

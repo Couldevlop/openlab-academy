@@ -267,6 +267,14 @@ class TestRubriques(unittest.TestCase):
         rubriques = editorjs.rubriques_module(Module("01", "M", "c", "l"), "DEV-1", 8)
         self.assertEqual([r.cle for r in rubriques], ["contenu", "livrable"])
 
+    def test_seance_sans_livrable_n_affiche_ni_rubrique_ni_format(self):
+        """Rappel du matin : pas de rendu attendu, donc pas de rubrique Livrable ni de répartition annoncée."""
+        rubriques = editorjs.rubriques_module(Module("01", "M", "c", ""), None, 8, "QUIZ-1",
+                                              exercices=REGLAGES.exercices)
+        self.assertEqual([r.cle for r in rubriques], ["contenu", "exercices"])
+        textes = [b.get("data", {}).get("text", "") for r in rubriques for b in r.blocs]
+        self.assertFalse([t for t in textes if "Format :" in t])
+
     def test_assemblage_d_une_lecon_depuis_des_rubriques(self):
         rubriques = editorjs.rubriques_module(self.MODULE, "DEV-1", 8, "QUIZ-1", "CAS-1", REGLAGES.exercices,
                                               archive_url="/private/files/socle.zip")

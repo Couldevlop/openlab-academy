@@ -5,8 +5,8 @@ import re
 import yaml
 
 from openlab_academy.domain.grille import Grille, GrilleInvalide
-from openlab_academy.domain.parcours import (Annonce, Bloc, Extrait, Figure, Module, Niveau, Parcours,
-                                             ParcoursInvalide, Projet, Question, Section, Tableau)
+from openlab_academy.domain.parcours import (Annonce, Bloc, Evaluations, Extrait, Figure, Module, Niveau,
+                                             Parcours, ParcoursInvalide, Projet, Question, Section, Tableau)
 from openlab_academy.domain.reglages import Reglages, ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import Chaine
 
@@ -58,6 +58,20 @@ class _Lecteur:
                                      "(sans cette clé, le réglage de la plateforme s'applique)")
             valeurs[_PARAMETRES[cle]] = valeur
         return valeurs
+
+    def evaluations(self, m: dict, chemin: str) -> Evaluations:
+        """Pièces d'évaluation de la séance ; absente, la séance les porte toutes."""
+        if "sans_exercices" in m:
+            raise FormatInvalide(f"{self.source}: {chemin}sans_exercices n'existe plus, utilisez "
+                                 f"evaluations: {Evaluations.AUCUNE.value}")
+        valeur = m.get("evaluations")
+        if valeur is None:
+            return Evaluations.COMPLETES
+        try:
+            return Evaluations(str(valeur))
+        except ValueError:
+            raise FormatInvalide(f"{self.source}: {chemin}evaluations inconnu "
+                                 f"{sorted(e.value for e in Evaluations)}") from None
 
     def booleen(self, d: dict, cle: str) -> bool:
         valeur = d.get(cle, False)
@@ -202,10 +216,13 @@ class _Lecteur:
         quiz = m.get("quiz") or []
         if not isinstance(quiz, list):
             raise FormatInvalide(f"{self.source}: {chemin}quiz doit être une liste de questions")
-        return Module(*(str(self.exiger(m, c, chemin)) for c in ("num", "title", "contenu", "livrable")),
+        evaluations = self.evaluations(m, chemin)
+        # le livrable n'est exigé que des séances qui en portent un ; le domaine refuse celui qui traîne ailleurs
+        livrable = self.exiger(m, "livrable", chemin) if evaluations.veut_livrable else m.get("livrable")
+        return Module(*(str(self.exiger(m, c, chemin)) for c in ("num", "title", "contenu")), str(livrable or ""),
                       quiz=tuple(self.question(q, f"{chemin}quiz[{i}].") for i, q in enumerate(quiz)),
                       mise_en_situation=str(m.get("mise_en_situation") or ""),
-                      sans_exercices=self.booleen(m, "sans_exercices"),
+                      evaluations=evaluations,
                       travaux_pratiques=str(m.get("travaux_pratiques") or ""),
                       archive=self.archive(m.get("archive"), f"{chemin}archive"),
                       cours=self.sections(m.get("cours"), f"{chemin}cours"),
