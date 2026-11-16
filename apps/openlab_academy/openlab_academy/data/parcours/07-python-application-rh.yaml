@@ -2878,6 +2878,7 @@ blocs:
       - num: "J21"
         title: "Premier écran Streamlit"
         evaluations: livrable
+        archive: depot-python-j21.zip
         contenu: >-
           Un script qui s'exécute de haut en bas à chaque interaction, des widgets, et la règle qui gouverne
           la semaine : l'écran appelle le cœur et ne calcule pas.
@@ -3007,6 +3008,7 @@ blocs:
       - num: "J22"
         title: "Tableaux et filtres"
         evaluations: livrable
+        archive: depot-python-j22.zip
         contenu: >-
           Afficher un tableau, filtrer par poste et par ancienneté, et garder le filtre dans une fonction
           testable plutôt que dans l'affichage.
@@ -3141,6 +3143,7 @@ blocs:
       - num: "J23"
         title: "Un formulaire d'embauche branché sur le cœur"
         evaluations: livrable
+        archive: depot-python-j23.zip
         contenu: >-
           Un formulaire, sa soumission, et la traduction d'une erreur métier en message lisible par un
           humain.
@@ -3280,6 +3283,7 @@ blocs:
       - num: "J24"
         title: "Deux graphiques utiles"
         evaluations: livrable
+        archive: depot-python-j24.zip
         contenu: >-
           La masse salariale par poste et les absences du mois, avec une mesure par axe et une série de
           données préparée par une fonction testable.
@@ -3412,6 +3416,7 @@ blocs:
       - num: "J25"
         title: "Cache, mise en forme et démonstration"
         evaluations: livrable
+        archive: depot-python-j25.zip
         contenu: >-
           Le cache des données, la mise en forme de l'écran, et le scénario de démonstration que vous
           jouerez en deux minutes.
