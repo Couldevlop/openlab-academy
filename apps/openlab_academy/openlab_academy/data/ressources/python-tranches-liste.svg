@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" width="760" height="300" role="img" aria-label="Index d&#x27;une liste et bornes d&#x27;une tranche">
+<title>Index d&#x27;une liste et bornes d&#x27;une tranche</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="760" height="300" fill="var(--surface)"/>
+<text x="380" y="34" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">L&#x27;index commence à 0 ; la borne de fin est exclue.</text>
+<text x="380" y="56" text-anchor="middle" font-size="12" fill="var(--encre2)">noms[1:3] prend l&#x27;index 1 et l&#x27;index 2, jamais l&#x27;index 3.</text>
+<rect x="110" y="110" width="130" height="60" rx="8" class="b-trait" fill="var(--surface)"/>
+<text x="175" y="146" text-anchor="middle" font-size="14" fill="var(--encre)">Awa</text>
+<text x="175" y="190" text-anchor="middle" font-size="11" fill="var(--encre2)">index 0</text>
+<text x="175" y="208" text-anchor="middle" font-size="11" fill="var(--attenue)">index -4</text>
+<rect x="260" y="110" width="130" height="60" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="325" y="146" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Bakary</text>
+<text x="325" y="190" text-anchor="middle" font-size="11" fill="var(--encre2)">index 1</text>
+<text x="325" y="208" text-anchor="middle" font-size="11" fill="var(--attenue)">index -3</text>
+<rect x="410" y="110" width="130" height="60" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="475" y="146" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Céline</text>
+<text x="475" y="190" text-anchor="middle" font-size="11" fill="var(--encre2)">index 2</text>
+<text x="475" y="208" text-anchor="middle" font-size="11" fill="var(--attenue)">index -2</text>
+<rect x="560" y="110" width="130" height="60" rx="8" class="b-trait" fill="var(--surface)"/>
+<text x="625" y="146" text-anchor="middle" font-size="14" fill="var(--encre)">Daouda</text>
+<text x="625" y="190" text-anchor="middle" font-size="11" fill="var(--encre2)">index 3</text>
+<text x="625" y="208" text-anchor="middle" font-size="11" fill="var(--attenue)">index -1</text>
+<path d="M 260 96 L 560 96" fill="none" stroke="var(--s1)" stroke-width="2"/>
+<text x="410" y="88" text-anchor="middle" font-size="12" font-weight="600" fill="var(--s1)">noms[1:3]</text>
+<text x="380" y="252" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Le dernier index vaut len(noms) moins un : noms[4] lève IndexError.</text>
+<text x="380" y="276" text-anchor="middle" font-size="12" fill="var(--encre2)">Un index négatif compte depuis la fin : noms[-1] est le dernier.</text>
+</svg>

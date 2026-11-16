@@ -702,72 +702,694 @@ blocs:
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 05, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 05, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. La fonction est l'unité de travail de tout le
+              reste du parcours.
+            tableaux:
+              - titre: Les cinq points de la journée 05
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [def, "Déclarer une fonction avec son nom et ses paramètres"]
+                  - [return, "Rendre une valeur à l'appelant et terminer la fonction"]
+                  - [Afficher ou rendre, "Savoir qu'une fonction qui affiche ne rend rien d'utilisable"]
+                  - [None, "Reconnaître le symptôme d'une fonction sans return"]
+                  - [Docstring, "Écrire en une ligne ce que fait la fonction"]
+        quiz:
+          - question: "Que rend une fonction qui n'a pas de return ?"
+            options: ["None", "0", "Une chaîne vide", "Une erreur"]
+            bonnes: [1]
+            explication: "None signifie « rien » : c'est le symptôme d'une fonction qui affiche au lieu de rendre."
+          - question: "À quoi sert la docstring ?"
+            options: ["À dire ce que fait la fonction à celui qui la relira", "À accélérer la fonction", "À déclarer les paramètres", "À remplacer les tests"]
+            bonnes: [1]
+            explication: "Elle s'adresse à la personne qui ouvrira le code dans six mois, souvent vous."
+          - question: "Pourquoi retirer les print d'une fonction de calcul ?"
+            options: ["Pour que son résultat soit réutilisable et testable", "Pour gagner des lignes", "Parce que print est lent", "Parce que Python l'interdit"]
+            bonnes: [1]
+            explication: "Un résultat affiché n'existe nulle part : ni l'API, ni l'écran, ni un test ne peuvent s'en servir."
+          - question: "Comment nommer une fonction ?"
+            options: ["Par un verbe qui dit l'action", "Par un nom de données", "Par une abréviation courte", "Par le nom de son auteur"]
+            bonnes: [1]
+            explication: "Si aucun verbe unique ne convient, la fonction fait deux choses et doit être coupée."
+          - question: "Que fait return au milieu d'une fonction ?"
+            options: ["Il rend la valeur et termine la fonction", "Il continue l'exécution", "Il affiche la valeur", "Il déclenche une erreur"]
+            bonnes: [1]
+            explication: "Les lignes situées après un return exécuté ne s'exécutent jamais."
       - num: "J06"
         title: "Les listes : indexer, trancher, trier"
         evaluations: livrable
         contenu: >-
-          Création, index, tranches, ajout, tri en place et copie triée, longueur.
+          Créer une liste, atteindre un élément par son index, en extraire une tranche, ajouter, trier en
+          place ou obtenir une copie triée.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez manipuler la liste des noms de l'effectif : la trier par ordre
+              alphabétique, en extraire les derniers arrivés, et ajouter une recrue sans tout réécrire.
+          - titre: Le problème d'abord
+            texte: >-
+              Le gérant veut afficher l'effectif par ordre alphabétique, puis montrer les trois dernières
+              embauches. Vous savez parcourir une liste depuis la journée 04, mais pas la trier, ni en
+              prendre un morceau.
+          - titre: La notion
+            texte: >-
+              Une liste est une suite ordonnée et modifiable, écrite entre crochets. Chaque élément porte un
+              index, qui commence à zéro : le premier élément est à l'index 0, le deuxième à l'index 1. Un
+              index négatif compte depuis la fin : -1 désigne le dernier.
+
+              Une tranche extrait une partie de la liste : la notation à deux points prend de la première
+              borne incluse à la seconde exclue. Omettre une borne signifie « depuis le début » ou « jusqu'à
+              la fin ». Une tranche rend une nouvelle liste ; elle ne modifie pas l'originale.
+
+              La méthode append ajoute un élément à la fin. La méthode sort trie la liste en place et ne
+              rend rien ; la fonction sorted rend une nouvelle liste triée sans toucher à l'originale. La
+              fonction len donne le nombre d'éléments.
+            figures:
+              - nom: python-tranches-liste.svg
+                legende: "Index et bornes d'une tranche : la première est incluse, la seconde exclue"
+            code:
+              - titre: Les gestes de base sur une liste
+                langage: python
+                source: |
+                  noms = ["Awa", "Bakary", "Céline", "Daouda"]
+
+                  print(noms[0])      # Awa
+                  print(noms[-1])     # Daouda
+                  print(noms[1:3])    # ['Bakary', 'Céline']
+                  print(noms[-2:])    # ['Céline', 'Daouda']
+
+                  noms.append("Eric")
+                  print(len(noms))    # 5
+                  print(sorted(noms)) # une nouvelle liste triée, noms n'a pas bougé
+          - titre: À la main
+            texte: >-
+              Dans l'interpréteur, créez la liste des quatre noms ci-dessus. Demandez noms[4] : Python
+              répond IndexError, parce que le dernier index d'une liste de quatre éléments est 3. Relisez
+              cette erreur attentivement, elle reviendra.
+
+              Appelez ensuite resultat = noms.sort() puis affichez resultat. Python affiche None : sort trie
+              la liste mais ne rend rien. Comparez avec resultat = sorted(noms), qui rend bien une liste.
+
+              Terminez en triant une liste contenant des prénoms accentués, par exemple Céline et Cédric :
+              observez l'ordre obtenu. Le tri compare les caractères selon leur code, pas selon les règles
+              d'un dictionnaire français.
+          - titre: L'astuce du jour
+            texte: >-
+              Utilisez sorted quand vous voulez une copie triée, et sort seulement quand vous voulez
+              vraiment modifier la liste d'origine. Dans un programme de gestion, la liste d'origine vient
+              souvent d'ailleurs : la trier en place surprend celui qui vous l'a passée.
+
+              C'est le premier contact avec une idée qui gouverne tout le parcours : une fonction qui
+              modifie ce qu'on lui donne est beaucoup plus difficile à utiliser qu'une fonction qui rend
+              quelque chose de neuf.
+          - titre: Le piège du jour
+            texte: >-
+              Deux pièges aujourd'hui. Le premier est l'index hors bornes, qui lève IndexError : il vient
+              presque toujours d'un index calculé avec la longueur, en oubliant que le dernier index vaut
+              len moins un.
+
+              Le second est la méthode sort qui rend None. Écrire noms = noms.sort() détruit votre liste :
+              la variable ne contient plus rien d'exploitable. Le symptôme est reconnaissable, c'est le même
+              que celui de la journée 05.
+            tableaux:
+              - titre: Trier, dans les deux cas
+                entetes: [Écriture, Effet sur la liste d'origine, Valeur rendue]
+                lignes:
+                  - ["noms.sort()", "triée en place", "None"]
+                  - ["sorted(noms)", "inchangée", "une nouvelle liste triée"]
+                  - ["noms.append(x)", "un élément de plus", "None"]
+                  - ["noms + [x]", "inchangée", "une nouvelle liste"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez effectif_trie(noms), qui rend une nouvelle liste triée par ordre alphabétique sans
+              modifier celle qu'on lui passe, et trois_derniers(noms), qui rend les trois derniers éléments,
+              ou tous s'il y en a moins de trois.
+
+              Les tests livrés vérifient le comportement sur des prénoms accentués, sur une liste vide et
+              sur une liste de deux éléments. Un test compare la liste d'origine avant et après l'appel :
+              elle ne doit pas avoir bougé.
+
+              Critères d'acceptation : les deux fonctions rendent une liste ; la liste reçue n'est jamais
+              modifiée ; aucun plantage sur la liste vide.
         livrable: >-
-          Écrire effectif_trie(noms) et trois_derniers(noms) ; les tests couvrent les accents et la liste vide.
+          Écrire effectif_trie(noms) et trois_derniers(noms) ; les tests couvrent les accents, la liste
+          vide et la liste d'origine laissée intacte.
       - num: "J07R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 06, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 06, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Les listes portent l'effectif du premier au
+              dernier jour du parcours.
+            tableaux:
+              - titre: Les cinq points de la journée 06
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Index, "Atteindre un élément, en sachant que le premier est à l'index 0"]
+                  - [Index négatif, "Désigner le dernier élément avec -1"]
+                  - [Tranche, "Extraire une partie : première borne incluse, seconde exclue"]
+                  - [append, "Ajouter un élément à la fin d'une liste"]
+                  - [sort et sorted, "Choisir entre trier en place et obtenir une copie triée"]
+        quiz:
+          - question: "Quel est l'index du premier élément d'une liste ?"
+            options: ["0", "1", "-1", "Le nom du premier élément"]
+            bonnes: [1]
+            explication: "Le dernier index vaut donc len moins un, ce qui explique la plupart des IndexError."
+          - question: "Que rend noms.sort() ?"
+            options: ["None", "La liste triée", "Une copie", "Le premier élément"]
+            bonnes: [1]
+            explication: "sort trie en place ; écrire noms = noms.sort() remplace la liste par None."
+          - question: "Que contient noms[1:3] pour une liste de quatre noms ?"
+            options: ["Les éléments d'index 1 et 2", "Les éléments d'index 1, 2 et 3", "Les trois premiers", "Le troisième seulement"]
+            bonnes: [1]
+            explication: "La borne de fin est exclue, comme pour range."
+          - question: "Comment obtenir une copie triée sans modifier l'originale ?"
+            options: ["sorted(noms)", "noms.sort()", "noms.copy().sort()", "noms[::]"]
+            bonnes: [1]
+            explication: "sorted rend une nouvelle liste et laisse celle qu'on lui passe intacte."
+          - question: "Quelle erreur lève noms[4] sur une liste de quatre éléments ?"
+            options: ["IndexError", "KeyError", "ValueError", "Aucune"]
+            bonnes: [1]
+            explication: "Les index valides vont de 0 à 3 : le quatrième élément est à l'index 3."
       - num: "J07"
         title: "Les dictionnaires : une fiche salarié"
         evaluations: livrable
         contenu: >-
-          Clés et valeurs, lecture sûre avec get, parcours des clés et des valeurs, clés stables en minuscules sans accent.
+          Clés et valeurs, lecture sûre avec get, parcours d'un dictionnaire, et le choix de clés stables
+          qui survivront aux sept semaines du parcours.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez représenter un salarié par une fiche complète, et lire n'importe lequel
+              de ses champs sans faire planter le programme quand il manque.
+          - titre: Le problème d'abord
+            texte: >-
+              Une liste de noms ne suffit plus. Chaque salarié porte un nom, un poste, une date d'embauche
+              et un salaire. Avec des listes parallèles, une par information, la moindre insertion décale
+              tout et mélange les salaires.
+
+              Il faut une structure qui attache une valeur à un nom de champ, à l'intérieur d'une même
+              fiche.
+          - titre: La notion
+            texte: >-
+              Un dictionnaire associe des clés à des valeurs. Il s'écrit entre accolades, chaque paire
+              séparée par deux points. La lecture par crochets lève KeyError si la clé n'existe pas ; la
+              méthode get rend None, ou la valeur par défaut que vous indiquez en second argument.
+
+              L'écriture crée la clé si elle n'existe pas encore. La méthode items parcourt les paires, keys
+              les clés, values les valeurs. Le mot in teste la présence d'une clé.
+
+              Les clés sont des chaînes dans tout ce parcours. Choisissez-les en minuscules, sans accent et
+              sans espace : elles traverseront un fichier CSV, une API JSON et une base de données, où les
+              accents et les majuscules posent des problèmes différents à chaque étape.
+            code:
+              - titre: Une fiche salarié et sa lecture sûre
+                langage: python
+                source: |
+                  fiche = {
+                      "nom": "Awa Kone",
+                      "poste": "Assistante RH",
+                      "date_embauche": "2024-03-01",
+                      "salaire_fcfa": 250000,
+                  }
+
+                  print(fiche["poste"])                  # Assistante RH
+                  print(fiche.get("telephone", "inconnu"))  # inconnu, sans erreur
+
+                  for cle, valeur in fiche.items():
+                      print(cle, ":", valeur)
+          - titre: À la main
+            texte: >-
+              Dans l'interpréteur, créez la fiche ci-dessus. Demandez fiche["telephone"] : Python répond
+              KeyError. Demandez maintenant fiche.get("telephone") : Python répond None, sans erreur.
+              Demandez enfin fiche.get("telephone", "inconnu").
+
+              Ces trois comportements sont trois décisions différentes. La première dit « ce champ est
+              obligatoire, s'il manque le programme doit s'arrêter ». La troisième dit « ce champ est
+              facultatif, voici quoi mettre à la place ». Choisir entre les deux est un acte de conception,
+              pas un détail.
+
+              Ajoutez ensuite fiche["poste"] = "Responsable RH" et affichez la fiche : l'écriture remplace
+              la valeur existante.
+          - titre: L'astuce du jour
+            texte: >-
+              Fixez vos clés une fois pour toutes, en minuscules et sans accent, et notez-les quelque part.
+              Dans ce parcours, ce sont nom, poste, date_embauche et salaire_fcfa, et elles ne changeront
+              plus jusqu'à la journée 35.
+
+              Un nom de clé qui change en cours de route coûte très cher : il faut le corriger dans le
+              calcul, dans le fichier CSV, dans l'API, dans l'écran et dans la base. Décider tôt et s'y
+              tenir est un réflexe de professionnel.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est le KeyError sur une clé absente, et plus encore sa variante sournoise :
+              une clé mal orthographiée. Écrire fiche["salaire"] au lieu de fiche["salaire_fcfa"] produit la
+              même erreur qu'une clé réellement absente.
+
+              Ne corrigez pas ce genre d'erreur en remplaçant partout les crochets par get : vous
+              transformeriez un plantage visible en valeur None qui se propage silencieusement dans vos
+              calculs, jusqu'à produire une masse salariale fausse. Utilisez les crochets pour les champs
+              obligatoires, et get avec une valeur par défaut explicite pour les champs facultatifs.
+            tableaux:
+              - titre: Lire un champ, selon ce qu'il représente
+                entetes: [Écriture, Si la clé manque, Quand l'employer]
+                lignes:
+                  - ['fiche["salaire_fcfa"]', "KeyError, le programme s'arrête", "champ obligatoire"]
+                  - ['fiche.get("telephone")', "None", "champ facultatif, absence acceptable"]
+                  - ['fiche.get("prime", 0)', "0", "champ facultatif avec une valeur neutre"]
+                  - ['"prime" in fiche', "False", "savoir si le champ est présent"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez salarie(nom, poste, date_embauche, salaire_fcfa), qui rend un dictionnaire avec
+              exactement ces quatre clés, et lire_champ(salarie, champ, defaut), qui rend la valeur du champ
+              ou la valeur par défaut si le champ est absent.
+
+              Les tests livrés vérifient les quatre clés, la lecture d'un champ absent, et le fait que
+              lire_champ ne modifie jamais la fiche reçue.
+
+              Critères d'acceptation : les clés sont exactement nom, poste, date_embauche et salaire_fcfa ;
+              aucune fonction n'affiche ; lire_champ ne lève jamais KeyError.
         livrable: >-
-          Écrire salarie(nom, poste, date_embauche, salaire_fcfa) et lire_champ(salarie, champ, defaut) ; les tests couvrent une clé absente.
+          Écrire salarie(nom, poste, date_embauche, salaire_fcfa) et lire_champ(salarie, champ, defaut) ;
+          les tests couvrent une clé absente.
       - num: "J08R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 07, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 07, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. La fiche salarié d'hier est la brique de
+              l'effectif d'aujourd'hui.
+            tableaux:
+              - titre: Les cinq points de la journée 07
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Dictionnaire, "Associer des clés à des valeurs dans une fiche"]
+                  - [Crochets, "Lire un champ obligatoire, quitte à lever KeyError"]
+                  - [get, "Lire un champ facultatif avec une valeur par défaut explicite"]
+                  - [items, "Parcourir les paires clé et valeur"]
+                  - [Clés stables, "Écrire les clés en minuscules, sans accent ni espace"]
+        quiz:
+          - question: "Que lève fiche['telephone'] si la clé n'existe pas ?"
+            options: ["KeyError", "IndexError", "None", "Rien"]
+            bonnes: [1]
+            explication: "Les crochets exigent la clé ; get sert quand l'absence est acceptable."
+          - question: "Que rend fiche.get('prime', 0) si la clé prime est absente ?"
+            options: ["0", "None", "KeyError", "Une liste vide"]
+            bonnes: [1]
+            explication: "Le second argument de get est la valeur rendue en cas d'absence."
+          - question: "Pourquoi écrire les clés sans accent ni majuscule ?"
+            options: ["Pour qu'elles traversent CSV, JSON et base de données sans surprise", "Parce que Python refuse les accents", "Pour gagner de la place", "Pour trier plus vite"]
+            bonnes: [1]
+            explication: "Chaque format a ses propres pièges d'encodage et de casse : des clés sobres les évitent tous."
+          - question: "Comment parcourir les paires d'un dictionnaire ?"
+            options: ["for cle, valeur in fiche.items()", "for cle in fiche.values()", "for i in range(len(fiche))", "for paire in fiche[]"]
+            bonnes: [1]
+            explication: "items rend les paires ; keys rend les clés et values les valeurs."
+          - question: "Que fait fiche['poste'] = 'Responsable RH' si la clé existe déjà ?"
+            options: ["Elle remplace la valeur", "Elle lève une erreur", "Elle ajoute une seconde clé", "Elle ne fait rien"]
+            bonnes: [1]
+            explication: "L'écriture crée la clé si elle manque, et remplace la valeur sinon."
       - num: "J08"
         title: "Un effectif : liste de dictionnaires"
         evaluations: livrable
         contenu: >-
-          Parcourir une liste de fiches, filtrer, regrouper, compréhensions de liste, copie et mutation partagée.
+          Parcourir une liste de fiches, filtrer selon un critère, regrouper par poste, écrire une
+          compréhension de liste, et comprendre ce qu'est une copie superficielle.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez répondre à deux questions du gérant sans ouvrir de tableur : combien de
+              personnes par poste, et qui gagne plus d'un certain montant.
+          - titre: Le problème d'abord
+            texte: >-
+              L'effectif complet, c'est une liste de fiches : chaque élément est un dictionnaire comme celui
+              d'hier. Le gérant veut un état par poste et une liste filtrée par salaire, et il veut surtout
+              que son fichier d'origine reste intact après chaque état.
+          - titre: La notion
+            texte: >-
+              Une liste de dictionnaires se parcourt comme toute liste ; à chaque tour, la variable de
+              boucle contient une fiche entière, dont vous lisez les champs par leurs clés.
+
+              Regrouper par poste revient à construire un dictionnaire dont les clés sont les postes et les
+              valeurs des listes de noms. La méthode setdefault crée la liste vide la première fois qu'un
+              poste apparaît.
+
+              Une compréhension de liste écrit en une ligne une boucle qui construit une liste, avec un
+              filtre facultatif. Employez-la quand elle tient sur une ligne lisible ; au-delà, écrivez une
+              boucle ordinaire, qui se relit mieux et se corrige plus facilement.
+
+              Dernier point, le plus important : une liste de fiches copiée avec une tranche donne une
+              nouvelle liste, mais les fiches à l'intérieur sont les mêmes objets. Modifier une fiche de la
+              copie modifie aussi celle de l'originale. C'est ce qu'on appelle une copie superficielle.
+            figures:
+              - nom: python-copie-liste.svg
+                legende: "Une copie superficielle duplique la liste, pas les fiches qu'elle contient"
+            code:
+              - titre: Filtrer et regrouper un effectif
+                langage: python
+                source: |
+                  effectif = [
+                      {"nom": "Awa", "poste": "RH", "salaire_fcfa": 250000},
+                      {"nom": "Bakary", "poste": "Atelier", "salaire_fcfa": 180000},
+                      {"nom": "Céline", "poste": "RH", "salaire_fcfa": 420000},
+                  ]
+
+                  bien_payes = [f["nom"] for f in effectif if f["salaire_fcfa"] >= 250000]
+
+                  par_poste = {}
+                  for fiche in effectif:
+                      par_poste.setdefault(fiche["poste"], []).append(fiche["nom"])
+
+                  print(bien_payes)   # ['Awa', 'Céline']
+                  print(par_poste)    # {'RH': ['Awa', 'Céline'], 'Atelier': ['Bakary']}
+          - titre: À la main
+            texte: >-
+              Recopiez l'effectif ci-dessus dans un fichier. Créez une copie avec copie = effectif[:], puis
+              modifiez le salaire de la première fiche de la copie et affichez la première fiche de
+              l'effectif d'origine.
+
+              Le salaire a changé des deux côtés. C'est la démonstration de la copie superficielle, et c'est
+              la source de bugs la plus déroutante pour un débutant : une donnée se modifie à un endroit où
+              vous n'avez rien écrit.
+
+              La parade de ce parcours est simple et tient en une phrase : une fonction ne modifie jamais ce
+              qu'on lui passe. Si elle doit changer quelque chose, elle construit et rend une nouvelle
+              structure.
+          - titre: L'astuce du jour
+            texte: >-
+              Une compréhension sur une ligne, une boucle sinon. Une compréhension avec deux filtres et une
+              condition imbriquée est plus difficile à lire qu'une boucle de quatre lignes, et beaucoup plus
+              difficile à corriger sous pression.
+
+              Le but n'est pas d'écrire court, il est d'écrire clair. Le code de ce parcours sera relu par
+              vous dans sept semaines, quand vous le brancherez sur Django.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est la mutation partagée, que vous venez de provoquer. Il se manifeste
+              toujours de la même façon : un état calculé modifie l'effectif d'origine, et l'état suivant
+              est faux sans que rien n'ait l'air anormal.
+
+              La règle de sécurité du parcours : construisez une nouvelle liste plutôt que de modifier
+              celle que vous recevez. Vos tests le vérifieront explicitement, en comparant l'effectif avant
+              et après l'appel.
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez par_poste(effectif), qui rend un dictionnaire des noms regroupés par poste, et
+              filtrer_par_salaire(effectif, mini), qui rend la liste des fiches dont le salaire atteint le
+              minimum.
+
+              Les tests livrés vérifient le regroupement sur trois postes, le filtre à la borne exacte, et
+              comparent l'effectif d'origine avant et après chaque appel : il ne doit pas avoir bougé.
+
+              Critères d'acceptation : aucune des deux fonctions ne modifie l'effectif reçu ; le filtre
+              inclut la valeur exacte du minimum ; les deux fonctions rendent une valeur.
         livrable: >-
-          Écrire par_poste(effectif) et filtrer_par_salaire(effectif, mini) ; un test prouve que l'effectif d'origine n'a pas bougé.
+          Écrire par_poste(effectif) et filtrer_par_salaire(effectif, mini) ; un test prouve que
+          l'effectif d'origine n'a pas bougé.
       - num: "J09R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 08, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 08, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. La mutation partagée est le piège le plus
+              coûteux de la semaine.
+            tableaux:
+              - titre: Les cinq points de la journée 08
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Liste de fiches, "Parcourir un effectif et lire les champs de chaque fiche"]
+                  - [Filtrer, "Construire une nouvelle liste selon un critère"]
+                  - [Regrouper, "Construire un dictionnaire de listes avec setdefault"]
+                  - [Compréhension, "Écrire une boucle de construction sur une ligne lisible"]
+                  - [Copie superficielle, "Savoir qu'une copie de liste partage les fiches"]
+        quiz:
+          - question: "Que fait copie = effectif[:] sur une liste de fiches ?"
+            options: ["Elle crée une nouvelle liste qui contient les mêmes fiches", "Elle duplique les fiches", "Elle vide l'effectif", "Elle trie l'effectif"]
+            bonnes: [1]
+            explication: "C'est une copie superficielle : modifier une fiche de la copie modifie l'originale."
+          - question: "Quelle règle protège l'effectif d'origine ?"
+            options: ["Une fonction ne modifie jamais ce qu'on lui passe", "Toujours trier avant de filtrer", "Toujours utiliser get", "Copier avec sorted"]
+            bonnes: [1]
+            explication: "Construire et rendre une nouvelle structure évite les modifications à distance."
+          - question: "À quoi sert setdefault en regroupement ?"
+            options: ["À créer la liste vide la première fois qu'une clé apparaît", "À trier les clés", "À supprimer les doublons", "À compter les éléments"]
+            bonnes: [1]
+            explication: "Sans elle, il faut tester la présence de la clé avant chaque ajout."
+          - question: "Quand préférer une boucle à une compréhension ?"
+            options: ["Dès que la compréhension ne tient plus sur une ligne lisible", "Jamais, la compréhension est toujours meilleure", "Quand la liste est vide", "Quand il y a un filtre"]
+            bonnes: [1]
+            explication: "Le but est la clarté : une compréhension trop chargée se relit mal et se corrige mal."
+          - question: "Que rend [f['nom'] for f in effectif if f['salaire_fcfa'] >= 250000] ?"
+            options: ["La liste des noms dont le salaire atteint 250000", "La liste des fiches", "Le nombre de salariés", "Un dictionnaire"]
+            bonnes: [1]
+            explication: "La compréhension construit une liste de noms filtrée par la condition."
       - num: "J09"
         title: "Les dates et l'ancienneté"
         evaluations: livrable
         contenu: >-
-          datetime.date, écriture ISO, différence entre deux dates, mois incomplet, date future.
+          Le type date, l'écriture ISO, la différence entre deux dates, le calcul d'une ancienneté en mois
+          et le traitement du mois incomplet.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez calculer l'ancienneté d'un salarié en mois révolus, ce qui alimente
+              directement la règle des congés écrite en journée 03.
+          - titre: Le problème d'abord
+            texte: >-
+              La fiche contient une date d'embauche écrite en texte. La règle des congés demande une
+              ancienneté en mois. Entre les deux, il manque un calcul, et ce calcul est plus subtil qu'il
+              n'y paraît : un salarié embauché le 31 janvier a-t-il un mois d'ancienneté le 28 février ?
+          - titre: La notion
+            texte: >-
+              Le module datetime fournit le type date. La fonction date.fromisoformat lit une chaîne écrite
+              en ISO, c'est-à-dire année, mois, jour séparés par des tirets. C'est l'écriture employée
+              partout dans ce parcours, parce qu'elle se trie correctement en tant que texte et qu'elle ne
+              laisse aucune ambiguïté entre le jour et le mois.
+
+              Soustraire deux dates donne un timedelta, dont l'attribut days donne un nombre de jours. Il
+              n'existe pas d'attribut months, parce qu'un mois n'a pas de durée fixe.
+
+              L'ancienneté en mois révolus se calcule donc autrement : différence des années multipliée par
+              douze, plus différence des mois, moins un si le jour du mois courant n'a pas encore atteint
+              le jour d'embauche. C'est la définition que retient ce parcours, et elle est écrite dans le
+              code une seule fois.
+            figures:
+              - nom: python-anciennete-mois.svg
+                legende: "L'ancienneté en mois révolus, et le cas du mois commencé mais non terminé"
+            code:
+              - titre: De la date d'embauche à l'ancienneté en mois
+                langage: python
+                source: |
+                  from datetime import date
+
+                  embauche = date.fromisoformat("2024-03-15")
+                  aujourdhui = date.fromisoformat("2025-03-14")
+
+                  mois = (aujourdhui.year - embauche.year) * 12 + aujourdhui.month - embauche.month
+                  if aujourdhui.day < embauche.day:
+                      mois -= 1
+
+                  print(mois)   # 11 : le douzième mois n'est pas révolu
+          - titre: À la main
+            texte: >-
+              Calculez l'ancienneté pour trois couples de dates : embauche le 15 mars 2024 et date du jour
+              au 14 mars 2025, puis au 15 mars 2025, puis au 16 mars 2025. Vous devez obtenir 11, 12 et 12.
+
+              Ces trois valeurs sont exactement les bornes de la règle des congés de la journée 03. Vous
+              venez de relier deux journées : c'est ainsi que l'application se construit.
+
+              Essayez ensuite une date d'embauche au 29 février 2024, année bissextile, avec une date du
+              jour au 28 février 2025. Observez le résultat et demandez-vous s'il correspond à ce qu'un
+              gestionnaire de paie attendrait.
+          - titre: L'astuce du jour
+            texte: >-
+              Tout en ISO, partout. Les dates circulent en chaînes de la forme année, mois, jour séparés
+              par des tirets, du fichier CSV jusqu'à la base de données, en passant par l'API JSON.
+
+              Convertissez en objet date à l'entrée du programme, travaillez avec des objets date à
+              l'intérieur, et reconvertissez en chaîne ISO à la sortie. Cette discipline, appelée
+              normalisation aux frontières, reviendra formalisée en journée 15.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est de croire qu'une différence de dates donne des mois. Elle donne des
+              jours, et diviser par trente donne un résultat faux une fois sur deux.
+
+              Le second piège est la date future. Une date d'embauche postérieure à aujourd'hui est une
+              donnée fausse : votre fonction doit la refuser par une erreur, et non rendre une ancienneté
+              négative qui traverserait ensuite toute la chaîne de calcul.
+            tableaux:
+              - titre: Les cas que votre fonction doit traiter
+                entetes: [Situation, Attendu]
+                lignes:
+                  - ["Embauche le 15, jour courant le 14", "le mois en cours ne compte pas"]
+                  - ["Embauche le 15, jour courant le 15", "le mois est révolu"]
+                  - ["Embauche un 29 février", "le calcul reste cohérent les années non bissextiles"]
+                  - ["Embauche dans le futur", "une erreur, jamais une valeur négative"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez anciennete_en_mois(embauche, aujourdhui), qui prend deux objets date et rend un nombre
+              entier de mois révolus. Une embauche postérieure à la date du jour lève une erreur.
+
+              Les tests livrés couvrent une embauche en cours de mois, le 29 février, et une date future
+              refusée. La fonction reçoit la date du jour en paramètre plutôt que de la lire elle-même :
+              c'est ce qui rend le test possible et reproductible.
+
+              Critères d'acceptation : la fonction rend un entier ; les trois cas limites passent ; la date
+              du jour n'est jamais lue à l'intérieur de la fonction.
         livrable: >-
-          Écrire anciennete_en_mois(embauche, aujourdhui) ; les tests couvrent une embauche en cours de mois, le 29 février et une date future refusée.
+          Écrire anciennete_en_mois(embauche, aujourdhui) ; les tests couvrent une embauche en cours de
+          mois, le 29 février et une date future refusée.
       - num: "J10R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 09, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 09, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Les dates reviendront en journée 34, quand
+              Django importera le même fichier.
+            tableaux:
+              - titre: Les cinq points de la journée 09
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Type date, "Lire une date ISO avec date.fromisoformat"]
+                  - [Différence, "Savoir qu'une soustraction de dates donne des jours"]
+                  - [Mois révolus, "Calculer une ancienneté sans diviser par trente"]
+                  - [Date injectée, "Recevoir la date du jour en paramètre pour rendre le test possible"]
+                  - [Date future, "Refuser une donnée fausse par une erreur"]
+        quiz:
+          - question: "Que donne la soustraction de deux dates ?"
+            options: ["Un nombre de jours", "Un nombre de mois", "Un nombre d'années", "Une chaîne"]
+            bonnes: [1]
+            explication: "Un mois n'a pas de durée fixe : le calcul en mois se fait sur les années et les mois."
+          - question: "Quelle écriture de date retient le parcours ?"
+            options: ["Année, mois, jour séparés par des tirets", "Jour, mois, année séparés par des barres", "Mois, jour, année", "Le nom du mois en toutes lettres"]
+            bonnes: [1]
+            explication: "L'écriture ISO se trie correctement en texte et ne laisse aucune ambiguïté."
+          - question: "Pourquoi passer la date du jour en paramètre ?"
+            options: ["Pour que le test soit reproductible", "Pour aller plus vite", "Parce que Python l'exige", "Pour éviter les fuseaux horaires"]
+            bonnes: [1]
+            explication: "Une fonction qui lit l'horloge donne un résultat différent chaque jour : elle devient intestable."
+          - question: "Que doit faire la fonction sur une date d'embauche future ?"
+            options: ["Lever une erreur", "Rendre une ancienneté négative", "Rendre 0", "Rendre None"]
+            bonnes: [1]
+            explication: "Une valeur négative traverserait silencieusement toute la chaîne de calcul."
+          - question: "Embauche le 15 mars 2024, jour courant le 14 mars 2025 : quelle ancienneté ?"
+            options: ["11 mois", "12 mois", "13 mois", "1 mois"]
+            bonnes: [1]
+            explication: "Le jour d'embauche n'est pas atteint : le douzième mois n'est pas révolu."
       - num: "J10"
         title: "Les chaînes : normaliser et aligner"
         evaluations: livrable
         contenu: >-
-          Normaliser une chaîne à l'entrée, découper, joindre, aligner des colonnes pour un état lisible.
+          Nettoyer une chaîne à l'entrée, découper, joindre, et aligner des colonnes pour produire un état
+          lisible dans un terminal.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez produire l'état « effectif par poste » aligné en colonnes, que le gérant
+              peut imprimer tel quel.
+          - titre: Le problème d'abord
+            texte: >-
+              Les noms saisis à la main contiennent des espaces en trop, des majuscules fantaisistes et
+              parfois un espace double. Deux fiches pour la même personne apparaissent alors comme deux
+              salariés différents, et l'état par poste compte deux têtes au lieu d'une.
+          - titre: La notion
+            texte: >-
+              La méthode strip retire les espaces en début et en fin de chaîne. La méthode lower met en
+              minuscules, title met une majuscule à chaque mot. La méthode split découpe une chaîne en
+              liste, la méthode join recolle une liste en chaîne avec un séparateur.
+
+              L'alignement se fait avec une f-string et un format de largeur : un nombre après deux points
+              réserve une largeur, un signe inférieur aligne à gauche, un signe supérieur aligne à droite.
+              Les nombres s'alignent à droite, les textes à gauche.
+
+              Une chaîne est immuable : aucune de ces méthodes ne modifie la chaîne d'origine, toutes en
+              rendent une nouvelle. C'est la même logique que sorted par rapport à sort.
+            code:
+              - titre: Normaliser un nom, puis aligner une colonne
+                langage: python
+                source: |
+                  brut = "   awa   kone  "
+                  propre = " ".join(brut.split()).title()
+                  print(propre)        # Awa Kone
+
+                  lignes = [("RH", 2, 670000), ("Atelier", 1, 180000)]
+                  for poste, effectif, masse in lignes:
+                      print(f"{poste:<12}{effectif:>4}{masse:>12}")
+          - titre: À la main
+            texte: >-
+              Dans l'interpréteur, comparez "  Awa  ".strip() et "  Awa  ". Puis comparez "AWA" == "awa" et
+              "AWA".lower() == "awa".
+
+              Essayez ensuite " ".join("   awa   kone  ".split()) : le découpage sans argument sépare sur
+              les blancs et ignore les répétitions, le recollage remet un espace simple. C'est la façon la
+              plus sûre de nettoyer les espaces d'un nom saisi à la main.
+
+              Terminez en affichant deux lignes alignées avec la f-string ci-dessus, en changeant la largeur
+              réservée pour observer l'effet.
+          - titre: L'astuce du jour
+            texte: >-
+              Normalisez à l'entrée, une fois. Le nom est nettoyé au moment où il entre dans le programme,
+              et plus jamais ensuite. Tous les calculs, comparaisons et regroupements travaillent alors sur
+              des données propres.
+
+              Normaliser au moment de comparer, au contraire, oblige à y penser à chaque comparaison, et
+              vous oublierez un jour. C'est la même idée que la conversion des dates en journée 09 : les
+              frontières nettoient, le cœur fait confiance.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est invisible à l'écran : un espace en fin de nom, un double espace au
+              milieu, une majuscule différente. Les deux chaînes paraissent identiques et ne le sont pas.
+
+              Quand une comparaison de textes échoue alors que tout semble correct, affichez la chaîne entre
+              deux marques, par exemple entre crochets, ou demandez sa longueur. Les espaces invisibles
+              deviennent alors visibles.
+            tableaux:
+              - titre: Nettoyer un texte saisi à la main
+                entetes: [Problème, Écriture, Résultat]
+                lignes:
+                  - ["Espaces aux extrémités", 'nom.strip()', '"Awa"']
+                  - ["Espaces multiples au milieu", '" ".join(nom.split())', '"Awa Kone"']
+                  - ["Casse incohérente", 'nom.title()', '"Awa Kone"']
+                  - ["Comparaison insensible à la casse", 'a.lower() == b.lower()', "True ou False"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez etat_par_poste(effectif), qui rend une chaîne de plusieurs lignes : une ligne
+              d'en-tête, puis une ligne par poste avec le nombre de salariés et la masse salariale, le tout
+              aligné en colonnes, montants en francs CFA.
+
+              La fonction rend la chaîne, elle ne l'affiche pas. Les tests livrés comparent la chaîne
+              exacte, espaces compris : c'est volontaire, l'alignement fait partie du résultat.
+
+              Critères d'acceptation : les postes apparaissent dans l'ordre alphabétique ; les noms sont
+              normalisés avant regroupement ; la fonction rend une chaîne et n'affiche rien.
         livrable: >-
-          Écrire etat_par_poste(effectif) qui rend l'état aligné sous forme de chaîne ; le test compare la chaîne exacte.
+          Écrire etat_par_poste(effectif) qui rend l'état aligné sous forme de chaîne ; le test compare la
+          chaîne exacte.
   - title: "Bloc 3 — Semaine 3 : fonctions, modules, tests et validation"
     modules:
       - num: "J11R"
