@@ -84,8 +84,17 @@ class TestVerrouExercices(FrappeTestCase):
         self.assertEqual(DelaiExercicesFrappe().minutes(self.lecon), 60)
 
     def test_parcours_sans_delai_replie_sur_le_reglage_global(self):
-        frappe.db.set_value("LMS Course", self.cours, CHAMP_DELAI, 0)
+        """-1 : le parcours ne dit rien, le réglage de la plateforme s'applique."""
+        frappe.db.set_value("LMS Course", self.cours, CHAMP_DELAI, -1)
         self.assertIsNone(DelaiExercicesFrappe().minutes(self.lecon))
+
+    def test_delai_nul_du_parcours_ouvre_les_exercices_tout_de_suite(self):
+        """0 est une valeur, pas une absence : les exercices s'ouvrent avec la leçon."""
+        frappe.db.set_value("LMS Course", self.cours, CHAMP_DELAI, 0)
+        self.assertEqual(DelaiExercicesFrappe().minutes(self.lecon), 0)
+        self.ouvrir(il_y_a_minutes=0)
+        frappe.set_user(ELEVE)
+        self.soumettre_quiz()
 
     def test_quiz_refuse_avant_une_heure(self):
         self.ouvrir(il_y_a_minutes=20)

@@ -18,9 +18,10 @@ _LISTES_PROJET = ("objectifs", "fonctionnalites", "stack", "criteres_acceptation
 _PARAMETRES = {"projets_par_portfolio": "projets_attendus", "heures_par_module": "heures_par_module",
                "delai_exercices_minutes": "delai_exercices_minutes", "tentatives_max": "tentatives_max",
                "score_min": "score_min"}
-# Un délai nul se règle pour la plateforme entière, jamais parcours par parcours : sur un parcours, 0 veut dire
-# « appliquer le réglage global », et laisser le fichier l'écrire ferait croire à un déblocage immédiat.
-_MINIMUMS = {"delai_exercices_minutes": 1}
+# Délai d'exercices : 0 est une valeur, et non une absence (les exercices s'ouvrent avec la leçon, pour un
+# parcours qui enchaîne cours et épreuve le même soir). Un parcours qui ne dit rien omet la clé, et le réglage
+# de la plateforme s'applique ; la sentinelle « non réglé » (-1) n'appartient qu'à la base.
+_MINIMUMS = {"delai_exercices_minutes": 0}
 
 
 def _entier(valeur) -> bool:

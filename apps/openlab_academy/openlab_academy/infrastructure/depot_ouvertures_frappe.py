@@ -5,7 +5,7 @@ import frappe
 from frappe.utils import get_datetime
 
 DOCTYPE = "Ouverture Lecon OpenLab"
-# Int sur LMS Course (créé par entrypoints/install) : délai propre au parcours, 0 = réglage de la plateforme
+# Int sur LMS Course (créé par entrypoints/install) : délai propre au parcours ; -1 = réglage de la plateforme
 CHAMP_DELAI = "delai_exercices_minutes"
 
 
@@ -23,8 +23,8 @@ class DepotOuverturesFrappe:
 class DelaiExercicesFrappe:
     """Port DelaiDuParcours : délai réglé sur le parcours de la leçon.
 
-    Rien à dire (champ absent, parcours introuvable, valeur nulle) : l'appelant applique le réglage de la
-    plateforme, qui reste la valeur de référence.
+    Rien à dire (champ absent, parcours introuvable, valeur négative) : l'appelant applique le réglage de la
+    plateforme. Un zéro, lui, est une consigne du parcours : les exercices s'ouvrent avec la leçon.
     """
 
     def minutes(self, lecon: str) -> int | None:
@@ -33,4 +33,5 @@ class DelaiExercicesFrappe:
         cours = frappe.db.get_value("Course Lesson", lecon, "course")
         if not cours:
             return None
-        return int(frappe.db.get_value("LMS Course", cours, CHAMP_DELAI) or 0) or None
+        minutes = int(frappe.db.get_value("LMS Course", cours, CHAMP_DELAI) or 0)
+        return minutes if minutes >= 0 else None

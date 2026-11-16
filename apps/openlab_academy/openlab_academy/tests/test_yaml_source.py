@@ -42,11 +42,18 @@ class TestConversion(unittest.TestCase):
         e = depuis_dict(brut, "t.yaml", Reglages()).exercices
         self.assertEqual((e.delai_minutes, e.tentatives_max, e.score_min), (15, 5, 70))
 
-    def test_delai_nul_refuse_au_profit_du_reglage_global(self):
+    def test_delai_nul_accepte_pour_ouvrir_les_exercices_tout_de_suite(self):
+        """Un parcours qui enchaîne cours et exercice le même soir exige l'ouverture immédiate."""
         brut = parcours_brut()
         brut["parametres"] = {"delai_exercices_minutes": 0}
+        self.assertEqual(depuis_dict(brut, "t.yaml").exercices.delai_minutes, 0)
+
+    def test_delai_negatif_refuse(self):
+        """Un parcours qui ne dit rien omet la clé ; la sentinelle « non réglé » n'appartient qu'à la base."""
+        brut = parcours_brut()
+        brut["parametres"] = {"delai_exercices_minutes": -1}
         with self.assertRaisesRegex(FormatInvalide,
-                                    r"parametres\.delai_exercices_minutes doit valoir au moins 1"):
+                                    r"parametres\.delai_exercices_minutes doit valoir au moins 0"):
             depuis_dict(brut, "t.yaml")
 
     def test_score_hors_bornes_refuse(self):

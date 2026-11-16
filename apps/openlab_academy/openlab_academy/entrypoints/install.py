@@ -93,10 +93,11 @@ def preparer_champs_lancement() -> None:
         "fieldtype": "Check", "label": "Accès limité aux dates de la cohorte", "default": "0",
         "insert_after": CHAMP_GRATUIT, "permlevel": NIVEAU_GRATUIT})
     _champ_personnalise(PARCOURS, CHAMP_DELAI, {
-        "fieldtype": "Int", "label": "Délai avant les exercices (minutes)", "default": "0",
+        "fieldtype": "Int", "label": "Délai avant les exercices (minutes)", "default": "-1",
         "insert_after": CHAMP_LIMITE, "permlevel": NIVEAU_GRATUIT,
         "description": "Temps d'étude exigé entre l'ouverture d'une leçon de ce parcours et l'accès à ses "
-                       "exercices. 0 : appliquer le délai réglé pour la plateforme entière."})
+                       "exercices. 0 : exercices ouverts avec la leçon. -1 : appliquer le délai réglé pour "
+                       "la plateforme entière."})
     for doctype in SUIVIS:
         _champ_personnalise(doctype, CHAMP_RETOUCHE, {
             "fieldtype": "Check", "label": "Retouché dans l'application", "default": "0",
