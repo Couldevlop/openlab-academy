@@ -274,6 +274,108 @@ blocs:
 
                   total = int(saisie) * 65
                   print(total)
+          - titre: "La notion : le coût d'un programme se compte, il ne se devine pas"
+            texte: >-
+              Votre programme de pesée tourne en un clin d'oeil sur les trente lignes du cahier de la
+              coopérative. Le jour où le gérant vous donne le fichier des trois dernières campagnes, deux cent
+              mille lignes, le même programme met quatre minutes. Rien n'a changé dans le code : seule la
+              quantité de données a changé.
+
+              Un programme a un coût, et ce coût se compte en nombre d'opérations, pas en secondes. Les
+              secondes dépendent de la machine, de l'humeur du disque et de ce qui tourne à côté. Le nombre
+              d'opérations, lui, ne dépend que de ce que vous avez écrit. C'est pour cela qu'on le compte.
+
+              La question à se poser devant une boucle est toujours la même : si je double la quantité de
+              données, combien de fois de plus ce bloc sera-t-il exécuté ? Si la réponse est deux fois, le
+              programme tiendra la montée en charge. Si la réponse est quatre fois, il se dégradera vite. Si
+              c'est pire encore, il ne finira jamais sur un vrai fichier.
+
+              Une boucle dans une boucle est le signal d'alarme le plus fiable du métier. Chaque fois que vous
+              parcourez une liste à l'intérieur d'un parcours de la même liste, vous multipliez le travail par
+              lui-même. Trente lignes donnent neuf cents passages, ce qui ne se voit pas. Deux cent mille
+              lignes donnent quarante milliards de passages, ce qui ne finit pas.
+            figures:
+              - nom: python-effet-du-cache.svg
+                legende: "Le même travail, deux organisations : la différence se lit en barres, pas en impressions"
+              - nom: devpy-m01-c.jpg
+                legende: "Ce qui se mesure se discute, ce qui se devine se dispute"
+          - titre: "Le geste technique : chronométrer la même tâche sur 10, 1 000 puis 100 000 éléments"
+            texte: >-
+              Mesurer ne demande ni outil ni bibliothèque : l'horloge de performance de Python suffit. Vous
+              écrivez la tâche, vous la lancez sur des tailles qui grandissent, et vous regardez comment le
+              temps grandit avec elles.
+
+              Lancez le programme ci-dessous. Sur dix références, les deux versions semblent identiques. Sur
+              mille, un écart apparaît. Sur cent mille, la première version devient inutilisable pendant que
+              la seconde répond encore tout de suite. C'est la même tâche et le même résultat : seule
+              l'organisation des données diffère.
+
+              Lisez le tableau de mesures dans ce sens : ce qui compte n'est pas le temps d'une ligne, c'est
+              le rapport entre deux lignes successives. Multipliez la taille par dix, et observez. La version
+              qui parcourt la liste voit son temps multiplié par cent, parce qu'elle fait dix fois plus de
+              tours et que chaque tour coûte dix fois plus cher. La version qui interroge un dictionnaire voit
+              son temps multiplié par dix seulement, parce que chaque recherche reste au même prix.
+
+              Notez enfin pourquoi doubler les données ne double pas toujours le temps, dans les deux sens. En
+              dessous d'un millier d'éléments, le coût de démarrage de l'interpréteur domine et masque tout.
+              Au-delà d'un certain volume, la mémoire se remplit, la machine échange avec le disque, et le
+              temps explose plus vite que le calcul. Mesurez toujours sur au moins trois tailles, jamais sur
+              une seule.
+            tableaux:
+              - titre: "Lire un tableau de mesures : le rapport compte, pas la seconde"
+                entetes: [Taille, Ce que fait le parcours, "Ce que fait l'index", Ce que vous en concluez]
+                lignes:
+                  - [10, quelques opérations, quelques opérations, les deux conviennent]
+                  - [1 000, cent fois plus de travail, dix fois plus de travail, "l'écart se voit"]
+                  - [100 000, le temps devient inacceptable, le temps reste stable, "l'index s'impose"]
+                  - [Rapport attendu, temps multiplié par cent, temps multiplié par dix, la forme de la courbe]
+            code:
+              - titre: "mesurer.py, la même question posée à deux organisations"
+                langage: python
+                source: |
+                  import random
+                  import time
+
+                  def chercher_par_parcours(references: list[tuple[str, int]], voulue: str) -> int:
+                      for code, prix_fcfa in references:
+                          if code == voulue:
+                              return prix_fcfa
+                      return 0
+
+                  def chercher_par_index(index: dict[str, int], voulue: str) -> int:
+                      return index.get(voulue, 0)
+
+                  for taille in (10, 1_000, 100_000):
+                      references = [(f"REF{numero:06d}", random.randint(500, 20_000)) for numero in range(taille)]
+                      index = dict(references)
+                      demandes = [f"REF{random.randrange(taille):06d}" for _ in range(1_000)]
+
+                      depart = time.perf_counter()
+                      for demande in demandes:
+                          chercher_par_parcours(references, demande)
+                      par_parcours = time.perf_counter() - depart
+
+                      depart = time.perf_counter()
+                      for demande in demandes:
+                          chercher_par_index(index, demande)
+                      par_index = time.perf_counter() - depart
+
+                      print(f"{taille:>7} references | parcours {par_parcours:8.4f} s | index {par_index:8.4f} s")
+          - titre: "À la main : votre tableau de mesures, et la décision qu'il justifie"
+            texte: >-
+              Reprenez le programme de pesée que vous avez écrit cette semaine et produisez-en trois versions
+              qui donnent exactement le même résultat. La première parcourt la liste à chaque recherche. La
+              deuxième construit un dictionnaire une fois, puis l'interroge. La troisième trie la liste une
+              fois, puis cherche par moitiés successives, si vous voulez pousser plus loin.
+
+              Mesurez les trois sur dix, mille et cent mille lignes, avec le même jeu de demandes. Reportez
+              les neuf mesures dans un tableau, en ajoutant pour chaque colonne le rapport entre une taille et
+              la suivante. Un tableau sans ces rapports ne prouve rien.
+
+              Terminez par trois lignes de justification : quelle version vous retenez, à partir de quel
+              volume elle devient nécessaire, et ce qu'elle coûte en mémoire. Une décision technique se défend
+              avec des chiffres que votre voisin peut reproduire sur sa machine. C'est ce tableau, et non
+              votre impression, qui entre dans le livrable de la semaine.
           - titre: Entraînement gradué
             texte: >-
               Premier exercice, imiter. Reprenez le programme de pesée et ajoutez une remise de deux pour cent
@@ -530,6 +632,103 @@ blocs:
             figures:
               - nom: devpy-m02-a.jpg
                 legende: "Un index transforme une recherche dans tout le rayon en un accès direct au bon tiroir"
+          - titre: "La notion : ce qu'il y a sous le dictionnaire, la table de hachage"
+            texte: >-
+              Vous avez employé le dictionnaire toute la semaine comme un index : vous donnez un code produit,
+              il rend le prix immédiatement, que le fichier compte cent ou cent mille entrées. Ce comportement
+              n'a rien de magique, et comprendre son mécanisme vous évitera trois erreurs courantes.
+
+              Imaginez les casiers numérotés d'un bureau de poste. Pour ranger une lettre, l'employé applique
+              une règle de calcul au nom du destinataire et obtient un numéro de casier. Pour la retrouver, il
+              applique la même règle et va directement au bon casier, sans ouvrir les autres. La règle de
+              calcul s'appelle une fonction de hachage, et les casiers s'appellent des seaux.
+
+              Deux noms différents peuvent donner le même numéro de casier : c'est une collision. Le casier
+              contient alors plusieurs lettres, et l'employé compare les noms un par un, mais seulement à
+              l'intérieur de ce casier. Tant que les collisions restent rares, la recherche reste quasi
+              immédiate, quel que soit le nombre total de lettres.
+
+              De là vient la règle qui surprend les débutants : une clé de dictionnaire doit être immuable. Si
+              vous rangiez une lettre sous un nom, puis que ce nom changeait tout seul, le calcul donnerait un
+              autre casier et la lettre serait introuvable alors qu'elle est bien là. C'est pourquoi une
+              chaîne, un nombre ou un tuple peuvent servir de clé, et pourquoi une liste ne le peut pas.
+
+              Retenez aussi ce que la table de hachage ne sait pas faire. Elle ne conserve aucun ordre utile :
+              demander la plus petite clé ou les clés comprises entre deux bornes l'oblige à tout parcourir.
+              Pour ces questions, il faut une structure triée, que vous verrez avec les index de base de
+              données.
+            figures:
+              - nom: python-liste-ou-dictionnaire.svg
+                legende: "Parcourir tous les rayons, ou aller directement au bon casier"
+              - nom: devpy-m02-c.jpg
+                legende: "Des casiers numérotés : la clé donne le numéro, et le casier répond tout de suite"
+          - titre: "Le geste technique : écrire une mini table de hachage à la main"
+            texte: >-
+              Le meilleur moyen de comprendre un mécanisme est de l'écrire en petit. Quarante lignes suffisent
+              pour une table de hachage qui range, retrouve et gère les collisions. Vous n'écrirez jamais cela
+              en production, puisque le dictionnaire de Python fait mieux ; vous l'écrivez une fois pour ne
+              plus jamais traiter le dictionnaire comme une boîte noire.
+
+              La fonction hash intégrée transforme une valeur immuable en un entier. Le reste de la division
+              de cet entier par le nombre de seaux donne le numéro du seau. Chaque seau est une petite liste
+              de paires, parcourue seulement quand il y a collision.
+
+              Exécutez le programme, puis réduisez le nombre de seaux à deux et observez : les listes
+              s'allongent, les collisions deviennent la règle, et la recherche redevient un parcours. C'est
+              exactement ce qui arrive à une vraie table quand elle est trop pleine, et c'est pourquoi le
+              dictionnaire de Python s'agrandit tout seul au fil des insertions.
+
+              Vérifiez enfin ce que vous avez construit avec trois assertions : une clé rangée se retrouve,
+              une clé absente ne lève pas d'erreur mais rend la valeur par défaut, et deux clés qui tombent
+              dans le même seau se distinguent correctement. Ces trois assertions sont votre preuve, et elles
+              entrent dans votre rendu.
+            tableaux:
+              - titre: "Ce que la table de hachage sait faire, et ce qu'elle ne sait pas"
+                entetes: [Question posée, Coût, Pourquoi]
+                lignes:
+                  - [Quel est le prix de cette référence, immédiat, un calcul donne le seau]
+                  - [Cette référence existe-t-elle, immédiat, même mécanisme]
+                  - [Quelle est la plus petite clé, parcours complet, les seaux ne sont pas ordonnés]
+                  - [Quelles clés entre deux bornes, parcours complet, il faut une structure triée]
+                  - [Ranger une liste comme clé, refusé, une clé doit être immuable]
+            code:
+              - titre: "table_simple.py, le dictionnaire demonte en quarante lignes"
+                langage: python
+                source: |
+                  class TableSimple:
+                      """Une table de hachage minimale, pour comprendre ce que fait un dictionnaire."""
+
+                      def __init__(self, nombre_de_seaux: int = 8) -> None:
+                          self.seaux: list[list[tuple[object, object]]] = [[] for _ in range(nombre_de_seaux)]
+
+                      def _numero_de_seau(self, cle: object) -> int:
+                          return hash(cle) % len(self.seaux)
+
+                      def ranger(self, cle: object, valeur: object) -> None:
+                          seau = self.seaux[self._numero_de_seau(cle)]
+                          for position, (cle_rangee, _) in enumerate(seau):
+                              if cle_rangee == cle:
+                                  seau[position] = (cle, valeur)
+                                  return
+                          seau.append((cle, valeur))
+
+                      def lire(self, cle: object, defaut: object = None) -> object:
+                          for cle_rangee, valeur in self.seaux[self._numero_de_seau(cle)]:
+                              if cle_rangee == cle:
+                                  return valeur
+                          return defaut
+
+                      def remplissage(self) -> list[int]:
+                          return [len(seau) for seau in self.seaux]
+
+
+                  table = TableSimple()
+                  for code, prix_fcfa in [("CACAO-A", 1200), ("CACAO-B", 950), ("CAFE-A", 1800)]:
+                      table.ranger(code, prix_fcfa)
+
+                  assert table.lire("CACAO-B") == 950
+                  assert table.lire("INCONNU", 0) == 0
+                  print(table.remplissage())
           - titre: "Le geste technique : les compréhensions, et leur limite"
             texte: >-
               Une compréhension transforme une collection en une autre en une ligne lisible. Elle remplace la
@@ -572,6 +771,107 @@ blocs:
             figures:
               - nom: python-copie-liste.svg
                 legende: "Deux noms pour une même liste : modifier par l'un se voit par l'autre"
+          - titre: "La notion : un nom n'est pas une boîte, c'est une étiquette"
+            texte: >-
+              En Python, un nom ne contient pas une valeur : il désigne un objet. Quand vous écrivez une
+              affectation, vous ne recopiez rien, vous collez une étiquette de plus sur un objet qui existe
+              déjà. Deux noms peuvent donc désigner le même objet, et c'est la source de bugs la plus
+              silencieuse du langage, parce qu'elle ne lève aucune erreur.
+
+              Pour les nombres, les chaînes et les tuples, cela ne se voit jamais : ces objets sont immuables,
+              personne ne peut les modifier, et deux étiquettes sur le même objet sont indiscernables de deux
+              copies. Pour les listes, les dictionnaires et les ensembles, cela change tout : modifier l'objet
+              par une étiquette le modifie pour toutes les autres.
+
+              Le mot technique est l'aliasing : deux noms, un seul objet. Le symptôme, en production, est une
+              liste qui change toute seule. Vous avez passé le relevé de la pharmacie à une fonction qui
+              devait le nettoyer sans y toucher, et votre relevé d'origine revient amputé de trois lignes.
+
+              Une copie de surface crée un nouvel objet, mais ses éléments restent les mêmes objets. Copier
+              une liste de listes de cette façon protège la liste extérieure et laisse les listes intérieures
+              partagées. Une copie profonde recopie tout l'arbre des objets, ce qui coûte du temps et de la
+              mémoire : employez-la en connaissance de cause, pas par réflexe.
+
+              La règle de métier qui en découle est simple et vous servira dix ans : une fonction qui reçoit
+              une structure modifiable soit la modifie et le dit dans son nom, soit n'y touche pas et rend une
+              structure neuve. Les fonctions qui font les deux sans prévenir sont celles que personne n'ose
+              plus appeler.
+            figures:
+              - nom: python-copie-liste.svg
+                legende: "Deux étiquettes sur le même objet, ou deux objets distincts"
+          - titre: "Le geste technique : prédire la sortie avant de l'exécuter"
+            texte: >-
+              Le seul exercice qui ancre durablement cette notion consiste à prédire par écrit ce qu'un
+              programme affichera, puis à le lancer. Tant que vous n'avez pas écrit votre prédiction, vous
+              n'apprenez rien : vous lisez une explication et vous êtes d'accord avec elle, ce qui n'est pas
+              la même chose.
+
+              Prenez le programme ci-dessous et notez sur une feuille les cinq lignes qu'il affiche, dans
+              l'ordre, avant de l'exécuter. Puis lancez-le et comparez. Chaque écart entre votre feuille et la
+              sortie réelle désigne précisément ce que vous croyiez savoir et que vous ne saviez pas.
+
+              Le dernier cas mérite une attention particulière : la valeur par défaut d'un paramètre est
+              évaluée une seule fois, à la définition de la fonction, et non à chaque appel. Une liste donnée
+              en valeur par défaut est donc partagée par tous les appels, et elle grossit d'appel en appel. La
+              correction tient en une ligne : mettre None par défaut et créer la liste dans le corps de la
+              fonction.
+            tableaux:
+              - titre: "Cinq cas, et la règle qui les explique"
+                entetes: [Cas, Ce que beaucoup prédisent, Ce qui se passe vraiment]
+                lignes:
+                  - [Affectation simple, une copie est faite, une étiquette de plus sur le même objet]
+                  - [Appel de copy, rien ne change, la liste extérieure est bien protégée]
+                  - [Liste de listes copiée, tout est protégé, les listes intérieures restent partagées]
+                  - [Copie profonde, identique à copy, "tout l'arbre est recopié, à son coût"]
+                  - [Liste en valeur par défaut, une liste neuve par appel, une seule liste pour tous les appels]
+            code:
+              - titre: "predire.py, cinq sorties a ecrire avant de lancer"
+                langage: python
+                source: |
+                  # 1
+                  releve = ["CACAO-A", "CACAO-B"]
+                  copie_etiquette = releve
+                  copie_etiquette.append("CAFE-A")
+                  print(releve)
+
+                  # 2
+                  copie_reelle = releve.copy()
+                  copie_reelle.append("THE-A")
+                  print(releve)
+
+                  # 3
+                  par_officine = [["CACAO-A"], ["CAFE-A"]]
+                  copie_de_surface = par_officine.copy()
+                  copie_de_surface[0].append("CACAO-B")
+                  print(par_officine)
+
+                  # 4
+                  import copy
+                  copie_profonde = copy.deepcopy(par_officine)
+                  copie_profonde[1].append("CAFE-B")
+                  print(par_officine)
+
+                  # 5
+                  def ajouter(code, panier=[]):
+                      panier.append(code)
+                      return panier
+
+                  print(ajouter("CACAO-A"), ajouter("CAFE-A"))
+          - titre: "À la main : rendre une fonction honnête avec ce qu'elle reçoit"
+            texte: >-
+              Reprenez une fonction de votre relevé de la pharmacie qui reçoit une liste et la trie, la filtre
+              ou la complète. Écrivez d'abord un test qui prouve que la liste d'origine n'est pas modifiée par
+              l'appel : construire la liste, en garder une copie, appeler la fonction, comparer. Ce test doit
+              échouer si votre fonction modifie son entrée.
+
+              Corrigez ensuite la fonction de la seule façon acceptable : travailler sur une copie et rendre
+              un résultat neuf. Vérifiez que le test passe, puis relisez la signature et le nom de la
+              fonction. Un nom comme nettoyer_le_releve annonce un résultat ; un nom comme vider_le_releve
+              annonce une modification. Le nom doit dire ce que le code fait.
+
+              Rendez les deux fichiers, le test et la fonction corrigée. Le correcteur regardera une seule
+              chose : le test échoue-t-il bien sur la version d'origine. Un test qui passe dans les deux cas
+              ne prouve rien du tout.
           - titre: "Le geste technique : normaliser les chaînes avant de comparer"
             texte: >-
               Un libellé saisi par six personnes différentes n'est jamais le même texte. Majuscules, espaces
@@ -896,6 +1196,96 @@ blocs:
 
 
                   print(repartir_places(50, [12, 25, 8]))
+          - titre: "La notion : la récursivité, se définir en fonction de soi"
+            texte: >-
+              Certaines données ne sont pas plates. Le dossier d'une campagne contient des dossiers
+              d'officines, qui contiennent des dossiers de mois, qui contiennent des fichiers. La réponse d'un
+              service de cotation contient des objets qui contiennent des listes qui contiennent d'autres
+              objets. Vous ne savez pas à l'avance combien de niveaux il y aura, et une boucle sait mal
+              traiter ce que l'on ne sait pas compter d'avance.
+
+              Une fonction récursive est une fonction qui s'appelle elle-même sur une partie plus petite du
+              problème. Elle tient en deux morceaux, et seulement deux. Le cas de base décrit la situation la
+              plus simple, celle où la réponse est immédiate et où l'on ne rappelle plus rien. Le cas récursif
+              traite un niveau, puis délègue le reste à la fonction elle-même.
+
+              Écrivez toujours le cas de base en premier. Une fonction récursive sans cas de base ne s'arrête
+              jamais, et Python finit par refuser d'aller plus loin : la profondeur maximale est fixée autour
+              de mille appels, et le dépassement lève une erreur dont vous reconnaîtrez désormais la cause.
+
+              Chaque appel en attente occupe une place dans la pile d'appels, cette pile d'assiettes que vous
+              avez vue en lisant les traces d'erreur. Elle s'empile tant que les appels se créent, puis elle
+              se dépile quand les réponses remontent. Comprendre la récursivité, c'est voir cette pile monter
+              et redescendre.
+
+              La récursivité est le bon outil quand la donnée elle-même est imbriquée et de profondeur
+              inconnue. Elle est le mauvais outil quand vous parcourez une suite plate de deux cent mille
+              lignes : la boucle est alors plus simple, plus rapide et sans limite de profondeur. Le critère
+              n'est pas l'élégance, c'est la forme de la donnée.
+            figures:
+              - nom: python-modules-arborescence.svg
+                legende: "Un dossier contient des dossiers : le même geste, à un niveau plus bas"
+              - nom: devpy-m03-c.jpg
+                legende: "Une poupée contient une poupée : le même geste, à une taille plus petite"
+          - titre: "Le geste technique : aplatir une structure imbriquée à profondeur quelconque"
+            texte: >-
+              L'exercice de référence est l'aplatissement. On vous donne une structure faite de listes dans
+              des listes, sans savoir jusqu'où elle descend, et vous devez rendre la suite plate de ses
+              valeurs, dans l'ordre.
+
+              Lisez la fonction dans l'ordre où Python l'exécute. Elle parcourt les éléments du niveau
+              courant. Pour chaque élément, elle pose une question unique : est-ce encore une liste. Si oui,
+              elle se rappelle sur cet élément et étend le résultat avec ce que l'appel lui rend. Si non, elle
+              ajoute la valeur. Il n'y a rien d'autre, et c'est ce dépouillement qui fait la force du procédé.
+
+              Le cas de base n'est pas écrit explicitement ici, et c'est fréquent : quand la liste du niveau
+              courant est vide, la boucle ne s'exécute pas, la fonction rend une liste vide et la remontée
+              commence. Sachez le reconnaître, car un correcteur vous demandera où est votre cas de base.
+
+              Déroulez ensuite le même raisonnement sur une arborescence de fichiers avec pathlib. La
+              structure change, le squelette reste identique : traiter ce niveau, se rappeler sur les niveaux
+              inférieurs, remonter le résultat. Quand vous verrez ce squelette dans les deux cas, la
+              récursivité sera acquise.
+            tableaux:
+              - titre: "Boucle ou récursivité : le critère est la forme de la donnée"
+                entetes: [Situation, Le bon outil, Pourquoi]
+                lignes:
+                  - [Relevé de 200 000 lignes, boucle, "la donnée est plate, et la pile est limitée"]
+                  - [Réponse JSON profondément imbriquée, récursivité, la profondeur est inconnue]
+                  - [Arborescence de dossiers, récursivité, un dossier contient des dossiers]
+                  - ["Somme d'une colonne", boucle ou somme intégrée, aucun niveau à descendre]
+                  - [Même calcul répété sur les mêmes entrées, mémoire de calcul, la récursion nue recalcule tout]
+            code:
+              - titre: "aplatir.py, le meme squelette sur deux structures"
+                langage: python
+                source: |
+                  from pathlib import Path
+
+
+                  def aplatir(structure: list) -> list:
+                      valeurs = []
+                      for element in structure:
+                          if isinstance(element, list):
+                              valeurs.extend(aplatir(element))
+                          else:
+                              valeurs.append(element)
+                      return valeurs
+
+
+                  def peser_le_dossier(dossier: Path) -> int:
+                      """Taille totale en octets, dossiers imbriques compris."""
+                      total = 0
+                      for entree in dossier.iterdir():
+                          if entree.is_dir():
+                              total += peser_le_dossier(entree)
+                          else:
+                              total += entree.stat().st_size
+                      return total
+
+
+                  livraisons = [["CACAO-A", 120], [["CACAO-B", 80], [["CAFE-A", 45]]]]
+                  assert aplatir(livraisons) == ["CACAO-A", 120, "CACAO-B", 80, "CAFE-A", 45]
+                  print(peser_le_dossier(Path(".")), "octets")
           - titre: "La notion : modules, imports et le garde du point d'entrée"
             texte: >-
               Un module est simplement un fichier Python. L'importer exécute son contenu une première fois et
@@ -943,6 +1333,101 @@ blocs:
                   #       principal()
 
                   python -m transport.cli
+          - titre: "La notion : abstraction et décomposition, décider où couper"
+            texte: >-
+              Abstraire, c'est séparer ce que fait une chose de la manière dont elle le fait. Le chauffeur du
+              car sait que la pédale freine ; il ignore le circuit hydraulique, et c'est précisément ce qui
+              lui permet de conduire. Une fonction bien écrite offre la même promesse : son nom et ses
+              paramètres disent ce qu'elle fait, son corps est votre affaire et peut changer demain.
+
+              Cette séparation porte un nom en deux mots que vous entendrez toute votre carrière. L'interface
+              est le contrat visible : le nom, les paramètres, ce qui est rendu, ce qui est refusé.
+              L'implémentation est le moyen choisi aujourd'hui : la boucle, le dictionnaire, la bibliothèque
+              appelée. Le contrat engage les autres, le moyen n'engage que vous.
+
+              Décomposer, c'est découper un problème en morceaux dont chacun a un contrat clair. Le bon
+              critère de découpe n'est pas le nombre de lignes : c'est la phrase. Si vous pouvez décrire ce
+              que fait un morceau en une phrase sans employer le mot et puis, la découpe est bonne. Si votre
+              phrase contient trois et puis, vous avez un morceau qui en cache trois.
+
+              Un deuxième critère se vérifie sans discussion : les choses qui changent ensemble vivent
+              ensemble, les choses qui changent pour des raisons différentes vivent séparément. Le calcul du
+              tarif change quand la direction change ses prix ; l'affichage du tarif change quand le guichet
+              change de formulaire. Ce sont deux raisons différentes, donc deux endroits différents.
+
+              Une abstraction réussie se reconnaît à un test simple, et c'est celui que vous allez faire :
+              vous changez complètement l'intérieur, et personne autour n'a besoin d'être prévenu. Si le
+              changement oblige à modifier les appelants ou les tests, l'abstraction fuit, et le contrat était
+              mal posé.
+            figures:
+              - nom: python-fonction-entree-sortie.svg
+                legende: "Le contrat visible d'un côté, le moyen choisi de l'autre"
+          - titre: "Le geste technique : changer l'implémentation sans toucher aux appelants ni aux tests"
+            texte: >-
+              Voici l'exercice qui prouve une abstraction. Vous disposez d'une fonction qui donne le tarif
+              d'un trajet, d'un appelant qui l'utilise, et de tests qui décrivent les règles commerciales. La
+              première implémentation parcourt une liste de tarifs : elle est lente et personne ne s'en plaint
+              encore.
+
+              Remplacez-la par une implémentation qui construit un index une fois pour toutes. Vous n'avez le
+              droit de toucher ni à l'appelant, ni aux tests, ni à la signature de la fonction. Si vous y
+              parvenez, votre contrat était juste. Si vous devez modifier un test parce qu'il vérifiait un
+              détail interne, ce test vérifiait l'implémentation et non la règle : c'est lui qu'il faut
+              corriger, et la leçon est encore plus précieuse.
+
+              Observez dans le code que le changement reste entièrement enfermé derrière une seule ligne de
+              contrat. Le module expose tarif_fcfa ; qu'il y ait derrière une liste parcourue, un dictionnaire
+              ou, demain, une requête vers une base, l'appelant l'ignore et continue de fonctionner.
+
+              Rendez les deux versions, les tests inchangés qui passent sur l'une comme sur l'autre, et trois
+              lignes qui nomment ce qui était l'interface et ce qui était l'implémentation. Cette distinction,
+              posée dès maintenant, est exactement ce qui rendra lisible l'architecture en couches de la
+              dernière semaine du parcours.
+            tableaux:
+              - titre: "Interface ou implémentation : qui a le droit de changer"
+                entetes: [Élément, Nature, Qui est prévenu si cela change]
+                lignes:
+                  - [Le nom de la fonction, interface, tous les appelants]
+                  - [Les paramètres et leur ordre, interface, tous les appelants]
+                  - [Le type rendu et les refus, interface, tous les appelants]
+                  - [La boucle ou le dictionnaire, implémentation, personne]
+                  - ["Le nom d'une variable interne", implémentation, personne]
+            code:
+              - titre: "tarifs.py, un contrat stable sur deux implementations"
+                langage: python
+                source: |
+                  GRILLE = [
+                      ("Abidjan", "Bouake", 7_000),
+                      ("Abidjan", "Korhogo", 12_500),
+                      ("Bouake", "Korhogo", 6_000),
+                  ]
+
+
+                  # Premiere implementation : on parcourt la grille a chaque demande.
+                  def tarif_fcfa(depart: str, arrivee: str) -> int:
+                      for ville_depart, ville_arrivee, prix_fcfa in GRILLE:
+                          if (ville_depart, ville_arrivee) == (depart, arrivee):
+                              return prix_fcfa
+                      raise ValueError(f"aucun tarif pour {depart} vers {arrivee}")
+
+
+                  # Deuxieme implementation : on construit l'index une fois. Meme contrat, meme nom.
+                  _INDEX = {(depart, arrivee): prix for depart, arrivee, prix in GRILLE}
+
+
+                  def tarif_fcfa(depart: str, arrivee: str) -> int:  # noqa: F811
+                      try:
+                          return _INDEX[(depart, arrivee)]
+                      except KeyError:
+                          raise ValueError(f"aucun tarif pour {depart} vers {arrivee}") from None
+
+
+                  # L'appelant et les tests ne changent pas d'une ligne.
+                  assert tarif_fcfa("Abidjan", "Bouake") == 7_000
+                  try:
+                      tarif_fcfa("Abidjan", "Daloa")
+                  except ValueError as refus:
+                      print(refus)
           - titre: "À la main : le tarificateur de la compagnie"
             texte: >-
               Premier temps, écrivez la fonction de tarif avec ses validations, et appelez-la depuis le même
@@ -1363,6 +1848,213 @@ blocs:
               Quatrième temps, écrivez la représentation lisible de vos objets et affichez un producteur avec
               ses lots. Le résultat doit se lire comme une ligne de registre de la coopérative, pas comme une
               adresse mémoire.
+          - titre: "La notion : sous la liste et le dictionnaire, quatre structures à connaître"
+            texte: >-
+              Vous employez depuis trois semaines des listes et des dictionnaires sans savoir ce qu'il y a
+              dessous. Cette semaine, vous avez appris à écrire des classes : c'est le moment de construire
+              vous-même les quatre structures que tout développeur doit savoir reconnaître, parce qu'elles
+              décrivent des situations que vous rencontrerez toutes les semaines.
+
+              La pile sert quand le dernier arrivé doit être le premier servi. Annuler la dernière saisie du
+              guichet, remonter une suite d'appels de fonctions, fermer des balises dans l'ordre inverse de
+              leur ouverture : toutes ces situations sont des piles.
+
+              La file sert quand le premier arrivé doit être le premier servi. La file d'attente du guichet de
+              la coopérative de Gagnoa, les messages à traiter dans l'ordre d'arrivée, les tâches d'un
+              traitement par lots : ce sont des files.
+
+              La liste chaînée relie des maillons, chacun pointant vers le suivant. Elle vous apprend ce qu'un
+              tableau n'est pas : insérer au milieu d'une liste chaînée ne coûte rien, mais atteindre le
+              millième élément coûte mille pas, là où la liste Python y accède d'un seul coup.
+
+              L'arbre décrit une hiérarchie : les catégories de produits d'une pharmacie, l'organigramme d'une
+              coopérative, les dossiers d'un disque. Dès qu'une chose contient des choses de même nature, vous
+              avez un arbre, et les structures imbriquées des fichiers JSON en sont.
+            figures:
+              - nom: python-liste-ou-dictionnaire.svg
+                legende: "Chaque structure répond à une question : que faut-il retrouver, et dans quel ordre"
+            tableaux:
+              - titre: "Le coût de chaque opération, selon la structure"
+                entetes: [Structure, Ajouter, Retirer, Chercher une valeur, Situation type]
+                lignes:
+                  - [Pile, constant, constant au sommet, linéaire, annuler la dernière action]
+                  - [File, constant, constant en tête, linéaire, "servir dans l'ordre d'arrivée"]
+                  - [Liste chaînée, constant en tête, constant si on tient le maillon, linéaire, insérer souvent au milieu]
+                  - [Arbre, selon la profondeur, selon la profondeur, parcours complet, hiérarchie de catégories]
+                  - [Dictionnaire Python, constant, constant, constant, retrouver par identifiant]
+          - titre: "Le geste technique : la pile et la file, écrites avec vos classes"
+            texte: >-
+              Les deux structures tiennent en une vingtaine de lignes chacune. Remarquez que l'attribut qui
+              porte les éléments commence par un souligné : il est interne, personne ne doit y toucher de
+              l'extérieur. C'est l'encapsulation de cette semaine appliquée à une structure réelle.
+
+              Remarquez aussi que la pile refuse de dépiler quand elle est vide, en levant une erreur claire,
+              plutôt que de rendre une valeur vide qui ferait planter le programme trois fonctions plus loin.
+              La file s'appuie sur deque, parce que retirer en tête d'une liste Python oblige la machine à
+              décaler tous les éléments restants : un coût linéaire là où deque reste constant.
+
+              La méthode spéciale de longueur, vue plus haut cette semaine, rend vos structures utilisables
+              comme les types natifs : len fonctionne, et un objet vide est reconnu comme faux dans un test.
+            code:
+              - titre: "structures.py, la pile et la file"
+                langage: python
+                source: |
+                  from collections import deque
+
+
+                  class Pile:
+                      """Dernier arrive, premier servi : annuler la derniere saisie du guichet."""
+
+                      def __init__(self) -> None:
+                          self._elements: list = []
+
+                      def empiler(self, element) -> None:
+                          self._elements.append(element)
+
+                      def depiler(self):
+                          if not self._elements:
+                              raise IndexError("pile vide : rien a annuler")
+                          return self._elements.pop()
+
+                      def sommet(self):
+                          return self._elements[-1] if self._elements else None
+
+                      def __len__(self) -> int:
+                          return len(self._elements)
+
+
+                  class File:
+                      """Premier arrive, premier servi : la file d'attente du guichet de Gagnoa."""
+
+                      def __init__(self) -> None:
+                          self._elements: deque = deque()
+
+                      def enfiler(self, element) -> None:
+                          self._elements.append(element)
+
+                      def defiler(self):
+                          if not self._elements:
+                              raise IndexError("file vide : aucun producteur en attente")
+                          return self._elements.popleft()
+
+                      def __len__(self) -> int:
+                          return len(self._elements)
+          - titre: "Le geste technique : la liste chaînée, pour comprendre ce qu'un tableau n'est pas"
+            texte: >-
+              La liste chaînée ne range pas ses éléments côte à côte en mémoire : chaque maillon tient sa
+              valeur et l'adresse du maillon suivant. Ajouter en tête revient à créer un maillon qui pointe
+              vers l'ancienne tête : trois lignes, un coût constant, quelle que soit la taille.
+
+              Le revers est immédiat : il n'existe pas d'accès direct au centième élément. Pour l'atteindre,
+              il faut suivre cent flèches. C'est exactement pour cela que les listes Python, elles, rangent
+              leurs éléments côte à côte et vous donnent le centième sans détour.
+
+              La méthode de parcours emploie le mot clé yield, vu la semaine prochaine : elle rend les valeurs
+              une par une, sans jamais construire de liste intermédiaire. Écrire soi-même cette structure est
+              la façon la plus rapide de comprendre pourquoi certaines opérations sont gratuites et d'autres
+              coûteuses.
+            code:
+              - titre: "structures.py, la liste chaînée"
+                langage: python
+                source: |
+                  from dataclasses import dataclass
+
+
+                  @dataclass
+                  class Maillon:
+                      valeur: object
+                      suivant: "Maillon | None" = None
+
+
+                  class ListeChainee:
+                      """Une suite de maillons : insertion en tete gratuite, acces par rang couteux."""
+
+                      def __init__(self) -> None:
+                          self.tete: Maillon | None = None
+
+                      def ajouter_en_tete(self, valeur) -> None:
+                          self.tete = Maillon(valeur, self.tete)
+
+                      def __iter__(self):
+                          courant = self.tete
+                          while courant is not None:
+                              yield courant.valeur
+                              courant = courant.suivant
+
+                      def __len__(self) -> int:
+                          return sum(1 for _ in self)
+
+
+                  chaine = ListeChainee()
+                  for lot in ("LOT-003", "LOT-002", "LOT-001"):
+                      chaine.ajouter_en_tete(lot)
+                  print(list(chaine))   # ['LOT-001', 'LOT-002', 'LOT-003']
+          - titre: "Le geste technique : l'arbre des catégories, et le parcours qui s'appelle lui-même"
+            texte: >-
+              La pharmacie range ses produits en catégories, qui contiennent des sous-catégories, qui
+              contiennent elles-mêmes des sous-catégories. Aucune boucle simple ne sait compter les produits
+              d'une telle structure, parce que personne ne connaît à l'avance le nombre de niveaux.
+
+              La solution tient en une idée : le total d'une catégorie, c'est ses propres produits plus le
+              total de chacune de ses sous-catégories. La méthode s'appelle elle-même, et s'arrête d'elle-même
+              quand une catégorie n'a plus de sous-catégorie. C'est la récursivité, et un arbre est l'endroit
+              où elle devient évidente plutôt qu'acrobatique.
+
+              Le parcours rend chaque catégorie avec sa profondeur, ce qui suffit à afficher l'arbre indenté,
+              à l'exporter, ou à chercher dedans. Le mot clé yield from passe la main à l'appel suivant : la
+              chaîne de parcours se construit toute seule.
+            figures:
+              - nom: devpy-m04-c.jpg
+                legende: "Une hiérarchie de rayons : chaque niveau contient des niveaux de même nature"
+            code:
+              - titre: "structures.py, l'arbre des catégories"
+                langage: python
+                source: |
+                  from dataclasses import dataclass, field
+
+
+                  @dataclass
+                  class Categorie:
+                      nom: str
+                      produits: int = 0
+                      sous_categories: list["Categorie"] = field(default_factory=list)
+
+                      def total_produits(self) -> int:
+                          return self.produits + sum(s.total_produits() for s in self.sous_categories)
+
+                      def parcourir(self, profondeur: int = 0):
+                          yield profondeur, self
+                          for sous in self.sous_categories:
+                              yield from sous.parcourir(profondeur + 1)
+
+
+                  rayon = Categorie("Pharmacie", sous_categories=[
+                      Categorie("Antipaludiques", produits=42),
+                      Categorie("Hygiene", sous_categories=[
+                          Categorie("Savons", produits=18),
+                          Categorie("Pansements", produits=25),
+                      ]),
+                  ])
+
+                  print(rayon.total_produits())               # 85
+                  for profondeur, categorie in rayon.parcourir():
+                      print("  " * profondeur + categorie.nom)
+          - titre: "À la main : structures.py, testé et chiffré"
+            texte: >-
+              Premier temps : rassemblez les quatre structures dans un seul fichier structures.py, chacune
+              avec sa docstring qui dit en une phrase à quoi elle sert et dans quelle situation la choisir.
+
+              Deuxième temps : écrivez pour chacune au moins trois tests. Le cas nominal, le cas vide qui doit
+              lever une erreur nommée, et un cas de bord : dépiler après avoir tout dépilé, défiler une file à
+              un seul élément, parcourir un arbre sans sous-catégorie.
+
+              Troisième temps : mesurez. Construisez une liste chaînée de dix mille maillons et chronométrez
+              l'accès au dernier élément, puis faites la même mesure sur une liste Python. Notez les deux
+              chiffres. Vous venez de rendre visible la différence entre un coût constant et un coût linéaire,
+              et la semaine 06 vous donnera le vocabulaire pour la nommer.
+
+              Quatrième temps : complétez le tableau des coûts de cette semaine avec vos propres mesures, et
+              ajoutez une ligne par structure disant la situation métier où vous la choisiriez.
           - titre: Les erreurs que vous allez voir cette semaine
             texte: >-
               Les trois premières produisent une trace immédiate. La quatrième et la cinquième sont
@@ -1754,6 +2446,184 @@ blocs:
                           paiement["montant_fcfa"],
                           masquer_numero(str(paiement.get("telephone", ""))),
                       )
+          - titre: "La notion : les expressions régulières, et ce qu'elles ne doivent pas faire"
+            texte: >-
+              Un journal applicatif, un relevé d'opérateur mobile, un export de caisse : ces fichiers arrivent
+              en texte brut, et chaque ligne suit une forme régulière sans être un vrai format structuré.
+              L'expression régulière est l'outil fait pour cela : elle décrit une forme, et dit si une chaîne
+              lui correspond, en extrayant les morceaux qui vous intéressent.
+
+              Les briques tiennent en quelques signes. Une classe de caractères entre crochets accepte un
+              caractère parmi plusieurs. Un quantificateur dit combien de fois. Un groupe entre parenthèses
+              capture un morceau que vous récupérerez ensuite, et un groupe nommé lui donne un nom lisible
+              plutôt qu'un numéro.
+
+              Une expression régulière cherche une forme, jamais un sens. Elle ne doit donc jamais servir à
+              analyser du HTML, du XML ou du JSON, qui sont des structures imbriquées : employez l'analyseur
+              prévu pour chacun. Elle ne doit pas non plus servir à découper un CSV, où un point-virgule peut
+              se trouver à l'intérieur d'un champ entre guillemets, et où le module csv fait le travail
+              correctement.
+
+              Dernier point, et il décide de la maintenabilité : une expression régulière écrite d'un seul
+              bloc devient illisible en trois semaines. Le mode commenté permet de l'écrire sur plusieurs
+              lignes, avec un commentaire par morceau. Un relecteur peut alors la corriger sans la réécrire.
+            figures:
+              - nom: python-normaliser-chaine.svg
+                legende: "Décrire la forme attendue, puis extraire les morceaux utiles"
+            tableaux:
+              - titre: Les briques qui couvrent la plupart des besoins
+                entetes: [Écriture, "Ce qu'elle accepte", Exemple ivoirien]
+                lignes:
+                  - ["'[0-9]{4}'", exactement quatre chiffres, "l'année 2026"]
+                  - ["'[A-Z]{3}[0-9]{2}'", trois majuscules puis deux chiffres, le code agence GAG07]
+                  - ["' +'", un ou plusieurs espaces, la séparation entre colonnes]
+                  - ["'(?P<montant>[0-9]+)'", "un nombre, capturé sous un nom", le montant en FCFA]
+                  - ["'(OK|REFUS)'", "l'un ou l'autre", "le statut d'une opération"]
+                  - ["'^' et '$'", le début et la fin de la ligne, refuser une ligne tronquée]
+          - titre: "Le geste technique : extraire les champs d'un journal brut vers un CSV"
+            texte: >-
+              L'expression est compilée une seule fois, hors de la boucle : la compiler à chaque ligne sur un
+              fichier de cent mille lignes se paie cher. Elle est écrite en mode commenté, un morceau par
+              ligne, avec le format attendu en commentaire.
+
+              La fonction ne fait pas qu'extraire : elle compte ce qu'elle retient et ce qu'elle ignore, puis
+              rend les deux chiffres. Sans ce comptage, un changement de format chez l'opérateur produirait un
+              fichier vide sans que personne ne s'en aperçoive avant la fin du mois.
+
+              Notez le geste de sécurité : les groupes nommés rendent le code lisible, et surtout la fonction
+              n'écrit que les champs attendus. Recopier une ligne entière de journal dans un fichier de
+              travail, c'est risquer d'y emporter un numéro de téléphone ou un identifiant de compte.
+            code:
+              - titre: "extraction.py, du journal brut au CSV"
+                langage: python
+                source: |
+                  import csv
+                  import re
+
+                  LIGNE = re.compile(
+                      r"""
+                      ^(?P<date>\d{4}-\d{2}-\d{2})        # 2026-03-14
+                      \s+(?P<heure>\d{2}:\d{2}:\d{2})     # 08:41:02
+                      \s+(?P<agence>[A-Z]{3}\d{2})        # GAG07
+                      \s+montant=(?P<montant>\d+)         # en FCFA, entier
+                      \s+statut=(?P<statut>OK|REFUS)$
+                      """,
+                      re.VERBOSE,
+                  )
+                  COLONNES = ("date", "heure", "agence", "montant", "statut")
+
+
+                  def extraire(journal: str, sortie_csv: str) -> tuple[int, int]:
+                      retenues = ignorees = 0
+                      with open(journal, encoding="utf-8") as entree, \
+                           open(sortie_csv, "w", encoding="utf-8", newline="") as sortie:
+                          plume = csv.writer(sortie)
+                          plume.writerow(COLONNES)
+                          for ligne in entree:
+                              trouve = LIGNE.match(ligne.strip())
+                              if trouve is None:
+                                  ignorees += 1
+                                  continue
+                              plume.writerow([trouve.group(nom) for nom in COLONNES])
+                              retenues += 1
+                      return retenues, ignorees
+          - titre: "La notion : assertions, invariants et contrats"
+            texte: >-
+              Un invariant est une phrase qui doit rester vraie pendant toute la vie d'un objet. Le solde d'un
+              compte de coopérative n'est jamais négatif. Une pile contient zéro élément ou davantage, jamais
+              moins. Un lot pesé a un poids strictement positif. Écrire ces phrases, puis les vérifier dans le
+              code, transforme un bug silencieux en arrêt immédiat à l'endroit exact de la faute.
+
+              L'assertion et l'exception métier ne jouent pas le même rôle, et les confondre crée une faille.
+              L'exception métier traite une situation prévue, venue de l'extérieur : une saisie fausse, un
+              fichier mal formé, un solde insuffisant. L'assertion vérifie une promesse interne que votre
+              propre code doit tenir : si elle échoue, c'est un bug de programmation, pas une faute de
+              l'utilisateur.
+
+              La règle qui en découle est absolue : une assertion ne valide jamais une entrée utilisateur. Les
+              assertions disparaissent quand l'interpréteur tourne en mode optimisé, avec l'option -O. Un
+              contrôle de sécurité écrit avec assert disparaît donc en production, et c'est exactement ainsi
+              que naissent des failles de validation.
+
+              Où poser les contrôles ? Aux frontières. Vous validez une fois, à l'entrée, ce qui vient de
+              l'extérieur, avec de vraies exceptions. À l'intérieur, vous posez des assertions là où une
+              promesse doit tenir, et vous laissez le coeur du code travailler sur des données déjà sûres.
+            figures:
+              - nom: python-double-validation.svg
+                legende: "L'extérieur se valide avec des exceptions, l'intérieur se vérifie avec des assertions"
+            tableaux:
+              - titre: "Assertion ou exception : le choix se décide en une question"
+                entetes: [La situation, "L'outil", Pourquoi]
+                lignes:
+                  - [Un montant saisi est négatif, exception métier, "faute prévue, venue de l'extérieur"]
+                  - [Un fichier reçu est mal formé, exception métier, le monde extérieur décide]
+                  - ["Un droit d'accès à vérifier", "exception, jamais assert", une assertion disparaît en mode optimisé]
+                  - [Le solde interne devient négatif, assertion, "promesse interne rompue, donc un bug"]
+                  - ["Une liste triée cesse de l'être", assertion, "invariant d'algorithme"]
+          - titre: "Le geste technique : poser un invariant là où il protège vraiment"
+            texte: >-
+              Le compte vérifie son invariant à la fin de chaque opération qui touche au solde. Si une
+              évolution future introduit un chemin qui le rend négatif, le programme s'arrête à la ligne
+              fautive, et non trois écrans plus loin dans un rapport comptable incompréhensible.
+
+              Remarquez la répartition : le retrait refuse poliment, avec une exception métier nommée, quand
+              le montant dépasse le solde, parce que c'est une situation normale de la vie de la coopérative.
+              L'assertion, elle, ne parle qu'au développeur.
+
+              Remarquez aussi le message de l'assertion. Une assertion nue vous donne seulement le numéro de
+              ligne ; une assertion avec message vous donne la promesse rompue, ce qui divise par dix le temps
+              de diagnostic.
+            code:
+              - titre: "compte.py, une exception dehors, une assertion dedans"
+                langage: python
+                source: |
+                  class SoldeInsuffisant(Exception):
+                      """Le retrait demande depasse le solde disponible du compte."""
+
+
+                  class CompteCooperative:
+                      def __init__(self, solde_fcfa: int) -> None:
+                          if solde_fcfa < 0:
+                              raise ValueError("un solde initial ne peut pas etre negatif")
+                          self._solde_fcfa = solde_fcfa
+                          self._verifier()
+
+                      def deposer(self, montant_fcfa: int) -> None:
+                          if montant_fcfa <= 0:
+                              raise ValueError("un depot doit etre strictement positif")
+                          self._solde_fcfa += montant_fcfa
+                          self._verifier()
+
+                      def retirer(self, montant_fcfa: int) -> None:
+                          if montant_fcfa > self._solde_fcfa:
+                              raise SoldeInsuffisant(
+                                  f"retrait de {montant_fcfa} FCFA pour un solde de {self._solde_fcfa} FCFA"
+                              )
+                          self._solde_fcfa -= montant_fcfa
+                          self._verifier()
+
+                      def _verifier(self) -> None:
+                          assert self._solde_fcfa >= 0, "invariant rompu : le solde est devenu negatif"
+          - titre: "À la main : l'extracteur de journal et les invariants du domaine"
+            texte: >-
+              Premier temps : récupérez un journal brut, le vôtre ou celui fourni, et écrivez l'extracteur. Il
+              doit rendre le nombre de lignes retenues et ignorées, et refuser silencieusement de produire un
+              CSV vide : si plus de dix pour cent des lignes sont ignorées, il le signale sur la sortie
+              d'erreur.
+
+              Deuxième temps : écrivez l'expression régulière en mode commenté, avec un commentaire par
+              morceau, et trois tests : une ligne conforme, une ligne tronquée, une ligne au format ancien.
+
+              Troisième temps : reprenez les structures du module précédent et le domaine de la coopérative,
+              et écrivez pour chaque classe la phrase de son invariant en français, dans la docstring, puis
+              l'assertion qui la vérifie.
+
+              Quatrième temps : la preuve par l'erreur. Cassez volontairement une règle dans votre code,
+              constatez que l'assertion s'arrête au bon endroit, puis remettez le code en état. Une assertion
+              qui n'a jamais échoué ne prouve rien.
+            figures:
+              - nom: devpy-m05-c.jpg
+                legende: "Chercher une forme précise dans un texte brut, ligne après ligne"
           - titre: Les erreurs que vous allez voir cette semaine
             texte: >-
               Ces cinq messages reviendront. Apprenez à les traduire immédiatement : le type nomme la famille
@@ -2091,6 +2961,132 @@ blocs:
                               yield ligne["montant"]
 
                   total = sum(gros_paiements(paiements))
+          - titre: "La notion : le grand O, ou comment nommer le coût d'un programme"
+            texte: >-
+              En semaine 01, vous avez chronométré trois versions d'un même calcul. En semaine 02, vous avez
+              vu qu'un ensemble répond instantanément là où une liste cherche élément par élément. En semaine
+              04, vous avez mesuré l'accès au dernier maillon d'une liste chaînée. Il est temps de donner un
+              nom à ce que vous avez observé.
+
+              Le grand O décrit la façon dont le temps grandit quand les données grandissent. Il ne mesure pas
+              des secondes, qui dépendent de la machine : il mesure une forme de croissance. Dire qu'un
+              traitement est linéaire, c'est dire que doubler les données double le temps. Dire qu'il est
+              quadratique, c'est dire que doubler les données multiplie le temps par quatre.
+
+              La différence devient brutale avec le volume. Sur mille lignes, un traitement quadratique passe
+              inaperçu. Sur cinq cent mille lignes de ventes, il ne finit pas de la journée, pendant que la
+              version linéaire rend la main en une seconde. Le code est pourtant presque identique, et c'est
+              bien pour cela qu'il faut savoir lire le coût au lieu de l'essayer.
+
+              Une dernière précision, qui évite beaucoup d'erreurs de jugement : le grand O ignore les
+              constantes et les termes secondaires. Un traitement en deux parcours reste linéaire. Entre deux
+              algorithmes de même classe, c'est la mesure, et elle seule, qui tranche.
+            figures:
+              - nom: python-boucle-for.svg
+                legende: "Une boucle dans une boucle : le nombre de tours se multiplie, pas s'additionne"
+            tableaux:
+              - titre: "Les six classes à reconnaître, et ce qu'elles donnent sur 500 000 lignes"
+                entetes: [Classe, Nom courant, Exemple typique, Ordre de grandeur du temps]
+                lignes:
+                  - [O(1), constant, "lire une clé d'un dictionnaire", immédiat]
+                  - [O(log n), logarithmique, "recherche dichotomique, index de base", "immédiat, environ 19 étapes"]
+                  - [O(n), linéaire, parcourir un fichier une fois, "moins d'une seconde"]
+                  - [O(n log n), quasi linéaire, trier une liste, quelques secondes]
+                  - [O(n au carré), quadratique, une boucle dans une boucle, plusieurs jours]
+                  - [O(2 puissance n), exponentiel, essayer toutes les combinaisons, hors de portée]
+          - titre: "Le geste technique : reconnaître une boucle dans une boucle, même déguisée"
+            texte: >-
+              La forme visible est facile : deux for imbriqués. La forme déguisée est celle qui fait tomber la
+              plupart des programmes en production, parce que la deuxième boucle est cachée dans une opération
+              qui a l'air gratuite.
+
+              Dans la version lente ci-dessous, il n'y a qu'un seul for. Mais le test d'appartenance à une
+              liste parcourt cette liste élément par élément : c'est la deuxième boucle, invisible. Le coût
+              total est quadratique. Dans la version rapide, le même test porte sur un ensemble, qui répond
+              par hachage en temps constant, et le coût redevient linéaire.
+
+              Les autres déguisements à connaître se repèrent au même raisonnement : construire une chaîne en
+              la concaténant dans une boucle recopie tout le texte à chaque tour ; retirer en tête d'une liste
+              décale tous les éléments restants ; trier à l'intérieur d'une boucle trie n fois.
+            code:
+              - titre: "doublons.py, la même règle, deux coûts"
+                langage: python
+                source: |
+                  def doublons_lent(codes: list[str]) -> list[str]:
+                      vus: list[str] = []
+                      doublons: list[str] = []
+                      for code in codes:            # n tours
+                          if code in vus:           # parcours de vus : jusqu'a n comparaisons
+                              doublons.append(code)
+                          else:
+                              vus.append(code)
+                      return doublons               # cout total : n au carre
+
+
+                  def doublons_rapide(codes: list[str]) -> list[str]:
+                      vus: set[str] = set()
+                      doublons: list[str] = []
+                      for code in codes:            # n tours
+                          if code in vus:           # test par hachage : cout constant
+                              doublons.append(code)
+                          else:
+                              vus.add(code)
+                      return doublons               # cout total : n
+          - titre: "Le geste technique : mesurer d'abord, nommer ensuite"
+            texte: >-
+              La bonne méthode tient en trois temps. Mesurez sur trois tailles, par exemple mille, dix mille
+              et cent mille. Regardez comment le temps grandit quand la taille est multipliée par dix. Puis
+              nommez : un temps multiplié par dix est linéaire, un temps multiplié par cent est quadratique,
+              un temps à peine changé est logarithmique ou constant.
+
+              Ce protocole vous évite deux erreurs opposées. La première est d'optimiser un code dont personne
+              n'a mesuré le coût, au détriment de la lisibilité. La seconde est de croire qu'un programme
+              rapide sur un échantillon le restera sur la vraie base.
+
+              Le tableau de mesures se conserve dans le dépôt, à côté du code. Le jour où un collègue
+              proposera une optimisation, la discussion portera sur des chiffres.
+            figures:
+              - nom: devpy-m06-c.jpg
+                legende: "Doubler le volume ne double pas toujours le temps : il faut mesurer pour le savoir"
+            code:
+              - titre: "mesure.py, trois tailles, une conclusion"
+                langage: python
+                source: |
+                  import random
+                  import string
+                  import timeit
+
+                  from doublons import doublons_lent, doublons_rapide
+
+
+                  def echantillon(taille: int) -> list[str]:
+                      return ["".join(random.choices(string.ascii_uppercase, k=6)) for _ in range(taille)]
+
+
+                  for taille in (1_000, 10_000, 100_000):
+                      codes = echantillon(taille)
+                      rapide = timeit.timeit(lambda: doublons_rapide(codes), number=1)
+                      print(f"{taille:>7} lignes  rapide : {rapide:.4f} s")
+
+                  for taille in (1_000, 10_000):
+                      codes = echantillon(taille)
+                      lent = timeit.timeit(lambda: doublons_lent(codes), number=1)
+                      print(f"{taille:>7} lignes  lent   : {lent:.4f} s")
+          - titre: "À la main : annoter les coûts, puis corriger la seule fonction trop lente"
+            texte: >-
+              Premier temps : prenez la base de code fournie, six fonctions qui traitent le relevé de ventes.
+              Lisez-les sans les exécuter et annotez chacune d'un commentaire qui donne sa classe de coût et
+              la phrase qui le justifie, par exemple un parcours du relevé pour chaque produit du catalogue.
+
+              Deuxième temps : mesurez sur mille, dix mille et cent mille lignes. Comparez vos annotations aux
+              mesures. Si une mesure contredit votre lecture, c'est votre lecture qui doit changer, et vous
+              devez savoir dire pourquoi.
+
+              Troisième temps : une seule des six fonctions est quadratique. Corrigez-la, sans toucher aux
+              autres, et sans changer son comportement : les tests existants doivent rester verts.
+
+              Quatrième temps : remesurez et consignez le gain. Un rapport de trois lignes suffit : coût
+              avant, coût après, et ce que cela change sur la vraie base de cinq cent mille lignes.
           - titre: Les erreurs que vous allez voir cette semaine
             texte: >-
               Les erreurs idiomatiques sont sournoises : la plupart ne lèvent aucune exception. Un générateur
@@ -2408,6 +3404,159 @@ blocs:
                               base_url=os.environ.get("COOP_BASE_URL", "https://api.exemple.test"),
                               delai_s=float(os.environ.get("COOP_DELAI_S", "5")),
                           )
+          - titre: "La notion : un programme vit dans un système, pas dans un éditeur"
+            texte: >-
+              Votre outil ne tournera pas toujours dans votre éditeur. Il tournera dans un terminal, lancé par
+              un collègue, par une tâche programmée de nuit, ou par une chaîne d'intégration. Dans tous ces
+              cas, trois choses décident de son comportement, et aucune n'est dans votre code.
+
+              Les chemins d'abord. Un chemin absolu part de la racine du disque et désigne toujours le même
+              endroit. Un chemin relatif part du dossier courant, celui où la commande a été lancée, qui n'est
+              presque jamais celui où vit votre fichier. C'est la première cause de l'erreur de fichier
+              introuvable qui n'apparaît que sur le serveur.
+
+              Les variables d'environnement ensuite. Ce sont des valeurs que le système transmet au programme
+              au moment de son lancement : le chemin des exécutables, la langue, et vos propres réglages.
+              C'est par elles que passent les secrets, comme vous l'avez vu plus haut cette semaine, parce
+              qu'elles ne laissent aucune trace dans le dépôt.
+
+              Le processus enfin. Chaque programme lancé reçoit un dossier courant, un environnement, trois
+              canaux, et rend un code de retour en s'arrêtant. Ce contrat minimal est le même pour tous les
+              outils du système, et c'est précisément ce qui permet de les assembler.
+            tableaux:
+              - titre: Le contrat que tout programme de ligne de commande doit respecter
+                entetes: [Élément, À quoi il sert, La faute à ne pas commettre]
+                lignes:
+                  - [Entrée standard, "recevoir des données d'un autre outil", "n'accepter qu'un chemin de fichier"]
+                  - [Sortie standard, "produire le résultat, et lui seul", "y mélanger des messages d'avancement"]
+                  - ["Sortie d'erreur", "messages, avertissements, diagnostics", écrire les erreurs sur la sortie standard]
+                  - [Code de retour, "dire si tout s'est bien passé", "rendre toujours zéro, même après un échec"]
+                  - ["Variables d'environnement", configurer sans recompiler, mettre la configuration en dur dans le code]
+                  - [Arguments, "dire quoi faire, sur quoi", poser des questions interactives dans un script]
+          - titre: "Le geste technique : parler par l'entrée et la sortie standard"
+            texte: >-
+              L'outil ci-dessous lit des montants sur l'entrée standard, un par ligne, écrit le total sur la
+              sortie standard, et met ses messages d'erreur sur la sortie d'erreur. Il rend zéro si tout va
+              bien, un s'il n'a rien reçu, deux s'il a rencontré une ligne illisible.
+
+              Cette répartition n'est pas une convention décorative. Elle permet à un collègue de récupérer le
+              total dans un fichier sans y trouver vos messages, et à une tâche programmée de savoir si elle
+              doit alerter. Un outil qui écrit ses avertissements sur la sortie standard pollue le résultat de
+              tous ceux qui l'utiliseront après lui.
+
+              Le point d'entrée déclaré dans le pyproject, vu plus haut cette semaine, transforme cette
+              fonction en commande du système. L'appel à SystemExit transmet le code de retour, qui est le
+              seul moyen qu'a votre programme de dire non à celui qui l'a lancé.
+            figures:
+              - nom: python-flux-ou-liste.svg
+                legende: "Lire au fil de l'eau permet de brancher l'outil derrière n'importe quel autre"
+            code:
+              - titre: "ventes/cli.py, un outil qui s'intègre partout"
+                langage: python
+                source: |
+                  import os
+                  import sys
+
+
+                  def principal() -> int:
+                      devise = os.environ.get("VENTES_DEVISE", "FCFA")
+                      total = 0
+                      lignes = 0
+                      for brute in sys.stdin:
+                          ligne = brute.strip()
+                          if not ligne:
+                              continue
+                          try:
+                              total += int(ligne)
+                          except ValueError:
+                              print(f"ligne illisible : {ligne}", file=sys.stderr)
+                              return 2
+                          lignes += 1
+                      if lignes == 0:
+                          print("aucun montant recu", file=sys.stderr)
+                          return 1
+                      print(f"{total} {devise}")
+                      return 0
+
+
+                  if __name__ == "__main__":
+                      raise SystemExit(principal())
+          - titre: "Le geste technique : tubes, redirections, codes de retour et exécution à distance"
+            texte: >-
+              Le tube branche la sortie d'un outil sur l'entrée du suivant. Chacun ignore tout de l'autre, et
+              c'est ce qui fait leur force : votre outil de totalisation se branche derrière n'importe quelle
+              source de montants, aujourd'hui un fichier, demain une requête, sans une ligne de code de plus.
+
+              La redirection envoie la sortie dans un fichier, et sépare le résultat des messages. Le code de
+              retour se lit juste après l'exécution ; il vaut zéro quand tout va bien, et c'est lui que
+              regardent les tâches programmées et les chaînes d'intégration pour décider d'alerter.
+
+              L'exécution à distance par SSH applique exactement le même contrat sur une autre machine. Si
+              votre outil respecte l'entrée, la sortie et le code de retour, il tourne sur le serveur de la
+              coopérative sans rien changer, et son résultat revient sur votre terminal.
+            code:
+              - titre: "La même commande, quatre usages"
+                langage: bash
+                source: |
+                  # 1. un tube : extraire la colonne des montants, puis totaliser
+                  cut -d';' -f4 ventes.csv | tail -n +2 | ventes-total
+
+                  # 2. une redirection : le resultat dans un fichier, les messages dans un autre
+                  ventes-total < montants.txt > total.txt 2> erreurs.txt
+
+                  # 3. le code de retour : zero si tout va bien, deux si une ligne est illisible
+                  ventes-total < montants.txt
+                  echo "code de retour : $?"
+
+                  # 4. une variable d'environnement, puis la meme commande sur le serveur
+                  VENTES_DEVISE=XOF ventes-total < montants.txt
+                  ssh collecte@serveur-cooperative 'ventes-total < /var/data/montants.txt'
+          - titre: "Le geste technique : vérifier le code de retour par un test"
+            texte: >-
+              Un comportement que personne ne teste finit par disparaître. Le code de retour est le premier à
+              se perdre, parce qu'il ne se voit pas quand on lance l'outil à la main.
+
+              Le test lance le programme comme le ferait le système, lui donne son entrée, et vérifie les
+              trois choses qui comptent : ce qui sort sur la sortie standard, ce qui sort sur la sortie
+              d'erreur, et le code de retour. Rien n'est simulé, c'est le vrai contrat qui est vérifié.
+
+              Remarquez l'emploi de l'interpréteur courant plutôt que du mot python : sur la machine d'un
+              collègue ou dans la chaîne d'intégration, la commande python peut désigner un autre
+              interpréteur, et le test échouerait pour une mauvaise raison.
+            figures:
+              - nom: devpy-m07-c.jpg
+                legende: "Un tube relie deux outils qui ne se connaissent pas et n'ont pas à se connaître"
+            code:
+              - titre: "tests/test_cli.py, le contrat vérifié"
+                langage: python
+                source: |
+                  import subprocess
+                  import sys
+
+
+                  def executer(entree: str) -> subprocess.CompletedProcess:
+                      return subprocess.run(
+                          [sys.executable, "-m", "ventes.cli"],
+                          input=entree, capture_output=True, text=True,
+                      )
+
+
+                  def test_le_total_part_sur_la_sortie_standard():
+                      resultat = executer("1500\n2300\n")
+                      assert resultat.stdout.strip() == "3800 FCFA"
+                      assert resultat.returncode == 0
+
+
+                  def test_une_entree_vide_donne_le_code_un():
+                      resultat = executer("")
+                      assert resultat.returncode == 1
+                      assert "aucun montant" in resultat.stderr
+
+
+                  def test_une_ligne_illisible_donne_le_code_deux():
+                      resultat = executer("1500\nabc\n")
+                      assert resultat.returncode == 2
+                      assert "illisible" in resultat.stderr
           - titre: "À la main : du dossier au paquet installable"
             texte: >-
               Étape 1, rangez votre code sous un dossier src contenant un paquet au nom du projet. Étape 2,
@@ -2781,6 +3930,195 @@ blocs:
                   - [Le test échoue un jour sur trente, "dépendance à l'horloge ou au hasard", "injecter la date, figer la graine aléatoire"]
                   - [La suite prend dix minutes, appels réseau ou base réelle, "isoler, et marquer les tests lents à part"]
                   - [Tout est vert mais le bug existe, assertions trop faibles, "vérifier la valeur attendue, pas seulement l'absence d'erreur"]
+          - titre: "La notion : déboguer est une enquête, pas une inspiration"
+            texte: >-
+              Un test rouge vous dit qu'une règle est violée. Il ne vous dit pas où. Entre les deux, il y a
+              une enquête, et cette enquête se mène toujours de la même façon, que le programme fasse cent
+              lignes ou cent mille. Les développeurs qui paraissent rapides ne devinent pas mieux que les
+              autres : ils éliminent plus vite.
+
+              La méthode tient en six temps. Reproduire d'abord : tant que vous ne savez pas provoquer le bug
+              à volonté, vous ne saurez jamais s'il est corrigé. Réduire ensuite : enlever tout ce qui n'est
+              pas nécessaire à l'apparition du défaut, jusqu'à obtenir le plus petit cas qui échoue encore.
+              Formuler alors une hypothèse falsifiable, c'est-à-dire une phrase qu'une expérience peut
+              contredire : non pas il y a un problème dans le calcul, mais la pénalité est appliquée aux lots
+              de qualité A alors qu'elle ne devrait pas l'être.
+
+              Vient le test de l'hypothèse, une seule expérience à la fois, qui change une seule chose.
+              Consigner son résultat, même quand il est négatif : une hypothèse écartée est un progrès, et
+              c'est la seule façon de ne pas tourner en rond au bout d'une heure. Puis recommencer, en
+              restreignant la zone de recherche à chaque tour. Une bonne enquête divise le territoire à chaque
+              hypothèse, elle ne le balaie pas au hasard.
+
+              La faute la plus courante n'est pas de mal chercher : c'est de corriger avant d'avoir compris.
+              Un correctif posé sur une hypothèse non vérifiée déplace le bug au lieu de le supprimer, et
+              ajoute une ligne que plus personne n'osera retirer.
+            figures:
+              - nom: python-trace-erreur.svg
+                legende: "La trace se lit de bas en haut : la dernière ligne nomme le symptôme, les lignes du dessus donnent le chemin"
+              - nom: devpy-m08-c.jpg
+                legende: "Un diagnostic se mène instrument en main, une hypothèse à la fois"
+            tableaux:
+              - titre: "Les six temps de l'enquête, et ce qui va de travers sans eux"
+                entetes: [Temps, Ce que vous faites, "Ce qui arrive si vous sautez l'étape"]
+                lignes:
+                  - [Reproduire, provoquer le bug à volonté, "vous ne saurez jamais s'il est corrigé"]
+                  - [Réduire, le plus petit cas qui échoue, vous cherchez dans mille lignes au lieu de dix]
+                  - [Formuler, "une phrase qu'un test peut démentir", vous lisez le code en espérant voir]
+                  - [Tester, une seule chose à la fois, "deux changements, aucune conclusion"]
+                  - [Consigner, "hypothèse, test, résultat", vous refaites trois fois la même expérience]
+                  - [Recommencer, sur un territoire réduit, "l'enquête s'étire sans jamais se refermer"]
+          - titre: "Le geste technique : le débogueur, les points d'arrêt conditionnels et l'inspection d'état"
+            texte: >-
+              L'affichage d'une variable rend service une fois, puis il pollue. Le débogueur fait mieux : il
+              arrête le programme à l'endroit choisi et vous laisse interroger l'état réel, celui du moment,
+              sans rien ajouter au code définitif.
+
+              En Python, la fonction intégrée breakpoint ouvre le débogueur à la ligne où elle se trouve. Les
+              commandes utiles tiennent sur une main : n exécute la ligne suivante, s entre dans la fonction
+              appelée, c reprend jusqu'au prochain arrêt, p affiche une expression, l affiche le code autour,
+              w affiche la pile d'appels, q sort.
+
+              Le point d'arrêt conditionnel est le geste qui change tout quand le bug ne survient qu'à la
+              trois mille deux cent dix-septième ligne du relevé. Plutôt que de passer trois mille fois par le
+              même arrêt, vous demandez au débogueur de ne s'arrêter que si la condition est vraie.
+
+              Prenez l'habitude d'inspecter l'état avant de conclure : le type d'une valeur autant que sa
+              valeur, l'identité d'un objet quand vous soupçonnez un partage de référence, et la pile d'appels
+              pour savoir qui vous a amené là. Quatre-vingts pour cent des bugs Python silencieux se voient
+              dans le type ou dans l'identité, jamais dans la valeur affichée.
+            code:
+              - titre: "debogage.py, s'arrêter seulement quand cela devient intéressant"
+                langage: python
+                source: |
+                  def prix_lot(lot: dict) -> int:
+                      # arret conditionnel : on ne s'arrete que sur le cas suspect
+                      if lot["qualite"] == "A" and lot["humide"]:
+                          breakpoint()
+                      base = lot["poids_kg"] * PRIX_PAR_QUALITE[lot["qualite"]]
+                      return round(base * 0.90) if lot["humide"] else base
+
+
+                  # dans le debogueur, les questions qui font avancer l'enquete :
+                  #   p lot                 -> la valeur complete du dictionnaire
+                  #   p type(lot["poids_kg"])  -> str au lieu de int explique bien des choses
+                  #   p id(lot) == id(original) -> deux noms, un seul objet partage ?
+                  #   w                     -> qui a appele cette fonction, et depuis ou
+          - titre: "Le geste technique : la bissection, pour trouver le commit qui a cassé la règle"
+            texte: >-
+              Quand un comportement marchait la semaine dernière et ne marche plus, l'histoire du dépôt
+              contient la réponse. La bissection est une recherche dichotomique dans cette histoire : à chaque
+              essai, vous coupez en deux le nombre de commits suspects. Sur deux cents commits, sept essais
+              suffisent.
+
+              Vous avez besoin de deux repères et d'une commande de vérification. Le repère bon est un commit
+              où le comportement attendu est présent, le repère mauvais est le commit actuel. La commande de
+              vérification doit répondre par oui ou par non, sans vous : un test qui passe ou qui échoue.
+
+              La version automatique est la plus honnête, parce qu'elle ne dépend pas de votre jugement à la
+              quinzième minute. Elle rend le commit fautif, son auteur et son message, ce qui transforme une
+              matinée d'hésitation en trois minutes de certitude.
+            code:
+              - titre: "bissection.sh, sept essais au lieu de deux cents"
+                langage: bash
+                source: |
+                  # 1. on ouvre l'enquete sur l'histoire
+                  git bisect start
+                  git bisect bad                 # l'etat actuel est fautif
+                  git bisect good v1.2.0         # cette version-la etait saine
+
+                  # 2. on confie la verification a un test, qui ne se fatigue pas
+                  git bisect run pytest tests/test_penalite.py -q
+
+                  # 3. git nomme le commit fautif, puis on referme proprement
+                  git bisect reset
+          - titre: "À la main : tenir un journal de débogage"
+            texte: >-
+              Le journal de débogage est une feuille, un fichier texte, peu importe, où chaque ligne porte
+              quatre colonnes : l'hypothèse, le test qui la met à l'épreuve, le résultat observé, et la suite
+              décidée. Il vous coûte trente secondes par tour et vous fait gagner des heures.
+
+              Il sert à trois choses. Il vous empêche de refaire deux fois la même expérience quand la fatigue
+              arrive. Il rend votre enquête transmissible : un collègue reprend là où vous en êtes sans que
+              vous ayez à tout raconter. Et il devient, une fois le bug corrigé, la matière du message de
+              commit et du test de non-régression.
+
+              Exercez-vous sur la base de code fournie, cinq cents à mille cinq cents lignes, dans laquelle
+              trois défauts ont été introduits. Pour chaque défaut : reproduisez, réduisez, tenez le journal
+              jusqu'à la cause, puis écrivez d'abord le test qui échoue, et seulement ensuite le correctif qui
+              le fait passer.
+
+              Ce travail est évaluable à la lecture du journal autant qu'à celle du correctif. Un journal où
+              toutes les hypothèses sont vraies du premier coup est suspect : il a été écrit après coup.
+            tableaux:
+              - titre: "Un journal de débogage, tenu pendant l'enquête"
+                entetes: [Hypothèse, Test mené, Résultat, Suite]
+                lignes:
+                  - ["La pénalité s'applique aux lots de qualité A", "un lot A humide, prix attendu 120 000", "obtenu 108 000, donc pénalisé", hypothèse retenue]
+                  - [Le drapeau humide est mal lu depuis le CSV, afficher le type et la valeur lus, "booleen correct, True", "hypothèse écartée, on remonte d'un cran"]
+                  - [La condition de qualité a été inversée au commit du 12, bissection sur les vingt derniers commits, commit 4f1c identifié, "lire le diff, écrire le test, corriger"]
+          - titre: "La notion : entrer dans le code des autres sans tout casser"
+            texte: >-
+              Dans un premier emploi, vous écrirez beaucoup moins de code neuf que vous n'en lirez. On vous
+              confiera une application que personne n'a documentée, dont les auteurs sont partis, et qui fait
+              vivre une activité réelle. La compétence demandée n'est pas d'avoir des idées : c'est d'entrer
+              sans rien casser.
+
+              Commencez par le point d'entrée. Toute application en a un : le fichier lancé, la commande
+              déclarée dans le projet, la fonction appelée par le serveur. Trouvez-le avant toute chose, car
+              c'est le seul endroit dont vous êtes certain qu'il est exécuté.
+
+              Suivez ensuite un seul chemin d'exécution, de bout en bout, pour un seul cas d'usage réel. Pas
+              deux, pas le cas général : un. Le chemin complet d'une seule fonctionnalité vous apprend
+              l'architecture mieux que la lecture de tous les fichiers dans l'ordre alphabétique.
+
+              Cartographiez avant de modifier. Une page suffit : les quatre ou cinq zones du code, qui appelle
+              qui, où vivent les règles métier, où vivent les accès au monde extérieur. Cette carte sera
+              fausse sur les détails et juste sur l'essentiel, ce qui est exactement ce qu'il faut pour agir.
+
+              Enfin, la règle qui protège les emplois : on ne réécrit pas. Le code existant contient des
+              années de règles métier apprises dans la douleur, dont la moitié n'est écrite nulle part
+              ailleurs. La réécriture complète jette ce savoir et recommence les mêmes erreurs. On transforme
+              par petits pas sûrs, chacun vérifiable.
+            figures:
+              - nom: python-modules-arborescence.svg
+                legende: "Avant de modifier, on dessine la carte : les zones du code et qui appelle qui"
+          - titre: "Le geste technique : suivre un seul chemin d'exécution de bout en bout"
+            texte: >-
+              Trois outils suffisent pour tracer un chemin dans une base inconnue, et aucun ne demande de
+              comprendre l'ensemble du projet.
+
+              La recherche textuelle d'abord : cherchez une chaîne que vous voyez à l'écran ou dans un
+              journal, par exemple un libellé ou un message d'erreur. Elle vous dépose directement dans la
+              zone concernée, là où la lecture ordonnée vous aurait fait traverser quinze fichiers.
+
+              La pile d'appels ensuite : provoquez volontairement une erreur au milieu du chemin, ou posez un
+              arrêt, et lisez qui vous a amené là. La pile est la seule documentation qui ne ment jamais, car
+              elle décrit l'exécution réelle et non les intentions.
+
+              Le traçage enfin, quand le chemin traverse plusieurs modules : une poignée de journaux
+              temporaires, posés aux frontières, vous donnent l'ordre réel des appels et les valeurs qui
+              circulent. Vous les retirez avant de livrer.
+
+              Terminez par un premier changement minuscule, dont vous pouvez prédire l'effet exact avant de le
+              faire : renommer une variable locale, extraire une constante, corriger un libellé. S'il produit
+              ce que vous aviez prédit, votre carte est juste. Sinon, votre carte est fausse, et il vaut mieux
+              l'apprendre sur un changement sans conséquence que sur une règle de facturation.
+            code:
+              - titre: "explorer.sh, trouver la porte d'entrée et le chemin"
+                langage: bash
+                source: |
+                  # 1. par ou le programme commence-t-il vraiment ?
+                  grep -rn "def main\|if __name__\|\[project.scripts\]" --include="*.py" --include="*.toml" .
+
+                  # 2. d'ou vient ce libelle que je vois a l'ecran ?
+                  grep -rn "Penalite humidite" --include="*.py" .
+
+                  # 3. qui appelle cette fonction, et depuis combien d'endroits ?
+                  grep -rn "prix_lot(" --include="*.py" . | wc -l
+
+                  # 4. le chemin reel, trace pendant une execution
+                  python -m ventes.cli --releve releve-octobre.csv --trace 2>&1 | head -20
           - titre: "Entraînement gradué : imiter, varier, créer"
             texte: >-
               Imiter : écrivez cinq tests sur une règle métier existante, dont un par la méthode rouge puis
@@ -2924,6 +4262,99 @@ blocs:
               se résout par la concurrence. L'absence de délai maximal, qui se résout par un timeout. L'échec
               passager, qui se résout par une relance mesurée. Les confondre produit un programme qui martèle
               un service déjà en difficulté, ce qui est la meilleure façon de l'achever.
+          - titre: "La notion : ce qui se passe réellement avant votre première ligne de Python"
+            texte: >-
+              Un appel HTTP qui prend deux cents millisecondes n'est pas une opération, c'est une chaîne de
+              quatre étapes, et chacune peut échouer pour ses propres raisons. Tant que vous ne savez pas
+              laquelle a échoué, vous corrigez au hasard.
+
+              La résolution de nom vient en premier : le nom du service est transformé en adresse par le DNS.
+              Si cette étape échoue, aucune connexion n'est tentée, et le message parle de nom introuvable,
+              pas de serveur en panne. Sur un poste d'entreprise, c'est souvent un paramétrage de réseau, pas
+              le service distant.
+
+              L'établissement de la connexion vient ensuite : votre machine ouvre un canal TCP vers l'adresse
+              et le port. Un échec ici, en particulier une attente qui se prolonge puis s'arrête, signale un
+              pare-feu, un port fermé ou une machine injoignable. La distinction est nette : refus immédiat
+              contre attente interminable, deux causes différentes.
+
+              La poignée de main TLS vient en troisième : les deux parties s'accordent sur le chiffrement et
+              votre machine vérifie le certificat du service. Les échecs de cette étape parlent de certificat
+              expiré, de nom qui ne correspond pas, ou d'autorité inconnue. Ils n'ont rien à voir avec votre
+              code, et tout à voir avec l'horloge de la machine ou le magasin de certificats.
+
+              La requête HTTP n'arrive qu'en quatrième position. Les en-têtes y décrivent ce que vous envoyez
+              et ce que vous acceptez, le corps porte les données, et le code de retour dit ce que le service
+              a fait. Un code 401 ou 404 prouve, au passage, que les trois étapes précédentes ont réussi : le
+              service vous a répondu. Dire le service est en panne devant un 404 est une faute de diagnostic.
+
+              Sur un réseau mobile ivoirien, la latence de chaque étape augmente et la variabilité explose. Un
+              appel qui tient en cent millisecondes au bureau peut demander deux secondes en déplacement : vos
+              délais maximaux doivent être choisis pour le réseau réel de vos utilisateurs, pas pour le vôtre.
+            figures:
+              - nom: python-requete-reponse.svg
+                legende: "La requête part, la réponse revient : entre les deux, quatre étapes qui peuvent échouer séparément"
+              - nom: devpy-m09-c.jpg
+                legende: "Entre votre programme et le service, il y a des noms à résoudre, des câbles et des poignées de main"
+            tableaux:
+              - titre: "Quatre étapes, quatre familles de pannes"
+                entetes: [Étape, "Ce qu'elle fait", Symptôme typique, Où chercher]
+                lignes:
+                  - [Résolution DNS, nom vers adresse, nom introuvable, "réseau local, configuration"]
+                  - [Connexion TCP, ouvrir le canal, refus immédiat ou attente qui expire, "pare-feu, port, machine"]
+                  - [Poignée de main TLS, chiffrer et vérifier, certificat expiré ou non reconnu, "horloge, magasin de certificats"]
+                  - [Échange HTTP, requête et réponse, code 4xx ou 5xx, "votre requête, puis le service"]
+          - titre: "Le geste technique : observer un appel avec curl avant d'écrire la moindre ligne de Python"
+            texte: >-
+              Avant d'ouvrir un éditeur, ouvrez un terminal. Un appel observé en mode verbeux vous montre les
+              quatre étapes, dans l'ordre, avec leurs durées. C'est la mesure que votre code ne vous donnera
+              pas, parce qu'il vous rend une exception là où le réseau vous aurait montré une étape.
+
+              Lisez la sortie comme un récit. Les lignes marquées d'un astérisque décrivent la mécanique :
+              l'adresse choisie, la connexion établie, le certificat accepté. Les lignes précédées d'un
+              chevron sortant sont ce que vous envoyez, celles précédées d'un chevron entrant sont ce que le
+              service répond. Le bloc de durées, demandé par un format d'écriture, chiffre chaque étape.
+
+              Ce chiffrage tranche les discussions. Si la résolution prend cinq cents millisecondes et le
+              reste quarante, votre problème n'est pas le service : c'est votre DNS. Si la poignée de main
+              occupe les deux tiers du temps, la bonne réponse est de réutiliser la connexion plutôt que d'en
+              ouvrir une par requête, ce que fait un client HTTP persistant.
+            code:
+              - titre: "observer.sh, les quatre étapes chiffrées"
+                langage: bash
+                source: |
+                  # le recit complet de l'appel, etape par etape
+                  curl -v https://exemple.test/cours/cacao
+
+                  # le meme appel, mais chiffre : ou passe le temps ?
+                  curl -s -o /dev/null -w "dns=%{time_namelookup}s tcp=%{time_connect}s tls=%{time_appconnect}s total=%{time_total}s code=%{http_code}\n" \
+                    https://exemple.test/cours/cacao
+
+                  # est-ce le nom qui ne se resout pas, ou le port qui est ferme ?
+                  getent hosts exemple.test
+                  curl -sv --connect-timeout 3 https://exemple.test/ 2>&1 | head -5
+          - titre: "À la main : diagnostiquer cinq appels défaillants"
+            texte: >-
+              On vous remet cinq appels qui échouent, chacun pour une raison différente, et une seule consigne
+              : pour chacun, dire à quelle étape il échoue, pourquoi, et quel geste le corrige. Le code Python
+              n'est pas la réponse attendue ; l'observation l'est.
+
+              Procédez toujours dans le même ordre, du bas vers le haut de la chaîne. Le nom se résout-il ? Le
+              port répond-il ? Le certificat est-il accepté ? Le service répond-il, et avec quel code ? La
+              première étape qui échoue est la seule à traiter : tout ce qui suit est hors de cause.
+
+              Rédigez le diagnostic en trois colonnes, comme un compte rendu d'astreinte, et terminez par la
+              phrase qui engage : ce que vous changeriez, et pourquoi vous pensez que cela suffira. C'est
+              exactement ce que l'on vous demandera un jour à trois heures du matin.
+            tableaux:
+              - titre: "Cinq pannes, cinq diagnostics attendus"
+                entetes: [Observation, Étape en cause, Geste correcteur]
+                lignes:
+                  - [nom introuvable, résolution DNS, "corriger le nom ou le réseau, pas le code"]
+                  - [attente puis expiration, connexion TCP, "pare-feu ou port, et poser un délai maximal"]
+                  - [certificat non reconnu, poignée de main TLS, "horloge de la machine, magasin de certificats"]
+                  - [code 401, échange HTTP, "clé absente ou expirée, jamais une relance"]
+                  - [code 429, échange HTTP, "ralentir, respecter l'en-tête de réessai"]
           - titre: "La notion : une requête, une réponse, un contrat"
             texte: >-
               Un appel HTTP est un échange de messages écrits. Votre programme envoie une requête : un verbe
@@ -3463,6 +4894,115 @@ blocs:
             figures:
               - nom: python-effet-du-cache.svg
                 legende: "Le même écran, avant et après : la mesure décide, pas l'intuition"
+          - titre: "La notion : pourquoi un index va vite, et ce qu'est un arbre de recherche"
+            texte: >-
+              Sans index, répondre à une question sur une colonne demande de lire toutes les lignes, une par
+              une. Sur cinq cent mille lignes, cela se sent. Avec un index, la base lit quelques dizaines de
+              pages et s'arrête. La différence n'est pas une astuce de moteur : c'est la différence entre
+              chercher un nom en feuilletant tout l'annuaire et le chercher en ouvrant au milieu.
+
+              La recherche séquentielle parcourt les éléments dans l'ordre : son coût grandit comme le nombre
+              de lignes. Doubler la table double le temps. La recherche dichotomique, sur des données triées,
+              coupe l'intervalle en deux à chaque essai : son coût grandit comme le logarithme du nombre de
+              lignes. Doubler la table ajoute un essai, un seul.
+
+              Un index est la version sur disque de cette idée : un arbre de recherche équilibré, dont chaque
+              noeud oriente vers la moitié utile. Équilibré signifie que toutes les branches ont
+              approximativement la même profondeur, sans quoi l'arbre dégénère en liste et le gain disparaît.
+              Pour cinq cent mille lignes, la profondeur d'un tel arbre se compte en unités, pas en milliers.
+
+              L'index a un prix. Chaque écriture doit maintenir l'arbre à jour, donc chaque insertion, chaque
+              mise à jour et chaque suppression coûtent un peu plus cher, et l'index occupe de la place. On
+              indexe ce que l'on filtre et ce sur quoi l'on joint, pas tout, et on vérifie après coup qu'un
+              index ajouté sert vraiment.
+
+              Dernier point, le plus souvent ignoré : un index ne sert que si la requête lui en laisse la
+              possibilité. Une fonction appliquée à la colonne filtrée, un motif qui commence par un joker,
+              une comparaison entre deux types différents : dans ces trois cas, la base ne peut plus utiliser
+              l'arbre et retombe au parcours complet, sans vous prévenir.
+            figures:
+              - nom: devpy-m10-c.jpg
+                legende: "Le fichier à tiroirs : on ne parcourt pas tous les dossiers, on va droit au bon tiroir"
+            tableaux:
+              - titre: Chercher dans cinq cent mille lignes
+                entetes: [Méthode, Coût, Essais pour 500 000 lignes, Condition]
+                lignes:
+                  - [Parcours séquentiel, proportionnel au nombre de lignes, "jusqu'à 500 000", aucune]
+                  - [Recherche dichotomique, logarithmique, environ 19, données triées]
+                  - [Index arborescent, logarithmique, quelques pages lues, "requête compatible avec l'index"]
+          - titre: "Le geste technique : lire un plan d'exécution et mesurer le gain d'un index"
+            texte: >-
+              Ne croyez jamais un index sur parole : demandez à la base ce qu'elle compte faire, et mesurez
+              avant et après. Le plan d'exécution est la réponse officielle du moteur à la question comment
+              vas-tu répondre à cette requête. Il nomme le parcours complet, l'usage d'un index, l'ordre des
+              jointures et le nombre de lignes estimé.
+
+              Le protocole de mesure tient en quatre temps. Peupler une table d'essai avec cinq cent mille
+              lignes représentatives. Mesurer la requête sans index, plan à l'appui. Créer l'index, mettre à
+              jour les statistiques, mesurer de nouveau. Puis mesurer le coût du côté des écritures, sans quoi
+              le bilan est incomplet.
+
+              Dans le plan, trois mots à reconnaître. Un balayage séquentiel sur une grande table, dans une
+              requête qui filtre, est un signal d'alarme. Un parcours d'index suivi d'un accès à la table est
+              le comportement attendu. Et un écart important entre les lignes estimées et les lignes réelles
+              signale des statistiques périmées, qui font prendre au moteur de mauvaises décisions.
+            code:
+              - titre: "mesure_index.sql, avant et après, chiffres à l'appui"
+                langage: sql
+                source: |
+                  -- 1. cinq cent mille ventes d'essai
+                  INSERT INTO vente (officine_id, code_produit, quantite, prix_fcfa, date)
+                  SELECT (random() * 12)::int + 1,
+                         lpad((random() * 4000)::int::text, 6, '0'),
+                         (random() * 20)::int + 1,
+                         (random() * 25000)::int + 500,
+                         DATE '2025-01-01' + (random() * 700)::int
+                  FROM generate_series(1, 500000);
+
+                  -- 2. sans index : que fait le moteur, et en combien de temps ?
+                  EXPLAIN ANALYZE
+                  SELECT SUM(quantite) FROM vente WHERE code_produit = '003421';
+
+                  -- 3. on cree l'index, puis on rafraichit les statistiques
+                  CREATE INDEX idx_vente_code_produit ON vente (code_produit);
+                  ANALYZE vente;
+
+                  -- 4. meme requete : le plan doit changer de balayage sequentiel a parcours d'index
+                  EXPLAIN ANALYZE
+                  SELECT SUM(quantite) FROM vente WHERE code_produit = '003421';
+
+                  -- 5. le prix a payer : la meme insertion, index en place
+                  EXPLAIN ANALYZE
+                  INSERT INTO vente (officine_id, code_produit, quantite, prix_fcfa, date)
+                  VALUES (3, '003421', 4, 12000, DATE '2026-11-16');
+          - titre: "Les trois requêtes qui rendent un index inutile, et comment s'en apercevoir"
+            texte: >-
+              Un index présent n'est pas un index utilisé. Trois formulations très répandues l'écartent
+              silencieusement, et la seule façon de s'en apercevoir est de lire le plan.
+
+              La première est la fonction appliquée à la colonne filtrée. Si vous filtrez sur l'année extraite
+              d'une date, l'index posé sur la date ne s'applique plus : la base devrait calculer la fonction
+              pour chaque ligne. La parade consiste à filtrer sur un intervalle de dates, ou à créer un index
+              sur l'expression elle-même.
+
+              La deuxième est le motif qui commence par un joker. Un index trie les valeurs par leur début :
+              chercher ce qui se termine par une chaîne ne peut pas s'appuyer sur ce tri. Selon le besoin, on
+              passe par une recherche plein texte ou par une colonne dédiée.
+
+              La troisième est la comparaison entre types différents, par exemple une colonne de type texte
+              comparée à un nombre. La base convertit, donc applique une fonction, donc n'utilise plus
+              l'index. C'est le piège classique des codes produit qui commencent par un zéro.
+
+              Vérifiez vos trois requêtes les plus fréquentes avec cette grille, plan à l'appui, et corrigez
+              celles qui retombent au parcours complet. Le gain se mesure en secondes gagnées sur chaque
+              affichage d'écran, tous les jours.
+            tableaux:
+              - titre: "Trois formulations qui écartent l'index"
+                entetes: [Écrit ainsi, Ce que fait la base, Écrire plutôt]
+                lignes:
+                  - [filtre sur une fonction de la colonne, parcours complet, "un intervalle, ou un index sur l'expression"]
+                  - [motif commençant par un joker, parcours complet, recherche plein texte ou colonne dédiée]
+                  - [colonne texte comparée à un nombre, conversion ligne à ligne, "comparer au bon type, zéro initial compris"]
           - titre: "À la main : du N plus un à la requête unique, en six étapes"
             texte: >-
               Première étape, activez la journalisation des requêtes en développement et ouvrez l'écran de
@@ -3560,6 +5100,77 @@ blocs:
                   - [concaténation de chaînes, interdit, "même faille, autre syntaxe"]
                   - [paramètre lié, la seule correcte, la valeur ne peut pas devenir du code]
                   - [nom de table dynamique, à éviter, "si inévitable, comparer à une liste blanche"]
+          - titre: "La notion : au-delà de l'injection, le moindre privilège et le transit chiffré"
+            texte: >-
+              La requête paramétrée ferme l'injection, et c'est le premier geste. Il ne suffit pas. Le
+              classement OWASP place le contrôle d'accès défaillant en tête des risques applicatifs, devant
+              les défauts cryptographiques et devant l'injection : autrement dit, la plupart des fuites
+              réelles ne viennent pas d'une requête mal écrite, mais d'un compte qui pouvait trop et d'un
+              canal qui protégeait mal.
+
+              Le moindre privilège s'applique au compte que votre application utilise pour se connecter à la
+              base. Ce compte n'a pas besoin de créer des tables, d'en supprimer, ni de lire les tables qui ne
+              le concernent pas. Un compte applicatif restreint transforme une injection réussie en incident
+              mineur au lieu d'une perte totale. Les migrations, elles, s'exécutent avec un autre compte, au
+              moment du déploiement, et jamais depuis le code qui sert les utilisateurs.
+
+              Le chiffrement en transit protège la liaison entre votre application et la base, et pas
+              seulement entre le navigateur et votre application. Une base jointe sans chiffrement sur un
+              réseau partagé expose, en clair, tout ce qui transite, identifiants compris.
+
+              Restent les données personnelles. Un numéro de téléphone, un numéro de compte mobile money, un
+              nom associé à une adresse sont des données qui engagent la responsabilité de votre employeur.
+              Trois règles suffisent à éviter l'essentiel : ne collecter que ce qui sert, ne jamais écrire ces
+              valeurs dans les journaux, et fixer une durée de conservation au-delà de laquelle elles sont
+              effacées ou rendues anonymes.
+            figures:
+              - nom: python-roles-permissions.svg
+                legende: "Chaque compte reçoit le strict nécessaire : ce qui n'est pas accordé ne peut pas être détourné"
+            tableaux:
+              - titre: "Quatre risques OWASP, quatre gestes dans ce module"
+                entetes: [Risque, Ce qui arrive, Le geste]
+                lignes:
+                  - ["Contrôle d'accès défaillant", un compte qui peut tout, compte applicatif restreint]
+                  - [Défaut cryptographique, transit en clair, liaison chiffrée vers la base]
+                  - [Injection, requête détournée, "paramètres liés, jamais de concaténation"]
+                  - [Journalisation exposante, données personnelles en clair, "masquer avant d'écrire"]
+          - titre: "Le geste technique : un test qui verrouille l'injection, des journaux qui ne trahissent personne"
+            texte: >-
+              Une protection que rien ne vérifie finit par disparaître au détour d'une correction pressée. Le
+              test d'injection est court, il se lit comme une démonstration, et il reste dans la suite pour
+              toujours : une valeur hostile est fournie, et la table est encore là après.
+
+              Le masquage des données personnelles se traite à un seul endroit, au moment d'écrire le journal,
+              jamais à chaque appel. Une fonction de masquage et un filtre de journalisation suffisent : le
+              reste du code continue d'écrire ce qu'il veut, et rien de sensible ne sort.
+
+              Ajoutez enfin la durée de conservation sous forme de tâche, pas de bonne intention : une
+              instruction datée qui efface ou anonymise ce qui a dépassé la durée annoncée. C'est ce que vous
+              montrerez le jour où l'on vous demandera ce que devient la donnée d'un client parti.
+            code:
+              - titre: "test_securite.py, la démonstration qui reste dans la suite"
+                langage: python
+                source: |
+                  import re
+
+                  MASQUE = re.compile(r"\b(\d{2})\d{4}(\d{2})\b")   # 0748123456 -> 07****56
+
+
+                  def masquer(message: str) -> str:
+                      return MASQUE.sub(r"\1****\2", message)
+
+
+                  def test_une_valeur_hostile_ne_detruit_pas_la_table(connexion):
+                      hostile = "003421'); DROP TABLE vente; --"
+                      curseur = connexion.execute(
+                          "SELECT SUM(quantite) FROM vente WHERE code_produit = %s", (hostile,)
+                      )
+                      assert curseur.fetchone()[0] is None          # aucune vente, et surtout :
+                      assert connexion.execute("SELECT COUNT(*) FROM vente").fetchone()[0] > 0
+
+
+                  def test_le_journal_ne_contient_aucun_numero_en_clair():
+                      assert masquer("paiement recu de 0748123456") == "paiement recu de 07****56"
           - titre: Les erreurs que vous allez voir
             texte: >-
               Ces messages sont ceux d'un serveur PostgreSQL et de SQLAlchemy. Ils sont précis : ils nomment
@@ -3933,6 +5544,236 @@ blocs:
                   - [Comment les taux se répartissent, histogramme, la seule moyenne]
                   - [Le prix influence-t-il le remplissage, nuage de points, deux courbes superposées]
                   - [Quelle part du chiffre par liaison, barres empilées à cent pour cent, camemberts multiples]
+          - titre: "La notion : modéliser avec un graphe, quand le tableau ne suffit plus"
+            texte: >-
+              Un tableau décrit des lignes indépendantes. Dès que vos données décrivent des liens, le tableau
+              ment par omission. Les villes desservies par une compagnie de cars, les tâches d'un pipeline qui
+              doivent attendre d'autres tâches, les producteurs qui livrent à des centres de collecte qui
+              livrent à une usine : ce sont des graphes, et les traiter comme des tableaux produit du code
+              compliqué pour des questions simples.
+
+              Un graphe se résume à deux mots. Les sommets sont les objets : une ville, une tâche, un centre
+              de collecte. Les arêtes sont les liens : une liaison, une dépendance, une livraison. Un graphe
+              est orienté quand le lien a un sens, comme la tâche B qui attend la tâche A, et non orienté
+              quand il n'en a pas, comme une route parcourue dans les deux sens. Il est pondéré quand l'arête
+              porte une valeur : une distance en kilomètres, un prix en FCFA, une durée en minutes.
+
+              En Python, la représentation la plus pratique est le dictionnaire de listes d'adjacence : à
+              chaque sommet, la liste de ses voisins. La matrice d'adjacence, un tableau de zéros et de uns,
+              répond instantanément à la question « y a-t-il une arête entre ces deux sommets », mais occupe
+              une place proportionnelle au carré du nombre de sommets. Pour un réseau de transport ivoirien de
+              quelques dizaines de villes et de quelques centaines de liaisons, les listes d'adjacence gagnent
+              sur les deux tableaux : moins de mémoire et un parcours des voisins immédiat.
+
+              Retenez le critère de choix. Si vos sommets sont peu nombreux et vos arêtes nombreuses au point
+              que presque tout est relié à tout, la matrice se défend. Dans tous les autres cas, et c'est la
+              quasi-totalité des cas réels, prenez les listes d'adjacence.
+            figures:
+              - nom: devpy-m11-c.jpg
+                legende: "Un carrefour est un sommet, les routes qui en partent sont ses arêtes"
+              - nom: python-modules-arborescence.svg
+                legende: "Une arborescence est un graphe orienté sans cycle, lu de haut en bas"
+            tableaux:
+              - titre: "Deux représentations d'un graphe, et quand les choisir"
+                entetes: [Critère, "Listes d'adjacence", "Matrice d'adjacence"]
+                lignes:
+                  - [Mémoire occupée, proportionnelle aux arêtes, proportionnelle au carré des sommets]
+                  - ["Parcourir les voisins d'un sommet", immédiat, il faut balayer toute une ligne]
+                  - [Tester une arête précise, parcours de la liste des voisins, accès direct]
+                  - ["Graphe creux, peu d'arêtes", le bon choix, gaspillage de mémoire]
+                  - ["Graphe dense, tout relié à tout", acceptable, le bon choix]
+                  - [Cas des réseaux réels, presque toujours ceci, rarement justifié]
+          - titre: "Le geste technique : parcourir un graphe en largeur et en profondeur"
+            texte: >-
+              Deux parcours suffisent à répondre à la majorité des questions. Le parcours en largeur visite
+              d'abord tous les voisins directs, puis leurs voisins, et ainsi de suite : il trouve le chemin
+              comportant le moins d'étapes. Le parcours en profondeur s'enfonce dans une branche jusqu'au bout
+              avant de revenir en arrière : il répond aux questions d'accessibilité et sert de base à la
+              détection de cycle.
+
+              Les deux algorithmes sont le même code à une ligne près. Le parcours en largeur prend le plus
+              ancien élément en attente, avec une file ; le parcours en profondeur prend le plus récent, avec
+              une pile. C'est la seule différence, et elle change tout le comportement.
+
+              L'ensemble des sommets déjà vus n'est pas une précaution facultative. Sans lui, le premier cycle
+              du graphe fait tourner votre programme indéfiniment. Marquez un sommet comme vu au moment où
+              vous l'ajoutez en attente, et non quand vous le traitez, sinon il entre plusieurs fois dans la
+              file.
+
+              Notez que la fonction rend le chemin et non un affichage : elle reste utilisable par un autre
+              programme, et surtout elle reste testable. La compagnie de cars veut savoir en combien de
+              correspondances on relie Abidjan à Korhogo ; le parcours en largeur répond en une ligne.
+            code:
+              - titre: "reseau.py, le plus court trajet en nombre de correspondances"
+                langage: python
+                source: |
+                  from collections import deque
+
+                  RESEAU = {
+                      "Abidjan": ["Yamoussoukro", "Abengourou", "San-Pedro"],
+                      "Yamoussoukro": ["Abidjan", "Bouake", "Daloa"],
+                      "Bouake": ["Yamoussoukro", "Korhogo"],
+                      "Daloa": ["Yamoussoukro", "Man"],
+                      "Korhogo": ["Bouake"],
+                      "Man": ["Daloa"],
+                      "Abengourou": ["Abidjan"],
+                      "San-Pedro": ["Abidjan"],
+                  }
+
+
+                  def plus_court_trajet(reseau: dict[str, list[str]], depart: str, arrivee: str) -> list[str] | None:
+                      """Parcours en largeur : le trajet comportant le moins de villes intermediaires."""
+                      if depart not in reseau or arrivee not in reseau:
+                          return None
+                      attente = deque([[depart]])
+                      vus = {depart}
+                      while attente:
+                          chemin = attente.popleft()
+                          ville = chemin[-1]
+                          if ville == arrivee:
+                              return chemin
+                          for voisine in reseau[ville]:
+                              if voisine not in vus:
+                                  vus.add(voisine)
+                                  attente.append(chemin + [voisine])
+                      return None
+
+
+                  def villes_atteignables(reseau: dict[str, list[str]], depart: str) -> set[str]:
+                      """Parcours en profondeur : tout ce que la compagnie dessert depuis cette ville."""
+                      pile, vus = [depart], set()
+                      while pile:
+                          ville = pile.pop()
+                          if ville in vus:
+                              continue
+                          vus.add(ville)
+                          pile.extend(reseau.get(ville, ()))
+                      return vus
+
+
+                  print(plus_court_trajet(RESEAU, "Abidjan", "Korhogo"))
+                  print(len(villes_atteignables(RESEAU, "Man")), "villes desservies depuis Man")
+          - titre: "Le geste technique : détecter un cycle et ordonner des tâches"
+            texte: >-
+              Votre pipeline de données enchaîne des tâches : charger les ventes, charger le référentiel
+              produits, nettoyer, joindre, agréger, publier le rapport. Chacune déclare ce qu'elle attend. La
+              question est double : dans quel ordre les exécuter, et que faire si quelqu'un a écrit, par
+              distraction, que la jointure attend l'agrégation qui attend la jointure.
+
+              Le tri topologique répond aux deux d'un coup. On retire à chaque tour les tâches dont toutes les
+              dépendances sont déjà satisfaites, et on les ajoute à l'ordre d'exécution. Si à un tour plus
+              aucune tâche n'est prête alors qu'il en reste, c'est qu'elles s'attendent mutuellement : le
+              graphe contient un cycle, et les tâches restantes le composent.
+
+              L'exception porte ici un nom métier et transporte la liste des tâches fautives. C'est la
+              différence entre un message qui dit « erreur dans le pipeline » et un message qui dit exactement
+              quelles trois tâches forment la boucle. La personne d'astreinte, à trois heures du matin, ne
+              lira pas votre code : elle lira ce message.
+
+              Remarquez enfin le tri des tâches prêtes par ordre alphabétique. Il ne sert pas à l'algorithme,
+              il sert à vous : il rend la sortie reproductible, donc testable. Deux exécutions sur les mêmes
+              données donnent le même ordre, et un test peut l'affirmer.
+            code:
+              - titre: "ordonnanceur.py, l'ordre d'execution ou le cycle fautif"
+                langage: python
+                source: |
+                  class CycleDetecte(Exception):
+                      """Des taches s'attendent mutuellement : le pipeline ne peut pas demarrer."""
+
+                      def __init__(self, taches: set[str]) -> None:
+                          self.taches = taches
+                          super().__init__("cycle de dependances entre : " + ", ".join(sorted(taches)))
+
+
+                  def ordre_execution(taches: dict[str, list[str]]) -> list[str]:
+                      """taches : nom -> noms des taches qui doivent etre terminees avant celle-ci."""
+                      restantes = {nom: set(avant) for nom, avant in taches.items()}
+                      ordre: list[str] = []
+                      while restantes:
+                          prets = sorted(nom for nom, avant in restantes.items() if not avant)
+                          if not prets:
+                              raise CycleDetecte(set(restantes))
+                          for nom in prets:
+                              del restantes[nom]
+                              ordre.append(nom)
+                          for avant in restantes.values():
+                              avant.difference_update(prets)
+                      return ordre
+
+
+                  PIPELINE = {
+                      "charger_ventes": [],
+                      "charger_produits": [],
+                      "nettoyer": ["charger_ventes"],
+                      "joindre": ["nettoyer", "charger_produits"],
+                      "agreger": ["joindre"],
+                      "publier": ["agreger"],
+                  }
+
+                  print(ordre_execution(PIPELINE))
+          - titre: "Entraînement : l'ordonnanceur de pipeline"
+            texte: >-
+              Premier temps, imiter. Reprenez le pipeline donné plus haut, exécutez l'ordonnanceur, et
+              vérifiez que l'ordre obtenu respecte bien chaque dépendance déclarée. Écrivez le test qui
+              l'affirme : pour chaque tâche, toutes ses dépendances apparaissent avant elle dans la liste.
+
+              Deuxième temps, varier. Ajoutez volontairement une dépendance fautive, par exemple en déclarant
+              que le nettoyage attend l'agrégation, et vérifiez que votre code lève bien l'exception de cycle
+              avec les quatre tâches concernées, ni plus ni moins. Un test qui attend une exception sans
+              vérifier son contenu ne prouve presque rien.
+
+              Troisième temps, créer. Étendez l'ordonnanceur pour qu'il rende non pas une liste mais une liste
+              de vagues : les tâches de la première vague n'attendent rien et peuvent s'exécuter en parallèle,
+              celles de la deuxième n'attendent que la première, et ainsi de suite. Vous venez d'écrire le
+              cœur d'un ordonnanceur de tâches, celui que l'on retrouve sous le capot des outils du parcours
+              Data Engineer.
+
+              Le livrable de cet entraînement est un module ordonnanceur.py accompagné de ses tests : ordre
+              correct sur un pipeline valide, cycle correctement nommé sur un pipeline fautif, et vagues
+              d'exécution justes sur un pipeline comportant deux branches indépendantes.
+          - titre: Ce que les chiffres ne disent pas
+            texte: >-
+              Un pipeline qui tourne et un graphique bien dessiné produisent une impression de vérité que les
+              données ne justifient presque jamais. Cette section ne traite pas de morale : elle traite de
+              décisions professionnelles que vous prendrez cette année, et dont vous répondrez.
+
+              Premier point, l'échantillon. Vos chiffres décrivent ce que vous avez mesuré, pas la réalité.
+              Les ventes de votre base décrivent les clients qui ont acheté, jamais ceux qui sont repartis
+              faute de stock. Ce biais de sélection ne se voit dans aucune colonne, et aucun calcul ne le
+              corrigera : seule une phrase écrite noir sur blanc avertit le lecteur.
+
+              Deuxième point, la mesure elle-même. Une donnée saisie à la main par une opératrice pressée, un
+              capteur déréglé pendant trois semaines, un code produit réutilisé pour un autre article après un
+              changement de fournisseur : chaque anomalie de terrain devient un chiffre parfaitement propre
+              dans votre tableau. Allez voir comment la donnée naît avant d'affirmer ce qu'elle signifie.
+
+              Troisième point, le lien entre deux séries. Les ventes de parapluies et celles de boissons
+              chaudes montent ensemble ; aucune ne cause l'autre, c'est la saison des pluies qui cause les
+              deux. Pour affirmer une cause, il faut autre chose qu'une corrélation : une expérience, une
+              intervention, ou au minimum un mécanisme explicable.
+
+              Quatrième point, le seuil choisi après coup. Si vous essayez dix découpages et que vous publiez
+              celui qui donne le plus bel écart, vous ne décrivez plus vos données, vous décrivez votre
+              recherche. Fixez vos seuils et vos regroupements avant de regarder les résultats, et dites-le.
+
+              Cinquième point, les personnes derrière les lignes. Vos tableaux contiennent des noms, des
+              numéros de téléphone, parfois des montants qui révèlent une situation personnelle. Ne gardez que
+              ce dont l'analyse a besoin, masquez les identifiants dès le chargement, ne recopiez jamais un
+              fichier de production sur votre poste, et demandez-vous à chaque export qui pourra le lire et
+              pendant combien de temps.
+
+              La règle de travail qui découle de tout cela tient en une ligne : écrivez la section des limites
+              avant d'écrire les conclusions. Dans ce parcours, toute analyse rendue comporte cette section,
+              et elle est notée sur son honnêteté, jamais sur la beauté du résultat.
+            tableaux:
+              - titre: Traduire une affirmation flatteuse en phrase défendable
+                entetes: ["Ce qu'on a envie d'écrire", Ce qui manque, La phrase honnête]
+                lignes:
+                  - [Nos clients préfèrent le format familial, "ceux qui n'ont rien acheté ne sont pas dans la base", "parmi les clients ayant acheté en octobre, le format familial domine"]
+                  - [La promotion a fait monter les ventes de 12 %, la promotion a eu lieu pendant la rentrée, "les ventes ont monté de 12 % pendant la promotion, qui coïncide avec la rentrée"]
+                  - [Le quartier A est plus rentable, trois officines contre vingt-neuf ailleurs, "sur trois officines seulement, la marge observée est plus élevée"]
+                  - [Le modèle prédit les ruptures à 97 %, il y a 97 % de jours sans rupture, le modèle fait aussi bien que la règle qui ne prédit jamais de rupture]
+                  - [Les livraisons du lundi sont les plus lentes, seuil de lenteur choisi après lecture des résultats, "avec le seuil fixé à 48 heures, défini avant l'analyse, le lundi ressort"]
           - titre: Les erreurs que vous allez voir
             texte: >-
               Ces cinq messages sont le quotidien de l'analyste. Trois d'entre eux ne sont pas des erreurs
@@ -4391,6 +6232,87 @@ blocs:
                   - [Journaux, "ni jeton, ni mot de passe, ni donnée personnelle"]
                   - [Base, "le compte applicatif n'a que lire et écrire"]
                   - [Erreurs, "aucune trace technique renvoyée à l'appelant"]
+          - titre: "Travailler à plusieurs : branches, demandes de fusion et conflits"
+            texte: >-
+              Jusqu'ici vous avez versionné votre travail pour vous-même. En entreprise, le dépôt est un lieu
+              partagé, et les gestes changent. Une branche par sujet : elle porte le nom de ce qu'elle fait,
+              elle vit quelques jours au plus, et elle ne mélange pas deux intentions. Une branche qui vit
+              trois semaines accumule des conflits que personne ne saura résoudre.
+
+              Un commit raconte pourquoi, pas quoi. Le quoi est déjà dans le code, le lecteur le voit. Ce
+              qu'il ne voit pas, c'est la raison : quel problème vous corrigez, quelle règle métier a changé,
+              quelle solution vous avez écartée. Écrivez à l'impératif, en une ligne courte, et ajoutez un
+              paragraphe quand la décision mérite d'être expliquée.
+
+              Une demande de fusion se relit en vingt minutes. Au-delà de trois ou quatre cents lignes
+              modifiées, la revue devient une formalité : le relecteur approuve sans comprendre, et le
+              bénéfice disparaît. Découpez en plusieurs demandes successives plutôt que d'en livrer une
+              énorme.
+
+              Un conflit survient quand deux personnes ont modifié les mêmes lignes. Ce n'est ni une faute ni
+              un accident rare : c'est le fonctionnement normal du travail à plusieurs. La seule règle qui
+              compte est de ne jamais résoudre un conflit en supprimant le travail de l'autre sans l'avoir lu
+              et compris. Si vous hésitez, allez lui demander ; trente secondes de conversation valent mieux
+              qu'une demi-journée de régression.
+            code:
+              - titre: "Le cycle de travail d'une semaine, en huit commandes"
+                langage: bash
+                source: |
+                  git switch main
+                  git pull --rebase origin main
+
+                  git switch -c correction-penalite-humidite
+                  # ... vous modifiez le code et les tests ...
+                  git add domaine.py tests/test_penalite.py
+                  git commit -m "Exempter la qualite A de la penalite d'humidite"
+
+                  git fetch origin
+                  git rebase origin/main        # vous rejouez votre travail sur le dernier etat partage
+                  # en cas de conflit : ouvrir le fichier, lire LES DEUX versions, choisir, puis
+                  git add domaine.py
+                  git rebase --continue
+
+                  git push -u origin correction-penalite-humidite
+                  # puis ouvrir la demande de fusion et demander une relecture
+          - titre: "Relire le code d'un autre, et recevoir une relecture"
+            texte: >-
+              Une revue de code n'est pas un examen, c'est une deuxième paire d'yeux. Le relecteur regarde
+              quatre choses, dans cet ordre. L'exactitude d'abord : le code fait-il ce que la demande annonce,
+              et que se passe-t-il aux bornes, sur une liste vide, sur une valeur absente. La lisibilité
+              ensuite : saurez-vous relire cela dans six mois, les noms disent-ils le métier. Les tests
+              ensuite : la règle modifiée est-elle verrouillée par un test qui aurait échoué avant. La
+              sécurité enfin : une requête construite par concaténation, un secret en clair, une donnée
+              personnelle qui part dans un journal.
+
+              La forme de la remarque décide de son sort. Une remarque utile désigne une ligne précise, dit ce
+              qui vous gêne, et propose. Comparez « ce code est sale » et « ici, si la liste est vide, la
+              division plante ; un test au début réglerait le cas ». La première déclenche une défense, la
+              seconde déclenche un correctif. Distinguez aussi ce qui bloque la fusion de ce qui est un simple
+              avis : annoncez-le explicitement, par exemple en préfixant vos remarques facultatives.
+
+              Recevoir une revue s'apprend aussi. Les remarques portent sur le code, jamais sur vous. Répondez
+              à chacune, en corrigeant ou en expliquant pourquoi vous ne corrigez pas ; une remarque laissée
+              sans réponse est la seule vraie impolitesse. Et quand vous n'êtes pas d'accord, demandez le
+              raisonnement de l'autre avant de défendre le vôtre : dans la moitié des cas, vous découvrirez
+              une contrainte que vous ignoriez.
+
+              Le livrable de cette section est double et il est noté deux fois. Chacun ouvre une demande de
+              fusion sur le projet d'un camarade ou sur un dépôt commun, et chacun relit celle d'un autre. La
+              relecture produite est évaluée au même titre que le code : des remarques précises, classées en
+              bloquantes et facultatives, et une décision argumentée.
+            figures:
+              - nom: devpy-m12-c.jpg
+                legende: "Une relecture se fait à deux, sur des lignes précises, pas sur des impressions"
+            tableaux:
+              - titre: "La grille de relecture, et ce qu'elle vous fait dire"
+                entetes: [Ce que le relecteur regarde, La question posée, Une remarque utile]
+                lignes:
+                  - [Exactitude, que se passe-t-il aux bornes, "sur une liste vide, cette moyenne divise par zéro"]
+                  - [Lisibilité, les noms disent-ils le métier, "tmp2 porte le total par producteur, le nom le dirait mieux"]
+                  - [Tests, un test aurait-il échoué avant ce correctif, "le cas de la qualité A n'est verrouillé par aucun test"]
+                  - [Sécurité, "entrées validées, secrets absents", "cette requête concatène le code saisi, à passer en paramètre lié"]
+                  - [Taille, la revue tient-elle en vingt minutes, ces deux sujets gagneraient à être deux demandes]
+                  - [Ton, la remarque désigne-t-elle le code, "dire ce qui gêne et proposer, jamais juger la personne"]
           - titre: "Entraînement gradué, et où aller ensuite"
             texte: >-
               Imiter : conteneurisez une des applications des semaines précédentes, avec configuration par
