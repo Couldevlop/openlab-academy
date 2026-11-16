@@ -1,0 +1,11 @@
+{% extends "effectif/base.html" %}
+{% block titre %}Connexion{% endblock %}
+{% block contenu %}
+  <h1>Connexion</h1>
+  {% if form.errors %}<p>Identifiants refusés.</p>{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Se connecter</button>
+  </form>
+{% endblock %}

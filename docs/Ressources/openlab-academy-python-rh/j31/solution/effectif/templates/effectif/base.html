@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titre %}Effectif RH{% endblock %}</title>
+</head>
+<body>
+  <header><a href="{% url 'salaries' %}">Effectif RH</a></header>
+  <main>{% block contenu %}{% endblock %}</main>
+  <footer><p>Données de démonstration, entièrement fictives.</p></footer>
+</body>
+</html>

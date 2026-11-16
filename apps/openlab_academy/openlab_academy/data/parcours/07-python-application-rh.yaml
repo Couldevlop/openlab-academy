@@ -4225,6 +4225,7 @@ blocs:
       - num: "J31"
         title: "Formulaires et validation côté serveur"
         evaluations: livrable
+        archive: depot-python-j31.zip
         contenu: >-
           Le formulaire de Django, la validation au serveur, l'affichage des erreurs, et la raison pour
           laquelle la validation du navigateur ne protège rien.
@@ -4361,6 +4362,7 @@ blocs:
       - num: "J32"
         title: "Authentification"
         evaluations: livrable
+        archive: depot-python-j32.zip
         contenu: >-
           Connexion, déconnexion, protection d'une page, utilisateur de démonstration, et la page sensible
           oubliée.
@@ -4490,6 +4492,7 @@ blocs:
       - num: "J33"
         title: "Rôles et permissions"
         evaluations: livrable
+        archive: depot-python-j33.zip
         contenu: >-
           Des groupes RH et manager, des permissions vérifiées au serveur, et la différence entre masquer
           un bouton et protéger une page.
@@ -4638,6 +4641,7 @@ blocs:
       - num: "J34"
         title: "Une commande de gestion qui réutilise le cœur"
         evaluations: livrable
+        archive: depot-python-j34.zip
         contenu: >-
           Écrire une commande manage.py qui importe un fichier CSV en appelant le cœur de la semaine 3,
           sans recoder la moindre règle.
@@ -4782,6 +4786,7 @@ blocs:
       - num: "J35"
         title: "Finir et montrer"
         evaluations: livrable
+        archive: depot-python-j35.zip
         contenu: >-
           Les états de l'application, la suite de tests complète, la vérification de déploiement, le mode
           de débogage désactivé et la clé secrète hors du dépôt.
