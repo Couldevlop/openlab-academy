@@ -20,7 +20,15 @@ les ressources de l'application. Trois usages :
 - `--verifier` : échoue si une archive livrée diffère de ce que le dépôt source produit ;
 - `--eprouver` : lance les tests de chaque journée sur `depart/` puis sur `solution/`, et exige le
   rouge puis le vert. Il demande pytest, absent de l'image de l'application : il se lance à la main
-  ou dans un environnement qui en dispose.
+  ou dans un environnement qui en dispose. Deux options l'accompagnent :
+  `--python <chemin>` choisit l'interpréteur qui exécute les tests, ce qui permet de garder Django
+  dans un environnement dédié plutôt que dans l'environnement principal, et `--journees j26,j27`
+  limite la vérification à quelques journées.
+
+Ce que chaque semaine demande pour être éprouvée : rien d'autre que pytest pour les semaines 1 à 3,
+pytest plus FastAPI et httpx pour la semaine 4, pytest seul pour la semaine 5 (les tests de l'écran
+éprouvent des fonctions pures et la forme du fichier, jamais Streamlit lui-même), pytest plus
+Django pour les semaines 6 et 7.
 
 Règles tenues par le dépôt source :
 

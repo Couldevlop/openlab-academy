@@ -3557,6 +3557,7 @@ blocs:
       - num: "J26"
         title: "Pourquoi Django, et un projet qui démarre"
         evaluations: livrable
+        archive: depot-python-j26.zip
         contenu: >-
           Ce que Django apporte par rapport à ce que vous avez écrit, la commande de création de projet,
           l'arborescence, SQLite et le serveur de développement.
@@ -3678,6 +3679,7 @@ blocs:
       - num: "J27"
         title: "Modèles et migrations"
         evaluations: livrable
+        archive: depot-python-j27.zip
         contenu: >-
           Décrire les données par des classes, générer les migrations, les appliquer, et comprendre
           pourquoi une migration est un journal et non un script jetable.
@@ -3820,6 +3822,7 @@ blocs:
       - num: "J28"
         title: "L'ORM : créer, filtrer, agréger"
         evaluations: livrable
+        archive: depot-python-j28.zip
         contenu: >-
           Les requêtes de Django, les filtres, les agrégations, et la raison pour laquelle on laisse l'ORM
           écrire le SQL.
@@ -3955,6 +3958,7 @@ blocs:
       - num: "J29"
         title: "L'administration comme back-office"
         evaluations: livrable
+        archive: depot-python-j29.zip
         contenu: >-
           Enregistrer les modèles dans l'administration, déclarer les colonnes et les filtres utiles, et
           décider ce qu'on n'expose pas.
@@ -4087,6 +4091,7 @@ blocs:
       - num: "J30"
         title: "Vues et gabarits"
         evaluations: livrable
+        archive: depot-python-j30.zip
         contenu: >-
           Le découpage modèle, vue, gabarit, l'écriture d'une liste et d'une fiche, et la règle qui garde
           toute logique métier hors du gabarit.

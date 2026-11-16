@@ -112,7 +112,7 @@ def construire() -> dict[str, bytes]:
     return {f"depot-python-{journee.name}.zip": archive(contenu(journee)) for journee in journees()}
 
 
-def eprouver() -> list[str]:
+def eprouver(interpreteur: str = sys.executable, retenues: list[str] | None = None) -> list[str]:
     """Lance les tests d'une journée sur le squelette puis sur la solution.
 
     Rend la liste des journées fautives : celles dont le squelette passe (le challenge ne
@@ -120,6 +120,8 @@ def eprouver() -> list[str]:
     """
     fautives = []
     for journee in journees():
+        if retenues and journee.name not in retenues:
+            continue
         for source, attendu_vert in ((journee / "depart", False), (journee / "solution", True)):
             with tempfile.TemporaryDirectory() as temporaire:
                 travail = pathlib.Path(temporaire)
@@ -127,7 +129,7 @@ def eprouver() -> list[str]:
                 shutil.copytree(journee / "tests", travail / "tests", dirs_exist_ok=True)
                 environnement = dict(os.environ, PYTHONPATH=str(travail), PYTHONDONTWRITEBYTECODE="1")
                 execution = subprocess.run(
-                    [sys.executable, "-m", "pytest", "-q", "--no-header", "-p", "no:cacheprovider"],
+                    [interpreteur, "-m", "pytest", "-q", "--no-header", "-p", "no:cacheprovider"],
                     cwd=travail, capture_output=True, text=True, env=environnement)
                 if (execution.returncode == 0) != attendu_vert:
                     fautives.append(f"{journee.name} / {source.name} : "
@@ -142,13 +144,20 @@ def main() -> int:
                         help="ne rien écrire ; échouer si une archive livrée diffère du rendu")
     parser.add_argument("--eprouver", action="store_true",
                         help="lancer les tests de chaque journée sur le squelette puis la solution")
+    parser.add_argument("--python", default=sys.executable, metavar="CHEMIN",
+                        help="interpréteur qui exécute les tests ; utile pour les journées Django, "
+                             "qui demandent un environnement où Django est installé")
+    parser.add_argument("--journees", default="", metavar="j26,j27",
+                        help="n'éprouver que ces journées, séparées par des virgules")
     arguments = parser.parse_args()
 
     if arguments.eprouver:
-        fautives = eprouver()
+        retenues = [nom.strip() for nom in arguments.journees.split(",") if nom.strip()]
+        fautives = eprouver(arguments.python, retenues)
         for ligne in fautives:
             print(f"  FAUTIF    {ligne}")
-        print(f"{len(journees())} journées éprouvées, {len(fautives)} fautives.")
+        nombre = len(retenues) if retenues else len(journees())
+        print(f"{nombre} journées éprouvées, {len(fautives)} fautives.")
         return 1 if fautives else 0
 
     DESTINATION.mkdir(parents=True, exist_ok=True)
