@@ -302,6 +302,8 @@ class Parcours:
     gratuit: bool = False  # parcours MOOC : aucun tarif ni blocage pour paiement
     acces_limite_a_la_cohorte: bool = False  # ouvert seulement entre les dates de sa cohorte
     mise_en_avant: bool = False  # « featured » du LMS
+    # parcours quotidien : une leçon ne s'ouvre qu'une fois la précédente terminée
+    progression_sequentielle: bool = False
     # exercices de fin de leçon : valeurs de la plateforme, qu'un parcours peut redéfinir pour ses apprenants
     delai_exercices_minutes: int = 60
     tentatives_max: int = 3

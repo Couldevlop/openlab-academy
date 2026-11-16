@@ -97,6 +97,19 @@ class TestDepotFrappe(FrappeTestCase):
         self.assertEqual(frappe.db.get_value("LMS Course", nom, ["parcours_gratuit", "acces_limite_cohorte", "featured"]),
                          (0, 0, 0))
 
+    def test_progression_sequentielle_publiee_et_republiee(self):
+        """Le parcours quotidien verrouille ses leçons ; celui qui ne le demande pas les laisse libres."""
+        nom = self.depot.creer(parcours(title=TITRE, progression_sequentielle=True))
+        self.assertEqual(frappe.db.get_value("LMS Course", nom, "enforce_lesson_completion"), 1)
+        self.depot.remplacer(nom, parcours(title=TITRE))
+        self.assertEqual(frappe.db.get_value("LMS Course", nom, "enforce_lesson_completion"), 0)
+
+    def test_completer_applique_la_progression_sequentielle(self):
+        """Parcours à inscrits : le verrou suit aussi, sinon la promo en cours garderait l'ancien régime."""
+        nom = self.depot.creer(self.p)
+        self.depot.completer(nom, parcours(title=TITRE, progression_sequentielle=True))
+        self.assertEqual(frappe.db.get_value("LMS Course", nom, "enforce_lesson_completion"), 1)
+
     def test_archive_jointe_en_fichier_prive_et_citee_par_la_lecon(self):
         """L'archive est un fichier privé attaché à la leçon : seul le contrôle des médias du LMS la sert, donc
         seul un membre dont le parcours est ouvert et la leçon accessible peut la télécharger."""

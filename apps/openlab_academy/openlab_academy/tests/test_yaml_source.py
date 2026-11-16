@@ -90,6 +90,19 @@ class TestConversion(unittest.TestCase):
         p = depuis_dict(parcours_brut(), "t.yaml")
         self.assertEqual((p.gratuit, p.acces_limite_a_la_cohorte, p.mise_en_avant), (False, False, False))
 
+    def test_progression_sequentielle_lue(self):
+        """Parcours quotidien : la leçon du jour n'ouvre qu'après celle de la veille."""
+        brut = parcours_brut()
+        brut["progression_sequentielle"] = True
+        self.assertTrue(depuis_dict(brut, "t.yaml").progression_sequentielle)
+        self.assertFalse(depuis_dict(parcours_brut(), "t.yaml").progression_sequentielle)
+
+    def test_progression_sequentielle_non_booleenne_refusee(self):
+        brut = parcours_brut()
+        brut["progression_sequentielle"] = "oui"
+        with self.assertRaisesRegex(FormatInvalide, "progression_sequentielle doit être un booléen"):
+            depuis_dict(brut, "t.yaml")
+
     def test_cle_de_lancement_non_booleenne_refusee(self):
         for valeur in (1, "oui"):
             brut = parcours_brut()

@@ -301,6 +301,7 @@ class _Lecteur:
             gratuit=self.booleen(d, "gratuit"),
             acces_limite_a_la_cohorte=self.booleen(d, "acces_limite_a_la_cohorte"),
             mise_en_avant=self.booleen(d, "mise_en_avant"),
+            progression_sequentielle=self.booleen(d, "progression_sequentielle"),
             **parametres,
         )
 

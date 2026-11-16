@@ -16,6 +16,9 @@ from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
 from openlab_academy.infrastructure.depot_ouvertures_frappe import CHAMP_DELAI
 from openlab_academy.infrastructure.visibilite_frappe import CHAMP_LIMITE, CHAMP_VIDEO
 
+# champ du LMS : une leçon ne s'ouvre qu'une fois la précédente terminée
+CHAMP_SEQUENTIEL = "enforce_lesson_completion"
+
 
 class DepotFrappe:
     def __init__(self, commit: bool = True, reglages: Reglages | None = None,
@@ -107,9 +110,10 @@ class DepotFrappe:
 
     @staticmethod
     def _drapeaux(p: Parcours) -> dict:
-        """Accès limité et délai des exercices toujours écrits ; gratuit et mise en avant seulement s'ils sont
+        """Accès limité, délai des exercices et progression séquentielle toujours écrits ; gratuit et mise en avant seulement s'ils sont
         demandés : absents, la décision de l'administrateur n'est pas écrasée."""
-        drapeaux = {CHAMP_LIMITE: int(p.acces_limite_a_la_cohorte), CHAMP_DELAI: p.exercices.delai_minutes}
+        drapeaux = {CHAMP_LIMITE: int(p.acces_limite_a_la_cohorte), CHAMP_DELAI: p.exercices.delai_minutes,
+                    CHAMP_SEQUENTIEL: int(p.progression_sequentielle)}
         if p.gratuit:
             drapeaux[CHAMP_GRATUIT] = 1
         if p.mise_en_avant:
