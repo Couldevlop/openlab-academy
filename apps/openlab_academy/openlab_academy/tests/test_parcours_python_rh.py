@@ -6,8 +6,11 @@ posée au mauvais endroit bloque l'apprenant sur un rendu que la page ne demande
 disent avant la publication.
 """
 import ast
+import hashlib
+import json
 import pathlib
 import unittest
+import zipfile
 
 from openlab_academy.domain.parcours import Evaluations, Parcours
 from openlab_academy.infrastructure.yaml_source import PARCOURS_DIR, charger_dossier
@@ -15,6 +18,7 @@ from openlab_academy.infrastructure.yaml_source import PARCOURS_DIR, charger_dos
 TITRE = "Bases de Python, jour après jour"
 JOURNEES = 35
 RESSOURCES = pathlib.Path(__file__).parents[1] / "data" / "ressources"
+EMPREINTES = pathlib.Path(__file__).parents[1] / "data" / "depots-python.json"
 BLOCS = 6
 
 
@@ -71,6 +75,24 @@ class TestParcoursPythonRh(unittest.TestCase):
             with self.subTest(m.num):
                 self.assertEqual(m.archive, f"depot-python-{m.num.lower()}.zip")
                 self.assertTrue((RESSOURCES / m.archive).is_file(), m.archive)
+
+    def test_depot_du_jour_complet_et_conforme_a_son_empreinte(self):
+        """Une archive livrée doit porter l'énoncé, la prise en main et les tests, et être exactement
+        celle que le script de construction produit : sinon l'apprenant télécharge autre chose que ce
+        que le dépôt source contient."""
+        self.assertTrue(EMPREINTES.is_file(), EMPREINTES)
+        attendues = json.loads(EMPREINTES.read_text(encoding="utf-8"))
+        cites = [m.archive for m in self.modules if m.archive]
+        self.assertTrue(cites)
+        for nom in cites:
+            with self.subTest(nom):
+                fichier = RESSOURCES / nom
+                self.assertIn(nom, attendues)
+                self.assertEqual(hashlib.sha256(fichier.read_bytes()).hexdigest(), attendues[nom])
+                entrees = zipfile.ZipFile(fichier).namelist()
+                self.assertIn("enonce.md", entrees)
+                self.assertIn("LISEZ-MOI.md", entrees)
+                self.assertTrue([e for e in entrees if e.startswith("tests/")], entrees)
 
     def test_quiz_de_rappel_a_cinq_questions(self):
         """Chaque rappel porte son quiz complet : sans lui, la leçon du jour s'ouvrirait sans contrôle."""

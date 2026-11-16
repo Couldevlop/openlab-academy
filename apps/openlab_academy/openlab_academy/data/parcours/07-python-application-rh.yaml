@@ -36,6 +36,7 @@ blocs:
       - num: "J01"
         title: "Installer Python et exécuter son premier fichier"
         evaluations: livrable
+        archive: depot-python-j01.zip
         contenu: >-
           Installer Python, écrire un fichier, l'exécuter depuis le terminal, déclarer des variables et
           afficher une valeur. Et surtout : lire une trace d'erreur, parce que vous en verrez tous les jours
@@ -194,6 +195,7 @@ blocs:
       - num: "J02"
         title: "Nombres, arrondis et montants en FCFA"
         evaluations: livrable
+        archive: depot-python-j02.zip
         contenu: >-
           Entiers et nombres à virgule, division entière et division décimale, arrondi, f-strings, et la
           façon d'écrire un montant en francs CFA sans se tromper d'unité.
@@ -336,6 +338,7 @@ blocs:
       - num: "J03"
         title: "Décider : if, elif, else"
         evaluations: livrable
+        archive: depot-python-j03.zip
         contenu: >-
           Booléens, comparaisons, enchaînement if, elif et else, et l'habitude de nommer une condition dans
           une variable pour la rendre lisible.
@@ -467,6 +470,7 @@ blocs:
       - num: "J04"
         title: "Répéter : for, range et while"
         evaluations: livrable
+        archive: depot-python-j04.zip
         contenu: >-
           Parcourir une séquence avec for, compter avec range, répéter tant qu'une condition tient avec
           while, et accumuler un total sans afficher à chaque tour.
@@ -608,6 +612,7 @@ blocs:
       - num: "J05"
         title: "Écrire sa première fonction"
         evaluations: livrable
+        archive: depot-python-j05.zip
         contenu: >-
           Le mot def, les paramètres, la valeur rendue, la docstring, et la différence décisive entre
           afficher une valeur et la rendre.
