@@ -38,65 +38,664 @@ blocs:
         title: "Installer Python et exécuter son premier fichier"
         evaluations: livrable
         contenu: >-
-          Installer Python, exécuter un fichier depuis le terminal, déclarer des variables, afficher avec print. Lire une trace d'erreur de bas en haut.
+          Installer Python, écrire un fichier, l'exécuter depuis le terminal, déclarer des variables et
+          afficher une valeur. Et surtout : lire une trace d'erreur, parce que vous en verrez tous les jours
+          pendant trente-cinq journées.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez exécuter un fichier Python depuis votre terminal, écrire des variables,
+              afficher leur valeur, et retrouver la ligne fautive dans une trace d'erreur sans appeler à
+              l'aide.
+
+              Une journée du parcours tient en une heure ou deux. Elle commence par un rappel de la veille
+              en cinq questions, se poursuit par cette leçon, et se termine par un challenge que vous rendez.
+              La journée suivante ne s'ouvre que lorsque celle du jour est terminée : c'est voulu, parce
+              qu'un débutant qui saute une journée paie la dette trois jours plus tard.
+          - titre: Le problème d'abord
+            texte: >-
+              Vous reprenez le fichier du personnel d'une petite entreprise d'Abidjan. On vous demande une
+              chose simple : afficher proprement la fiche d'un salarié, son nom, son poste et son salaire.
+              Aujourd'hui, cette fiche existe sur un bout de papier et dans la tête du gérant.
+
+              Vous ne savez pas encore écrire une ligne de Python. À la fin de la journée, votre programme
+              affichera cette fiche, et c'est la première brique de l'application RH que vous montrerez à
+              quelqu'un dans trente-cinq jours.
+          - titre: Installer Python et vérifier que ça marche
+            texte: >-
+              Rendez-vous sur python.org, section Downloads, et prenez la version stable proposée pour votre
+              système. Sous Windows, cochez impérativement la case « Add python.exe to PATH » dans la
+              première fenêtre de l'installateur : sans elle, votre terminal ne trouvera pas Python et vous
+              perdrez une demi-heure. Sous macOS, l'installateur officiel suffit. Sous Linux, Python est
+              presque toujours déjà là.
+
+              Ouvrez ensuite un terminal. Sous Windows, cherchez « PowerShell » dans le menu Démarrer. Sous
+              macOS, « Terminal » dans les applications. Sous Linux, votre terminal habituel. Tapez la
+              commande de vérification de votre système : elle doit répondre un numéro de version qui
+              commence par 3.
+
+              Un éditeur de texte vous servira à écrire les fichiers. Visual Studio Code est gratuit et
+              convient parfaitement ; n'importe quel éditeur de code fait l'affaire. Un traitement de texte,
+              en revanche, ne convient pas : il ajoute des caractères invisibles qui cassent votre programme.
+            tableaux:
+              - titre: Vérifier l'installation, selon votre système
+                entetes: [Système, Commande, Réponse attendue]
+                lignes:
+                  - [Windows, "py --version", "Python 3.13.x"]
+                  - [macOS, "python3 --version", "Python 3.13.x"]
+                  - [Linux, "python3 --version", "Python 3.12.x ou plus récent"]
+          - titre: Variables et affichage, à la main
+            texte: >-
+              Créez un dossier pour le parcours, puis un fichier nommé fiche.py à l'intérieur. Recopiez le
+              programme ci-dessous, à la main plutôt que par copier-coller : la mémoire des doigts compte
+              plus que vous ne le croyez pendant la première semaine.
+
+              Une variable est un nom posé sur une valeur. Le signe égal ne compare rien, il range : à
+              gauche le nom, à droite la valeur. La fonction print affiche ce qu'on lui donne. Les guillemets
+              délimitent du texte ; un nombre s'écrit sans guillemets, sinon ce n'est plus un nombre mais une
+              suite de caractères, et vous ne pourrez pas calculer avec.
+
+              Exécutez le fichier depuis le terminal, dans le dossier qui le contient. La commande est
+              py fiche.py sous Windows, python3 fiche.py sous macOS et Linux.
+            code:
+              - titre: fiche.py, votre premier programme
+                langage: python
+                source: |
+                  nom = "Awa Kone"
+                  poste = "Assistante RH"
+                  salaire_fcfa = 250000
+
+                  print(nom)
+                  print(poste)
+                  print(salaire_fcfa)
+          - titre: L'astuce du jour
+            texte: >-
+              Quand votre programme s'arrête sur une erreur, lisez la trace de bas en haut. La dernière
+              ligne nomme le problème, celle juste au-dessus indique le fichier et le numéro de ligne. Tout
+              le reste, au milieu, ne vous servira pas avant plusieurs semaines.
+
+              Les noms d'erreurs sont en anglais et ils reviennent sans cesse. NameError veut dire que vous
+              employez un nom qui n'existe pas, souvent une faute de frappe. SyntaxError veut dire que la
+              phrase Python est mal formée, souvent un guillemet ou une parenthèse oubliée. TypeError veut
+              dire que vous mélangez deux choses qui ne se mélangent pas, par exemple un texte et un nombre.
+            figures:
+              - nom: python-trace-erreur.svg
+                legende: "Une trace d'erreur se lit de bas en haut : la dernière ligne nomme le problème"
+          - titre: Le piège du jour
+            texte: >-
+              Le piège de la première journée est le guillemet non fermé. Écrivez nom = "Awa Kone sans le
+              guillemet final, exécutez, et Python vous répond SyntaxError: unterminated string literal,
+              avec le numéro de la ligne fautive.
+
+              Faites l'expérience volontairement, maintenant : retirez un guillemet, exécutez, lisez le
+              message, remettez-le. Provoquer une erreur pour la reconnaître coûte trente secondes
+              aujourd'hui et vous fera gagner des heures ce mois-ci. Même chose avec une parenthèse non
+              fermée dans un print.
+
+              Deuxième piège de débutant, plus sournois : enregistrer le fichier sans l'enregistrer
+              vraiment. Si votre programme ne change pas alors que vous venez de le modifier, vérifiez que
+              l'éditeur n'affiche pas une pastille de modification non enregistrée.
+          - titre: Challenge du jour
+            texte: >-
+              Complétez fiche.py pour qu'il expose quatre informations : la variable nom, la variable poste,
+              la variable salaire_fcfa, et une variable resume qui contient la phrase complète à afficher,
+              sous la forme « Awa Kone, Assistante RH, 250000 FCFA ».
+
+              Les tests livrés dans le dépôt du jour importent votre fichier et vérifient les quatre
+              valeurs. Pour les lancer, suivez le fichier LISEZ-MOI de l'archive : une commande pour
+              installer l'outil de test, une commande pour lancer les tests.
+
+              Critères d'acceptation : les quatre variables existent et portent exactement ces noms ; le
+              programme s'exécute sans erreur ; la variable resume est bien une phrase, pas un affichage.
         livrable: >-
-          Écrire fiche.py qui expose nom, poste, salaire_fcfa et resume ; les tests livrés importent le module et vérifient les quatre valeurs.
+          Écrire fiche.py qui expose nom, poste, salaire_fcfa et resume ; les tests livrés importent le
+          module et vérifient les quatre valeurs.
       - num: "J02R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 01, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 01, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Si l'un d'eux ne vous dit rien, rouvrez la
+              leçon d'hier avant de répondre : le rappel est là pour ça, pas pour vous piéger.
+            tableaux:
+              - titre: Les cinq points de la journée 01
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Exécuter un fichier, "Lancer py fiche.py ou python3 fiche.py depuis le bon dossier"]
+                  - [Variable, "Poser un nom sur une valeur avec le signe égal, qui range et ne compare pas"]
+                  - [Texte et nombre, "Mettre des guillemets autour d'un texte, jamais autour d'un nombre"]
+                  - [print, "Afficher une valeur pour la voir, sans que cela produise une valeur"]
+                  - [Trace d'erreur, "Lire de bas en haut : le nom de l'erreur, puis la ligne fautive"]
+        quiz:
+          - question: "Dans quel sens lit-on une trace d'erreur Python ?"
+            options: ["De bas en haut", "De haut en bas", "Au hasard", "Seulement la première ligne"]
+            bonnes: [1]
+            explication: "La dernière ligne nomme l'erreur et celle du dessus donne le fichier et la ligne fautive."
+          - question: "Que fait la ligne salaire_fcfa = 250000 ?"
+            options: ["Elle range la valeur 250000 sous le nom salaire_fcfa", "Elle compare salaire_fcfa à 250000", "Elle affiche 250000", "Elle crée un fichier"]
+            bonnes: [1]
+            explication: "Le signe égal affecte une valeur à un nom ; la comparaison s'écrit avec deux signes égal."
+          - question: "Quelle erreur signale un nom qui n'existe pas ?"
+            options: ["NameError", "SyntaxError", "TypeError", "ValueError"]
+            bonnes: [1]
+            explication: "NameError apparaît presque toujours après une faute de frappe sur un nom de variable."
+          - question: "Pourquoi écrire 250000 sans guillemets ?"
+            options: ["Pour pouvoir calculer avec", "Pour l'afficher plus vite", "Parce que les guillemets sont interdits", "Pour économiser de la mémoire"]
+            bonnes: [1]
+            explication: "Entre guillemets, c'est un texte : additionner deux textes les colle au lieu de les additionner."
+          - question: "Un guillemet non fermé provoque quelle erreur ?"
+            options: ["SyntaxError", "NameError", "TypeError", "Aucune, Python devine"]
+            bonnes: [1]
+            explication: "La phrase Python est mal formée : l'erreur est signalée avant même l'exécution."
       - num: "J02"
         title: "Nombres, arrondis et montants en FCFA"
         evaluations: livrable
         contenu: >-
-          Entiers et flottants, division entière et division décimale, arrondi, f-strings, écriture d'un montant en francs CFA.
+          Entiers et nombres à virgule, division entière et division décimale, arrondi, f-strings, et la
+          façon d'écrire un montant en francs CFA sans se tromper d'unité.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez calculer un salaire annuel à partir d'un salaire mensuel et de primes,
+              arrondir un montant correctement, et l'afficher en francs CFA avec les séparateurs de milliers.
+          - titre: Le problème d'abord
+            texte: >-
+              Le gérant veut connaître le coût annuel d'un salarié, primes comprises, et le voir écrit comme
+              sur un bulletin : 3 250 000 FCFA, et non 3250000.0. Avec les seules variables d'hier, vous ne
+              savez ni calculer, ni mettre en forme.
+
+              Le franc CFA n'a pas de centimes en pratique courante. Un montant s'écrit donc en nombre
+              entier, et tout calcul qui produit des décimales doit être arrondi avant d'être affiché.
+          - titre: La notion
+            texte: >-
+              Python distingue deux sortes de nombres. L'entier, int, compte sans virgule : 250000. Le
+              flottant, float, porte une partie décimale : 250000.0. Les quatre opérations s'écrivent avec
+              les symboles habituels ; l'étoile multiplie.
+
+              Deux divisions cohabitent, et c'est la source d'erreur du jour. La barre oblique simple rend
+              toujours un flottant, même quand le résultat tombe juste : 10 / 2 vaut 5.0. La double barre
+              oblique rend le quotient entier : 10 // 3 vaut 3. La fonction round arrondit, et round(x) sans
+              second argument rend un entier.
+
+              L'affichage se fait avec une f-string : une chaîne précédée de la lettre f, dans laquelle des
+              accolades contiennent une expression Python. À l'intérieur des accolades, un format peut
+              suivre deux points ; celui qui nous intéresse aujourd'hui groupe les milliers.
+            code:
+              - titre: Les deux divisions, l'arrondi et la mise en forme
+                langage: python
+                source: |
+                  print(10 / 2)        # 5.0, un flottant
+                  print(10 // 3)       # 3, le quotient entier
+                  print(10 % 3)        # 1, le reste
+                  print(round(2.5))    # 2, et non 3 : Python arrondit au pair le plus proche
+                  print(round(2.6))    # 3
+
+                  montant = 3250000
+                  print(f"{montant:,} FCFA".replace(",", " "))   # 3 250 000 FCFA
+          - titre: À la main
+            texte: >-
+              Ouvrez un terminal et tapez py ou python3 sans nom de fichier : vous entrez dans l'interpréteur
+              interactif, qui calcule ce que vous tapez et affiche le résultat immédiatement. C'est votre
+              calculatrice et votre laboratoire pour toute la semaine.
+
+              Essayez-y 0.1 + 0.2. Python répond 0.30000000000000004. Ce n'est pas un défaut de Python mais
+              la façon dont les machines rangent les nombres à virgule : certaines valeurs décimales n'ont
+              pas d'écriture exacte en binaire, comme un tiers n'en a pas en décimal. Conséquence pratique
+              pour vous : ne comparez jamais deux flottants avec le signe égal, et gardez les montants en
+              entiers.
+
+              Pour quitter l'interpréteur, tapez exit() et validez.
+          - titre: L'astuce du jour
+            texte: >-
+              Nommez l'unité dans la variable. Écrivez salaire_fcfa et non salaire, duree_mois et non duree.
+              Le jour où quelqu'un ajoute une prime en euros ou une durée en jours, l'erreur saute aux yeux
+              à la lecture, sans exécuter le programme.
+
+              C'est une habitude de professionnel, pas une coquetterie : les plus célèbres pannes de
+              l'informatique industrielle viennent d'une unité confondue avec une autre.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est la confusion entre les deux divisions. Un salaire mensuel calculé avec la
+              barre simple devient un flottant, s'affiche avec un .0 traînant, et se met à traîner des
+              décimales dès qu'une prime ne tombe pas rond.
+
+              Règle de travail pour tout le parcours : les montants en francs CFA restent des entiers. Si un
+              calcul produit un flottant, arrondissez tout de suite avec round, et seulement ensuite
+              affichez. Arrondir à l'affichage sans arrondir la valeur conserve l'erreur dans les calculs
+              suivants.
+            tableaux:
+              - titre: Choisir la bonne opération
+                entetes: [Besoin, Écriture, Résultat sur 7 et 2]
+                lignes:
+                  - [Division exacte, "7 / 2", "3.5, un flottant"]
+                  - [Quotient entier, "7 // 2", "3, un entier"]
+                  - [Reste, "7 % 2", "1, un entier"]
+                  - [Arrondi au plus proche, "round(7 / 2)", "4"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez deux fonctions dans le fichier du jour. La première, salaire_annuel(mensuel, primes),
+              rend le coût annuel : douze fois le salaire mensuel, plus le total des primes, en nombre
+              entier. La seconde, formater_fcfa(montant), rend une chaîne comme « 3 250 000 FCFA », avec des
+              espaces comme séparateurs de milliers.
+
+              Les tests livrés couvrent treize cas, dont un salaire nul, un montant à sept chiffres et un
+              calcul qui tombe sur une décimale. Ils vérifient le type du résultat : salaire_annuel doit
+              rendre un entier, formater_fcfa une chaîne.
+
+              Critères d'acceptation : aucun .0 dans les montants affichés ; les deux fonctions rendent une
+              valeur et n'affichent rien.
         livrable: >-
-          Écrire salaire_annuel(mensuel, primes) et formater_fcfa(montant) ; les tests couvrent treize cas dont zéro, un montant à sept chiffres et un arrondi.
+          Écrire salaire_annuel(mensuel, primes) et formater_fcfa(montant) ; les tests couvrent treize cas
+          dont zéro, un montant à sept chiffres et un arrondi.
       - num: "J03R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 02, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 02, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Les nombres reviendront tous les jours du
+              parcours : c'est la base de tout calcul de paie.
+            tableaux:
+              - titre: Les cinq points de la journée 02
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Entier et flottant, "Reconnaître 250000 et 250000.0, et savoir lequel vous voulez"]
+                  - [Les deux divisions, "Choisir entre la barre simple et la double barre selon le besoin"]
+                  - [Arrondi, "Arrondir la valeur avec round, et pas seulement son affichage"]
+                  - [f-string, "Insérer une valeur dans un texte avec les accolades"]
+                  - [Unité dans le nom, "Écrire salaire_fcfa plutôt que salaire"]
+        quiz:
+          - question: "Que vaut 7 // 2 ?"
+            options: ["3", "3.5", "4", "1"]
+            bonnes: [1]
+            explication: "La double barre oblique rend le quotient entier, sans arrondir au plus proche."
+          - question: "Que vaut 10 / 2 en Python ?"
+            options: ["5.0", "5", "2", "0.2"]
+            bonnes: [1]
+            explication: "La barre simple rend toujours un flottant, même quand la division tombe juste."
+          - question: "Pourquoi 0.1 + 0.2 ne vaut-il pas exactement 0.3 ?"
+            options: ["Parce que les décimaux n'ont pas tous une écriture binaire exacte", "Parce que Python a un bug", "Parce qu'il faut arrondir avant d'additionner", "Parce que 0.1 est un texte"]
+            bonnes: [1]
+            explication: "C'est une propriété des nombres à virgule flottante : gardez les montants en entiers."
+          - question: "Comment afficher un montant dans une phrase ?"
+            options: ["Avec une f-string et des accolades", "Avec print deux fois", "En collant le nombre au texte avec un plus", "Avec round"]
+            bonnes: [1]
+            explication: "La f-string insère la valeur dans le texte ; coller un nombre à un texte avec un plus lève une TypeError."
+          - question: "Pourquoi nommer une variable salaire_fcfa plutôt que salaire ?"
+            options: ["Pour que l'unité se lise sans exécuter le programme", "Parce que Python l'exige", "Pour que le programme aille plus vite", "Pour éviter les accents"]
+            bonnes: [1]
+            explication: "Une unité dans le nom fait apparaître les mélanges d'unités à la simple lecture."
       - num: "J03"
         title: "Décider : if, elif, else"
         evaluations: livrable
         contenu: >-
-          Booléens, comparaisons, enchaînement if / elif / else, condition nommée dans une variable.
+          Booléens, comparaisons, enchaînement if, elif et else, et l'habitude de nommer une condition dans
+          une variable pour la rendre lisible.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez écrire une règle métier à seuils, la tester à ses bornes, et expliquer
+              pourquoi les bornes sont l'endroit où les programmes se trompent.
+          - titre: Le problème d'abord
+            texte: >-
+              Le gérant vous demande si un salarié a droit à ses congés. La règle de l'entreprise tient en
+              une phrase : le droit s'ouvre à douze mois d'ancienneté révolus. Avant, rien. À partir de
+              douze mois, le droit est acquis.
+
+              Votre programme d'hier sait calculer, pas décider. Il lui manque la capacité de prendre un
+              chemin ou un autre selon une condition.
+          - titre: La notion
+            texte: >-
+              Une comparaison produit un booléen, c'est-à-dire une valeur qui vaut True ou False, avec une
+              majuscule. Les comparaisons s'écrivent avec deux signes égal pour l'égalité, un point
+              d'exclamation suivi d'un égal pour la différence, et les signes habituels pour les
+              inégalités.
+
+              L'instruction if exécute un bloc si la condition est vraie. Le bloc est délimité par
+              l'indentation, c'est-à-dire par les espaces en début de ligne : quatre espaces, toujours
+              quatre, jamais une tabulation mélangée à des espaces. Le mot elif, contraction de else if,
+              ajoute un cas ; le mot else attrape tout le reste.
+
+              Les conditions se combinent avec and, or et not, qui s'écrivent en toutes lettres et non avec
+              des symboles.
+            figures:
+              - nom: python-seuils-conges.svg
+                legende: Les bornes d'une règle à seuils, là où les programmes se trompent
+            code:
+              - titre: Une règle à seuils, écrite lisiblement
+                langage: python
+                source: |
+                  mois_anciennete = 11
+
+                  anciennete_suffisante = mois_anciennete >= 12
+                  if anciennete_suffisante:
+                      print("Droit aux congés ouvert")
+                  else:
+                      print("Pas encore de droit")
+          - titre: À la main
+            texte: >-
+              Reprenez l'interpréteur interactif et tapez les comparaisons une à une : 11 >= 12, 12 >= 12,
+              13 >= 12. Observez les trois réponses. Vous venez de tester les trois cas qui comptent dans
+              toute règle à seuil : juste avant, pile sur la borne, juste après.
+
+              Tapez ensuite "RH" == "rh". Python répond False : la comparaison de textes distingue les
+              majuscules des minuscules. Retenez-le, vous le reverrez en journée 10.
+          - titre: L'astuce du jour
+            texte: >-
+              Donnez un nom à votre condition. Écrire anciennete_suffisante = mois_anciennete >= 12, puis
+              if anciennete_suffisante, prend une ligne de plus et rend la règle lisible par le gérant, qui
+              n'est pas développeur.
+
+              Cette habitude paie surtout quand les conditions se compliquent. Une condition composée de
+              trois morceaux est illisible dans un if ; nommée en deux variables intermédiaires, elle se
+              relit à voix haute.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est le simple signe égal employé à la place du double. En Python, cette faute
+              provoque une SyntaxError dans un if, ce qui est une chance : l'erreur apparaît tout de suite.
+
+              Le second piège est silencieux, donc bien pire : une borne mal placée. Écrire un supérieur
+              strict là où la règle dit « douze mois révolus » prive de ses congés tout salarié qui a
+              exactement douze mois d'ancienneté. Personne ne s'en aperçoit avant une réclamation. D'où la
+              discipline du jour : pour chaque seuil, testez la valeur juste en dessous, la valeur exacte et
+              la valeur juste au-dessus.
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez droit_aux_conges(mois_anciennete) qui rend True si le droit est ouvert et False sinon,
+              selon la règle de l'entreprise : douze mois révolus. La fonction rend un booléen, elle
+              n'affiche rien.
+
+              Les tests livrés passent aux bornes 0, 11, 12 et 13. Un test vérifie en plus qu'une ancienneté
+              négative lève une erreur plutôt que de rendre False en silence : une ancienneté négative est
+              une donnée fausse, pas un cas métier.
+
+              Critères d'acceptation : la fonction rend un booléen ; les quatre bornes passent ; la règle
+              est écrite une seule fois dans le programme.
         livrable: >-
-          Écrire droit_aux_conges(mois_anciennete) selon la règle du cours ; les tests passent aux bornes 0, 11, 12 et 13.
+          Écrire droit_aux_conges(mois_anciennete) selon la règle du cours ; les tests passent aux bornes
+          0, 11, 12 et 13.
       - num: "J04R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 03, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 03, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Les règles à seuils sont le cœur de tout logiciel
+              de gestion du personnel.
+            tableaux:
+              - titre: Les cinq points de la journée 03
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Booléen, "Reconnaître une valeur True ou False produite par une comparaison"]
+                  - [Égalité, "Comparer avec deux signes égal, affecter avec un seul"]
+                  - [Indentation, "Délimiter un bloc par quatre espaces, sans jamais mélanger les tabulations"]
+                  - [elif et else, "Enchaîner plusieurs cas, et attraper le reste"]
+                  - [Bornes, "Tester la valeur avant le seuil, le seuil, et la valeur après"]
+        quiz:
+          - question: "Comment compare-t-on deux valeurs en Python ?"
+            options: ["Avec deux signes égal", "Avec un signe égal", "Avec le mot egal", "Avec une flèche"]
+            bonnes: [1]
+            explication: "Un seul signe égal affecte une valeur à un nom ; il ne compare rien."
+          - question: "Qu'est-ce qui délimite un bloc de code en Python ?"
+            options: ["L'indentation", "Les accolades", "Les parenthèses", "Le point-virgule"]
+            bonnes: [1]
+            explication: "Les espaces en début de ligne font partie du langage : quatre espaces par niveau."
+          - question: "Que vaut la comparaison 12 >= 12 ?"
+            options: ["True", "False", "12", "Une erreur"]
+            bonnes: [1]
+            explication: "Le supérieur ou égal inclut la borne : c'est exactement ce que veut dire « douze mois révolus »."
+          - question: "Comment combiner deux conditions qui doivent être vraies ensemble ?"
+            options: ["Avec and", "Avec &&", "Avec plus", "Avec une virgule"]
+            bonnes: [1]
+            explication: "Python écrit les opérateurs logiques en toutes lettres : and, or et not."
+          - question: "Pourquoi nommer une condition dans une variable ?"
+            options: ["Pour que la règle se relise en langage courant", "Pour accélérer le programme", "Parce que if l'exige", "Pour éviter les erreurs de frappe"]
+            bonnes: [1]
+            explication: "Une condition nommée se relit à voix haute, y compris par quelqu'un qui ne programme pas."
       - num: "J04"
         title: "Répéter : for, range et while"
         evaluations: livrable
         contenu: >-
-          Boucle for sur une séquence, range, boucle while, accumulation d'un total, affichage une seule fois à la fin.
+          Parcourir une séquence avec for, compter avec range, répéter tant qu'une condition tient avec
+          while, et accumuler un total sans afficher à chaque tour.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez parcourir une liste de salaires, en calculer le total et en trouver le
+              plus élevé, sans recopier la même ligne dix fois.
+          - titre: Le problème d'abord
+            texte: >-
+              Le gérant veut la masse salariale du mois : la somme de tous les salaires versés. L'entreprise
+              compte douze personnes aujourd'hui, et trente l'an prochain. Recopier douze additions n'est
+              pas une solution, ni trente.
+
+              Il vous faut une instruction qui répète un traitement pour chaque élément d'une collection,
+              quel que soit le nombre d'éléments.
+          - titre: La notion
+            texte: >-
+              La boucle for parcourt les éléments d'une séquence, un par un. À chaque tour, la variable de
+              boucle prend la valeur de l'élément courant. Une liste s'écrit entre crochets, ses éléments
+              séparés par des virgules ; vous l'étudierez en détail en journée 06, aujourd'hui vous la
+              parcourez.
+
+              La fonction range produit une suite de nombres : range(5) donne 0, 1, 2, 3 et 4, soit cinq
+              valeurs qui commencent à zéro et s'arrêtent avant la borne. C'est l'outil du « répéter n fois ».
+
+              La boucle while répète tant qu'une condition reste vraie. Elle sert quand le nombre de tours
+              n'est pas connu d'avance. Elle exige que quelque chose change à l'intérieur de la boucle,
+              sinon elle tourne indéfiniment.
+
+              Accumuler, c'est préparer une variable à zéro avant la boucle, puis l'augmenter à chaque tour.
+              L'écriture total += salaire est un raccourci pour total = total + salaire.
+            code:
+              - titre: Accumuler un total, puis afficher une seule fois
+                langage: python
+                source: |
+                  salaires = [250000, 180000, 420000]
+
+                  total = 0
+                  for salaire in salaires:
+                      total += salaire
+
+                  print(total)   # 850000, affiché une fois, après la boucle
+          - titre: À la main
+            texte: >-
+              Tapez la boucle ci-dessus dans un fichier, exécutez-la, puis déplacez le print à l'intérieur
+              de la boucle, en l'indentant au même niveau que l'addition. Exécutez de nouveau : vous voyez
+              trois lignes au lieu d'une, parce que l'affichage a lieu à chaque tour.
+
+              C'est la démonstration la plus parlante de ce que signifie l'indentation en Python : la place
+              d'une ligne décide du moment où elle s'exécute. Remettez le print après la boucle avant de
+              continuer.
+
+              Essayez ensuite une boucle qui compte : for i in range(3), avec un print de i à l'intérieur.
+              Observez que la suite commence à 0 et s'arrête à 2.
+          - titre: L'astuce du jour
+            texte: >-
+              Accumulez dans la boucle, affichez après. Un programme qui affiche à chaque tour produit un
+              écran illisible dès que les données grossissent, et surtout il ne sépare pas le calcul du
+              résultat.
+
+              Cette discipline prépare la journée 05 : une fonction qui calcule rend une valeur, elle
+              n'affiche rien. Prenez l'habitude dès aujourd'hui.
+          - titre: Le piège du jour
+            texte: >-
+              Deux pièges guettent aujourd'hui. Le premier est la boucle while qui ne s'arrête pas, parce
+              que la condition ne change jamais à l'intérieur. Si votre programme semble figé, c'est
+              probablement cela : arrêtez-le avec Ctrl+C dans le terminal.
+
+              Le second est l'erreur d'un rang, en anglais off-by-one. range(3) produit trois valeurs qui
+              s'arrêtent à 2, pas à 3. Compter de 1 à 12 s'écrit range(1, 13). Chaque fois que vous écrivez
+              un range, relisez-le en vous demandant ce que vaut la dernière valeur produite.
+            tableaux:
+              - titre: Ce que produit range
+                entetes: [Écriture, Valeurs produites, Nombre de tours]
+                lignes:
+                  - ["range(3)", "0, 1, 2", "3"]
+                  - ["range(1, 4)", "1, 2, 3", "3"]
+                  - ["range(1, 13)", "1 à 12", "12"]
+                  - ["range(0)", "aucune", "0"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez masse_salariale(salaires) qui rend la somme d'une liste de salaires, et
+              plus_haut_salaire(salaires) qui rend le plus élevé. Les deux rendent un nombre entier et
+              n'affichent rien.
+
+              Les tests livrés couvrent la liste vide, une liste d'un seul élément et une liste où deux
+              salaires sont ex aequo. Sur une liste vide, masse_salariale rend 0 ; plus_haut_salaire doit
+              lever une erreur, parce qu'un plus haut salaire n'existe pas dans un effectif vide, et rendre
+              0 serait un mensonge.
+
+              Critères d'acceptation : aucune fonction prédéfinie de somme ou de maximum, le but du jour
+              étant d'écrire la boucle ; les trois cas limites passent.
         livrable: >-
-          Écrire masse_salariale(salaires) et plus_haut_salaire(salaires) ; les tests couvrent la liste vide, un seul élément et deux salaires ex æquo.
+          Écrire masse_salariale(salaires) et plus_haut_salaire(salaires) ; les tests couvrent la liste
+          vide, un seul élément et deux salaires ex aequo.
       - num: "J05R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 04, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 04, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. La boucle et l'accumulation sont les deux gestes
+              que vous referez le plus souvent du parcours.
+            tableaux:
+              - titre: Les cinq points de la journée 04
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Boucle for, "Parcourir une liste élément par élément"]
+                  - [range, "Produire une suite de nombres qui s'arrête avant la borne"]
+                  - [Boucle while, "Répéter tant qu'une condition tient, et la faire changer"]
+                  - [Accumulation, "Préparer un total à zéro, puis l'augmenter à chaque tour"]
+                  - [Place du print, "Afficher après la boucle, pas à chaque tour"]
+        quiz:
+          - question: "Combien de valeurs produit range(3) ?"
+            options: ["3", "4", "2", "Une infinité"]
+            bonnes: [1]
+            explication: "range(3) produit 0, 1 et 2 : trois valeurs qui s'arrêtent avant la borne."
+          - question: "Que faut-il faire avant une boucle d'accumulation ?"
+            options: ["Préparer le total à zéro", "Afficher le total", "Trier la liste", "Compter les éléments"]
+            bonnes: [1]
+            explication: "Sans variable préparée avant la boucle, l'addition du premier tour n'a rien à quoi s'ajouter."
+          - question: "Pourquoi une boucle while peut-elle ne jamais s'arrêter ?"
+            options: ["Parce que rien ne change la condition à l'intérieur", "Parce que range est absent", "Parce que la liste est vide", "Parce qu'il manque un print"]
+            bonnes: [1]
+            explication: "Une condition qui reste vraie indéfiniment fait tourner la boucle sans fin : arrêtez avec Ctrl+C."
+          - question: "Comment compter de 1 à 12 ?"
+            options: ["range(1, 13)", "range(1, 12)", "range(12)", "range(0, 12)"]
+            bonnes: [1]
+            explication: "La borne de fin est exclue : il faut 13 pour que 12 soit la dernière valeur."
+          - question: "Où placer l'affichage d'un total ?"
+            options: ["Après la boucle", "À chaque tour de boucle", "Avant la boucle", "Dans la condition"]
+            bonnes: [1]
+            explication: "Le total n'est juste qu'une fois tous les éléments parcourus."
       - num: "J05"
         title: "Écrire sa première fonction"
         evaluations: livrable
         contenu: >-
-          def, paramètres, valeur de retour, docstring, différence entre afficher et rendre une valeur.
+          Le mot def, les paramètres, la valeur rendue, la docstring, et la différence décisive entre
+          afficher une valeur et la rendre.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez regrouper les calculs des quatre premières journées dans un fichier de
+              fonctions réutilisables, que les journées suivantes importeront sans les réécrire.
+          - titre: Le problème d'abord
+            texte: >-
+              Vos quatre programmes calculent chacun quelque chose d'utile, mais chacun dans son coin. Le
+              calcul de la masse salariale servira à l'écran de la direction, à l'API et à l'application
+              Django, dans trois semaines, cinq semaines et sept semaines.
+
+              Recopier le calcul à chaque fois garantit trois versions qui finiront par diverger. Il faut
+              l'écrire une fois, lui donner un nom, et l'appeler depuis partout.
+          - titre: La notion
+            texte: >-
+              Une fonction se déclare avec def, suivi de son nom, de ses paramètres entre parenthèses, et de
+              deux points. Son corps est indenté. L'instruction return rend une valeur à l'appelant et met
+              fin à l'exécution de la fonction.
+
+              Une fonction sans return rend None, une valeur spéciale qui signifie « rien ». C'est le piège
+              du jour, nous y venons.
+
+              La première ligne du corps peut être une docstring : une chaîne entre triples guillemets qui
+              dit ce que fait la fonction. Elle s'adresse à la personne qui lira le code dans six mois,
+              c'est-à-dire souvent vous.
+            figures:
+              - nom: python-fonction-entree-sortie.svg
+                legende: Une fonction reçoit des paramètres et rend une valeur ; afficher n'est pas rendre
+            code:
+              - titre: Une fonction qui calcule et rend
+                langage: python
+                source: |
+                  def masse_salariale(salaires):
+                      """Rend la somme des salaires, en francs CFA."""
+                      total = 0
+                      for salaire in salaires:
+                          total += salaire
+                      return total
+
+
+                  print(masse_salariale([250000, 180000]))   # l'appelant affiche, la fonction calcule
+          - titre: À la main
+            texte: >-
+              Créez le dossier rh et, à l'intérieur, le fichier calculs.py. Déplacez-y vos quatre calculs de
+              la semaine, chacun dans une fonction : salaire_annuel, formater_fcfa, droit_aux_conges,
+              masse_salariale et plus_haut_salaire.
+
+              Retirez tous les print de ces fonctions. Chacune doit se terminer par un return. Dans un
+              fichier séparé, importez le module et appelez vos fonctions pour vérifier qu'elles répondent
+              comme avant.
+          - titre: L'astuce du jour
+            texte: >-
+              Une fonction, un verbe. calculer, formater, trouver : le nom dit l'action. Si vous ne trouvez
+              pas de verbe unique pour nommer votre fonction, c'est qu'elle en fait deux, et il faut la
+              couper en deux.
+
+              Corollaire utile pour la suite du parcours : une fonction qui tient dans un écran se relit ;
+              une fonction de cent lignes ne se relit plus, elle se subit.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est la fonction qui affiche au lieu de rendre. Elle semble marcher :
+              l'exécution montre le bon nombre à l'écran. Mais son résultat n'existe nulle part, donc
+              personne ne peut le réutiliser, et un test ne peut rien vérifier.
+
+              Essayez : écrivez une fonction qui termine par un print au lieu d'un return, puis affichez ce
+              qu'elle rend. Python affiche None. Retenez ce symptôme, vous le rencontrerez plus d'une fois.
+
+              Les tests du challenge d'aujourd'hui refusent explicitement tout print dans le module de
+              calculs : ils capturent la sortie et échouent si quelque chose s'y affiche.
+          - titre: Challenge du jour
+            texte: >-
+              Regroupez les cinq fonctions de la semaine dans rh/calculs.py. Chacune porte une docstring
+              d'une ligne. Aucune n'affiche quoi que ce soit.
+
+              Les tests livrés importent le module, appellent les cinq fonctions et comparent les résultats
+              à ceux des journées précédentes. Un test supplémentaire capture la sortie standard pendant
+              l'appel et échoue si le module affiche quelque chose.
+
+              Critères d'acceptation : les cinq fonctions existent avec les noms exacts ; aucun print dans
+              le module ; les tests des journées 02, 03 et 04 passent toujours en appelant le nouveau
+              module.
         livrable: >-
-          Regrouper les quatre premières journées dans rh/calculs.py ; les tests refusent tout print dans le module.
+          Regrouper les quatre premières journées dans rh/calculs.py ; les tests refusent tout print dans
+          le module.
   - title: "Bloc 2 — Semaine 2 : structures de données"
     modules:
       - num: "J06R"

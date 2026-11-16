@@ -5,6 +5,7 @@ la leçon du jour, et se ferme par un challenge à rendre, qui verrouille le len
 posée au mauvais endroit bloque l'apprenant sur un rendu que la page ne demande pas ; ces invariants le
 disent avant la publication.
 """
+import ast
 import pathlib
 import unittest
 
@@ -82,6 +83,17 @@ class TestParcoursPythonRh(unittest.TestCase):
                     self.assertEqual(len(q.options), 4)
                     self.assertEqual(len(q.bonnes), 1)
                     self.assertTrue(q.explication.strip())
+
+    def test_les_extraits_python_compilent(self):
+        """Un cours de Python ne publie pas de code qui ne s'analyse même pas : l'apprenant le recopie."""
+        for m in self.modules:
+            for section in (None, *m.cours):
+                porteur = m if section is None else section
+                for extrait in porteur.extraits:
+                    if extrait.langage != "python":
+                        continue
+                    with self.subTest(f"{m.num} · {extrait.titre}"):
+                        ast.parse(extrait.code)
 
     def test_aucun_texte_inacheve(self):
         for m in self.modules:

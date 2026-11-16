@@ -14,13 +14,14 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "schemas"))
 
 from figures import FIGURES  # noqa: E402  (le chemin doit être posé avant l'import)
+from figures_python import FIGURES_PYTHON  # noqa: E402
 
 DESTINATION = (pathlib.Path(__file__).resolve().parents[2]
                / "apps" / "openlab_academy" / "openlab_academy" / "data" / "ressources")
 
 
 def construire() -> dict[str, str]:
-    return {nom: fabrique().rendre() for nom, fabrique in sorted(FIGURES.items())}
+    return {nom: fabrique().rendre() for nom, fabrique in sorted({**FIGURES, **FIGURES_PYTHON}.items())}
 
 
 def main() -> int:
