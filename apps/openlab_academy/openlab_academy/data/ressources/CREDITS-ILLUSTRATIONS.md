@@ -80,6 +80,39 @@ Licence : https://unsplash.com/license
 | python-ouverture-j26.jpg | `photo-1674471361339-2e1e1dbd3e73` |
 | python-ouverture-j35.jpg | `photo-1505373877841-8d25f7d46678` |
 
+## Parcours Développeur Python
+
+Photographies issues de Wikimedia Commons, sous licence libre. Elles sont recadrées en 1200 x 675,
+sans autre modification. L'auteur, la licence et la page d'origine sont rappelés ici, comme les
+licences CC BY et CC BY-SA l'exigent.
+
+| Fichier | Auteur | Licence | Page d'origine |
+| --- | --- | --- | --- |
+| devpy-m01-a.jpg | Irene Scott/AusAID | by | https://commons.wikimedia.org/w/index.php?curid=32167595 |
+| devpy-m01-b.jpg | Startup Stock Photos | cc0 | https://stocksnap.io/photo/coding-code-PFPNV9W5HK |
+| devpy-m02-a.jpg | Jiří Sedláček | by-sa | https://commons.wikimedia.org/w/index.php?curid=71006874 |
+| devpy-m02-b.jpg | Jonathan Schilling | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Banner_page_from_VAX_VMS_printout_on_MicroVAX_3100_system.jpg |
+| devpy-m03-a.jpg | 玄史生 | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:2013TIBE_Day4_Hall1_Ticket_Windows_in_Exit_3_20130202.JPG |
+| devpy-m03-b.jpg | Anthere | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:A_French_bus_in_Abidjan.jpg |
+| devpy-m04-a.jpg | Milequem Diarassouba | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Cocoa_beans_in_Soubr%C3%A9.jpg |
+| devpy-m04-b.jpg | David Wilson from Oak Park, Illinois, USA | CC BY 2.0 | https://commons.wikimedia.org/wiki/File:19960302_07_UP_River_Forest,_IL_(5403196370).jpg |
+| devpy-m05-a.jpg | John Carlin | CC0 | https://commons.wikimedia.org/wiki/File:Account_Book_Ledger_MET_DP214203.jpg |
+| devpy-m05-b.jpg | USDAgov | Public domain | https://commons.wikimedia.org/wiki/File:Food_and_Nutrition_Service%E2%80%99s_(FNS)_Special_Supplemental_Nutrition_Program_for_Women,_Infants,_and_Children_(WIC)_in_South_Carolina_on_19_February_2025_-_111.jpg |
+| devpy-m06-a.jpg | Roy Egloff | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:CH.ZG.Zug_Museum-Burg-Zug_shoemaker%27s-workbench-around-1930.jpg |
+| devpy-m06-b.jpg | Lisa Fotios | cc0 | https://stocksnap.io/photo/workbench-machinery-RKR8CFTODQ |
+| devpy-m07-a.jpg | Joe Mabel | by-sa | https://commons.wikimedia.org/w/index.php?curid=79762544 |
+| devpy-m07-b.jpg | User:Mattes | CC BY 2.0 de | https://commons.wikimedia.org/wiki/File:AUT_%E2%80%94_Tirol_%E2%80%94_Bezirk_Kitzb%C3%BChel_%E2%80%94_Gemeinde_Kirchberg_in_Tirol_%E2%80%94_Gaisberg_5_(Fahrweg_zur_B%C3%A4rstattalm_%C2%B7_Schl%C3%BCsseltresore)_2023-09-29_Mattes.jpg |
+| devpy-m08-a.jpg | Marek Ślusarczyk ( Tupungato ) Photo portfolio | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:11_Scaffolding_safety_plastic_net_-_polyethylene_material_nets_at_construction_site_in_Makati_Manila.jpg |
+| devpy-m08-b.jpg | U.S. Department of Agriculture | cc0 | https://www.rawpixel.com/image/3259563/free-photo-image-blue-conveyor-cleaning |
+| devpy-m09-a.jpg | Alan Levine | CC BY 2.0 | https://commons.wikimedia.org/wiki/File:Home_server_equipment.jpg |
+| devpy-m09-b.jpg | Tasma3197 | by-sa | https://commons.wikimedia.org/w/index.php?curid=15368339 |
+| devpy-m10-a.jpg | Luke McKernan | CC BY-SA 2.0 | https://commons.wikimedia.org/wiki/File:Archive_shelves_(41054237191).jpg |
+| devpy-m10-b.jpg | Angela Monika Arnold, Berlin | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Flora-Apotheke,_2024-08-28_ama_fec_(7).JPG |
+| devpy-m11-a.jpg | Superraptor123 | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Vernon_Royal_Line_notebook_owned_by_Jim_Morrison.jpg |
+| devpy-m11-b.jpg | Gafirita jean d'amour Uwimana | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:A_bus_station.jpg |
+| devpy-m12-a.jpg | Belfast Dissenter | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Belfast_Container_Terminal,_April_2019.jpg |
+| devpy-m12-b.jpg | Hanul from Germany | CC BY 2.0 | https://commons.wikimedia.org/wiki/File:Dell_mini_12_vs_Acer_Aspire_One_(3409774781).jpg |
+
 Chaque image de leçon est servie en fichier privé : elle suit le contrôle d'accès du parcours.
 L'image de couverture fait exception : elle est publique, puisque la vignette s'affiche au catalogue,
 donc avant toute inscription.
