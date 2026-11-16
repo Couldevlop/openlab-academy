@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" width="760" height="300" role="img" aria-label="Une requête, une réponse">
+<title>Une requête, une réponse</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="760" height="300" fill="var(--surface)"/>
+<text x="380" y="34" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Deux messages, et quatre informations à lire.</text>
+<rect x="60" y="80" width="180" height="56" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="150" y="114" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">Votre navigateur</text>
+<rect x="520" y="80" width="180" height="56" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="610" y="114" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">Votre API</text>
+<path d="M 246 100 L 514 100" fill="none" stroke="var(--s1)" stroke-width="2" marker-end="url(#pointe-s1)"/>
+<text x="380" y="92" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">GET /salaries/12</text>
+<path d="M 514 132 L 246 132" fill="none" stroke="var(--s3)" stroke-width="2" marker-end="url(#pointe-s3)"/>
+<text x="380" y="150" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">200, puis le JSON de la fiche</text>
+<text x="170" y="190" text-anchor="end" font-size="12" font-weight="600" fill="var(--encre)">Méthode</text>
+<text x="190" y="190" text-anchor="start" font-size="12" fill="var(--encre2)">l&#x27;intention : GET lit, POST crée</text>
+<text x="170" y="216" text-anchor="end" font-size="12" font-weight="600" fill="var(--encre)">Chemin</text>
+<text x="190" y="216" text-anchor="start" font-size="12" fill="var(--encre2)">la ressource visée</text>
+<text x="170" y="242" text-anchor="end" font-size="12" font-weight="600" fill="var(--encre)">Code</text>
+<text x="190" y="242" text-anchor="start" font-size="12" fill="var(--encre2)">2 réussite, 4 faute de l&#x27;appelant, 5 panne du serveur</text>
+<text x="170" y="268" text-anchor="end" font-size="12" font-weight="600" fill="var(--encre)">Contenu</text>
+<text x="190" y="268" text-anchor="start" font-size="12" fill="var(--encre2)">le JSON, qui ressemble aux dictionnaires Python</text>
+</svg>

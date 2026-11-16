@@ -211,6 +211,72 @@ def frontiere_validation() -> Dessin:
     return d
 
 
+def requete_reponse() -> Dessin:
+    """J16 : les deux messages d'un échange HTTP, et ce que chacun porte."""
+    d = Dessin(760, 300, "Une requête, une réponse")
+    d.texte(380, 34, "Deux messages, et quatre informations à lire.", taille=15, gras=True)
+    d.boite(60, 80, 180, 56, teinte="s1")
+    d.texte(150, 114, "Votre navigateur", taille=13, gras=True)
+    d.boite(520, 80, 180, 56, teinte="s3")
+    d.texte(610, 114, "Votre API", taille=13, gras=True)
+    d.fleche(246, 100, 514, 100, teinte="s1")
+    d.texte(380, 92, "GET /salaries/12", taille=12, gras=True)
+    d.fleche(514, 132, 246, 132, teinte="s3")
+    d.texte(380, 150, "200, puis le JSON de la fiche", taille=12, gras=True)
+    lignes = [("Méthode", "l'intention : GET lit, POST crée"),
+              ("Chemin", "la ressource visée"),
+              ("Code", "2 réussite, 4 faute de l'appelant, 5 panne du serveur"),
+              ("Contenu", "le JSON, qui ressemble aux dictionnaires Python")]
+    for i, (nom, role) in enumerate(lignes):
+        y = 190 + i * 26
+        d.texte(170, y, nom, taille=12, gras=True, ancre="end")
+        d.texte(190, y, role, taille=12, ancre="start", couleur="encre2")
+    return d
+
+
+def api_autour_du_coeur() -> Dessin:
+    """J17 : le cœur au centre, les habillages autour, et des flèches qui pointent vers le centre."""
+    d = Dessin(760, 340, "Le cœur au centre, les habillages autour")
+    d.texte(380, 34, "Les trois habillages dépendent du cœur ; le cœur n'en connaît aucun.",
+            taille=15, gras=True)
+    d.boite(290, 140, 180, 90, teinte="s3")
+    d.texte(380, 172, "rh/", taille=15, gras=True)
+    d.texte(380, 194, "règles et calculs", taille=11, couleur="encre2")
+    d.texte(380, 214, "semaine 3", taille=11, couleur="attenue")
+    autour = [(60, 90, "FastAPI", "semaine 4", "s1"), (540, 90, "Streamlit", "semaine 5", "s2"),
+              (300, 276, "Django", "semaines 6 et 7", "s1")]
+    for x, y, nom, quand, teinte in autour:
+        d.boite(x, y, 160, 56, teinte=teinte)
+        d.texte(x + 80, y + 24, nom, taille=13, gras=True)
+        d.texte(x + 80, y + 43, quand, taille=10, couleur="encre2")
+    d.fleche(190, 132, 286, 164, teinte="s1")
+    d.fleche(570, 132, 474, 164, teinte="s2")
+    d.fleche(380, 270, 380, 236, teinte="s1")
+    d.texte(380, 326, "Une flèche qui partirait du cœur rendrait le cœur inutilisable ailleurs.",
+            taille=12, gras=True, couleur="encre2")
+    return d
+
+
+def codes_http() -> Dessin:
+    """J19 : à chaque situation son code, et le piège du 200 qui ment."""
+    d = Dessin(760, 320, "Quel code pour quelle situation")
+    d.texte(380, 34, "Le code est une information, pas une décoration.", taille=15, gras=True)
+    cas = [("200", "Réussite", "le mois demandé, avec son total", "s3"),
+           ("200", "Réussite vide", "aucun salarié ce mois : total nul", "s3"),
+           ("422", "Faute de l'appelant", "le mois est mal écrit", "s2"),
+           ("500", "Panne de votre côté", "à corriger, jamais à renvoyer sciemment", "critique")]
+    for i, (code, nom, detail, teinte) in enumerate(cas):
+        y = 80 + i * 52
+        d.boite(60, y, 90, 40, teinte=teinte)
+        d.texte(105, y + 26, code, taille=16, gras=True)
+        d.texte(180, y + 18, nom, taille=13, gras=True, ancre="start")
+        d.texte(180, y + 36, detail, taille=11, ancre="start", couleur="encre2")
+    d.boite(60, 292, 640, 0.1, teinte="trait")
+    d.texte(380, 300, "Le pire n'est pas le 500 : c'est le 200 renvoyé après une erreur étouffée.",
+            taille=12, gras=True, couleur="encre2")
+    return d
+
+
 FIGURES_PYTHON = {
     "python-trace-erreur.svg": trace_erreur,
     "python-seuils-conges.svg": seuils_conges,
@@ -221,4 +287,7 @@ FIGURES_PYTHON = {
     "python-modules-arborescence.svg": modules_arborescence,
     "python-erreur-metier.svg": erreur_metier,
     "python-frontiere-validation.svg": frontiere_validation,
+    "python-requete-reponse.svg": requete_reponse,
+    "python-api-autour-du-coeur.svg": api_autour_du_coeur,
+    "python-codes-http.svg": codes_http,
 }

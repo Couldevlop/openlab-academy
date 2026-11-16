@@ -2123,72 +2123,695 @@ blocs:
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 15, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 15, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. La frontière de validation est le concept qui
+              rend la semaine 4 possible.
+            tableaux:
+              - titre: Les cinq points de la journée 15
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Modèle d'entrée, "Décrire ce que le monde extérieur a le droit d'envoyer"]
+                  - [Contraintes, "Refuser un salaire négatif ou un poste vide dès l'entrée"]
+                  - [Frontière unique, "Valider à un seul endroit, et nulle part ailleurs"]
+                  - [Cœur nu, "Laisser les calculs sans contrôle de type ni de borne"]
+                  - [Message métier, "Traduire une erreur de validation en phrase compréhensible"]
+        quiz:
+          - question: "Où valide-t-on les données ?"
+            options: ["À la frontière, une seule fois", "Dans chaque fonction", "À l'affichage", "Nulle part, Python suffit"]
+            bonnes: [1]
+            explication: "Valider partout coûte cher et finit par produire des règles divergentes."
+          - question: "Pourquoi un modèle d'entrée distinct de la fiche métier ?"
+            options: ["Parce que l'extérieur et le cœur n'ont pas les mêmes champs", "Pour doubler les tests", "Parce que Pydantic l'impose", "Pour accélérer la validation"]
+            bonnes: [1]
+            explication: "Dès la journée 18, l'API acceptera des champs que le cœur ignore."
+          - question: "Que lève Pydantic sur un salaire négatif déclaré positif ?"
+            options: ["ValidationError", "ValueError seule", "KeyError", "Rien"]
+            bonnes: [1]
+            explication: "La ValidationError nomme le champ, la règle violée et la valeur reçue."
+          - question: "Que fait le cœur de calcul avec une fiche reçue ?"
+            options: ["Il la traite comme saine", "Il revérifie ses types", "Il la valide de nouveau", "Il la refuse si elle est incomplète"]
+            bonnes: [1]
+            explication: "La frontière a déjà fait ce travail ; le refaire alourdit et finit par diverger."
+          - question: "Faut-il montrer la ValidationError brute à l'utilisateur ?"
+            options: ["Non, il faut la traduire en message métier", "Oui, elle est très claire", "Oui, c'est la norme", "Seulement en production"]
+            bonnes: [1]
+            explication: "Elle parle de types et de contraintes dans le vocabulaire d'une bibliothèque."
       - num: "J16"
         title: "HTTP en vingt minutes et première route"
         evaluations: livrable
         contenu: >-
-          Requête et réponse, méthode, code de retour, JSON, lancement par uvicorn, documentation automatique.
+          Requête et réponse, méthode, code de retour, JSON, lancement du serveur avec uvicorn et
+          documentation automatique.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez lancer un serveur sur votre machine et répondre à une requête faite par
+              un navigateur ou par un test.
+          - titre: Le problème d'abord
+            texte: >-
+              Votre application tourne dans un terminal, sur votre poste. Le gérant veut la consulter depuis
+              son bureau, et plus tard depuis son téléphone. Il faut que votre programme réponde à des
+              questions venues d'ailleurs.
+
+              C'est le rôle d'une API : un programme qui attend des requêtes et renvoie des réponses, sans
+              interface graphique.
+          - titre: La notion
+            texte: >-
+              Un échange HTTP tient en deux messages. La requête porte une méthode, qui dit l'intention,
+              et un chemin, qui dit quoi. La réponse porte un code, qui dit comment cela s'est passé, et
+              un contenu, ici au format JSON.
+
+              Les méthodes qui nous serviront sont GET, qui lit sans rien changer, et POST, qui crée. Les
+              codes se lisent par leur premier chiffre : 2 pour un succès, 4 pour une faute de l'appelant,
+              5 pour une panne de votre côté.
+
+              JSON est un format de texte qui ressemble beaucoup aux dictionnaires et listes de Python.
+              FastAPI convertit automatiquement ce que votre fonction rend en JSON.
+
+              Le serveur se lance avec uvicorn, qui écoute un port de votre machine. FastAPI publie en plus
+              une documentation interactive à l'adresse /docs, construite à partir de votre code.
+            figures:
+              - nom: python-requete-reponse.svg
+                legende: "Une requête, une réponse : méthode, chemin, code et contenu"
+            code:
+              - titre: Votre première route
+                langage: python
+                source: |
+                  from fastapi import FastAPI
+
+                  app = FastAPI(title="API RH")
+
+
+                  @app.get("/sante")
+                  def sante():
+                      """Dit que le service répond. Première route de toute application."""
+                      return {"etat": "ok"}
+          - titre: À la main
+            texte: >-
+              Installez fastapi et uvicorn, écrivez le fichier ci-dessus sous le nom api.py, puis lancez le
+              serveur avec uvicorn en lui indiquant le module et l'objet app, avec l'option de rechargement
+              automatique.
+
+              Ouvrez votre navigateur sur l'adresse locale indiquée par uvicorn, suivie de /sante. Vous
+              voyez le JSON. Ouvrez ensuite /docs : la documentation de votre route est déjà là, et vous
+              pouvez l'essayer depuis la page.
+
+              Arrêtez le serveur avec Ctrl+C. Relancez-le une seconde fois sans avoir arrêté le premier :
+              le message indique que le port est déjà utilisé. C'est le piège du jour, vous le
+              reconnaîtrez.
+          - titre: L'astuce du jour
+            texte: >-
+              Lisez /docs avant d'écrire le moindre client. La page est produite à partir de votre code :
+              elle montre exactement ce que votre API accepte et rend, y compris les champs que vous auriez
+              oubliés.
+
+              C'est aussi l'outil de dialogue avec les autres : au lieu d'expliquer votre API dans un
+              document qui vieillira, vous donnez une adresse qui ne ment jamais.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est le port déjà pris, qui survient quand un serveur tourne encore dans un
+              terminal oublié. Le message le dit clairement ; fermez l'autre terminal, ou changez de port.
+
+              Le second piège est le rechargement automatique qui masque une erreur. Quand le serveur
+              recharge votre code après une modification fautive, il affiche la trace et continue de servir
+              l'ancienne version. Lisez le terminal à chaque sauvegarde : c'est là que vos erreurs
+              s'affichent, pas dans le navigateur.
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez la route GET /sante qui rend un objet contenant la clé etat avec la valeur ok, et
+              écrivez le test qui la vérifie avec TestClient, l'outil de test fourni avec FastAPI.
+
+              Le test n'a pas besoin que le serveur tourne : TestClient appelle votre application
+              directement. C'est ce qui rend les tests d'API rapides et reproductibles.
+
+              Critères d'acceptation : la route répond avec le code 200 ; le contenu est exactement l'objet
+              attendu ; le test passe sans serveur lancé.
         livrable: >-
-          Écrire GET /sante qui rend {"etat": "ok"} ; le test passe par TestClient.
+          Écrire GET /sante qui rend l'état ok, et son test avec TestClient, sans serveur lancé.
       - num: "J17R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 16, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 16, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Le vocabulaire HTTP vous servira jusqu'à la
+              journée 35.
+            tableaux:
+              - titre: Les cinq points de la journée 16
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Requête, "Reconnaître la méthode et le chemin d'une requête"]
+                  - [Réponse, "Lire le code de retour et le contenu JSON"]
+                  - [GET, "Employer la méthode qui lit sans rien changer"]
+                  - [uvicorn, "Lancer le serveur et l'arrêter proprement"]
+                  - [/docs, "Lire la documentation produite à partir du code"]
+        quiz:
+          - question: "Que signifie un code de réponse qui commence par 4 ?"
+            options: ["Une faute de l'appelant", "Une panne du serveur", "Un succès", "Une redirection"]
+            bonnes: [1]
+            explication: "Le premier chiffre suffit : 2 succès, 4 faute de l'appelant, 5 panne de votre côté."
+          - question: "Quelle méthode lit sans rien modifier ?"
+            options: ["GET", "POST", "DELETE", "PATCH"]
+            bonnes: [1]
+            explication: "Une requête GET doit pouvoir être répétée sans effet de bord."
+          - question: "D'où vient la page /docs ?"
+            options: ["Elle est produite à partir de votre code", "Vous l'écrivez à la main", "Elle vient d'un fichier séparé", "Elle est hébergée par FastAPI en ligne"]
+            bonnes: [1]
+            explication: "C'est pourquoi elle ne peut pas vieillir tant que le code est à jour."
+          - question: "Que signale un message de port déjà utilisé ?"
+            options: ["Un autre serveur tourne encore", "Le code est faux", "Le port n'existe pas", "Le pare-feu bloque"]
+            bonnes: [1]
+            explication: "Fermez le terminal oublié, ou lancez le serveur sur un autre port."
+          - question: "Où s'affichent les erreurs du serveur ?"
+            options: ["Dans le terminal qui l'a lancé", "Dans le navigateur uniquement", "Dans /docs", "Dans un fichier de log obligatoire"]
+            bonnes: [1]
+            explication: "Le rechargement automatique affiche la trace dans le terminal et continue de servir l'ancienne version."
       - num: "J17"
         title: "Exposer le cœur sans le modifier"
         evaluations: livrable
         contenu: >-
-          Séparer le métier de l'habillage, dépendances orientées vers le cœur, pourquoi le cœur ignore FastAPI.
+          Séparer le métier de l'habillage, orienter les dépendances vers le cœur, et comprendre
+          concrètement pourquoi le cœur ignore FastAPI.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez exposer l'effectif et la fiche d'un salarié par deux routes, sans écrire
+              une seule ligne de calcul dans l'API.
+          - titre: Le problème d'abord
+            texte: >-
+              La tentation est immense : écrire le filtre et le total directement dans la route, parce que
+              c'est plus rapide à taper. Trois semaines plus tard, Django aura besoin des mêmes règles, et
+              elles seront prisonnières de FastAPI.
+
+              Le cœur que vous avez écrit en semaine 3 doit rester le seul endroit où vivent les règles.
+          - titre: La notion
+            texte: >-
+              Une route est une fonction décorée par la méthode et le chemin. Son rôle tient en trois
+              gestes : lire ce qui arrive, appeler le cœur, rendre le résultat. Rien d'autre.
+
+              Un paramètre de chemin s'écrit entre accolades dans le chemin et devient un paramètre de la
+              fonction, typé. FastAPI convertit et refuse automatiquement une valeur du mauvais type.
+
+              Quand une ressource n'existe pas, la réponse doit porter le code 404 et un message. FastAPI
+              fournit HTTPException pour cela. C'est la traduction d'un fait métier, l'absence, en langage
+              HTTP : cette traduction appartient à l'API, jamais au cœur.
+            figures:
+              - nom: python-api-autour-du-coeur.svg
+                legende: "L'API entoure le cœur et en dépend ; le cœur ne sait pas qu'elle existe"
+            code:
+              - titre: Deux routes qui ne calculent rien
+                langage: python
+                source: |
+                  from fastapi import FastAPI, HTTPException
+
+                  from rh.calculs import trouver_salarie
+                  from rh.fichiers import charger_effectif
+
+                  app = FastAPI(title="API RH")
+                  EFFECTIF = charger_effectif("effectif.csv")
+
+
+                  @app.get("/salaries")
+                  def lister_salaries():
+                      return EFFECTIF
+
+
+                  @app.get("/salaries/{matricule}")
+                  def lire_salarie(matricule: str):
+                      fiche = trouver_salarie(EFFECTIF, matricule)
+                      if fiche is None:
+                          raise HTTPException(status_code=404, detail="Salarié inconnu")
+                      return fiche
+          - titre: À la main
+            texte: >-
+              Ajoutez les deux routes, lancez le serveur, et appelez-les depuis /docs. Demandez un matricule
+              qui n'existe pas et observez la réponse : code 404, et le message que vous avez écrit.
+
+              Ouvrez ensuite rh/calculs.py et cherchez le mot fastapi : il ne doit apparaître nulle part. Le
+              cœur ne connaît ni les routes, ni les codes HTTP, ni les exceptions de la bibliothèque.
+
+              Faites l'expérience inverse pour comprendre l'enjeu : imaginez que trouver_salarie lève
+              directement une HTTPException. Votre code marcherait aujourd'hui, et serait inutilisable en
+              journée 30, quand Django appellera la même fonction.
+          - titre: L'astuce du jour
+            texte: >-
+              Le cœur ne connaît pas FastAPI. C'est la phrase à retenir de la semaine, et c'est ce que vos
+              tests vérifieront automatiquement, en lisant les imports de vos modules.
+
+              Cette discipline porte un nom dans le métier, l'architecture hexagonale, mais le nom importe
+              moins que le réflexe : les règles au centre, les technologies autour, et des dépendances qui
+              pointent toujours vers le centre.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est la logique métier recopiée dans la route. Elle commence toujours petit :
+              un filtre de trois lignes, puis un calcul, puis une règle. Un mois plus tard, personne ne sait
+              plus quelle version fait foi.
+
+              Le second piège est le chargement de l'effectif au moment de l'import, comme dans l'extrait
+              ci-dessus. C'est acceptable aujourd'hui, pour rester simple ; retenez que la donnée est alors
+              figée au démarrage, et que les journées Django y mettront bon ordre.
+            tableaux:
+              - titre: Ce que fait une route, et ce qu'elle ne fait pas
+                entetes: [La route, Le cœur]
+                lignes:
+                  - ["lit les paramètres", "applique les règles"]
+                  - ["appelle le cœur", "calcule"]
+                  - ["traduit en code HTTP", "ignore HTTP"]
+                  - ["rend du JSON", "rend des données Python"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez GET /salaries, qui rend l'effectif, et GET /salaries/{matricule}, qui rend une fiche
+              ou répond 404 avec un message.
+
+              Les tests livrés couvrent les deux routes et le cas inconnu. Un test lit le code source du
+              paquet rh et échoue si le mot fastapi y apparaît, à quelque endroit que ce soit.
+
+              Critères d'acceptation : aucun calcul dans les routes ; le 404 porte un message lisible ; le
+              paquet rh n'importe pas fastapi.
         livrable: >-
-          Écrire GET /salaries et GET /salaries/{matricule} avec un 404 propre ; un test vérifie que rh/ n'importe pas fastapi.
+          Écrire GET /salaries et GET /salaries/{matricule} avec un 404 propre ; un test vérifie que le
+          paquet rh n'importe pas fastapi.
       - num: "J18R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 17, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 17, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. La séparation du cœur et de l'habillage est la
+              leçon d'architecture du parcours.
+            tableaux:
+              - titre: Les cinq points de la journée 17
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Rôle d'une route, "Lire, appeler le cœur, rendre, et rien de plus"]
+                  - [Paramètre de chemin, "Recevoir une valeur typée depuis l'adresse"]
+                  - [404, "Traduire une absence métier en code HTTP"]
+                  - [Sens des dépendances, "Faire dépendre l'API du cœur, jamais l'inverse"]
+                  - [Vérification, "Chercher le nom de la bibliothèque dans le cœur, et n'en trouver aucun"]
+        quiz:
+          - question: "Que fait une route bien écrite ?"
+            options: ["Elle lit, appelle le cœur et rend", "Elle calcule et rend", "Elle valide et calcule", "Elle écrit dans le fichier"]
+            bonnes: [1]
+            explication: "Toute règle écrite dans une route devient prisonnière du framework."
+          - question: "Qui traduit une absence en code 404 ?"
+            options: ["L'API", "Le cœur", "Le fichier CSV", "Pydantic"]
+            bonnes: [1]
+            explication: "Le cœur rend None ou lève une erreur métier ; la traduction HTTP appartient à l'API."
+          - question: "Le paquet rh peut-il importer fastapi ?"
+            options: ["Non, jamais", "Oui, pour les erreurs", "Oui, pour les types", "Seulement dans les tests"]
+            bonnes: [1]
+            explication: "C'est précisément ce que le test d'architecture vérifie."
+          - question: "Pourquoi garder les règles dans le cœur ?"
+            options: ["Pour les réutiliser avec Streamlit puis Django", "Pour écrire moins de code", "Parce que FastAPI est lent", "Pour éviter les tests"]
+            bonnes: [1]
+            explication: "Le même cœur servira les trois habillages du parcours."
+          - question: "Comment s'écrit un paramètre de chemin ?"
+            options: ["Entre accolades dans le chemin", "Après un point d'interrogation", "Dans le corps de la requête", "Dans un en-tête"]
+            bonnes: [1]
+            explication: "Le paramètre devient un argument typé de la fonction de route."
       - num: "J18"
         title: "Écrire : POST, 201 et 422"
         evaluations: livrable
         contenu: >-
-          Corps de requête, réutilisation du modèle d'entrée, code 201, erreurs de validation en 422.
+          Recevoir un corps de requête, réutiliser le modèle d'entrée de la journée 15, répondre 201 à une
+          création et laisser Pydantic répondre 422.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez accepter une embauche envoyée par le monde extérieur, et refuser une
+              donnée fausse avec un message qui nomme le champ.
+          - titre: Le problème d'abord
+            texte: >-
+              Jusqu'ici votre API ne fait que lire. Le gérant veut déclarer une embauche depuis son
+              navigateur. La donnée vient de l'extérieur, donc elle est suspecte par défaut : un salaire
+              négatif, un poste vide ou une date absurde arriveront un jour.
+          - titre: La notion
+            texte: >-
+              Une route POST reçoit un corps de requête. Il suffit de déclarer un paramètre dont le type est
+              votre modèle Pydantic : FastAPI lit le JSON, le valide, et vous donne un objet déjà sain.
+
+              Si la validation échoue, FastAPI répond automatiquement 422 avec le détail des champs fautifs.
+              Vous n'écrivez rien pour cela : c'est le modèle d'entrée de la journée 15 qui travaille.
+
+              Une création réussie répond 201 plutôt que 200, ce qui s'indique dans le décorateur. Le code
+              dit à l'appelant que quelque chose a été créé, information qu'aucun contenu ne remplace.
+            code:
+              - titre: Une création qui valide sans y penser
+                langage: python
+                source: |
+                  from fastapi import FastAPI
+
+                  from rh.entrees import SalarieEntrant
+                  from rh.calculs import ajouter_salarie
+
+                  app = FastAPI(title="API RH")
+                  EFFECTIF = []
+
+
+                  @app.post("/salaries", status_code=201)
+                  def embaucher(entrant: SalarieEntrant):
+                      fiche = entrant.model_dump()
+                      return ajouter_salarie(EFFECTIF, fiche)
+          - titre: À la main
+            texte: >-
+              Depuis /docs, essayez la route POST avec une fiche correcte : vous obtenez 201 et la fiche
+              créée. Recommencez avec un salaire négatif : vous obtenez 422, et le détail nomme le champ
+              salaire_fcfa et la règle violée.
+
+              Ajoutez un champ inconnu dans le JSON envoyé et observez : par défaut, Pydantic l'ignore. Si
+              vous voulez qu'il soit refusé, c'est une option de configuration du modèle, et c'est une
+              décision de conception : tolérer l'inconnu facilite les évolutions, le refuser détecte les
+              fautes de frappe des appelants.
+
+              Vérifiez enfin que votre route ne contient aucun if de validation. Si vous en avez écrit un,
+              retirez-le : il double une règle déjà portée par le modèle.
+          - titre: L'astuce du jour
+            texte: >-
+              Réutilisez le modèle d'entrée écrit en journée 15. Il décrit déjà ce que le monde extérieur a
+              le droit d'envoyer ; le CSV et l'API sont deux portes du même bâtiment, et la serrure est la
+              même.
+
+              Quand l'API devra accepter un champ que le fichier ne connaît pas, créez un second modèle
+              plutôt que d'alourdir le premier. Deux modèles clairs valent mieux qu'un modèle à options.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est la double validation : un contrôle écrit à la main dans la route, en plus
+              du modèle. Le jour où la règle change, l'un des deux est oublié, et l'API accepte ce que le
+              fichier refuse.
+
+              Le second piège est le message d'erreur maison qui remplace celui de Pydantic : écrire « donnée
+              invalide » à la place d'un détail qui nommait le champ fautif fait perdre de l'information à
+              celui qui appelle votre API.
+            tableaux:
+              - titre: Les codes de cette journée
+                entetes: [Situation, Code, Qui décide]
+                lignes:
+                  - ["Création réussie", "201", "votre décorateur"]
+                  - ["Champ invalide", "422", "Pydantic, automatiquement"]
+                  - ["Lecture réussie", "200", "FastAPI par défaut"]
+                  - ["Ressource absente", "404", "votre route"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez POST /salaries qui crée une fiche et répond 201. Une fiche invalide reçoit 422 sans
+              que vous écriviez de contrôle.
+
+              Les tests livrés couvrent la création, le refus sur salaire négatif, et vérifient que le
+              détail de la réponse 422 nomme le champ fautif. Un test vérifie qu'aucun if de validation
+              n'existe dans le fichier de l'API.
+
+              Critères d'acceptation : 201 à la création ; 422 automatique sur donnée fausse ; aucun
+              contrôle manuel dans la route.
         livrable: >-
-          Refuser la création sur un salaire négatif avec un 422 qui nomme le champ fautif.
+          Écrire POST /salaries ; la création est refusée sur salaire négatif avec un 422 qui nomme le
+          champ fautif.
       - num: "J19R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 18, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 18, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Écrire par une API demande plus de rigueur que
+              lire.
+            tableaux:
+              - titre: Les cinq points de la journée 18
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [POST, "Recevoir un corps de requête typé par un modèle"]
+                  - [201, "Indiquer qu'une ressource a été créée"]
+                  - [422, "Laisser Pydantic refuser une donnée fausse"]
+                  - [Réutilisation, "Employer le modèle d'entrée écrit en journée 15"]
+                  - [Pas de double contrôle, "N'écrire aucun if de validation dans la route"]
+        quiz:
+          - question: "Quel code répond à une création réussie ?"
+            options: ["201", "200", "204", "301"]
+            bonnes: [1]
+            explication: "Il dit à l'appelant qu'une ressource existe maintenant, ce qu'aucun contenu ne remplace."
+          - question: "Qui produit la réponse 422 ?"
+            options: ["Pydantic, automatiquement", "Votre route", "uvicorn", "Le navigateur"]
+            bonnes: [1]
+            explication: "Le modèle d'entrée suffit : écrire un contrôle en plus crée une divergence."
+          - question: "Que contient le détail d'une réponse 422 ?"
+            options: ["Le champ fautif et la règle violée", "La trace complète", "Rien", "Le code source"]
+            bonnes: [1]
+            explication: "Le remplacer par un message maison fait perdre de l'information à l'appelant."
+          - question: "Comment déclarer le corps attendu d'une route POST ?"
+            options: ["Par un paramètre typé avec le modèle", "Par un dictionnaire", "Par un paramètre de chemin", "Dans le décorateur"]
+            bonnes: [1]
+            explication: "FastAPI lit le JSON, le valide, et passe un objet déjà sain à votre fonction."
+          - question: "Deux portes, le CSV et l'API : combien de modèles d'entrée au départ ?"
+            options: ["Un seul, réutilisé", "Deux obligatoirement", "Autant que de routes", "Aucun"]
+            bonnes: [1]
+            explication: "Le second modèle n'apparaît que le jour où les deux portes n'acceptent plus la même chose."
       - num: "J19"
         title: "Paramètres de requête et erreurs métier"
         evaluations: livrable
         contenu: >-
-          Paramètres de requête, traduction d'une erreur métier en code HTTP, ni 500 fourre-tout ni 200 trompeur.
+          Recevoir des paramètres après le point d'interrogation, et traduire chaque erreur métier en un
+          code HTTP précis plutôt qu'en panne générale.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez exposer un état mensuel paramétré, et répondre correctement quand le
+              paramètre est absurde ou quand le mois demandé est vide.
+          - titre: Le problème d'abord
+            texte: >-
+              Le gérant veut la masse salariale d'un mois donné. Le mois arrive dans l'adresse, après un
+              point d'interrogation. Trois situations sont à distinguer : un mois valide avec des données,
+              un mois valide sans données, et un mois mal écrit.
+
+              Les confondre produit soit un 500 qui alarme, soit un 200 qui ment.
+          - titre: La notion
+            texte: >-
+              Un paramètre de requête se déclare comme un argument de la fonction qui ne figure pas dans le
+              chemin. Son type guide la conversion ; une valeur du mauvais type donne 422 sans que vous
+              écriviez quoi que ce soit.
+
+              Les contraintes de forme, comme un mois écrit en année et mois séparés par un tiret, se
+              déclarent avec Query et un motif, ou se vérifient dans le cœur, qui lève alors une erreur
+              métier que la route traduit.
+
+              La règle de traduction est simple et vaut pour toute l'application : une erreur métier connue
+              donne un 4, une panne inattendue donne un 5. Un mois sans données n'est ni l'un ni l'autre :
+              c'est un succès dont le résultat est zéro.
+            figures:
+              - nom: python-codes-http.svg
+                legende: "Chaque situation a son code : réussite, faute de l'appelant, panne du serveur"
+            code:
+              - titre: Un état mensuel, et ses trois issues
+                langage: python
+                source: |
+                  from fastapi import FastAPI, HTTPException, Query
+
+                  from rh.calculs import MoisInvalide, masse_du_mois
+
+                  app = FastAPI(title="API RH")
+
+
+                  @app.get("/etats/masse-salariale")
+                  def masse_salariale(mois: str = Query(pattern=r"^\d{4}-\d{2}$")):
+                      try:
+                          return {"mois": mois, "total_fcfa": masse_du_mois(mois)}
+                      except MoisInvalide as erreur:
+                          raise HTTPException(status_code=422, detail=str(erreur)) from erreur
+          - titre: À la main
+            texte: >-
+              Appelez la route avec un mois correct, puis avec un mois écrit à l'envers, puis avec un mois
+              valide mais sans aucune donnée. Comparez les trois réponses : 200 avec un total, 422 avec un
+              détail, 200 avec un total nul.
+
+              Retirez ensuite le motif de la déclaration et relancez avec un mois mal écrit : la requête
+              atteint votre cœur, qui lève MoisInvalide, que la route traduit en 422. Les deux chemins
+              arrivent au même code : le premier le fait plus tôt, le second le fait dans le cœur, où la
+              règle est écrite une fois pour tous les habillages.
+
+              Essayez enfin de supprimer le bloc try : une erreur métier non traduite devient une panne 500.
+              C'est exactement ce qu'il faut éviter.
+          - titre: L'astuce du jour
+            texte: >-
+              Une erreur métier, un code, un message. Écrivez cette correspondance quelque part dans votre
+              projet, et tenez-la à jour : c'est le contrat que lisent ceux qui appellent votre API.
+
+              Les erreurs métier du cœur portent des noms qui disent le problème, comme MoisInvalide. La
+              route n'a plus qu'à les associer à un code.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est le 500 fourre-tout : laisser toute erreur remonter sans traduction. Celui
+              qui appelle votre API ne peut rien en faire, et vos journaux se remplissent d'alertes qui ne
+              signalent aucune panne réelle.
+
+              Le piège symétrique est pire : attraper l'erreur et répondre 200 avec un résultat vide. La
+              réponse semble normale et la donnée est fausse. Un mois sans données rend bien 200, mais parce
+              que c'est un vrai succès dont le total vaut zéro, pas parce qu'une erreur a été étouffée.
+            tableaux:
+              - titre: Trois situations, trois réponses
+                entetes: [Situation, Code, Contenu]
+                lignes:
+                  - ["Mois valide avec données", "200", "le total du mois"]
+                  - ["Mois valide sans données", "200", "un total nul"]
+                  - ["Mois mal écrit", "422", "le détail du champ fautif"]
+                  - ["Panne inattendue", "500", "rien d'exploitable, et une alerte pour vous"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez GET /etats/masse-salariale avec un paramètre mois. Un mois mal écrit donne 422 ; un
+              mois sans données donne 200 et un total nul.
+
+              Les tests livrés couvrent les trois cas. Un test vérifie qu'aucune réponse 500 n'est produite
+              par une donnée d'entrée, quelle qu'elle soit.
+
+              Critères d'acceptation : la règle du mois est écrite dans le cœur ; chaque erreur métier a son
+              code ; un mois vide n'est pas traité comme une erreur.
         livrable: >-
-          Écrire GET /etats/masse-salariale?mois=AAAA-MM ; les tests couvrent un mois invalide (422) et un mois sans données (200 et total nul).
+          Écrire GET /etats/masse-salariale avec un paramètre mois ; les tests couvrent le mois invalide
+          et le mois sans données.
       - num: "J20R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 19, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 19, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. La correspondance entre erreurs métier et codes
+              HTTP est le contrat de votre API.
+            tableaux:
+              - titre: Les cinq points de la journée 19
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Paramètre de requête, "Recevoir une valeur après le point d'interrogation"]
+                  - [Contrainte de forme, "Refuser tôt un paramètre mal écrit"]
+                  - [Erreur métier traduite, "Associer un code et un message à chaque erreur connue"]
+                  - [Résultat vide, "Répondre 200 avec un total nul quand il n'y a rien à compter"]
+                  - [Pas de 500 fourre-tout, "Ne jamais laisser une erreur connue devenir une panne"]
+        quiz:
+          - question: "Un mois valide sans aucune donnée : quel code ?"
+            options: ["200 avec un total nul", "404", "422", "500"]
+            bonnes: [1]
+            explication: "C'est un succès dont le résultat est zéro, pas une erreur."
+          - question: "Que devient une erreur métier non traduite ?"
+            options: ["Une panne 500", "Un 404", "Un 422", "Un succès"]
+            bonnes: [1]
+            explication: "L'appelant ne peut rien en faire et vos alertes perdent leur sens."
+          - question: "Où écrire la règle de validité d'un mois ?"
+            options: ["Dans le cœur, une seule fois", "Dans chaque route", "Dans le navigateur", "Dans le fichier CSV"]
+            bonnes: [1]
+            explication: "Les trois habillages du parcours réutiliseront la même règle."
+          - question: "Comment refuser tôt un paramètre mal écrit ?"
+            options: ["Par une contrainte de forme à la déclaration", "Par un try autour de tout", "Par un if dans le cœur seulement", "On ne peut pas"]
+            bonnes: [1]
+            explication: "FastAPI répond alors 422 sans que la requête atteigne votre code."
+          - question: "Pourquoi un 200 renvoyé après une erreur étouffée est-il pire qu'un 500 ?"
+            options: ["Parce que la donnée est fausse et que personne ne le voit", "Parce qu'il est plus lent", "Parce qu'il n'est pas standard", "Parce qu'il casse /docs"]
+            bonnes: [1]
+            explication: "Une panne visible se corrige ; une réponse fausse se propage."
       - num: "J20"
         title: "Tester l'API et sortir les secrets du code"
         evaluations: livrable
         contenu: >-
-          Suite de tests d'API, pydantic-settings, variables d'environnement, fichier .env.exemple suivi et .env jamais versionné.
+          Une suite de tests d'API, la configuration par variables d'environnement, le fichier d'exemple
+          suivi et le fichier réel jamais versionné.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez tester toutes vos routes sans lancer de serveur, et configurer votre
+              application sans écrire la moindre valeur sensible dans le code.
+          - titre: Le problème d'abord
+            texte: >-
+              Votre API lit un chemin de fichier écrit en dur et, bientôt, parlera à une base de données
+              avec un mot de passe. Écrire ces valeurs dans le code les envoie dans le dépôt, donc chez
+              tous ceux qui le récupèrent, et pour toujours dans l'historique.
+          - titre: La notion
+            texte: >-
+              Une variable d'environnement est une valeur fournie par le système au programme qui démarre.
+              La bibliothèque pydantic-settings décrit ces valeurs par une classe, avec leurs types et leurs
+              valeurs par défaut, et lit en plus un fichier nommé .env pendant le développement.
+
+              Le fichier .env n'est jamais versionné. Un fichier .env.exemple, lui, est versionné : il liste
+              les variables attendues avec des valeurs d'exemple, pour que quiconque récupère le dépôt
+              sache quoi remplir.
+
+              TestClient, fourni avec FastAPI, appelle votre application sans serveur. Les tests d'API se
+              lancent donc comme les autres, en une commande, et restent rapides.
+            code:
+              - titre: Une configuration sans secret dans le code
+                langage: python
+                source: |
+                  from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+                  class Configuration(BaseSettings):
+                      model_config = SettingsConfigDict(env_file=".env")
+
+                      chemin_effectif: str = "effectif.csv"
+                      cle_api: str = ""   # vide par défaut : jamais de secret écrit ici
+
+
+                  configuration = Configuration()
+          - titre: À la main
+            texte: >-
+              Créez .env.exemple avec les deux variables et des valeurs d'exemple, puis .env avec vos
+              vraies valeurs locales. Ajoutez .env au fichier .gitignore, et vérifiez que votre outil de
+              version ne le propose plus.
+
+              Lancez l'application et vérifiez qu'elle lit bien le chemin depuis la configuration. Changez
+              la valeur dans .env, relancez, et observez l'effet sans avoir touché au code.
+
+              Écrivez enfin un test qui parcourt les fichiers du dépôt et échoue si un motif de secret y
+              apparaît, par exemple une clé écrite en clair. Faites-le échouer volontairement une fois, en
+              ajoutant une fausse clé dans un fichier, pour vérifier qu'il détecte bien.
+          - titre: L'astuce du jour
+            texte: >-
+              Le fichier d'exemple est suivi, le fichier réel ne l'est jamais. Cette règle simple évite
+              l'accident le plus fréquent et le plus coûteux du métier : une clé publiée dans un dépôt.
+
+              Un secret publié reste dans l'historique même après suppression. La seule réaction correcte
+              est de le révoquer immédiatement, puis de nettoyer. Mieux vaut l'empêcher par un test.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est la clé écrite en dur « juste pour essayer ». Elle finit toujours dans un
+              commit, parce que personne ne se souvient de la retirer.
+
+              Le second piège est le fichier .env ajouté au dépôt par inadvertance, souvent par une commande
+              qui ajoute tout. Vérifiez votre .gitignore avant le premier envoi, et faites confiance au
+              test plutôt qu'à votre mémoire.
+            tableaux:
+              - titre: Où vit chaque valeur
+                entetes: [Valeur, Où elle vit, Versionnée]
+                lignes:
+                  - ["Chemin du fichier d'effectif", ".env", "non"]
+                  - ["Liste des variables attendues", ".env.exemple", "oui"]
+                  - ["Valeur par défaut inoffensive", "la classe de configuration", "oui"]
+                  - ["Clé d'API", ".env, et jamais ailleurs", "non"]
+          - titre: Challenge du jour
+            texte: >-
+              Rendez la suite d'API complète et verte : les quatre routes de la semaine, leurs cas d'erreur,
+              et la configuration lue depuis l'environnement.
+
+              Ajoutez le test qui refuse tout secret en dur dans le dépôt. Le dépôt du jour contient un
+              fichier piégé avec une fausse clé : votre test doit le détecter, puis vous le retirez.
+
+              Critères d'acceptation : aucune valeur sensible dans le code ; .env absent du dépôt et
+              .env.exemple présent ; la suite complète passe en une commande.
         livrable: >-
-          Rendre la suite d'API verte et ajouter le test qui refuse tout secret écrit en dur dans le dépôt.
+          Rendre la suite d'API verte et ajouter le test qui refuse tout secret en dur dans le dépôt.
   - title: "Bloc 5 — Semaine 5 : un écran avec Streamlit"
     modules:
       - num: "J21R"
