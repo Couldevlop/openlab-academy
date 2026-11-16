@@ -147,6 +147,19 @@ class _Lecteur:
             raise FormatInvalide(f"{self.source}: {chemin} doit être un nom de fichier .zip sans chemin")
         return nom
 
+    def atelier(self, brut, archive: str, chemin: str) -> bool:
+        """Clé facultative `atelier:` : la séance s'exerce dans l'atelier de code du navigateur.
+
+        Elle n'a de sens qu'avec une archive, puisque l'atelier ouvre les fichiers du dépôt du jour.
+        """
+        if brut is None:
+            return False
+        if not isinstance(brut, bool):
+            raise FormatInvalide(f"{self.source}: {chemin} doit valoir true ou false")
+        if brut and not archive:
+            raise FormatInvalide(f"{self.source}: {chemin} demande une archive pour la séance")
+        return brut
+
     def couverture(self, brut, chemin: str = "couverture") -> str:
         """Clé facultative `couverture:` : nom de fichier seul d'une image livrée avec l'application. Jamais un
         chemin (OWASP A01 : l'image est lue dans le dossier des ressources, pas où le texte l'indique)."""
@@ -218,6 +231,7 @@ class _Lecteur:
         if not isinstance(quiz, list):
             raise FormatInvalide(f"{self.source}: {chemin}quiz doit être une liste de questions")
         evaluations = self.evaluations(m, chemin)
+        archive = self.archive(m.get("archive"), f"{chemin}archive")
         # le livrable n'est exigé que des séances qui en portent un ; le domaine refuse celui qui traîne ailleurs
         livrable = self.exiger(m, "livrable", chemin) if evaluations.veut_livrable else m.get("livrable")
         return Module(*(str(self.exiger(m, c, chemin)) for c in ("num", "title", "contenu")), str(livrable or ""),
@@ -225,7 +239,8 @@ class _Lecteur:
                       mise_en_situation=str(m.get("mise_en_situation") or ""),
                       evaluations=evaluations,
                       travaux_pratiques=str(m.get("travaux_pratiques") or ""),
-                      archive=self.archive(m.get("archive"), f"{chemin}archive"),
+                      archive=archive,
+                      atelier=self.atelier(m.get("atelier"), archive, f"{chemin}atelier"),
                       cours=self.sections(m.get("cours"), f"{chemin}cours"),
                       figures=self.figures(m.get("figures"), f"{chemin}figures"),
                       tableaux=self.tableaux(m.get("tableaux"), f"{chemin}tableaux"),

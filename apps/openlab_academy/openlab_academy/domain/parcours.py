@@ -201,6 +201,9 @@ class Module(AvecCours):
     evaluations: Evaluations = Evaluations.COMPLETES  # ce que la séance évalue (voir Evaluations)
     travaux_pratiques: str = ""  # support de la séance : déroulé et défi, affiché dans la leçon
     archive: str = ""  # nom de fichier de l'archive de départ, jointe à la leçon et citée par elle
+    # l'atelier exécute le code dans le navigateur de l'apprenant : vrai pour les séances de Python seul,
+    # faux dès qu'une séance demande un serveur (API, écran, framework web), qui ne peut pas y tourner
+    atelier: bool = False
     cours: tuple[Section, ...] = ()  # le chapitre proprement dit, en sections titrées
     figures: tuple[Figure, ...] = ()  # schémas de la séance, servis comme l'archive
     tableaux: tuple[Tableau, ...] = ()

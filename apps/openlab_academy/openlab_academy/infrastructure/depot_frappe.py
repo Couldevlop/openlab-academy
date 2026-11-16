@@ -2,6 +2,7 @@
 import contextlib
 import dataclasses
 import html
+from urllib.parse import quote
 
 import frappe
 
@@ -262,7 +263,10 @@ class DepotFrappe:
                             TypeExercice.MISE_EN_SITUATION, grille=m.grille_cas, chaine=m.correction_cas,
                             type_="Text")
                if quiz and m.mise_en_situation.strip() else None)
-        rubriques = editorjs.rubriques_module(m, devoir, heures, quiz, cas, parcours.exercices, url, figures)
+        # l'atelier ouvre le dépôt du jour dans le navigateur : il n'existe que pour les séances qui le déclarent
+        atelier = f"/atelier?lecon={quote(lecon.name, safe='')}" if m.atelier else None
+        rubriques = editorjs.rubriques_module(m, devoir, heures, quiz, cas, parcours.exercices, url, figures,
+                                              atelier)
         if quiz:
             evaluations = evaluations + [{"assessment_type": "LMS Quiz", "assessment_name": quiz}]
         if cas:

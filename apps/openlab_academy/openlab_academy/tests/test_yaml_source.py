@@ -6,7 +6,8 @@ import yaml
 
 from openlab_academy.domain.parcours import Annonce, Niveau, Parcours
 from openlab_academy.domain.reglages import Reglages
-from openlab_academy.infrastructure.yaml_source import PARCOURS_DIR, FormatInvalide, charger_dossier, depuis_dict
+from openlab_academy.infrastructure.yaml_source import (PARCOURS_DIR, FormatInvalide, _Lecteur, charger_dossier,
+                                                       depuis_dict)
 from openlab_academy.tests.fabriques import parcours_brut
 
 
@@ -337,3 +338,26 @@ class TestGrilleEtCorrection(unittest.TestCase):
         brut["blocs"][0]["modules"][0]["correction_livrable"] = {"etapes": [{"etape": "zzz"}]}
         with self.assertRaisesRegex(FormatInvalide, r"t\.yaml: blocs\[0\]\.modules\[0\]\.correction_livrable invalide"):
             depuis_dict(brut, "t.yaml")
+
+
+class TestAtelier(unittest.TestCase):
+    """Clé `atelier:` : la séance s'exerce dans l'atelier de code du navigateur."""
+
+    def _module(self, **cles):
+        brut = {"num": "J01", "title": "T", "contenu": "c", "livrable": "l", **cles}
+        return _Lecteur("essai.yaml", Reglages()).module(brut, "modules[0].")
+
+    def test_absente_l_atelier_est_ferme(self):
+        self.assertFalse(self._module().atelier)
+
+    def test_atelier_declare_avec_une_archive(self):
+        self.assertTrue(self._module(archive="depot.zip", atelier=True).atelier)
+
+    def test_atelier_sans_archive_refuse(self):
+        with self.assertRaises(FormatInvalide):
+            self._module(atelier=True)
+
+    def test_atelier_doit_etre_un_booleen(self):
+        with self.assertRaises(FormatInvalide):
+            self._module(archive="depot.zip", atelier="oui")
+

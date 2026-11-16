@@ -30,7 +30,7 @@ class TestCouverture(FrappeTestCase):
         cours = self.depot.creer(parcours(title=TITRE, couverture=COUVERTURE))
         adresse = frappe.db.get_value("LMS Course", cours, "image")
         self.assertTrue(adresse)
-        fichier = frappe.db.get_value("File", {"file_url": adresse},
+        fichier = frappe.db.get_value("File", {"file_url": adresse.split("?")[0]},
                                       ["is_private", "attached_to_doctype", "attached_to_name"], as_dict=True)
         self.assertEqual((fichier.is_private, fichier.attached_to_doctype, fichier.attached_to_name),
                          (0, "LMS Course", cours))
@@ -52,7 +52,19 @@ class TestCouverture(FrappeTestCase):
         fichiers = frappe.get_all("File", {"attached_to_doctype": "LMS Course", "attached_to_name": cours},
                                   ["file_url"])
         self.assertEqual(len(fichiers), 1)
-        self.assertEqual(frappe.db.get_value("LMS Course", cours, "image"), fichiers[0].file_url)
+        self.assertEqual(frappe.db.get_value("LMS Course", cours, "image").split("?")[0], fichiers[0].file_url)
+
+    def test_adresse_de_couverture_marquee_par_le_contenu(self):
+        """Une couverture redessinée garde son nom : sans ce marqueur, le navigateur garderait l'ancienne."""
+        import hashlib
+        cours = self.depot.creer(parcours(title=TITRE, couverture=COUVERTURE))
+        empreinte = hashlib.md5(ressources_frappe.chemin(COUVERTURE).read_bytes()).hexdigest()
+        self.assertTrue(frappe.db.get_value("LMS Course", cours, "image").endswith(f"?v={empreinte[:12]}"))
+
+    def test_republication_ne_empile_pas_les_marqueurs(self):
+        cours = self.depot.creer(parcours(title=TITRE, couverture=COUVERTURE))
+        self.depot.remplacer(cours, parcours(title=TITRE, couverture=COUVERTURE))
+        self.assertEqual(frappe.db.get_value("LMS Course", cours, "image").count("?"), 1)
 
     def test_parcours_a_inscrits_recoit_quand_meme_sa_couverture(self):
         """Un parcours que la publication laisse tel quel (inscrits) voit tout de même sa vitrine rafraîchie."""

@@ -53,16 +53,16 @@ rect[class^='b-']{stroke-width:1.5}
 <text x="380" y="56" text-anchor="middle" font-size="12" fill="var(--encre2)">La dernière ligne dit quoi ; la ligne au-dessus dit où.</text>
 <rect x="40" y="90" width="430" height="40" rx="8" class="b-attenue" fill="var(--surface)"/>
 <text x="54" y="115" text-anchor="start" font-size="12" fill="var(--encre)">Traceback (most recent call last):</text>
-<text x="492" y="115" text-anchor="start" font-size="11" fill="var(--encre2)">l&#x27;annonce, sans information utile</text>
+<text x="504" y="115" text-anchor="start" font-size="11" fill="var(--encre2)">l&#x27;annonce, sans information utile</text>
 <rect x="40" y="142" width="430" height="40" rx="8" class="b-s1" fill="var(--surface)"/>
 <text x="54" y="167" text-anchor="start" font-size="12" fill="var(--encre)">  File &quot;fiche.py&quot;, line 7, in &lt;module&gt;</text>
-<text x="492" y="167" text-anchor="start" font-size="11" fill="var(--encre2)">le fichier et la ligne : regardez là</text>
+<text x="504" y="167" text-anchor="start" font-size="11" fill="var(--encre2)">le fichier et la ligne : regardez là</text>
 <rect x="40" y="194" width="430" height="40" rx="8" class="b-s1" fill="var(--surface)"/>
 <text x="54" y="219" text-anchor="start" font-size="12" fill="var(--encre)">    print(salaire_fcfa)</text>
-<text x="492" y="219" text-anchor="start" font-size="11" fill="var(--encre2)">le code fautif, recopié</text>
+<text x="504" y="219" text-anchor="start" font-size="11" fill="var(--encre2)">le code fautif, recopié</text>
 <rect x="40" y="246" width="430" height="40" rx="8" class="b-critique" fill="var(--surface)"/>
 <text x="54" y="271" text-anchor="start" font-size="12" fill="var(--encre)">NameError: name &#x27;salaire_fcfa&#x27; is not defined</text>
-<text x="492" y="271" text-anchor="start" font-size="11" fill="var(--encre2)">le problème, nommé : commencez ici</text>
-<path d="M 500 290 L 500 120" fill="none" stroke="var(--critique)" stroke-width="2" marker-end="url(#pointe-critique)"/>
+<text x="504" y="271" text-anchor="start" font-size="11" fill="var(--encre2)">le problème, nommé : commencez ici</text>
+<path d="M 486 290 L 486 120" fill="none" stroke="var(--critique)" stroke-width="2" marker-end="url(#pointe-critique)"/>
 <text x="380" y="316" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Le nom de l&#x27;erreur et la ligne suffisent dans neuf cas sur dix.</text>
 </svg>

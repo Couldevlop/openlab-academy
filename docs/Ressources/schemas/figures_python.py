@@ -24,8 +24,10 @@ def trace_erreur() -> Dessin:
         y = 90 + i * 52
         d.boite(40, y, 430, 40, teinte=teinte)
         d.texte(54, y + 25, code, taille=12, ancre="start")
-        d.texte(492, y + 25, commentaire, taille=11, ancre="start", couleur="encre2")
-    d.fleche(500, 290, 500, 120, teinte="critique")
+        d.texte(504, y + 25, commentaire, taille=11, ancre="start", couleur="encre2")
+    # la flèche occupe la gouttière entre les lignes de trace et leurs commentaires : sans cette
+    # marge, elle passait sur le texte
+    d.fleche(486, 290, 486, 120, teinte="critique")
     d.texte(380, 316, "Le nom de l'erreur et la ligne suffisent dans neuf cas sur dix.",
             taille=12, gras=True, couleur="encre2")
     return d

@@ -50,6 +50,21 @@ def _lien_archive(nom: str, url: str) -> dict:
     return _bloc("paragraph", text=f'À télécharger : <a href="{url}">{_e(nom)}</a>')
 
 
+_ATELIER = re.compile(r"/atelier\?lecon=[A-Za-z0-9%._-]{1,140}")
+
+
+def _lien_atelier(url: str) -> dict:
+    """Lien vers l'atelier de code, qui ouvre le dépôt du jour dans le navigateur.
+
+    L'adresse est celle de la page d'atelier du site, avec la leçon en paramètre ; toute autre
+    adresse est refusée (OWASP A03, échec fermé).
+    """
+    if not isinstance(url, str) or not _ATELIER.fullmatch(url):
+        raise ValueError(f"adresse d'atelier non servie par le site : {url!r}")
+    return _bloc("paragraph", text=('Sans rien installer : <a href="' + url + '">ouvrir le dépôt du jour '
+                                    "dans l'atelier de code</a>, où Python s'exécute dans votre navigateur."))
+
+
 _FIGURE_PRIVEE = re.compile(r"/private/files/[a-z0-9][a-z0-9-]{0,79}\.(?:svg|jpg|png|webp)")
 
 
@@ -96,9 +111,10 @@ def _section(section: Section, figures_urls: dict[str, str]) -> list[dict]:
 
 def lecon_module(module: Module, devoir: str | None, heures: int, quiz: str | None = None,
                  devoir_cas: str | None = None, exercices: ReglagesExercices | None = None,
-                 archive_url: str | None = None, figures_urls: dict[str, str] | None = None) -> str:
+                 archive_url: str | None = None, figures_urls: dict[str, str] | None = None,
+                 atelier_url: str | None = None) -> str:
     return assembler(rubriques_module(module, devoir, heures, quiz, devoir_cas, exercices, archive_url,
-                                      figures_urls))
+                                      figures_urls, atelier_url))
 
 
 def lecon_projet(projet: Projet, devoir: str, reglages: Reglages,
@@ -138,7 +154,8 @@ def _sections(porteur: AvecCours, urls: dict[str, str]) -> list[Rubrique]:
             for rang, s in enumerate(porteur.cours, start=1)]
 
 
-def _travaux_pratiques(module: Module, archive_url: str | None) -> Rubrique | None:
+def _travaux_pratiques(module: Module, archive_url: str | None,
+                       atelier_url: str | None = None) -> Rubrique | None:
     """Rubrique des travaux pratiques : le déroulé de la séance, l'archive du jour, ou les deux.
 
     Une archive citée est toujours livrée, même quand la séance n'a pas de déroulé écrit : sans cela,
@@ -146,11 +163,14 @@ def _travaux_pratiques(module: Module, archive_url: str | None) -> Rubrique | No
     """
     if not module.travaux_pratiques.strip() and archive_url is None:
         return None
+    atelier_url = atelier_url if module.atelier else None
     blocs = [_titre("Travaux pratiques")]
     blocs += [_bloc("paragraph", text=_e(paragraphe.strip()))
               for paragraphe in re.split(r"\n+", module.travaux_pratiques) if paragraphe.strip()]
     if archive_url is not None:
         blocs.append(_lien_archive(module.archive, archive_url))
+    if atelier_url is not None:
+        blocs.append(_lien_atelier(atelier_url))
     return _rubrique("travaux-pratiques", "Travaux pratiques", blocs)
 
 
@@ -206,7 +226,8 @@ def decouper(blocs) -> list[Rubrique]:
 def rubriques_module(module: Module, devoir: str | None, heures: int, quiz: str | None = None,
                      devoir_cas: str | None = None, exercices: ReglagesExercices | None = None,
                      archive_url: str | None = None,
-                     figures_urls: dict[str, str] | None = None) -> list[Rubrique]:
+                     figures_urls: dict[str, str] | None = None,
+                     atelier_url: str | None = None) -> list[Rubrique]:
     urls = figures_urls or {}
     contenu = [
         _titre("Contenu du module"),
@@ -219,7 +240,7 @@ def rubriques_module(module: Module, devoir: str | None, heures: int, quiz: str 
     rubriques = [
         _rubrique("contenu", "Contenu du module", contenu),
         *_sections(module, urls),
-        _travaux_pratiques(module, archive_url),
+        _travaux_pratiques(module, archive_url, atelier_url),
     ]
     if devoir:
         rubriques.append(_rubrique("livrable", "Livrable", [

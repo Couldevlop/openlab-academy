@@ -74,6 +74,28 @@ class TestRenduModule(unittest.TestCase):
         self.assertIn('<a href="/private/files/depot-python-j01.zip">depot-python-j01.zip</a>',
                       b[4]["data"]["text"])
 
+    def test_lien_de_l_atelier_apres_celui_de_l_archive(self):
+        m = Module("01", "M", "c", "l", archive="depot.zip", atelier=True)
+        b = blocs(editorjs.lecon_module(m, "D", 3, archive_url="/private/files/depot.zip",
+                                        atelier_url="/atelier?lecon=22072"))
+        self.assertIn("depot.zip", b[4]["data"]["text"])
+        self.assertIn('<a href="/atelier?lecon=22072">', b[5]["data"]["text"])
+
+    def test_aucun_atelier_pour_une_seance_qui_ne_le_declare_pas(self):
+        """Une séance qui demande un serveur ne peut pas tourner dans le navigateur."""
+        m = Module("01", "M", "c", "l", archive="depot.zip")
+        rendu = texte(editorjs.lecon_module(m, "D", 3, archive_url="/private/files/depot.zip",
+                                            atelier_url="/atelier?lecon=22072"))
+        self.assertNotIn("atelier", rendu)
+
+    def test_adresse_d_atelier_etrangere_refusee(self):
+        """OWASP A03 : seule la page d'atelier du site est transformée en lien."""
+        m = Module("01", "M", "c", "l", archive="depot.zip", atelier=True)
+        for url in ("javascript:alert(1)", "https://ailleurs.example/atelier?lecon=1",
+                    "/atelier?lecon=22072&amp;x=1", "/atelier"):
+            with self.subTest(url), self.assertRaises(ValueError):
+                editorjs.lecon_module(m, "D", 3, archive_url="/private/files/depot.zip", atelier_url=url)
+
     def test_aucune_section_travaux_pratiques_sans_contenu(self):
         rendu = texte(editorjs.lecon_module(Module("01", "M", "c", "l", travaux_pratiques="   "), "D", 3))
         self.assertNotIn("Travaux pratiques", rendu)
