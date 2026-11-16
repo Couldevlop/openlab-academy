@@ -53,6 +53,9 @@ blocs:
               en cinq questions, se poursuit par cette leçon, et se termine par un challenge que vous rendez.
               La journée suivante ne s'ouvre que lorsque celle du jour est terminée : c'est voulu, parce
               qu'un débutant qui saute une journée paie la dette trois jours plus tard.
+            figures:
+              - nom: python-ouverture-j01.jpg
+                legende: "Un terminal ouvert et quelques lignes de code : votre poste de travail des trente-cinq journées"
           - titre: Le problème d'abord
             texte: >-
               Vous reprenez le fichier du personnel d'une petite entreprise d'Abidjan. On vous demande une
@@ -214,6 +217,9 @@ blocs:
 
               Le franc CFA n'a pas de centimes en pratique courante. Un montant s'écrit donc en nombre
               entier, et tout calcul qui produit des décimales doit être arrondi avant d'être affiché.
+            figures:
+              - nom: python-corps-j02.jpg
+                legende: "Une paie se compte en francs entiers, pas en décimales"
           - titre: La notion
             texte: >-
               Python distingue deux sortes de nombres. L'entier, int, compte sans virgule : 250000. Le
@@ -1079,6 +1085,9 @@ blocs:
               L'effectif complet, c'est une liste de fiches : chaque élément est un dictionnaire comme celui
               d'hier. Le gérant veut un état par poste et une liste filtrée par salaire, et il veut surtout
               que son fichier d'origine reste intact après chaque état.
+            figures:
+              - nom: python-corps-j08.jpg
+                legende: "Un effectif, c'est d'abord des personnes et leurs fiches"
           - titre: La notion
             texte: >-
               Une liste de dictionnaires se parcourt comme toute liste ; à chaque tour, la variable de
@@ -1228,6 +1237,9 @@ blocs:
               La fiche contient une date d'embauche écrite en texte. La règle des congés demande une
               ancienneté en mois. Entre les deux, il manque un calcul, et ce calcul est plus subtil qu'il
               n'y paraît : un salarié embauché le 31 janvier a-t-il un mois d'ancienneté le 28 février ?
+            figures:
+              - nom: python-corps-j09.jpg
+                legende: "Une ancienneté se compte sur un calendrier, jour d'embauche compris"
           - titre: La notion
             texte: >-
               Le module datetime fournit le type date. La fonction date.fromisoformat lit une chaîne écrite
@@ -1501,6 +1513,9 @@ blocs:
             texte: >-
               Ce soir, vous saurez organiser votre application en trois fichiers qui s'importent
               proprement, au lieu d'un seul fichier qui grossit.
+            figures:
+              - nom: python-ouverture-j11.jpg
+                legende: "Un code qui grossit se range, comme des dossiers qui s'empilent"
           - titre: Le problème d'abord
             texte: >-
               Votre fichier de calculs contient maintenant les fonctions de cinq journées, et l'état par
@@ -1650,6 +1665,9 @@ blocs:
               Jusqu'ici votre effectif est écrit dans le code. Le gérant, lui, tient son personnel dans un
               tableur, qu'il exporte en CSV. Les noms contiennent des accents, et le fichier n'est pas
               toujours au même endroit.
+            figures:
+              - nom: python-corps-j12.jpg
+                legende: "Le fichier du personnel arrive souvent en tableur, avant d'arriver en Python"
           - titre: La notion
             texte: >-
               L'instruction with ouvre un fichier et le referme quoi qu'il arrive, y compris si une erreur
@@ -1946,6 +1964,9 @@ blocs:
               Depuis treize journées, les tests arrivent avec le dépôt du jour. Vous savez les lancer, pas
               les écrire. Or la règle des congés de la journée 03 va changer : l'entreprise ajoute une
               condition. Comment savoir que votre modification ne casse pas ce qui marchait ?
+            figures:
+              - nom: python-corps-j14.jpg
+                legende: "Un test, c'est une liste de contrôle que la machine coche à votre place"
           - titre: La notion
             texte: >-
               pytest découvre les fichiers dont le nom commence par test_, les fonctions dont le nom
@@ -2243,6 +2264,9 @@ blocs:
             texte: >-
               Ce soir, vous saurez lancer un serveur sur votre machine et répondre à une requête faite par
               un navigateur ou par un test.
+            figures:
+              - nom: python-ouverture-j16.jpg
+                legende: "Derrière une adresse web, un serveur qui attend des requêtes"
           - titre: Le problème d'abord
             texte: >-
               Votre application tourne dans un terminal, sur votre poste. Le gérant veut la consulter depuis
@@ -2823,6 +2847,9 @@ blocs:
               Votre API lit un chemin de fichier écrit en dur et, bientôt, parlera à une base de données
               avec un mot de passe. Écrire ces valeurs dans le code les envoie dans le dépôt, donc chez
               tous ceux qui le récupèrent, et pour toujours dans l'historique.
+            figures:
+              - nom: python-corps-j20.jpg
+                legende: "Une clé ne se laisse pas sur le clavier, ni dans le code"
           - titre: La notion
             texte: >-
               Une variable d'environnement est une valeur fournie par le système au programme qui démarre.
@@ -2956,6 +2983,9 @@ blocs:
             texte: >-
               Ce soir, vous saurez afficher dans un navigateur les trois chiffres que le gérant regarde
               chaque matin, sans écrire une ligne de HTML.
+            figures:
+              - nom: python-ouverture-j21.jpg
+                legende: "Un écran que le gérant ouvre lui-même, sans passer par vous"
           - titre: Le problème d'abord
             texte: >-
               Votre API répond en JSON. C'est parfait pour un programme, illisible pour le gérant. Il veut
@@ -3236,6 +3266,9 @@ blocs:
               Le gérant saisit une embauche. Il se trompe : il tape un salaire négatif, ou laisse le poste
               vide. Votre modèle d'entrée de la journée 15 sait refuser, mais son message parle de
               contraintes et de types, dans un vocabulaire de bibliothèque.
+            figures:
+              - nom: python-corps-j23.jpg
+                legende: "Une embauche commence par une fiche lue, vérifiée, puis saisie"
           - titre: La notion
             texte: >-
               Un formulaire regroupe plusieurs widgets et un bouton de soumission : le script n'agit qu'au
@@ -3651,6 +3684,9 @@ blocs:
             texte: >-
               Ce soir, vous saurez créer un projet Django qui démarre et passe sa vérification intégrée,
               et vous saurez nommer chaque fichier qu'il a créé.
+            figures:
+              - nom: python-ouverture-j26.jpg
+                legende: "Changer d'outil au milieu du parcours : ce que Django apporte en échange"
           - titre: Le problème d'abord
             texte: >-
               Votre application tient dans un fichier CSV. Deux personnes ne peuvent pas saisir en même
@@ -3931,6 +3967,9 @@ blocs:
               Votre état par poste, en semaine 2, parcourait une liste en mémoire. Avec dix mille fiches en
               base, charger tout l'effectif pour en faire la somme est absurde : la base sait sommer, et
               elle le fait mieux.
+            figures:
+              - nom: python-corps-j28.jpg
+                legende: "Les données vivent dans la base ; c'est à elle de compter, pas à votre boucle"
           - titre: La notion
             texte: >-
               Un gestionnaire de modèle donne accès aux enregistrements. La méthode de filtrage accepte des
@@ -4354,6 +4393,9 @@ blocs:
               Le gérant veut embaucher depuis une page publique de l'application, pas depuis
               l'administration. Les données arrivent donc du monde extérieur, et tout ce que la semaine 4
               vous a appris sur la frontière s'applique ici.
+            figures:
+              - nom: python-corps-j31.jpg
+                legende: "Un formulaire mal rempli se renvoie, il ne se jette pas"
           - titre: La notion
             texte: >-
               Un formulaire de modèle décrit les champs à saisir à partir d'un modèle. La vue construit le
@@ -4493,6 +4535,9 @@ blocs:
             texte: >-
               Vos deux pages sont publiques. N'importe qui connaissant l'adresse lit les salaires de toute
               l'entreprise. Aucune démonstration ne peut être faite dans cet état.
+            figures:
+              - nom: python-corps-j32.jpg
+                legende: "Ouvrir une session, c'est présenter une clé que le serveur reconnaît"
           - titre: La notion
             texte: >-
               Django fournit un modèle d'utilisateur, des vues de connexion et de déconnexion, et un
@@ -4919,6 +4964,9 @@ blocs:
             texte: >-
               Ce soir, vous saurez livrer une application complète, testée, configurée pour être montrée, et
               vous saurez la présenter en cinq minutes.
+            figures:
+              - nom: python-ouverture-j35.jpg
+                legende: "Montrer son application à quelqu'un : la dernière journée du parcours"
           - titre: Le problème d'abord
             texte: >-
               Votre application marche sur votre machine. Entre « ça marche chez moi » et « je peux le

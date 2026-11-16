@@ -59,6 +59,27 @@ Licence : https://unsplash.com/license
 | ouverture-18.jpg | `photo-1511376868136-742c0de8c9a8` |
 | ouverture-19.jpg | `photo-1681949222860-9cb3b0329878` |
 
+## Parcours « Bases de Python, jour après jour »
+
+| Fichier | Identifiant Unsplash |
+|---|---|
+| python-corps-j02.jpg | `photo-1730789701634-5386e7271462` |
+| python-corps-j08.jpg | `photo-1758876202610-bae5608f5051` |
+| python-corps-j09.jpg | `photo-1435527173128-983b87201f4d` |
+| python-corps-j12.jpg | `photo-1454165804606-c3d57bc86b40` |
+| python-corps-j14.jpg | `photo-1754039985008-a15410211b67` |
+| python-corps-j20.jpg | `photo-1633265486064-086b219458ec` |
+| python-corps-j23.jpg | `photo-1698047681432-006d2449c631` |
+| python-corps-j28.jpg | `photo-1784652852605-6945598f2af3` |
+| python-corps-j31.jpg | `photo-1778113048525-387745cbbc6c` |
+| python-corps-j32.jpg | `photo-1609770231080-e321deccc34c` |
+| python-ouverture-j01.jpg | `photo-1773966071293-bea3d7646fd1` |
+| python-ouverture-j11.jpg | `photo-1583521214690-73421a1829a9` |
+| python-ouverture-j16.jpg | `photo-1564457461758-8ff96e439e83` |
+| python-ouverture-j21.jpg | `photo-1781246435700-afec19012b45` |
+| python-ouverture-j26.jpg | `photo-1674471361339-2e1e1dbd3e73` |
+| python-ouverture-j35.jpg | `photo-1505373877841-8d25f7d46678` |
+
 Chaque image de leçon est servie en fichier privé : elle suit le contrôle d'accès du parcours.
 L'image de couverture fait exception : elle est publique, puisque la vignette s'affiche au catalogue,
 donc avant toute inscription.
