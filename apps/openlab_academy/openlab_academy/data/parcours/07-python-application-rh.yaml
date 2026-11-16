@@ -747,6 +747,7 @@ blocs:
       - num: "J06"
         title: "Les listes : indexer, trancher, trier"
         evaluations: livrable
+        archive: depot-python-j06.zip
         contenu: >-
           Créer une liste, atteindre un élément par son index, en extraire une tranche, ajouter, trier en
           place ou obtenir une copie triée.
@@ -888,6 +889,7 @@ blocs:
       - num: "J07"
         title: "Les dictionnaires : une fiche salarié"
         evaluations: livrable
+        archive: depot-python-j07.zip
         contenu: >-
           Clés et valeurs, lecture sûre avec get, parcours d'un dictionnaire, et le choix de clés stables
           qui survivront aux sept semaines du parcours.
@@ -1031,6 +1033,7 @@ blocs:
       - num: "J08"
         title: "Un effectif : liste de dictionnaires"
         evaluations: livrable
+        archive: depot-python-j08.zip
         contenu: >-
           Parcourir une liste de fiches, filtrer selon un critère, regrouper par poste, écrire une
           compréhension de liste, et comprendre ce qu'est une copie superficielle.
@@ -1170,6 +1173,7 @@ blocs:
       - num: "J09"
         title: "Les dates et l'ancienneté"
         evaluations: livrable
+        archive: depot-python-j09.zip
         contenu: >-
           Le type date, l'écriture ISO, la différence entre deux dates, le calcul d'une ancienneté en mois
           et le traitement du mois incomplet.
@@ -1308,6 +1312,7 @@ blocs:
       - num: "J10"
         title: "Les chaînes : normaliser et aligner"
         evaluations: livrable
+        archive: depot-python-j10.zip
         contenu: >-
           Nettoyer une chaîne à l'entrée, découper, joindre, et aligner des colonnes pour produire un état
           lisible dans un terminal.
