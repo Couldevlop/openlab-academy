@@ -77,6 +77,13 @@ class DepotFrappe:
         adresse = ressources_frappe.joindre_couverture(cours_id, parcours.couverture)
         frappe.db.set_value("LMS Course", cours_id, "image", adresse)
 
+    @staticmethod
+    def _couverture_si_non_retouchee(cours_id: str, parcours: Parcours | Annonce) -> None:
+        """Couverture d'un parcours que la publication laisse par ailleurs tel quel."""
+        if retouches_frappe.fiche_retouchee(cours_id):
+            return
+        DepotFrappe._couverture(cours_id, parcours)
+
     @contextlib.contextmanager
     def unite_de_travail(self):
         frappe.db.savepoint("openlab_publication")
@@ -169,8 +176,13 @@ class DepotFrappe:
         depot_copies_frappe.enregistrer_grille_exercice(nom, type_exercice, grille, chaine)
 
     def completer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
-        """Cours conservé tel quel (inscrits) : applique les drapeaux de lancement et crée seulement les grilles
-        manquantes de ses devoirs, par titre."""
+        """Cours conservé tel quel (inscrits) : applique les drapeaux de lancement, rafraîchit la couverture et
+        crée seulement les grilles manquantes de ses devoirs, par titre.
+
+        La couverture est une vitrine, pas du contenu : la poser ne change rien pour les inscrits, et sans cela
+        un parcours en cours garderait à jamais l'image de sa première publication. La fiche retouchée dans
+        l'application reste intouchée, comme pour une republication complète."""
+        self._couverture_si_non_retouchee(cours_id, parcours)
         if isinstance(parcours, Annonce):
             return
         frappe.db.set_value("LMS Course", cours_id, self._drapeaux(parcours))

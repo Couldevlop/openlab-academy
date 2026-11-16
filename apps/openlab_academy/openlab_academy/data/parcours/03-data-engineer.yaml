@@ -9,6 +9,7 @@ description: >-
   <p><b>Fil conducteur :</b> des plateformes de données pour les filières et entreprises d'Afrique de l'Ouest,
   avec une attention constante aux coûts.</p>
   <p><b>Évaluation :</b> livrables hebdomadaires 20 %, portfolio 40 %, capstone 40 %.</p>
+couverture: couverture-data-engineer.jpg
 tags: [Data Engineering, SQL, dbt, Spark, Kafka, Airflow, Cloud]
 card_gradient: Amber
 

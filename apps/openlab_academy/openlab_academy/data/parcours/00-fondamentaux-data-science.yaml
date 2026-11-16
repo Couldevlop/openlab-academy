@@ -9,6 +9,7 @@ description: >-
   <p><b>Rôle :</b> installer le vocabulaire, les maths et l'outillage communs aux parcours
   Développeur Python, AI Engineer, Data Engineer et Cybersécurité.</p>
   <p><b>Évaluation :</b> livrables hebdomadaires 20 %, portfolio 40 %, capstone 40 %.</p>
+couverture: couverture-fondamentaux-data-science.jpg
 tags: [Data Science, Python, Statistiques, SQL, Machine Learning]
 card_gradient: Blue
 

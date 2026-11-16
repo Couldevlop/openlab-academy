@@ -132,9 +132,14 @@ def exercices(cours_id: str) -> dict[str, str]:
             for e in frappe.get_all(doctype, {"course": cours_id}, ["name", "title"])}
 
 
+def fiche_retouchee(cours_id: str) -> bool:
+    """Vrai si la fiche du parcours a été retouchée dans l'application."""
+    return bool(frappe.db.get_value(PARCOURS, cours_id, CHAMP))
+
+
 def champs_du_parcours(cours_id: str, champs: dict) -> dict:
     """Retire de ce que la publication écrirait les champs de fiche retouchés dans l'application."""
-    if not frappe.db.get_value(PARCOURS, cours_id, CHAMP):
+    if not fiche_retouchee(cours_id):
         return champs
     return {cle: valeur for cle, valeur in champs.items() if cle not in SUIVIS[PARCOURS]}
 

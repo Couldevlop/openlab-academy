@@ -8,8 +8,8 @@ description: >-
   et un capstone devant jury.</p>
   <p><b>Trajectoire :</b> de la syntaxe de base jusqu'à un code confirmé, testé et packagé.</p>
   <p><b>Évaluation :</b> livrables hebdomadaires 20 %, portfolio 40 %, capstone 40 %.</p>
+couverture: couverture-developpeur-python.jpg
 tags: [Python, Tests, Packaging, API, SQL]
-card_gradient: Green
 
 blocs:
   - title: "Bloc 1 — Bases du langage (S1–S3)"

@@ -4,6 +4,7 @@ Un fichier privé de leçon n'est servi que par le contrôle des médias (`entry
 parcours doit être ouvert, visible et non bloqué pour le membre, et la leçon accessible. L'archive hérite donc de la
 visibilité du parcours sans nouveau point d'entrée.
 """
+import hashlib
 import pathlib
 
 import frappe
@@ -31,18 +32,22 @@ def joindre_couverture(cours: str, nom: str) -> str:
     """Joint l'image de couverture au parcours en fichier public et renvoie son adresse.
 
     Publique, à l'inverse des archives et des figures : la vignette s'affiche au catalogue, donc avant
-    toute inscription. Une couverture déjà jointe est réutilisée, pour qu'une republication ne laisse
-    pas derrière elle une collection de doublons.
+    toute inscription. Un parcours n'a qu'une couverture : celle déjà jointe est réutilisée si elle a le
+    même contenu, sinon elle est retirée et remplacée. L'appariement se fait sur l'empreinte du contenu,
+    jamais sur le nom du fichier — deux parcours peuvent porter le même nom de fichier, et le LMS suffixe
+    alors celui qu'il écrit sur disque.
     """
-    deja = frappe.db.get_value("File", {"attached_to_doctype": "LMS Course", "attached_to_name": cours,
-                                        "file_name": nom, "is_private": 0}, "file_url")
-    if deja:
-        return deja
-    fichier = chemin(nom)
+    contenu = chemin(nom).read_bytes()
+    empreinte = hashlib.md5(contenu).hexdigest()
+    for deja in frappe.get_all("File", {"attached_to_doctype": "LMS Course", "attached_to_name": cours,
+                                        "attached_to_field": "image"}, ["name", "content_hash", "file_url"]):
+        if deja.content_hash == empreinte:
+            return deja.file_url
+        frappe.delete_doc("File", deja.name, ignore_permissions=True, delete_permanently=True)
     return frappe.get_doc({
         "doctype": "File", "file_name": nom, "is_private": 0, "decode": False,
         "attached_to_doctype": "LMS Course", "attached_to_name": cours, "attached_to_field": "image",
-        "content": fichier.read_bytes(),
+        "content": contenu,
     }).insert(ignore_permissions=True).file_url
 
 

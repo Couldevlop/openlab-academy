@@ -15,6 +15,7 @@ from openlab_academy.infrastructure.yaml_source import FormatInvalide, _Lecteur
 from openlab_academy.tests.fabriques import parcours, parcours_brut
 
 COUVERTURE = "couverture-ia-agentique.jpg"
+AUTRE_COUVERTURE = "couverture-developpeur-python.jpg"
 TITRE = "Parcours couverture test"
 
 
@@ -43,6 +44,29 @@ class TestCouverture(FrappeTestCase):
         self.depot.remplacer(cours, parcours(title=TITRE, couverture=COUVERTURE))
         self.assertEqual(frappe.db.count("File", {"attached_to_doctype": "LMS Course",
                                                   "attached_to_name": cours}), 1)
+
+    def test_une_nouvelle_couverture_remplace_l_ancienne(self):
+        """Changer l'image d'un parcours ne laisse pas deux fichiers derrière elle."""
+        cours = self.depot.creer(parcours(title=TITRE, couverture=COUVERTURE))
+        self.depot.remplacer(cours, parcours(title=TITRE, couverture=AUTRE_COUVERTURE))
+        fichiers = frappe.get_all("File", {"attached_to_doctype": "LMS Course", "attached_to_name": cours},
+                                  ["file_url"])
+        self.assertEqual(len(fichiers), 1)
+        self.assertEqual(frappe.db.get_value("LMS Course", cours, "image"), fichiers[0].file_url)
+
+    def test_parcours_a_inscrits_recoit_quand_meme_sa_couverture(self):
+        """Un parcours que la publication laisse tel quel (inscrits) voit tout de même sa vitrine rafraîchie."""
+        cours = self.depot.creer(parcours(title=TITRE))
+        self.assertFalse(frappe.db.get_value("LMS Course", cours, "image"))
+        self.depot.completer(cours, parcours(title=TITRE, couverture=COUVERTURE))
+        self.assertTrue(frappe.db.get_value("LMS Course", cours, "image"))
+
+    def test_fiche_retouchee_garde_sa_couverture(self):
+        from openlab_academy.infrastructure.retouches_frappe import CHAMP
+        cours = self.depot.creer(parcours(title=TITRE))
+        frappe.db.set_value("LMS Course", cours, CHAMP, 1, update_modified=False)
+        self.depot.completer(cours, parcours(title=TITRE, couverture=COUVERTURE))
+        self.assertFalse(frappe.db.get_value("LMS Course", cours, "image"))
 
     def test_couverture_d_une_annonce(self):
         annonce = Annonce(title=TITRE, short_introduction="s", description="d", tags=("x",),
