@@ -19,6 +19,94 @@ blocs:
         contenu: >-
           Installation (uv), interpréteur, variables, types, opérateurs, entrées/sorties, premiers scripts.
           Pensée algorithmique.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous installez Python proprement sur votre machine, vous exécutez un
+              fichier depuis un terminal, vous déclarez des variables du bon type, vous écrivez des conditions
+              et des boucles, et vous lisez une trace d'erreur sans appeler à l'aide.
+
+              Le parcours vise un niveau confirmé en douze semaines. Cette première semaine pose les gestes
+              que vous répéterez des milliers de fois : un terminal ouvert, un fichier enregistré, une
+              exécution, une erreur lue. Prenez le temps de les automatiser maintenant ; tout le reste
+              s'appuie dessus.
+          - titre: "Le problème d'abord"
+            texte: >-
+              Une boutique de Treichville vend des articles au détail. Le gérant veut un programme qui demande
+              le prix unitaire et la quantité, puis affiche le total en francs CFA, avec une remise de 5 % au
+              delà de cinquante mille francs. C'est un calcul de comptoir, exactement le genre de besoin par
+              lequel un développeur commence.
+
+              Ce programme tient en quinze lignes. Il demande pourtant tout ce que vous apprenez cette semaine
+              : lire une saisie, convertir un texte en nombre, décider selon un seuil, calculer, afficher un
+              résultat lisible. Et il contient déjà le piège le plus fréquent du débutant : la saisie arrive
+              toujours sous forme de texte, jamais sous forme de nombre.
+          - titre: "La notion : installer, exécuter, lire l'erreur"
+            texte: >-
+              Installez Python avec uv, le gestionnaire qui installe l'interpréteur et gère les environnements
+              sans toucher à votre système. Une seule commande installe uv ; une seconde installe la version
+              de Python que vous voulez. Vous aurez autant de versions que de projets, sans conflit.
+
+              Exécutez toujours vos fichiers depuis un terminal, jamais par un bouton vert d'éditeur. Le
+              terminal vous montre la commande exacte, le dossier courant et la sortie complète : trois
+              informations que le bouton vert vous cache et qui vous manqueront au premier incident.
+
+              Une trace d'erreur se lit de bas en haut. La dernière ligne nomme le problème, celle du dessus
+              donne le fichier et le numéro de ligne. Les noms reviennent sans cesse : NameError pour un nom
+              qui n'existe pas, TypeError pour deux types qui ne se mélangent pas, ValueError pour une
+              conversion impossible comme int("douze").
+            figures:
+              - nom: python-trace-erreur.svg
+                legende: "Une trace d'erreur se lit de bas en haut : la dernière ligne nomme le problème"
+          - titre: "À la main : le programme du comptoir"
+            texte: >-
+              Créez un dossier pour le parcours, puis un fichier nommé comptoir.py. Recopiez le programme,
+              puis exécutez-le avec la commande de votre système. Modifiez les valeurs, recommencez, observez.
+
+              Trois points méritent votre attention. La fonction input rend toujours une chaîne de caractères
+              : sans conversion, 5 fois "3" donne "33" et non quinze. Le calcul de la remise se fait sur le
+              total, pas sur le prix unitaire. Enfin, le franc CFA n'a pas de centimes : arrondissez une seule
+              fois, à la fin, avec round.
+            tableaux:
+              - titre: Les types que vous manipulez cette semaine
+                entetes: [Type, Exemple, "Ce qu'il permet", Piège courant]
+                lignes:
+                  - [str, "'Awa Kone'", du texte, additionner deux saisies au lieu de les sommer]
+                  - [int, 250000, un entier, oublier int() après input()]
+                  - [float, 0.95, un nombre à virgule, comparer deux flottants avec ==]
+                  - [bool, True, une condition, confondre = et ==]
+            code:
+              - titre: "comptoir.py, le calcul du comptoir"
+                langage: python
+                source: |
+                  prix_unitaire = float(input("Prix unitaire en FCFA : "))
+                  quantite = int(input("Quantite : "))
+
+                  total = prix_unitaire * quantite
+                  if total > 50_000:
+                      total = total * 0.95
+
+                  print(f"Total a payer : {round(total)} FCFA")
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est l'indentation. Python délimite les blocs par les espaces, pas par des
+              accolades : quatre espaces, toujours les mêmes, jamais de tabulation mélangée à des espaces.
+              Configurez votre éditeur une fois pour toutes.
+
+              Le deuxième est l'encodage des accents. Enregistrez tous vos fichiers en UTF-8. Sous Windows,
+              vérifiez le réglage de votre terminal si les accents s'affichent de travers.
+
+              Le troisième est la comparaison de flottants. 0.1 + 0.2 ne vaut pas exactement 0.3 : pour des
+              montants, travaillez en entiers de francs, ou arrondissez au moment de comparer.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez une suite de petits programmes : le calcul du comptoir, un programme qui classe une note
+              sur vingt en mention, et un programme qui affiche la table de multiplication d'un nombre
+              demandé.
+
+              Critères d'acceptation : chaque programme s'exécute sans erreur depuis le terminal, les saisies
+              sont converties explicitement, les montants sont arrondis une seule fois, et vous savez
+              expliquer à l'oral ce que fait chaque ligne.
         livrable: Suite de petits programmes (calculs, conditions, boucles).
         mise_en_situation: "Un commerçant veut un petit programme qui demande le prix unitaire et la quantité d'un article puis affiche le total en FCFA, avec une remise de 5 % au-delà de 50 000 FCFA. Écrivez le programme et décrivez les cas que vous testez."
         quiz:
@@ -45,6 +133,95 @@ blocs:
       - num: "02"
         title: Structures de données
         contenu: Listes, tuples, dictionnaires, sets, compréhensions, slicing, manipulation de chaînes.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous choisissez la structure de données adaptée à un problème, vous
+              parcourez et transformez une collection avec une compréhension, vous découpez des chaînes et
+              vous agrégez des données en mémoire sans écrire trois boucles imbriquées.
+
+              Le choix de structure est le premier geste d'ingénieur de ce parcours. Un mauvais choix se paie
+              en lignes de code, en lenteur et en bugs ; un bon choix fait disparaître la moitié du problème.
+          - titre: "Le problème d'abord"
+            texte: >-
+              Une coopérative agricole vous remet le relevé des ventes de la semaine : une longue liste de
+              couples produit et quantité, saisis au fil de l'eau, dans le désordre, avec des répétitions. On
+              vous demande la quantité totale vendue par produit, puis les trois produits les plus vendus.
+
+              Avec une liste seule, vous écrivez une boucle dans une boucle et vous obtenez un programme lent
+              et difficile à relire. Avec un dictionnaire, le total par produit s'obtient en un seul passage.
+              La différence ne tient pas à votre habileté : elle tient à la structure choisie.
+          - titre: "La notion : quatre structures, quatre usages"
+            texte: >-
+              La liste garde l'ordre et accepte les doublons : c'est la structure par défaut d'une suite
+              d'éléments. Le tuple est une liste figée, utile pour ce qui ne doit pas changer, comme des
+              coordonnées ou une ligne de relevé. Le dictionnaire associe une clé à une valeur et répond
+              immédiatement à la question « combien pour ce produit ». L'ensemble ne retient que des valeurs
+              uniques et répond à « est-ce que cet élément est déjà là ».
+
+              La compréhension transforme une collection en une autre, en une ligne lisible. Préférez-la à une
+              boucle qui ne fait qu'accumuler. Gardez la boucle explicite dès que le corps dépasse deux lignes
+              : une compréhension illisible est pire qu'une boucle claire.
+
+              Le découpage, ou slicing, s'écrit avec deux bornes : la première est incluse, la seconde exclue.
+              La même règle vaut pour les chaînes et pour les listes.
+            figures:
+              - nom: python-liste-ou-dictionnaire.svg
+                legende: "La liste se lit par position, le dictionnaire par clé : la clé ne se décale pas"
+          - titre: "À la main : l'agrégation des ventes"
+            texte: >-
+              Partez du relevé brut et produisez le total par produit, puis le classement. Lisez le programme
+              avant de l'exécuter : il tient en huit lignes et il remplace les deux boucles imbriquées de la
+              version naïve.
+
+              La méthode get d'un dictionnaire rend une valeur par défaut quand la clé manque : c'est elle qui
+              évite le test d'existence à chaque tour. Le tri par valeur décroissante se demande à sorted,
+              avec une clé de tri et le drapeau reverse.
+            tableaux:
+              - titre: Choisir sa structure en trois questions
+                entetes: [Question, Réponse, Structure]
+                lignes:
+                  - ["L'ordre compte", oui, list]
+                  - [Les valeurs doivent être uniques, oui, set]
+                  - [Je cherche par identifiant, oui, dict]
+                  - [La donnée ne doit plus changer, oui, tuple]
+            code:
+              - titre: "ventes.py, le total par produit"
+                langage: python
+                source: |
+                  ventes = [("cacao", 120), ("hevea", 80), ("cacao", 45), ("anacarde", 200), ("hevea", 60)]
+
+                  totaux = {}
+                  for produit, quantite in ventes:
+                      totaux[produit] = totaux.get(produit, 0) + quantite
+
+                  classement = sorted(totaux.items(), key=lambda couple: couple[1], reverse=True)
+
+                  for produit, total in classement[:3]:
+                      print(f"{produit:<10} {total:>6}")
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est la copie. b = a ne copie pas la liste : les deux noms désignent la même
+              liste, et modifier l'une modifie l'autre. Copiez avec a.copy, ou mieux, construisez une nouvelle
+              liste plutôt que de modifier celle que vous avez reçue.
+
+              Le deuxième est la modification pendant le parcours. Supprimer des éléments d'une liste que vous
+              êtes en train de parcourir saute des éléments sans prévenir. Construisez une liste filtrée.
+
+              Le troisième est l'argument par défaut mutable. Une liste ou un dictionnaire donné comme valeur
+              par défaut d'un paramètre est partagé entre tous les appels : utilisez None et créez la
+              collection dans le corps de la fonction.
+            figures:
+              - nom: python-copie-liste.svg
+                legende: "Copier une liste ne copie pas les fiches qu'elle contient"
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez un programme de traitement de données en mémoire : il lit un relevé de ventes fourni,
+              rend le total par produit, le classement des trois premiers, la liste des produits vendus une
+              seule fois, et la moyenne par produit arrondie au franc.
+
+              Critères d'acceptation : aucune boucle imbriquée, chaque structure est choisie pour une raison
+              que vous savez expliquer, et le programme reste lisible sans commentaire d'explication.
         livrable: Programme de traitement de données en mémoire.
         mise_en_situation: "Vous recevez une liste de ventes (produit, quantité). Proposez la structure de données la plus adaptée pour obtenir rapidement la quantité totale vendue par produit, et écrivez le code correspondant."
         quiz:
@@ -71,6 +248,96 @@ blocs:
       - num: "03"
         title: Fonctions & modularité
         contenu: Fonctions, portée, arguments, *args/**kwargs, modules, imports, organisation d'un projet.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous découpez un programme en fonctions courtes qui rendent des
+              valeurs, vous rangez ces fonctions dans des modules, vous écrivez des docstrings utiles et vous
+              annotez vos signatures avec des types.
+
+              C'est la semaine qui sépare le script du logiciel. Un script marche une fois ; un code découpé
+              en fonctions se relit, se teste et se réutilise dans le projet suivant.
+          - titre: "Le problème d'abord"
+            texte: >-
+              Votre programme de ventes de la semaine passée a grossi : lecture du relevé, nettoyage des noms,
+              agrégation, classement, affichage. Tout tient dans un seul fichier de cent lignes, et chaque
+              modification casse autre chose.
+
+              On vous demande maintenant de réutiliser l'agrégation dans un second programme, celui des
+              achats. Avec un fichier unique, vous copiez-collez. Avec des fonctions rangées dans un module,
+              vous importez. Le copier-coller a un coût différé : la correction d'un bug devra être faite deux
+              fois, et la seconde sera oubliée.
+          - titre: "La notion : une fonction rend, elle n'affiche pas"
+            texte: >-
+              Une fonction reçoit des paramètres, calcule et rend une valeur avec return. Elle n'affiche rien
+              : l'affichage est la décision de l'appelant. Une fonction qui affiche ne peut être ni réutilisée
+              dans un autre contexte, ni testée simplement.
+
+              Une fonction fait une seule chose, et son nom le dit. Si vous devez écrire « et » pour décrire
+              ce qu'elle fait, coupez-la en deux. Visez des fonctions de moins de vingt lignes.
+
+              Un module est un fichier ; un paquet est un dossier qui contient un fichier __init__.py. Le bloc
+              if __name__ == "__main__" sépare ce qui s'exécute quand on lance le fichier de ce qui s'exécute
+              quand on l'importe : sans lui, importer votre module déclenche votre programme.
+            figures:
+              - nom: python-fonction-entree-sortie.svg
+                legende: "Ce qu'une fonction reçoit, ce qu'elle rend, et ce qu'elle n'affiche pas"
+              - nom: python-modules-arborescence.svg
+                legende: "Un module est un fichier, un paquet est un dossier qui en contient plusieurs"
+          - titre: "À la main : extraire les fonctions"
+            texte: >-
+              Reprenez le programme de ventes et extrayez trois fonctions : une qui normalise un nom de
+              produit, une qui agrège les ventes, une qui classe. Rangez-les dans un module nommé ventes.py,
+              et laissez dans main.py uniquement la lecture des données et l'affichage.
+
+              Annotez les signatures : les annotations ne sont pas vérifiées à l'exécution, mais elles disent
+              au lecteur, et à votre éditeur, ce que la fonction attend et ce qu'elle rend. Écrivez une
+              docstring d'une ligne qui dit ce que fait la fonction, pas comment elle le fait.
+            tableaux:
+              - titre: "Trois signes qu'une fonction est trop grosse"
+                entetes: [Signe, "Ce qu'il révèle", Le geste]
+                lignes:
+                  - [Son nom contient « et », elle fait deux choses, la couper en deux]
+                  - [Elle dépasse vingt lignes, "le détail noie l'intention", extraire une sous-fonction]
+                  - [Elle affiche et calcule, elle mélange décision et présentation, rendre la valeur]
+            code:
+              - titre: "ventes.py, trois fonctions et rien d'autre"
+                langage: python
+                source: |
+                  def normaliser(nom: str) -> str:
+                      """Forme comparable d'un nom de produit : sans espaces superflus, en minuscules."""
+                      return nom.strip().lower()
+
+
+                  def agreger(lignes: list[tuple[str, int]]) -> dict[str, int]:
+                      """Quantite totale par produit, les noms etant normalises avant regroupement."""
+                      totaux: dict[str, int] = {}
+                      for nom, quantite in lignes:
+                          totaux[normaliser(nom)] = totaux.get(normaliser(nom), 0) + quantite
+                      return totaux
+
+
+                  def classer(totaux: dict[str, int], combien: int = 3) -> list[tuple[str, int]]:
+                      """Les `combien` produits les plus vendus, du plus grand au plus petit."""
+                      return sorted(totaux.items(), key=lambda couple: couple[1], reverse=True)[:combien]
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est l'import circulaire : deux modules qui s'importent l'un l'autre. Il signale
+              presque toujours un mauvais découpage ; déplacez la fonction partagée dans un troisième module.
+
+              Le deuxième est la variable globale. Une fonction qui lit une variable définie ailleurs dépend
+              d'un état invisible ; passez la valeur en paramètre.
+
+              Le troisième est la docstring décorative. « Cette fonction agrège les ventes » n'apporte rien à
+              qui lit déjà le nom agreger. Écrivez ce que la fonction garantit, ou ce qu'elle refuse.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez un petit utilitaire structuré en modules : un paquet avec au moins deux modules, des
+              fonctions annotées et documentées, un point d'entrée protégé par if __name__ == "__main__", et
+              un fichier LISEZ-MOI qui explique comment l'exécuter.
+
+              Critères d'acceptation : aucune fonction n'affiche et ne calcule à la fois, l'import du paquet
+              ne déclenche aucun traitement, et le même module s'utilise depuis deux programmes différents.
         livrable: Petit utilitaire structuré en modules.
         mise_en_situation: "Un script de 300 lignes calcule des factures, envoie des SMS et écrit des fichiers, le tout dans une seule fonction. Proposez un découpage en fonctions et en modules, en justifiant vos choix."
         quiz:
@@ -101,6 +368,107 @@ blocs:
         contenu: >-
           Classes, objets, attributs, méthodes, héritage, composition, encapsulation, dataclasses,
           méthodes spéciales (dunder).
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous modélisez un domaine métier avec des classes, vous distinguez ce
+              qui relève d'un objet de ce qui relève d'une fonction, vous employez les dataclasses pour les
+              structures de données, et vous savez quand l'héritage est une bonne idée, ce qui est plus rare
+              qu'on ne le croit.
+
+              L'objectif n'est pas d'empiler des classes : c'est de nommer les concepts du métier dans le
+              code, pour qu'un lecteur retrouve dans vos fichiers les mots qu'emploie le gérant de la
+              coopérative.
+          - titre: "Le problème d'abord"
+            texte: >-
+              La coopérative veut suivre ses producteurs : chacun livre plusieurs lots, chaque lot a un poids,
+              une qualité et un prix au kilo. Le paiement dépend de la qualité, et une pénalité s'applique aux
+              lots trop humides.
+
+              Avec des dictionnaires imbriqués, le code devient une suite d'accès par clé que personne ne peut
+              relire, et une faute de frappe dans une clé passe inaperçue jusqu'à la production. Des classes
+              nomment les concepts, et une faute de frappe sur un attribut échoue immédiatement.
+          - titre: "La notion : objets, dataclasses, et le bon usage de l'héritage"
+            texte: >-
+              Une classe réunit des données et les opérations qui les concernent. Le constructeur reçoit ce
+              qu'il faut pour que l'objet soit valide dès sa naissance : un objet à moitié construit est une
+              source de bugs. Les méthodes expriment des règles métier, pas des manipulations techniques.
+
+              Pour une structure de données simple, la dataclass évite d'écrire le constructeur, l'égalité et
+              la représentation. Avec frozen, l'objet devient immuable : il ne peut plus être modifié après sa
+              création, ce qui supprime une catégorie entière de bugs.
+
+              L'héritage sert quand un objet est vraiment un cas particulier d'un autre, et que tout ce qui
+              est vrai du parent reste vrai de l'enfant. Dans le doute, préférez la composition : un objet qui
+              en contient un autre. Trois niveaux d'héritage sont presque toujours le signe d'une erreur de
+              conception.
+            figures:
+              - nom: python-objet-ou-composition.svg
+                legende: "La règle vit près des données ; la composition avant l'héritage"
+          - titre: "À la main : le domaine de la coopérative"
+            texte: >-
+              Écrivez les classes Producteur et Lot. Le prix d'un lot se calcule dans le lot, parce que c'est
+              une règle qui ne concerne que lui. Le total dû à un producteur se calcule dans le producteur,
+              parce qu'il concerne l'ensemble de ses lots.
+
+              Remarquez que rien n'affiche : les objets calculent et rendent des valeurs. Remarquez aussi que
+              la pénalité est nommée, et qu'un lecteur du métier reconnaît le terme sans lire le calcul.
+            tableaux:
+              - titre: "Classe, dataclass ou simple fonction"
+                entetes: [Besoin, Le bon outil, Pourquoi]
+                lignes:
+                  - [Grouper trois valeurs liées, dataclass, ni constructeur ni égalité à écrire]
+                  - [Une règle métier sur ces valeurs, méthode de la classe, la règle vit près des données]
+                  - [Un calcul isolé sans état, fonction, une classe sans attribut est une fonction déguisée]
+                  - [Un cas particulier strict, héritage, "tout ce qui vaut du parent vaut de l'enfant"]
+            code:
+              - titre: "domaine.py, des classes qui parlent le métier"
+                langage: python
+                source: |
+                  from dataclasses import dataclass, field
+
+                  PENALITE_HUMIDITE = 0.90
+                  PRIX_PAR_QUALITE = {"A": 1200, "B": 950, "C": 700}
+
+
+                  @dataclass(frozen=True)
+                  class Lot:
+                      poids_kg: int
+                      qualite: str
+                      humide: bool = False
+
+                      def prix_fcfa(self) -> int:
+                          base = self.poids_kg * PRIX_PAR_QUALITE[self.qualite]
+                          return round(base * PENALITE_HUMIDITE) if self.humide else base
+
+
+                  @dataclass
+                  class Producteur:
+                      nom: str
+                      lots: list[Lot] = field(default_factory=list)
+
+                      def total_fcfa(self) -> int:
+                          return sum(lot.prix_fcfa() for lot in self.lots)
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est la classe fourre-tout, qui grossit jusqu'à mille lignes parce qu'on y
+              ajoute tout ce qui touche de près ou de loin au sujet. Découpez dès que deux groupes de méthodes
+              ne partagent aucun attribut.
+
+              Le deuxième est l'attribut mutable partagé : une liste déclarée au niveau de la classe est
+              commune à toutes les instances. Avec une dataclass, utilisez field et default_factory.
+
+              Le troisième est l'objet anémique : une classe qui ne contient que des attributs et dont toutes
+              les règles vivent ailleurs. Soit vous rapatriez les règles, soit vous assumez une structure de
+              données simple et des fonctions.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez la modélisation objet d'un domaine métier de votre choix, avec au moins trois classes,
+              des règles métier portées par les objets, et un programme court qui construit un cas réel et
+              affiche un résultat.
+
+              Critères d'acceptation : aucun attribut mutable partagé, aucune classe sans comportement, et un
+              lecteur du métier reconnaît les mots du domaine dans vos noms de classes et de méthodes.
         livrable: Modélisation objet d'un domaine métier.
         mise_en_situation: "Modélisez en classes une pharmacie de quartier : médicaments, stock, ventes et ordonnances. Indiquez quelles règles métier chaque classe protège et où vous utilisez la composition plutôt que l'héritage."
         quiz:
@@ -128,6 +496,108 @@ blocs:
         title: Gestion des erreurs & fichiers
         contenu: >-
           Exceptions, try/except, context managers, lecture/écriture (texte, CSV, JSON), pathlib et OS.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous ouvrez et écrivez des fichiers sans jamais corrompre les
+              accents, vous traitez des CSV et du JSON, vous attrapez les erreurs que vous savez traiter, et
+              vous laissez remonter celles que vous ne savez pas traiter.
+
+              Vous apprendrez surtout une règle de style : un programme robuste n'est pas un programme qui
+              attrape tout, c'est un programme qui échoue clairement, au bon endroit, avec un message qui dit
+              quoi faire.
+          - titre: "Le problème d'abord"
+            texte: >-
+              On vous remet l'export du logiciel de caisse : un fichier CSV de quelques milliers de lignes,
+              encodé on ne sait comment, avec des montants parfois vides, des dates en trois formats et des
+              noms écrits tantôt en majuscules, tantôt avec des espaces en trop.
+
+              Le programme naïf s'arrête à la première ligne fautive, après avoir traité mille lignes sans
+              rien enregistrer. Le programme robuste traite les lignes valides, consigne les lignes rejetées
+              avec leur numéro et la raison, et rend un compte rendu exploitable par le comptable.
+            figures:
+              - nom: python-csv-encodage.svg
+                legende: "Les mêmes octets lus en utf-8 puis sans encodage déclaré"
+          - titre: "La notion : les ressources se ferment, les erreurs se choisissent"
+            texte: >-
+              Ouvrez tout fichier avec un gestionnaire de contexte, le mot-clé with : le fichier se ferme même
+              si une erreur survient. Déclarez toujours l'encodage, utf-8 par défaut, et le paramètre newline
+              vide pour les CSV, sinon Windows ajoute des lignes vides.
+
+              N'attrapez qu'une exception que vous savez traiter, et attrapez-la au plus près. Un except nu
+              avale aussi les erreurs de programmation et les interruptions clavier : il transforme un bug
+              visible en comportement inexplicable.
+
+              Définissez vos propres exceptions pour les refus métier. Une erreur nommée LigneInvalide dit à
+              l'appelant ce qui s'est passé, là où un ValueError générique l'oblige à lire votre code.
+            figures:
+              - nom: python-erreur-metier.svg
+                legende: "Une erreur métier porte un nom du métier, pas un nom de bibliothèque"
+          - titre: "À la main : un lecteur de CSV qui tient debout"
+            texte: >-
+              Écrivez une fonction qui lit le fichier ligne par ligne, convertit ce qui doit l'être, et sépare
+              les lignes valides des lignes rejetées. Le numéro de ligne est précieux : sans lui, le comptable
+              ne retrouvera jamais la ligne fautive dans son tableur.
+
+              La fonction ne décide pas quoi faire des rejets : elle les rend. C'est l'appelant qui choisit de
+              les afficher, de les écrire dans un fichier ou d'interrompre le traitement.
+            tableaux:
+              - titre: "Attraper, ou laisser remonter"
+                entetes: [Situation, Le geste, Pourquoi]
+                lignes:
+                  - [Fichier absent, attraper et expliquer, "l'utilisateur peut corriger le chemin"]
+                  - [Ligne mal formée, attraper et consigner, les autres lignes restent traitables]
+                  - [Clé absente dans votre code, laisser remonter, "c'est un bug, il doit se voir"]
+                  - [Interruption clavier, laisser remonter, "l'utilisateur a demandé l'arrêt"]
+            code:
+              - titre: "lecture.py, les lignes valides et les rejets"
+                langage: python
+                source: |
+                  import csv
+
+
+                  class LigneInvalide(Exception):
+                      """Une ligne du relevé ne peut pas etre convertie en vente."""
+
+
+                  def lire_vente(ligne: dict[str, str]) -> tuple[str, int]:
+                      produit = (ligne.get("produit") or "").strip().lower()
+                      if not produit:
+                          raise LigneInvalide("produit vide")
+                      try:
+                          quantite = int(ligne["quantite"])
+                      except (KeyError, ValueError) as erreur:
+                          raise LigneInvalide("quantite illisible") from erreur
+                      return produit, quantite
+
+
+                  def lire_fichier(chemin: str) -> tuple[list[tuple[str, int]], list[str]]:
+                      ventes, rejets = [], []
+                      with open(chemin, encoding="utf-8", newline="") as fichier:
+                          for numero, ligne in enumerate(csv.DictReader(fichier), start=2):
+                              try:
+                                  ventes.append(lire_vente(ligne))
+                              except LigneInvalide as erreur:
+                                  rejets.append(f"ligne {numero} : {erreur}")
+                      return ventes, rejets
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est le except Exception qui ne journalise rien : l'erreur disparaît et le
+              programme continue dans un état incohérent. Si vous attrapez, faites quelque chose.
+
+              Le deuxième est le chemin écrit en dur avec des antislashs : employez pathlib, qui rend votre
+              code portable entre Windows, macOS et Linux.
+
+              Le troisième est le fichier entièrement chargé en mémoire. Pour un gros relevé, lisez ligne par
+              ligne ; votre machine vous remerciera le jour où le fichier fera un gigaoctet.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez un outil de traitement de fichiers robuste : il lit un CSV fourni, écrit un fichier de
+              résultats et un fichier de rejets numérotés, et rend un code de sortie non nul si le taux de
+              rejet dépasse un seuil.
+
+              Critères d'acceptation : aucun except nu, l'encodage est déclaré partout, les rejets portent un
+              numéro de ligne et une raison lisible, et le programme ne charge pas tout le fichier en mémoire.
         livrable: Outil de traitement de fichiers robuste.
         mise_en_situation: "Votre outil lit chaque nuit un fichier CSV déposé par un partenaire. Une nuit, le fichier est absent ; une autre, il est mal encodé. Décrivez comment votre code gère ces deux cas sans planter ni perdre de données."
         quiz:
@@ -155,6 +625,93 @@ blocs:
         title: Python idiomatique
         contenu: >-
           Itérateurs, générateurs, décorateurs, lambda, typage statique (mypy/pyright), PEP 8, ruff.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous écrivez du Python idiomatique : des itérateurs plutôt que des
+              index, des générateurs pour les gros volumes, des gestionnaires de contexte pour les ressources,
+              et des décorateurs quand ils simplifient vraiment la lecture.
+
+              Idiomatique ne veut pas dire astucieux. Le code idiomatique est celui qu'un autre développeur
+              Python lit sans effort, parce qu'il emploie les constructions que la communauté attend.
+          - titre: "Le problème d'abord"
+            texte: >-
+              On vous confie un script hérité : six cents lignes, des boucles sur des index, des variables
+              nommées tmp et data2, un fichier ouvert au début et fermé à la fin, parfois. Il fonctionne, et
+              personne n'ose le modifier.
+
+              Votre travail cette semaine n'est pas de le réécrire de zéro, ce qui ferait perdre les règles
+              métier accumulées. Il est de le transformer par petits pas sûrs, en gardant le comportement
+              identique et en rendant chaque étape vérifiable.
+          - titre: "La notion : itérer, produire, envelopper"
+            texte: >-
+              Parcourez les collections directement, pas par leurs index. Quand il vous faut le rang, employez
+              enumerate ; quand il vous faut deux collections en parallèle, zip. Un for i in range(len(x)) est
+              presque toujours le signe d'un code à retoucher.
+
+              Un générateur produit ses valeurs une par une, avec yield, au lieu de construire une liste
+              entière en mémoire. Pour un fichier de plusieurs millions de lignes, c'est la différence entre
+              un programme qui tourne et un programme qui sature la machine.
+
+              Un gestionnaire de contexte garantit la libération d'une ressource. Vous en écrivez un avec
+              contextlib.contextmanager pour vos propres ressources : une connexion, un chronomètre, un
+              dossier temporaire.
+            figures:
+              - nom: python-flux-ou-liste.svg
+                legende: "Une liste occupe la mémoire, un générateur la traverse"
+          - titre: "À la main : du script hérité au code lisible"
+            texte: >-
+              Prenez la boucle la plus laide du script et transformez-la. Ici, le comptage des ventes au-
+              dessus d'un seuil passe d'une boucle à index à un générateur composable, et le total se demande
+              à sum.
+
+              La version idiomatique n'est pas plus courte par coquetterie : elle est plus courte parce
+              qu'elle ne contient plus que l'intention. L'index, l'accumulateur et le test de longueur ont
+              disparu ; ils n'appartenaient pas au problème.
+            tableaux:
+              - titre: Quatre réflexes idiomatiques
+                entetes: [Au lieu de, Écrivez, Gain]
+                lignes:
+                  - [for i in range(len(x)), for element in x, "l'index disparaît, l'intention reste"]
+                  - [une liste intermédiaire, un générateur, la mémoire ne grandit plus]
+                  - [open puis close, with open(...), "la ressource se ferme même en cas d'erreur"]
+                  - [un drapeau booléen, une sortie anticipée, "un niveau d'indentation de moins"]
+            code:
+              - titre: "avant.py et apres.py, la même règle"
+                langage: python
+                source: |
+                  # avant : des index, un accumulateur, et l'intention noyee
+                  total = 0
+                  for i in range(len(ventes)):
+                      if ventes[i][1] > 100:
+                          total = total + ventes[i][1]
+
+                  # apres : un generateur et une somme
+                  def grosses_ventes(lignes, seuil=100):
+                      for produit, quantite in lignes:
+                          if quantite > seuil:
+                              yield quantite
+
+                  total = sum(grosses_ventes(ventes))
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est le générateur consommé deux fois : une fois parcouru, il est vide. Si vous
+              devez le relire, convertissez-le en liste, en connaissance de cause.
+
+              Le deuxième est le décorateur écrit pour le plaisir. Un décorateur ajoute un niveau
+              d'indirection : il se justifie quand la même enveloppe revient dix fois, pas pour une fonction
+              unique.
+
+              Le troisième est la compréhension à trois étages. Dès qu'une compréhension demande un effort de
+              lecture, redevenez explicite : la clarté passe avant la concision.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez la refactorisation d'un code existant en style idiomatique, accompagnée d'une note qui
+              liste les transformations faites et ce qu'elles apportent.
+
+              Critères d'acceptation : le comportement est strictement inchangé, aucune boucle à index ne
+              subsiste sans raison, les ressources sont ouvertes avec with, et chaque transformation tient en
+              un commit séparé.
         livrable: Refactorisation d'un code existant en style idiomatique.
         mise_en_situation: "On vous confie une fonction qui charge un fichier de 2 Go en mémoire pour compter des lignes. Réécrivez-la de manière idiomatique avec un générateur et ajoutez les annotations de type."
         quiz:
@@ -182,6 +739,90 @@ blocs:
         title: Environnements & packaging
         contenu: >-
           uv, pyproject.toml, dépendances verrouillées, structure d'un package, publication interne, pre-commit.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous isolez chaque projet dans son environnement, vous déclarez vos
+              dépendances dans un pyproject.toml, vous figez les versions exactes pour que la machine du
+              voisin installe les mêmes, et vous publiez un paquet installable.
+
+              C'est la semaine qui fait disparaître la phrase « chez moi ça marche ». Elle paraît aride, et
+              elle vous fera gagner plus de temps que n'importe quelle astuce de syntaxe.
+          - titre: "Le problème d'abord"
+            texte: >-
+              Votre outil de traitement fonctionne sur votre poste. Vous l'envoyez à un collègue : il obtient
+              une erreur d'import, installe une bibliothèque au hasard, obtient une autre erreur, puis
+              abandonne et vous renvoie le fichier.
+
+              Le problème n'est pas le code : c'est que l'environnement dans lequel il tourne n'est écrit
+              nulle part. Un projet qui ne déclare pas ses dépendances et leurs versions n'est pas livrable.
+          - titre: "La notion : environnement, dépendances, versions figées"
+            texte: >-
+              Un environnement virtuel est un dossier qui contient un interpréteur et les bibliothèques d'un
+              seul projet. Deux projets peuvent ainsi exiger deux versions incompatibles de la même
+              bibliothèque sans se gêner. Avec uv, l'environnement se crée et se met à jour en une commande.
+
+              Le fichier pyproject.toml déclare le nom du projet, sa version, ses dépendances et son point
+              d'entrée. Il remplace les anciens setup.py et requirements.txt dispersés.
+
+              Les versions figées, dans un fichier de verrouillage, disent exactement quelles versions ont été
+              installées. Les dépendances déclarées disent ce que votre code exige ; le verrouillage dit ce
+              qui a été vérifié. Les deux sont versionnés.
+          - titre: "À la main : un paquet installable"
+            texte: >-
+              Créez le squelette du projet, déclarez-le, installez-le en mode modifiable et vérifiez que la
+              commande s'exécute depuis n'importe quel dossier. Le point d'entrée transforme votre fonction en
+              commande du terminal.
+
+              Épinglez des bornes, pas des versions exactes, dans les dépendances déclarées : vous acceptez
+              les corrections de sécurité de la bibliothèque sans accepter sa prochaine version majeure.
+            tableaux:
+              - titre: "Les trois fichiers d'un projet livrable"
+                entetes: [Fichier, "Ce qu'il dit", Versionné]
+                lignes:
+                  - [pyproject.toml, ce que le code exige, oui]
+                  - [uv.lock, ce qui a été installé et vérifié, oui]
+                  - [.env, les secrets de la machine, "non, jamais"]
+            code:
+              - titre: "pyproject.toml, la carte d'identité du projet"
+                langage: yaml
+                source: |
+                  [project]
+                  name = "ventes-cooperative"
+                  version = "0.1.0"
+                  requires-python = ">=3.12"
+                  dependencies = [
+                    "httpx>=0.27,<1.0",
+                  ]
+
+                  [project.scripts]
+                  ventes = "ventes.cli:principal"
+
+                  [build-system]
+                  requires = ["hatchling"]
+                  build-backend = "hatchling.build"
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est l'installation globale avec pip install sans environnement : au troisième
+              projet, les versions se contredisent et l'interpréteur système devient inutilisable.
+
+              Le deuxième est le fichier de verrouillage oublié dans le gitignore. Sans lui, votre collègue et
+              votre serveur d'intégration installeront autre chose que vous.
+
+              Le troisième est le secret glissé dans pyproject.toml. Les clés et les mots de passe vivent dans
+              un fichier d'environnement exclu du dépôt, jamais dans un fichier versionné.
+            figures:
+              - nom: python-secrets-hors-du-code.svg
+                legende: "Où vit un secret, et où il ne vit jamais"
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez un paquet installable avec ses dépendances : squelette de projet, pyproject.toml complet,
+              fichier de verrouillage versionné, point d'entrée en ligne de commande et LISEZ-MOI qui donne
+              les trois commandes d'installation et d'exécution.
+
+              Critères d'acceptation : l'installation réussit sur une machine vierge en suivant seulement le
+              LISEZ-MOI, aucune dépendance n'est installée globalement, et aucun secret n'apparaît dans un
+              fichier versionné.
         livrable: Package installable avec ses dépendances.
         mise_en_situation: "Un collègue installe votre projet et obtient des erreurs de versions de bibliothèques. Expliquez comment rendre l'installation reproductible et ce que vous mettez dans le dépôt."
         quiz:
@@ -212,6 +853,94 @@ blocs:
         contenu: >-
           pytest, fixtures, tests paramétrés, Hypothesis, couverture, linting, intégration continue
           (GitHub Actions).
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous écrivez des tests qui décrivent une règle, vous les faites
+              échouer avant de les faire passer, vous mesurez ce qu'ils couvrent, et vous les faites exécuter
+              automatiquement à chaque envoi de code.
+
+              Un test n'est pas une corvée administrative : c'est le seul moyen de modifier un code sans peur.
+              Sans tests, chaque amélioration est un pari ; avec eux, c'est une opération vérifiée.
+          - titre: "Le problème d'abord"
+            texte: >-
+              Votre outil de traitement des ventes est en service. On vous demande d'ajouter une règle : les
+              lots humides subissent une pénalité, sauf pour la qualité A. Vous modifiez le calcul, tout
+              semble marcher, et trois jours plus tard le comptable découvre que les lots de qualité C ne sont
+              plus pénalisés du tout.
+
+              Le bug n'est pas dû à votre inattention : il est dû à l'absence de filet. Une suite de tests
+              aurait rougi dans la minute, avant même l'envoi du code.
+          - titre: "La notion : rouge, vert, et ce que l'on mesure"
+            texte: >-
+              Écrivez le test avant le correctif, et regardez-le échouer. Un test qui n'a jamais échoué ne
+              prouve rien : il peut très bien ne rien vérifier du tout.
+
+              Un test porte le nom de la règle qu'il protège, pas le nom de la fonction. Il suit trois temps :
+              préparer les données, exécuter l'opération, vérifier le résultat. Une seule règle par test.
+
+              La couverture mesure les lignes exécutées par vos tests. C'est un détecteur de zones oubliées,
+              pas une note. Quatre-vingts pour cent de couverture avec des tests qui vérifient les bornes vaut
+              mieux que cent pour cent de tests qui ne vérifient rien.
+            figures:
+              - nom: python-rouge-puis-vert.svg
+                legende: "Un test rougit d'abord, puis il verdit : c'est ainsi qu'il prouve quelque chose"
+          - titre: "À la main : tester une règle et ses bornes"
+            texte: >-
+              Écrivez les tests de la règle de pénalité, y compris ses bornes : la qualité A exemptée, les
+              autres qualités pénalisées, et le lot sec jamais touché. La paramétrisation évite de recopier
+              trois fois le même test.
+
+              Installez ensuite l'exécution automatique : un fichier de workflow qui installe les dépendances
+              et lance la suite à chaque envoi. Une suite qui ne tourne que sur votre poste finit par ne plus
+              tourner du tout.
+            tableaux:
+              - titre: Quatre tests qui valent mieux que quarante
+                entetes: [Cas, "Ce qu'il protège"]
+                lignes:
+                  - [Le cas nominal, la règle fonctionne dans la vie courante]
+                  - [La borne, le seuil est du bon côté]
+                  - ["Le cas d'erreur", le refus est explicite et nommé]
+                  - [La régression, le bug corrigé ne revient pas]
+            code:
+              - titre: "test_penalite.py, une règle et ses bornes"
+                langage: python
+                source: |
+                  import pytest
+
+                  from domaine import Lot
+
+
+                  def test_un_lot_sec_nest_jamais_penalise():
+                      assert Lot(poids_kg=100, qualite="B", humide=False).prix_fcfa() == 95_000
+
+
+                  @pytest.mark.parametrize("qualite, attendu", [("B", 85_500), ("C", 63_000)])
+                  def test_un_lot_humide_est_penalise(qualite, attendu):
+                      assert Lot(poids_kg=100, qualite=qualite, humide=True).prix_fcfa() == attendu
+
+
+                  def test_la_qualite_a_echappe_a_la_penalite():
+                      assert Lot(poids_kg=100, qualite="A", humide=True).prix_fcfa() == 120_000
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est le test qui dépend de l'ordre d'exécution ou d'un fichier laissé par un
+              autre test. Chaque test prépare ce dont il a besoin et ne laisse rien derrière lui.
+
+              Le deuxième est le test qui appelle le réseau ou l'horloge. Isolez ce qui est hors de votre
+              contrôle derrière une fonction que le test peut remplacer.
+
+              Le troisième est la suite lente. Une suite qui prend dix minutes ne sera plus lancée : gardez
+              les tests unitaires sous la seconde et réservez les tests lents à une étape séparée.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez une suite de tests sur un projet existant, avec son exécution automatique : au moins
+              quinze tests, un rapport de couverture, et un workflow d'intégration qui échoue si un test
+              rougit.
+
+              Critères d'acceptation : chaque test porte le nom d'une règle, la suite passe sur une machine
+              vierge, aucun test ne dépend d'un autre, et le rapport de couverture est produit
+              automatiquement.
         livrable: Suite de tests sur un projet existant avec CI.
         mise_en_situation: "Une fonction de calcul de pénalités de retard n'a aucun test et a déjà causé une erreur de facturation. Listez les cas de test que vous écrivez (y compris les cas limites) et montrez deux d'entre eux en pytest."
         quiz:
@@ -239,6 +968,103 @@ blocs:
         title: Python asynchrone & API
         contenu: >-
           httpx, async/await, consommation d'API REST, limites de débit, pagination, reprises sur erreur.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous appelez une API HTTP depuis Python, vous traitez les codes de
+              retour au lieu de les ignorer, vous rejouez les appels qui méritent de l'être, et vous employez
+              l'asynchrone là où il apporte vraiment quelque chose.
+
+              Vous apprendrez aussi à reconnaître les situations où l'asynchrone ne sert à rien : un calcul
+              intensif ne va pas plus vite parce qu'on l'écrit avec async.
+          - titre: "Le problème d'abord"
+            texte: >-
+              Vous devez récupérer le cours du cacao auprès d'un service distant, pour quatre cents
+              références, chaque matin. En séquentiel, chaque appel prend deux cents millisecondes et le
+              programme tourne pendant une minute et demie. Et le service répond parfois par une erreur
+              temporaire.
+
+              Deux problèmes distincts se posent : l'attente, qui se traite par la concurrence, et l'échec
+              passager, qui se traite par une relance mesurée. Les confondre produit un programme qui martèle
+              un service déjà en difficulté.
+            figures:
+              - nom: python-codes-http.svg
+                legende: "Le code de retour dit à l'appelant quoi faire ensuite"
+          - titre: "La notion : attendre à plusieurs, et réessayer avec mesure"
+            texte: >-
+              L'asynchrone sert quand le programme attend : réseau, disque, base de données. Pendant qu'un
+              appel attend sa réponse, un autre progresse. Pour un calcul qui occupe le processeur, c'est le
+              multiprocessus qu'il faut, pas l'asynchrone.
+
+              Un client résilient distingue trois familles de réponses. Ce qui a réussi se traite. Ce qui a
+              échoué définitivement, comme une requête mal formée ou un accès refusé, ne se rejoue jamais. Ce
+              qui a échoué temporairement, comme une erreur serveur ou une limitation de débit, se rejoue avec
+              un délai croissant et un plafond d'essais.
+
+              Posez toujours un délai maximal d'attente. Sans lui, un service qui ne répond plus bloque votre
+              programme indéfiniment, et vous ne saurez jamais pourquoi.
+          - titre: "À la main : un client résilient"
+            texte: >-
+              Écrivez le client avec httpx. La limitation de concurrence est essentielle : lancer quatre cents
+              requêtes simultanées contre un service public est une façon rapide de se faire bloquer. Dix
+              requêtes en vol suffisent à diviser le temps par dix.
+
+              Les codes 4xx ne se rejouent pas, à l'exception de 429, qui demande d'attendre. Les codes 5xx se
+              rejouent, trois fois au plus, avec un délai qui double à chaque essai.
+            tableaux:
+              - titre: Quel outil pour quelle attente
+                entetes: [Le programme, "L'outil", Pourquoi]
+                lignes:
+                  - [attend le réseau, asyncio, "l'attente se partage"]
+                  - [calcule intensément, multiprocessing, plusieurs cœurs travaillent]
+                  - [attend un seul appel, appel synchrone, "la concurrence n'apporte rien"]
+                  - [attend un fichier local, appel synchrone, le disque est déjà rapide]
+            code:
+              - titre: "client.py, concurrence limitée et relance mesurée"
+                langage: python
+                source: |
+                  import asyncio
+                  import httpx
+
+                  REJOUABLES = {429, 500, 502, 503, 504}
+
+
+                  async def lire_cours(client: httpx.AsyncClient, reference: str, essais: int = 3) -> dict:
+                      for essai in range(essais):
+                          reponse = await client.get(f"/cours/{reference}", timeout=5.0)
+                          if reponse.status_code == 200:
+                              return reponse.json()
+                          if reponse.status_code not in REJOUABLES:
+                              reponse.raise_for_status()
+                          await asyncio.sleep(2 ** essai)
+                      raise RuntimeError(f"service indisponible pour {reference}")
+
+
+                  async def lire_tout(references: list[str]) -> list[dict]:
+                      limite = asyncio.Semaphore(10)
+                      async with httpx.AsyncClient(base_url="https://exemple.test") as client:
+                          async def une(reference: str) -> dict:
+                              async with limite:
+                                  return await lire_cours(client, reference)
+                          return await asyncio.gather(*(une(r) for r in references))
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est l'appel bloquant glissé dans une fonction asynchrone : il fige toute la
+              boucle d'événements. Si une bibliothèque n'est pas asynchrone, exécutez-la dans un fil séparé.
+
+              Le deuxième est la relance sans délai. Rejouer immédiatement une requête qui vient d'échouer
+              aggrave la panne du service distant ; doublez le délai à chaque essai.
+
+              Le troisième est l'absence de délai maximal. Un appel sans timeout attend indéfiniment, et le
+              programme paraît gelé sans aucun message.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez un client d'API résilient : concurrence limitée, délai maximal, relance mesurée sur les
+              seuls codes rejouables, et une suite de tests qui simule les réponses du service sans appeler le
+              réseau.
+
+              Critères d'acceptation : aucune requête ne part sans délai maximal, les erreurs définitives ne
+              sont jamais rejouées, et le nombre de requêtes simultanées est plafonné et documenté.
         livrable: Client d'API résilient avec gestion d'erreurs.
         mise_en_situation: "Votre client d'API se fait bloquer (code 429) par le fournisseur après 100 requêtes. Expliquez la cause et décrivez la stratégie que vous mettez en place côté client."
         quiz:
@@ -265,6 +1091,84 @@ blocs:
       - num: "10"
         title: Bases de données
         contenu: SQL depuis Python, SQLAlchemy 2, ORM vs requêtes, migrations Alembic, bonnes pratiques.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous modélisez des données relationnelles, vous écrivez du SQL
+              lisible, vous employez un ORM sans lui laisser écrire n'importe quoi, et vous reconnaissez les
+              requêtes qui vont écrouler votre application.
+
+              Vous apprendrez surtout à poser la bonne question à la base : compter, filtrer et agréger se
+              demandent en SQL, pas en parcourant des milliers de lignes en Python.
+          - titre: "Le problème d'abord"
+            texte: >-
+              L'application de la coopérative affiche la liste des producteurs avec leur total livré. Avec
+              trente producteurs, l'écran s'affiche instantanément. Avec trois mille, il met huit secondes, et
+              le serveur chauffe.
+
+              La cause est presque toujours la même : une requête pour la liste, puis une requête par ligne
+              pour le total. Trois mille et une requêtes au lieu d'une seule. Ce défaut porte un nom, le N
+              plus un, et il se corrige en une ligne quand on sait le reconnaître.
+            figures:
+              - nom: python-masse-salariale-mois.svg
+                legende: "Une agrégation se demande à la base, qui rend douze lignes au lieu de mille"
+          - titre: "La notion : schéma, index, et une seule requête"
+            texte: >-
+              Un schéma relationnel nomme les entités et leurs liens. Une clé étrangère garantit qu'une ligne
+              ne référence pas un producteur inexistant : c'est la base qui tient cette promesse, pas votre
+              code.
+
+              Un index accélère les recherches sur une colonne, au prix d'écritures légèrement plus lentes.
+              Indexez ce que vous filtrez et ce sur quoi vous joignez ; n'indexez pas tout au hasard.
+
+              Un ORM traduit vos objets en SQL. Il est commode et il cache le coût : apprenez à lire le SQL
+              qu'il produit. Les agrégations et les jointures se demandent explicitement, sinon l'ORM ira
+              chercher ligne à ligne.
+          - titre: "À la main : du N plus un à la requête unique"
+            texte: >-
+              Comparez les deux versions. La première paraît naturelle et déclenche une requête par
+              producteur. La seconde demande à la base de faire la jointure et la somme : une requête, un
+              parcours.
+
+              Mesurez toujours : activez la journalisation des requêtes en développement, et regardez combien
+              votre écran en déclenche. Le chiffre surprend presque toujours.
+            tableaux:
+              - titre: "Trois symptômes, trois remèdes"
+                entetes: [Symptôme, Cause probable, Remède]
+                lignes:
+                  - ["L'écran ralentit avec le volume", une requête par ligne, jointure et agrégation]
+                  - [Un filtre met plusieurs secondes, colonne non indexée, index sur la colonne filtrée]
+                  - [Des doublons apparaissent, jointure sans regroupement, GROUP BY ou DISTINCT assumé]
+            code:
+              - titre: "totaux.py, une requête au lieu de mille"
+                langage: python
+                source: |
+                  -- la question posee directement a la base
+                  SELECT p.nom, COALESCE(SUM(l.poids_kg), 0) AS total_kg
+                  FROM producteur p
+                  LEFT JOIN lot l ON l.producteur_id = p.id
+                  GROUP BY p.id, p.nom
+                  ORDER BY total_kg DESC;
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est la requête construite par concaténation de chaînes. Elle ouvre la porte à
+              l'injection SQL : employez toujours des paramètres liés, sans exception, même pour une valeur
+              qui vient de votre propre code.
+
+              Le deuxième est la transaction oubliée. Deux écritures qui doivent réussir ensemble se font dans
+              une transaction ; sinon une panne au milieu laisse la base dans un état incohérent.
+
+              Le troisième est le SELECT étoile. Ramener toutes les colonnes d'une table large coûte en réseau
+              et en mémoire, et masque les colonnes réellement utilisées.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez la couche d'accès aux données d'une petite application : schéma avec clés étrangères,
+              migrations, requêtes paramétrées, au moins une agrégation faite par la base, et des tests qui
+              tournent sur une base jetable.
+
+              Critères d'acceptation : aucune requête construite par concaténation, aucun N plus un sur les
+              écrans de liste, les index sont justifiés en une phrase chacun, et les tests ne touchent jamais
+              la base de production.
         livrable: Couche d'accès aux données d'une petite application.
         mise_en_situation: "Un formulaire de recherche construit la requête SQL avec f\"SELECT * FROM eleves WHERE nom = '{nom}'\". Expliquez le risque, montrez un exemple de saisie malveillante et réécrivez la requête de manière sûre."
         quiz:
@@ -293,6 +1197,102 @@ blocs:
         contenu: >-
           NumPy, pandas et Polars, nettoyage, agrégations, Parquet et premières visualisations, le pont vers
           les parcours Data et AI.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous chargez un jeu de données avec pandas, vous le nettoyez
+              méthodiquement, vous l'agrégez, vous le représentez, et vous écrivez un pipeline qui rejoue
+              l'analyse du fichier brut au résultat final sans intervention manuelle.
+
+              C'est la semaine qui ouvre les parcours AI Engineer et Data Engineer : tout y commence par des
+              données dont on connaît la provenance et la qualité.
+          - titre: "Le problème d'abord"
+            texte: >-
+              La coopérative veut savoir si la qualité des lots varie selon la saison et selon la zone de
+              collecte. Les données existent : trois ans de relevés, dans quatre fichiers aux colonnes presque
+              identiques, avec des noms de zones écrits de six façons différentes.
+
+              Le travail d'analyse est pour un quart du calcul et pour trois quarts du nettoyage. Un résultat
+              produit sur des données mal nettoyées est pire qu'une absence de résultat : il est cru.
+          - titre: "La notion : charger, nettoyer, agréger, montrer"
+            texte: >-
+              Un DataFrame est un tableau nommé : des colonnes typées et un index. Chargez en déclarant les
+              types et l'encodage plutôt que de laisser deviner la bibliothèque, surtout pour les identifiants
+              qui commencent par un zéro.
+
+              Le nettoyage se fait en étapes nommées et vérifiables : normaliser les libellés, traiter les
+              valeurs manquantes explicitement, écarter les doublons, contrôler les bornes. Comptez les lignes
+              avant et après chaque étape, et consignez ces chiffres.
+
+              Un graphique sert une question. Une barre pour comparer des catégories, une courbe pour suivre
+              une évolution dans le temps. Axe à zéro, unités lisibles, et un titre qui énonce le constat.
+            figures:
+              - nom: python-graphique-lisible.svg
+                legende: "Un graphique répond à une question : axe à zéro, unité lisible, constat en titre"
+              - nom: python-effectif-par-service.svg
+                legende: "Des barres triées du plus grand au plus petit se lisent sans effort"
+          - titre: "À la main : un pipeline qui se rejoue"
+            texte: >-
+              Écrivez le pipeline comme une suite de fonctions courtes qui prennent un tableau et en rendent
+              un autre. Chacune est testable seule, et l'enchaînement se lit comme une recette.
+
+              Consignez les effectifs à chaque étape. Le jour où un résultat surprendra, ces chiffres diront
+              immédiatement quelle étape a supprimé trop de lignes.
+            tableaux:
+              - titre: "Les quatre contrôles d'un jeu de données"
+                entetes: [Contrôle, Question posée, Décision]
+                lignes:
+                  - [Effectif, combien de lignes, écart avec la source]
+                  - [Valeurs manquantes, où et combien, "écarter, compléter ou garder"]
+                  - [Doublons, même identifiant deux fois, dédoublonner avec une règle]
+                  - [Bornes, valeurs impossibles, écarter et consigner]
+            code:
+              - titre: "pipeline.py, des étapes nommées et comptées"
+                langage: python
+                source: |
+                  import pandas as pd
+
+
+                  def charger(chemin: str) -> pd.DataFrame:
+                      return pd.read_csv(chemin, encoding="utf-8", dtype={"code_zone": "string"})
+
+
+                  def normaliser(tableau: pd.DataFrame) -> pd.DataFrame:
+                      tableau = tableau.copy()
+                      tableau["zone"] = tableau["zone"].str.strip().str.lower()
+                      tableau["qualite"] = tableau["qualite"].str.upper()
+                      return tableau
+
+
+                  def ecarter_invalides(tableau: pd.DataFrame) -> pd.DataFrame:
+                      valides = tableau["poids_kg"].between(1, 20_000) & tableau["qualite"].isin(["A", "B", "C"])
+                      print(f"ecartees : {(~valides).sum()} lignes sur {len(tableau)}")
+                      return tableau[valides]
+
+
+                  def qualite_par_zone(tableau: pd.DataFrame) -> pd.DataFrame:
+                      return (tableau.groupby(["zone", "qualite"])["poids_kg"].sum()
+                              .unstack(fill_value=0)
+                              .sort_values("A", ascending=False))
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est le nettoyage fait à la main dans un tableur : il n'est pas reproductible,
+              et personne ne saura ce qui a été modifié. Tout nettoyage est du code.
+
+              Le deuxième est la valeur manquante remplacée par zéro sans y penser. Un poids inconnu n'est pas
+              un poids nul : la moyenne s'en trouve faussée.
+
+              Le troisième est le graphique dont l'axe ne part pas de zéro : il exagère les écarts et suggère
+              une conclusion que les données ne portent pas.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez un pipeline d'analyse de données de bout en bout : chargement des fichiers bruts,
+              nettoyage en étapes nommées, agrégation, deux graphiques, et une note d'une page qui répond à la
+              question posée.
+
+              Critères d'acceptation : le pipeline se rejoue d'une commande sur les fichiers bruts, les
+              effectifs sont consignés à chaque étape, aucune retouche manuelle n'est nécessaire, et la note
+              distingue ce que les données montrent de ce qu'elles ne montrent pas.
         livrable: Pipeline d'analyse de données de bout en bout.
         mise_en_situation: "Le traitement pandas d'un fichier de 5 millions de lignes de transactions prend 20 minutes. Proposez au moins trois pistes pour l'accélérer et dites comment vous mesurez le gain."
         quiz:
@@ -321,6 +1321,96 @@ blocs:
         contenu: >-
           Architecture d'un projet réel (hexagonale), logging structuré, configuration, Docker multi-stage,
           documentation.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de ces dernières semaines, vous assemblez tout : une application testée, journalisée,
+              configurée par l'environnement, empaquetée dans une image conteneur, et livrée par une chaîne
+              automatique.
+
+              C'est le passage du code qui marche au logiciel qu'on exploite. Un jury regardera autant votre
+              manière de livrer que votre manière de coder.
+          - titre: "Le problème d'abord"
+            texte: >-
+              Votre application doit tourner ailleurs que sur votre poste : sur le serveur de la coopérative,
+              avec une autre base, d'autres secrets, et une personne d'astreinte qui n'a pas écrit le code.
+
+              Trois questions se posent alors. Comment l'installer sans rien oublier ? Comment la configurer
+              sans modifier le code ? Comment savoir, à trois heures du matin, pourquoi elle a échoué ?
+          - titre: "La notion : configuration, journaux, image, chaîne"
+            texte: >-
+              La configuration vient de l'environnement, jamais du code. Une même image doit tourner en
+              développement et en production avec d'autres variables, sans recompilation.
+
+              Les journaux sont écrits pour celui qui ne connaît pas le code. Un message utile dit ce qui a
+              été tenté, sur quel objet, et ce qui s'est passé. Jamais de mot de passe ni de jeton dans un
+              journal.
+
+              Une image conteneur fige le système, l'interpréteur, les dépendances et votre code. Construisez-
+              la en deux étapes pour qu'elle reste légère, et faites-la tourner avec un utilisateur non
+              privilégié.
+
+              La chaîne d'intégration exécute les tests, l'analyse statique et la construction de l'image à
+              chaque envoi. Ce qui n'est pas automatique finit par ne pas être fait.
+            figures:
+              - nom: python-coeur-partage.svg
+                legende: "Une règle, plusieurs portes d'entrée : l'image conteneur les emmène toutes"
+          - titre: "À la main : l'image et la chaîne"
+            texte: >-
+              Écrivez le Dockerfile en deux étapes : une pour installer les dépendances, une pour l'exécution.
+              L'utilisateur non privilégié et le contrôle de santé ne sont pas des ornements : ils sont
+              demandés par toute équipe d'exploitation sérieuse.
+
+              Ajoutez ensuite la chaîne : tests, analyse statique, construction. Faites-la échouer
+              volontairement une fois, pour vérifier qu'elle bloque bien la livraison.
+            tableaux:
+              - titre: "Ce qu'un jury vérifie en cinq minutes"
+                entetes: [Point, Preuve attendue]
+                lignes:
+                  - ["Le projet s'installe", "une commande, un LISEZ-MOI à jour"]
+                  - [Le projet est testé, une suite verte et un rapport de couverture]
+                  - [Le projet est configurable, "aucune valeur d'environnement en dur"]
+                  - [Le projet est livrable, une image construite par la chaîne]
+                  - [Le projet est exploitable, des journaux lisibles et un contrôle de santé]
+            code:
+              - titre: "Dockerfile, deux étapes et un utilisateur sans privilège"
+                langage: bash
+                source: |
+                  FROM python:3.12-slim AS base
+                  ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+                  WORKDIR /app
+
+                  FROM base AS dependances
+                  COPY pyproject.toml uv.lock ./
+                  RUN pip install --no-cache-dir uv && uv sync --frozen --no-dev
+
+                  FROM base AS execution
+                  COPY --from=dependances /app/.venv /app/.venv
+                  COPY src/ ./src/
+                  ENV PATH="/app/.venv/bin:$PATH"
+                  RUN useradd --create-home application && chown -R application /app
+                  USER application
+                  HEALTHCHECK CMD python -c "import ventes" || exit 1
+                  CMD ["ventes", "--serveur"]
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est le secret copié dans l'image. Tout ce qui entre dans une couche d'image y
+              reste, même supprimé ensuite : les secrets se passent à l'exécution.
+
+              Le deuxième est l'image qui tourne en root. Une faille applicative devient alors une prise de
+              contrôle de la machine.
+
+              Le troisième est la chaîne que l'on contourne quand elle gêne. Une chaîne que l'on désactive
+              pour livrer plus vite ne protège plus rien.
+          - titre: Le livrable final
+            texte: >-
+              Rendez une application Python complète, testée et conteneurisée, avec son dépôt propre : LISEZ-
+              MOI d'installation, configuration par variables d'environnement, suite de tests verte, image
+              conteneur construite par la chaîne, et une démonstration de cinq minutes.
+
+              Critères d'acceptation : la démonstration part d'une machine vierge, montre un cas qui réussit
+              et un cas qui échoue proprement, et vous savez répondre à la question « que se passe-t-il si la
+              base est indisponible ».
         livrable: Application Python complète, testée et conteneurisée.
         mise_en_situation: "Votre application fonctionne sur votre poste mais pas sur le serveur de production. Décrivez comment la conteneurisation, la configuration par variables d'environnement et les journaux structurés auraient évité ce problème."
         quiz:

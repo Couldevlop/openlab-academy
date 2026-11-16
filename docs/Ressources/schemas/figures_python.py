@@ -889,6 +889,59 @@ def sept_semaines() -> Dessin:
     return d
 
 
+def objet_ou_composition() -> Dessin:
+    """Développeur Python, module 04 : la règle vit près des données, et l'héritage se mérite."""
+    d = Dessin(760, 340, "Une classe porte ses règles ; l'héritage se mérite")
+    d.texte(380, 34, "Une classe réunit des données et les règles qui les concernent.", taille=15,
+            gras=True)
+    d.texte(380, 56, "Si la règle vit ailleurs, la classe n'est qu'un dictionnaire déguisé.",
+            taille=12, couleur="encre2")
+    d.boite(40, 92, 320, 136, teinte="s3")
+    d.texte(200, 118, "Lot", taille=14, gras=True)
+    for i, ligne in enumerate(["poids_kg, qualite, humide", "prix_fcfa() applique la pénalité",
+                               "immuable : frozen=True"]):
+        d.texte(200, 148 + i * 26, ligne, taille=11, couleur="encre2")
+    d.boite(400, 92, 320, 136, teinte="s1")
+    d.texte(560, 118, "Producteur", taille=14, gras=True)
+    for i, ligne in enumerate(["nom, lots", "total_fcfa() somme ses lots",
+                               "contient des Lot : composition"]):
+        d.texte(560, 148 + i * 26, ligne, taille=11, couleur="encre2")
+    d.fleche(392, 160, 368, 160, teinte="s1")
+    d.boite(40, 258, 320, 58, teinte="bon")
+    d.texte(200, 282, "Composition : A contient B", taille=13, gras=True)
+    d.texte(200, 302, "le cas courant, souple et sans surprise", taille=11, couleur="encre2")
+    d.boite(400, 258, 320, 58, teinte="critique", tirets=True)
+    d.texte(560, 282, "Héritage : A est un B", taille=13, gras=True, couleur="critique")
+    d.texte(560, 302, "seulement si tout ce qui vaut de B vaut de A", taille=11, couleur="encre2")
+    return d
+
+
+def flux_ou_liste() -> Dessin:
+    """Développeur Python, module 06 : une liste occupe la mémoire, un générateur la traverse."""
+    d = Dessin(760, 330, "Construire une liste entière, ou produire au fil de l'eau")
+    d.texte(380, 34, "Une liste occupe la mémoire ; un générateur la traverse.", taille=15, gras=True)
+    d.texte(380, 56, "Même résultat, même code ou presque, et une machine qui ne sature plus.",
+            taille=12, couleur="encre2")
+    d.texte(40, 100, "Liste intermédiaire", taille=13, gras=True, ancre="start")
+    for i in range(8):
+        x = 230 + i * 56
+        d.boite(x, 86, 48, 34, teinte="s2")
+    d.texte(690, 108, "en mémoire", taille=11, ancre="start", couleur="encre2")
+    d.texte(40, 128, "les 8 valeurs existent en même temps", taille=11, ancre="start", couleur="encre2")
+    d.texte(40, 194, "Générateur", taille=13, gras=True, ancre="start")
+    for i in range(8):
+        x = 230 + i * 56
+        teinte = "s1" if i == 3 else "trait"
+        d.boite(x, 180, 48, 34, teinte=teinte, tirets=i != 3)
+    d.texte(690, 202, "une à la fois", taille=11, ancre="start", couleur="encre2")
+    d.texte(40, 222, "yield rend la valeur, puis reprend là", taille=11, ancre="start", couleur="encre2")
+    d.boite(140, 258, 480, 58, teinte="trait", tirets=True)
+    d.texte(380, 282, "Un générateur ne se parcourt qu'une fois", taille=13, gras=True)
+    d.texte(380, 302, "pour le relire, convertissez-le en liste, en connaissance de cause",
+            taille=11, couleur="encre2")
+    return d
+
+
 FIGURES_PYTHON = {
     "python-trace-erreur.svg": trace_erreur,
     "python-seuils-conges.svg": seuils_conges,
@@ -925,4 +978,6 @@ FIGURES_PYTHON = {
     "python-parcours-connexion.svg": parcours_connexion,
     "python-coeur-partage.svg": coeur_partage,
     "python-sept-semaines.svg": sept_semaines,
+    "python-objet-ou-composition.svg": objet_ou_composition,
+    "python-flux-ou-liste.svg": flux_ou_liste,
 }
