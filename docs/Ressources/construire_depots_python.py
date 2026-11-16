@@ -53,6 +53,15 @@ Données entièrement fictives : aucun fichier de paie réel ne doit entrer dans
 """
 
 
+def octets(fichier: pathlib.Path) -> bytes:
+    """Contenu d'un fichier du dépôt source, fins de ligne normalisées.
+
+    Git peut rendre le dépôt source en CRLF sous Windows et en LF ailleurs ; sans cette
+    normalisation, la même source produirait deux archives différentes selon la machine.
+    """
+    return fichier.read_bytes().replace(b"\r\n", b"\n")
+
+
 def journees() -> list[pathlib.Path]:
     return sorted(dossier for dossier in SOURCE.glob("j[0-9][0-9]") if dossier.is_dir())
 
@@ -68,22 +77,22 @@ def contenu(journee: pathlib.Path) -> dict[str, bytes]:
     """{chemin dans l'archive: octets} d'une journée, corrigé de la veille compris."""
     numero = journee.name[1:]
     entrees: dict[str, bytes] = {
-        "enonce.md": (journee / "enonce.md").read_bytes(),
+        "enonce.md": octets(journee / "enonce.md"),
         "LISEZ-MOI.md": LISEZ_MOI.format(numero=numero, programme=_programme(journee)).encode("utf-8"),
     }
     for racine, prefixe in ((journee / "depart", ""), (journee / "tests", "tests/")):
         for fichier in sorted(racine.rglob("*")):
             if fichier.is_file():
-                entrees[prefixe + fichier.relative_to(racine).as_posix()] = fichier.read_bytes()
+                entrees[prefixe + fichier.relative_to(racine).as_posix()] = octets(fichier)
     carnet = SOURCE / "carnets" / f"semaine-{SEMAINES.get(int(numero), 0)}.md"
     if carnet.is_file():
         # le carnet d'entraînement arrive le premier jour de sa semaine, pour servir toute la semaine
-        entrees[carnet.name] = carnet.read_bytes()
+        entrees[carnet.name] = octets(carnet)
     veille = SOURCE / f"j{int(numero) - 1:02d}" / "solution"
     if veille.is_dir():
         for fichier in sorted(veille.rglob("*")):
             if fichier.is_file():
-                entrees["corrige/" + fichier.relative_to(veille).as_posix()] = fichier.read_bytes()
+                entrees["corrige/" + fichier.relative_to(veille).as_posix()] = octets(fichier)
     return entrees
 
 
