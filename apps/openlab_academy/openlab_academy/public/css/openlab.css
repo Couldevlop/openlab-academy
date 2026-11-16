@@ -193,3 +193,23 @@ header.header-frame { border-bottom: 3px solid transparent; border-image: var(--
 /* Jeu d'onglets et filtres : l'onglet choisi prend le bleu nuit, les autres restent sobres */
 .bg-surface-gray-2 > button[aria-selected="true"],
 .bg-surface-white.shadow-sm { color: var(--ol-navy); font-weight: 600; }
+
+/* Illustrations d'une leçon : la figure appuie le texte, elle ne le pousse pas hors de l'écran.
+   Hauteur plafonnée et image centrée ; une photographie d'ambiance reste plus discrète qu'un schéma,
+   qui porte, lui, de l'information à lire. */
+.cdx-simple-image__picture img,
+.image-tool__image img {
+  display: block;
+  margin: 0 auto;
+  width: auto;
+  max-width: 100%;
+  max-height: 21rem;
+}
+.cdx-simple-image__picture img[src*=".jpg"],
+.cdx-simple-image__picture img[src*=".jpeg"],
+.cdx-simple-image__picture img[src*=".png"],
+.image-tool__image img[src*=".jpg"],
+.image-tool__image img[src*=".jpeg"],
+.image-tool__image img[src*=".png"] {
+  max-height: 14rem;
+}
