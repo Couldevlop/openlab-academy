@@ -4,6 +4,8 @@ Le public est débutant : une figure n'est là que si le texte seul demanderait 
 plusieurs choses en tête à la fois. Lire une trace d'erreur, placer des seuils sur un axe, distinguer ce
 qu'une fonction reçoit de ce qu'elle rend : trois objets que la prose explique mal et qu'un dessin règle.
 """
+import math
+
 from trousse import Dessin
 
 
@@ -277,6 +279,59 @@ def codes_http() -> Dessin:
     return d
 
 
+def streamlit_execution() -> Dessin:
+    """J21 : chaque interaction rejoue le script entier, de la première ligne à la dernière."""
+    d = Dessin(760, 320, "Le script Streamlit est rejoué à chaque interaction")
+    d.texte(380, 34, "Un clic ne déclenche pas une fonction : il rejoue la page.", taille=15, gras=True)
+    etapes = [("charger l'effectif", "refait à chaque fois, d'où le cache"),
+              ("lire les widgets", "les valeurs choisies par l'utilisateur"),
+              ("appeler le cœur", "filtrer, calculer, préparer les séries"),
+              ("afficher", "chiffres, tableau, graphiques")]
+    for i, (nom, detail) in enumerate(etapes):
+        y = 80 + i * 56
+        d.boite(170, y, 420, 44, teinte="s1")
+        d.texte(240, y + 27, nom, taille=13, gras=True, ancre="start")
+        d.texte(575, y + 27, detail, taille=10, ancre="end", couleur="encre2")
+        if i < 3:
+            d.fleche(380, y + 44, 380, y + 56, teinte="s1")
+    d.ajouter('<path d="M 150 290 L 90 290 L 90 102 L 162 102" fill="none" stroke="var(--s2)"'
+              ' stroke-width="2" marker-end="url(#pointe-s2)"/>')
+    d.texte(96, 310, "clic sur un widget", taille=11, ancre="start", couleur="s2")
+    d.texte(520, 310, "Ce qui mérite un test vit dans le cœur, pas ici.", taille=12, gras=True,
+            couleur="encre2")
+    return d
+
+
+def graphique_lisible() -> Dessin:
+    """J24 : la même donnée en barres triées et en camembert à douze parts."""
+    d = Dessin(760, 330, "Barres triées contre camembert à douze parts")
+    d.texte(380, 34, "La même donnée, deux formes : une seule répond à la question.",
+            taille=15, gras=True)
+    d.texte(190, 62, "Barres triées", taille=13, gras=True, couleur="s3")
+    valeurs = [120, 96, 74, 58, 40, 28]
+    for i, valeur in enumerate(valeurs):
+        x = 60 + i * 44
+        d.barre(x, 230 - valeur, 32, valeur, "s3")
+    d.ajouter('<line x1="50" y1="232" x2="340" y2="232" stroke="var(--trait)" stroke-width="2"/>')
+    d.texte(190, 252, "en FCFA, du plus cher au moins cher", taille=11, couleur="encre2")
+    d.texte(190, 274, "lecture immédiate", taille=12, gras=True, couleur="s3")
+    d.texte(570, 62, "Camembert à douze parts", taille=13, gras=True, couleur="critique")
+    centre, rayon = (570, 160), 72
+    for i in range(12):
+        a1, a2 = i * 30, (i + 1) * 30
+        x1 = centre[0] + rayon * math.cos(math.radians(a1))
+        y1 = centre[1] + rayon * math.sin(math.radians(a1))
+        x2 = centre[0] + rayon * math.cos(math.radians(a2))
+        y2 = centre[1] + rayon * math.sin(math.radians(a2))
+        d.ajouter(f'<path d="M {centre[0]} {centre[1]} L {x1:.2f} {y1:.2f} A {rayon} {rayon} 0 0 1'
+                  f' {x2:.2f} {y2:.2f} Z" fill="none" stroke="var(--critique)" stroke-width="1.5"/>')
+    d.texte(570, 252, "douze angles proches, une légende à décoder", taille=11, couleur="encre2")
+    d.texte(570, 274, "lecture impossible", taille=12, gras=True, couleur="critique")
+    d.texte(380, 314, "Une mesure par axe, et jamais deux échelles sur une même figure.",
+            taille=12, gras=True, couleur="encre2")
+    return d
+
+
 FIGURES_PYTHON = {
     "python-trace-erreur.svg": trace_erreur,
     "python-seuils-conges.svg": seuils_conges,
@@ -290,4 +345,6 @@ FIGURES_PYTHON = {
     "python-requete-reponse.svg": requete_reponse,
     "python-api-autour-du-coeur.svg": api_autour_du_coeur,
     "python-codes-http.svg": codes_http,
+    "python-streamlit-execution.svg": streamlit_execution,
+    "python-graphique-lisible.svg": graphique_lisible,
 }

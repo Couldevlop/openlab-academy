@@ -2818,72 +2818,674 @@ blocs:
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 20, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 20, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. La configuration par l'environnement vous
+              suivra jusqu'à la mise en production de la journée 35.
+            tableaux:
+              - titre: Les cinq points de la journée 20
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [TestClient, "Tester une API sans lancer de serveur"]
+                  - [Variable d'environnement, "Fournir une valeur au programme depuis l'extérieur"]
+                  - [Fichier .env, "Garder les valeurs locales hors du dépôt"]
+                  - [Fichier d'exemple, "Publier la liste des variables attendues"]
+                  - [Test anti-secret, "Faire échouer le dépôt si une clé y apparaît en clair"]
+        quiz:
+          - question: "Quel fichier est versionné ?"
+            options: [".env.exemple", ".env", "les deux", "aucun"]
+            bonnes: [1]
+            explication: "Le fichier d'exemple documente les variables attendues sans contenir de valeur réelle."
+          - question: "Que faire si une clé a été publiée dans un dépôt ?"
+            options: ["La révoquer immédiatement, puis nettoyer", "La supprimer du dernier commit", "Renommer le fichier", "Rien, l'historique est privé"]
+            bonnes: [1]
+            explication: "Un secret publié reste dans l'historique : seule la révocation le neutralise."
+          - question: "À quoi sert TestClient ?"
+            options: ["À appeler l'application sans serveur", "À lancer uvicorn", "À remplacer pytest", "À charger le fichier CSV"]
+            bonnes: [1]
+            explication: "Les tests d'API restent rapides et reproductibles, sans port ni réseau."
+          - question: "Où écrire la valeur par défaut d'un chemin de fichier ?"
+            options: ["Dans la classe de configuration", "Dans chaque route", "Dans le fichier .env uniquement", "Dans le test"]
+            bonnes: [1]
+            explication: "Une valeur par défaut inoffensive peut être versionnée ; un secret, jamais."
+          - question: "Pourquoi un test anti-secret plutôt qu'une relecture attentive ?"
+            options: ["Parce qu'il ne dépend pas de la mémoire de l'équipe", "Parce qu'il est plus rapide", "Parce qu'il chiffre les clés", "Parce qu'il remplace le gitignore"]
+            bonnes: [1]
+            explication: "La clé « juste pour essayer » finit toujours dans un commit quand rien ne l'arrête."
       - num: "J21"
         title: "Premier écran Streamlit"
         evaluations: livrable
         contenu: >-
-          Exécution descendante du script, widgets, l'écran appelle le cœur et ne calcule pas.
+          Un script qui s'exécute de haut en bas à chaque interaction, des widgets, et la règle qui gouverne
+          la semaine : l'écran appelle le cœur et ne calcule pas.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez afficher dans un navigateur les trois chiffres que le gérant regarde
+              chaque matin, sans écrire une ligne de HTML.
+          - titre: Le problème d'abord
+            texte: >-
+              Votre API répond en JSON. C'est parfait pour un programme, illisible pour le gérant. Il veut
+              trois chiffres, un tableau, et deux filtres, sans apprendre à lire du JSON ni à appeler une
+              adresse.
+          - titre: La notion
+            texte: >-
+              Streamlit transforme un script Python en page web. Il n'y a ni gabarit, ni route : vous
+              écrivez des appels de fonctions qui affichent, et la page se construit dans l'ordre du script.
+
+              Le modèle d'exécution est particulier et explique tout le reste : à chaque interaction, le
+              script entier est réexécuté de haut en bas. Un bouton cliqué ne déclenche pas une fonction,
+              il relance la page.
+
+              Les widgets rendent une valeur : une case cochée rend un booléen, une liste déroulante rend
+              l'élément choisi. Vous employez cette valeur comme n'importe quelle variable, plus bas dans le
+              script.
+            figures:
+              - nom: python-streamlit-execution.svg
+                legende: "À chaque clic, le script est rejoué de haut en bas : c'est le modèle de Streamlit"
+            code:
+              - titre: Un écran qui n'a aucune règle métier
+                langage: python
+                source: |
+                  import streamlit as st
+
+                  from rh.calculs import masse_salariale
+                  from rh.fichiers import charger_effectif
+
+                  effectif = charger_effectif("effectif.csv")
+
+                  st.title("Tableau de bord RH")
+                  st.metric("Effectif", len(effectif))
+                  st.metric("Masse salariale",
+                            f"{masse_salariale([f['salaire_fcfa'] for f in effectif]):,}".replace(",", " "))
+                  st.dataframe(effectif)
+          - titre: À la main
+            texte: >-
+              Installez streamlit, écrivez le fichier ci-dessus sous le nom ecran.py, puis lancez-le avec la
+              commande streamlit run suivie du nom du fichier. Votre navigateur s'ouvre.
+
+              Ajoutez temporairement un affichage de la date et de l'heure au début du script, puis cliquez
+              sur n'importe quel widget : l'heure change. C'est la preuve que tout le script est rejoué.
+
+              Vérifiez enfin que votre fichier d'écran ne contient aucun calcul : pas de boucle de somme,
+              pas de filtre, pas de règle. Tout vient du paquet rh.
+          - titre: L'astuce du jour
+            texte: >-
+              L'écran appelle le cœur, il ne calcule pas. C'est la même règle que pour l'API, et pour la
+              même raison : ce qui est écrit dans l'écran ne sert qu'à l'écran.
+
+              Conséquence pratique immédiate : tout ce qui mérite un test se range dans une fonction du
+              paquet rh. Vous testerez les fonctions, jamais l'affichage, ce qui vous épargne une catégorie
+              entière d'outils compliqués.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est de recalculer tout à chaque interaction. Comme le script est rejoué
+              entièrement, un chargement de fichier placé en haut se refait à chaque clic. Sur un petit
+              fichier, cela ne se voit pas ; sur un gros, l'écran devient lent.
+
+              La parade s'appelle le cache et arrive en journée 25. En attendant, gardez conscience du coût
+              de chaque ligne placée en haut du script.
+          - titre: Challenge du jour
+            texte: >-
+              Affichez les trois chiffres de la direction : l'effectif total, la masse salariale du mois, et
+              le nombre de postes distincts. Les trois viennent de fonctions du paquet rh.
+
+              Les tests livrés portent sur les fonctions de préparation, pas sur l'affichage : ils appellent
+              par exemple chiffres_cles(effectif) et vérifient le dictionnaire rendu. Un test vérifie que le
+              fichier d'écran ne contient ni boucle ni calcul.
+
+              Critères d'acceptation : trois chiffres affichés ; une fonction testable derrière chacun ;
+              aucun calcul dans le fichier d'écran.
         livrable: >-
-          Afficher les trois chiffres de la direction ; les tests portent sur les fonctions de préparation, pas sur l'affichage.
+          Afficher les trois chiffres de la direction ; les tests portent sur les fonctions de préparation,
+          pas sur l'affichage.
       - num: "J22R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 21, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 21, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Le modèle d'exécution de Streamlit explique
+              tout ce qui vous surprendra cette semaine.
+            tableaux:
+              - titre: Les cinq points de la journée 21
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Script affiché, "Écrire une page en appelant des fonctions d'affichage"]
+                  - [Réexécution, "Savoir que tout le script est rejoué à chaque interaction"]
+                  - [Widget, "Lire la valeur rendue par un widget comme une variable"]
+                  - [Écran sans règle, "Appeler le cœur au lieu de calculer dans la page"]
+                  - [Tests, "Tester les fonctions de préparation, pas l'affichage"]
+        quiz:
+          - question: "Que se passe-t-il quand on clique sur un widget ?"
+            options: ["Le script entier est rejoué", "Seule la fonction liée s'exécute", "Rien tant qu'on ne valide pas", "La page se recharge depuis le serveur sans Python"]
+            bonnes: [1]
+            explication: "C'est le modèle d'exécution de Streamlit : il explique la lenteur comme les surprises."
+          - question: "Que rend un widget de liste déroulante ?"
+            options: ["L'élément choisi", "Un événement", "None", "Un identifiant"]
+            bonnes: [1]
+            explication: "La valeur s'emploie comme n'importe quelle variable, plus bas dans le script."
+          - question: "Où écrire le calcul de la masse salariale ?"
+            options: ["Dans le paquet rh", "Dans le fichier d'écran", "Dans un widget", "Dans le fichier CSV"]
+            bonnes: [1]
+            explication: "Ce qui est écrit dans l'écran ne sert qu'à l'écran, et ne se teste pas."
+          - question: "Que teste-t-on dans une application Streamlit ?"
+            options: ["Les fonctions de préparation", "Les pixels affichés", "Le navigateur", "Les widgets eux-mêmes"]
+            bonnes: [1]
+            explication: "Tester l'affichage demande des outils lourds pour un bénéfice faible."
+          - question: "Pourquoi un chargement placé en haut du script coûte-t-il cher ?"
+            options: ["Il est refait à chaque interaction", "Il bloque le navigateur", "Il consomme le disque", "Il empêche les widgets"]
+            bonnes: [1]
+            explication: "La parade est le cache, vu en journée 25."
       - num: "J22"
         title: "Tableaux et filtres"
         evaluations: livrable
         contenu: >-
-          Afficher un tableau, filtrer par poste et par ancienneté, garder le filtre dans une fonction testable.
+          Afficher un tableau, filtrer par poste et par ancienneté, et garder le filtre dans une fonction
+          testable plutôt que dans l'affichage.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez offrir au gérant deux filtres combinables sur l'effectif, et prouver par
+              un test qu'ils filtrent juste.
+          - titre: Le problème d'abord
+            texte: >-
+              Le gérant veut voir « les gens de l'atelier qui ont plus de deux ans de maison ». Deux
+              critères, combinables, et un tableau qui se met à jour. Écrire cela directement dans
+              l'affichage paraît naturel et vous priverait de tout test.
+          - titre: La notion
+            texte: >-
+              La fonction d'affichage de tableau reçoit une liste de dictionnaires et produit un tableau
+              triable. Les widgets de choix et de curseur rendent les valeurs choisies par l'utilisateur.
+
+              Le filtrage, lui, appartient au cœur : une fonction qui reçoit l'effectif et les critères, et
+              rend une nouvelle liste. L'écran se contente de lire les widgets, d'appeler cette fonction, et
+              d'afficher le résultat.
+
+              Un filtre doit accepter l'absence de critère, car l'utilisateur commence toujours sans rien
+              choisir. La convention de ce parcours : une valeur vide ou nulle signifie « ne filtre pas sur
+              ce critère ».
+            code:
+              - titre: Un filtre testable, un écran sans règle
+                langage: python
+                source: |
+                  def effectif_filtre(effectif, poste=None, anciennete_min=0):
+                      """Rend les fiches qui satisfont les deux critères ; un critère absent n'exclut rien."""
+                      resultat = []
+                      for fiche in effectif:
+                          if poste and fiche["poste"] != poste:
+                              continue
+                          if fiche["anciennete_mois"] < anciennete_min:
+                              continue
+                          resultat.append(fiche)
+                      return resultat
+          - titre: À la main
+            texte: >-
+              Ajoutez à votre écran une liste déroulante des postes et un curseur d'ancienneté minimale.
+              Passez les deux valeurs à effectif_filtre et affichez le résultat dans un tableau.
+
+              Essayez les quatre combinaisons : aucun critère, un seul, l'autre seul, les deux. Vérifiez que
+              le cas sans critère affiche tout l'effectif : c'est l'état initial, celui que verra le gérant
+              en ouvrant la page.
+
+              Choisissez enfin des critères qui ne correspondent à personne. Le tableau est vide : ajoutez
+              un message qui le dit en toutes lettres, car un tableau vide sans explication ressemble à une
+              panne.
+          - titre: L'astuce du jour
+            texte: >-
+              Filtrez dans une fonction, affichez le résultat. Une règle de filtrage est une règle métier
+              comme une autre : elle mérite un nom, un test, et sa place dans le paquet rh.
+
+              Autre bénéfice immédiat, qui se verra en semaine 6 : la même fonction servira à l'API, à
+              l'écran et à Django. Un filtre écrit dans la page serait à réécrire trois fois.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est le filtre appliqué à l'affichage seulement : masquer des lignes du
+              tableau sans filtrer les données. Les totaux affichés plus haut continuent alors de compter
+              tout le monde, et l'écran se contredit lui-même.
+
+              Deuxième piège, plus discret : un critère absent traité comme une valeur. Un poste vide
+              comparé avec l'égalité ne correspond à personne, et l'écran s'ouvre sur un tableau vide que
+              le gérant prendra pour une panne.
+            tableaux:
+              - titre: Quatre combinaisons à vérifier
+                entetes: [Poste, Ancienneté minimale, Attendu]
+                lignes:
+                  - ["aucun", "0", "tout l'effectif"]
+                  - ["Atelier", "0", "les fiches de l'atelier"]
+                  - ["aucun", "24", "les fiches de deux ans et plus"]
+                  - ["Atelier", "24", "l'intersection des deux critères"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez effectif_filtre(effectif, poste, anciennete_min) dans le paquet rh, et branchez-la sur
+              deux widgets.
+
+              Les tests livrés couvrent les quatre combinaisons du tableau, le résultat vide, et vérifient
+              que l'effectif d'origine n'est pas modifié. Un test vérifie que les totaux affichés
+              correspondent à l'effectif filtré, et non à l'effectif complet.
+
+              Critères d'acceptation : un critère absent n'exclut personne ; le tableau vide affiche un
+              message ; aucun filtrage écrit dans le fichier d'écran.
         livrable: >-
-          Écrire effectif_filtre(effectif, poste, anciennete_min) ; les tests couvrent les filtres cumulés et un résultat vide.
+          Écrire effectif_filtre(effectif, poste, anciennete_min) ; les tests couvrent les filtres cumulés
+          et le résultat vide.
       - num: "J23R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 22, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 22, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Un filtre est une règle métier, pas une
+              décoration d'écran.
+            tableaux:
+              - titre: Les cinq points de la journée 22
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Tableau, "Afficher une liste de fiches dans un tableau"]
+                  - [Widgets de critère, "Lire un choix et un seuil depuis la page"]
+                  - [Filtre testable, "Écrire le filtre dans le cœur et l'appeler depuis l'écran"]
+                  - [Critère absent, "Ne rien exclure quand l'utilisateur n'a rien choisi"]
+                  - [Résultat vide, "Afficher un message plutôt qu'un tableau vide muet"]
+        quiz:
+          - question: "Où écrire la règle de filtrage ?"
+            options: ["Dans le paquet rh", "Dans la page", "Dans le widget", "Dans le fichier CSV"]
+            bonnes: [1]
+            explication: "La même fonction servira à l'API, à l'écran et à Django."
+          - question: "Que doit faire un filtre quand aucun critère n'est choisi ?"
+            options: ["Ne rien exclure", "Rendre une liste vide", "Lever une erreur", "Rendre None"]
+            bonnes: [1]
+            explication: "C'est l'état initial de la page : le gérant doit voir tout l'effectif."
+          - question: "Pourquoi un tableau vide mérite-t-il un message ?"
+            options: ["Parce qu'un tableau vide ressemble à une panne", "Parce que Streamlit l'exige", "Pour remplir la page", "Pour accélérer l'affichage"]
+            bonnes: [1]
+            explication: "Le message dit que la recherche a abouti et qu'elle ne trouve personne."
+          - question: "Quel risque y a-t-il à masquer des lignes sans filtrer les données ?"
+            options: ["Les totaux affichés deviennent incohérents", "La page plante", "Le tri ne marche plus", "Les widgets disparaissent"]
+            bonnes: [1]
+            explication: "L'écran se contredit lui-même : le tableau montre dix lignes et le total en compte trente."
+          - question: "Que vérifient les tests d'un filtre ?"
+            options: ["Les combinaisons de critères et l'effectif laissé intact", "La couleur du tableau", "Le temps de réponse", "Le nombre de widgets"]
+            bonnes: [1]
+            explication: "Les quatre combinaisons et le résultat vide suffisent à couvrir la règle."
       - num: "J23"
         title: "Un formulaire d'embauche branché sur le cœur"
         evaluations: livrable
         contenu: >-
-          Formulaire, soumission, message d'erreur lisible par un humain, données conservées au rechargement.
+          Un formulaire, sa soumission, et la traduction d'une erreur métier en message lisible par un
+          humain.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez offrir au gérant un formulaire d'embauche qui refuse proprement une
+              saisie fausse, en lui disant quoi corriger.
+          - titre: Le problème d'abord
+            texte: >-
+              Le gérant saisit une embauche. Il se trompe : il tape un salaire négatif, ou laisse le poste
+              vide. Votre modèle d'entrée de la journée 15 sait refuser, mais son message parle de
+              contraintes et de types, dans un vocabulaire de bibliothèque.
+          - titre: La notion
+            texte: >-
+              Un formulaire regroupe plusieurs widgets et un bouton de soumission : le script n'agit qu'au
+              moment où l'utilisateur valide, ce qui évite de réagir à chaque frappe.
+
+              La soumission appelle le cœur, qui valide et lève une erreur métier le cas échéant. L'écran
+              attrape cette erreur et affiche un message, en vert si tout va bien, en rouge sinon.
+
+              La traduction de l'erreur en message appartient à une fonction testable, pas au corps de la
+              page. Vous testez alors que telle erreur produit telle phrase, sans jamais ouvrir un
+              navigateur.
+            code:
+              - titre: Un formulaire qui dit quoi corriger
+                langage: python
+                source: |
+                  import streamlit as st
+
+                  from rh.entrees import SalarieEntrant
+                  from rh.messages import message_d_erreur
+
+                  with st.form("embauche"):
+                      nom = st.text_input("Nom")
+                      poste = st.text_input("Poste")
+                      salaire = st.number_input("Salaire mensuel en FCFA", step=1000)
+                      valide = st.form_submit_button("Embaucher")
+
+                  if valide:
+                      try:
+                          SalarieEntrant(nom=nom, poste=poste, salaire_fcfa=int(salaire),
+                                         date_embauche="2026-01-05")
+                          st.success("Embauche enregistrée.")
+                      except Exception as erreur:
+                          st.error(message_d_erreur(erreur))
+          - titre: À la main
+            texte: >-
+              Construisez le formulaire, puis essayez une saisie correcte, un salaire négatif et un poste
+              vide. Lisez les trois messages produits.
+
+              Écrivez ensuite message_d_erreur dans le paquet rh : elle reçoit l'erreur de validation et
+              rend une phrase simple, par exemple « Le salaire ne peut pas être négatif. » Testez-la
+              directement, sans Streamlit.
+
+              Observez enfin ce qui se passe quand la page est rejouée après la soumission : les champs se
+              vident. C'est le piège du jour.
+          - titre: L'astuce du jour
+            texte: >-
+              Un message d'erreur s'adresse à un humain pressé. Il dit ce qui ne va pas et ce qu'il faut
+              faire, en une phrase, sans vocabulaire technique et sans nom de classe.
+
+              Écrivez-le comme vous le diriez à voix haute au gérant debout à côté de vous. Puis testez
+              cette phrase : un message est un comportement du logiciel, au même titre qu'un calcul.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est la perte de la saisie au rechargement. Comme le script est rejoué, les
+              champs reprennent leur valeur par défaut, et le gérant retape tout après chaque refus.
+
+              La parade tient en une idée : conserver les valeurs saisies dans l'état de session, que
+              Streamlit fournit, et les réutiliser comme valeurs initiales des champs. Rien de ce qui est
+              conservé là ne doit cependant devenir une règle métier : l'état de session garde la saisie,
+              pas la vérité de l'application.
+            tableaux:
+              - titre: Qui fait quoi dans un formulaire
+                entetes: [Étape, Responsable]
+                lignes:
+                  - ["Afficher les champs", "l'écran"]
+                  - ["Valider la saisie", "le modèle d'entrée"]
+                  - ["Traduire l'erreur en phrase", "une fonction testable du cœur"]
+                  - ["Afficher la phrase", "l'écran"]
+          - titre: Challenge du jour
+            texte: >-
+              Branchez le formulaire sur le cœur. Un refus affiche la raison en une phrase compréhensible ;
+              une réussite affiche une confirmation et le tableau se met à jour.
+
+              Les tests livrés portent sur message_d_erreur : trois erreurs de validation, trois phrases
+              attendues. Un test vérifie que la fonction ne dépend ni de Streamlit, ni de FastAPI.
+
+              Critères d'acceptation : aucune phrase d'erreur écrite dans le fichier d'écran ; la saisie
+              n'est pas perdue après un refus ; les trois messages sont testés.
         livrable: >-
-          Afficher la raison d'un refus d'embauche ; le test porte sur la fonction qui traduit l'erreur métier en message.
+          Afficher la raison d'un refus d'embauche ; le test porte sur la fonction qui traduit l'erreur
+          métier en message.
       - num: "J24R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 23, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 23, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Un bon message d'erreur vaut une page de
+              documentation.
+            tableaux:
+              - titre: Les cinq points de la journée 23
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Formulaire, "Grouper des champs et n'agir qu'à la soumission"]
+                  - [Appel du cœur, "Laisser la validation au modèle d'entrée"]
+                  - [Traduction, "Transformer une erreur en phrase, dans une fonction testable"]
+                  - [Message humain, "Dire ce qui ne va pas et quoi faire, sans jargon"]
+                  - [État de session, "Conserver la saisie entre deux exécutions du script"]
+        quiz:
+          - question: "Quand le code d'un formulaire agit-il ?"
+            options: ["À la soumission", "À chaque frappe", "Au chargement de la page", "Jamais"]
+            bonnes: [1]
+            explication: "C'est tout l'intérêt du formulaire face à des widgets isolés."
+          - question: "Où traduire une erreur de validation en phrase ?"
+            options: ["Dans une fonction testable du cœur", "Dans la page", "Dans le modèle Pydantic", "Dans le fichier .env"]
+            bonnes: [1]
+            explication: "Un message est un comportement du logiciel : il se teste comme un calcul."
+          - question: "À qui s'adresse un message d'erreur ?"
+            options: ["À un humain pressé", "Au développeur", "À la machine", "À personne"]
+            bonnes: [1]
+            explication: "Une phrase, sans nom de classe ni vocabulaire de bibliothèque."
+          - question: "Pourquoi la saisie se perd-elle après un refus ?"
+            options: ["Parce que le script est rejoué et les champs repartent par défaut", "Parce que le navigateur vide le cache", "Parce que l'erreur efface les variables", "Parce que le formulaire se ferme"]
+            bonnes: [1]
+            explication: "L'état de session conserve la saisie d'une exécution à l'autre."
+          - question: "Que ne doit-on pas mettre dans l'état de session ?"
+            options: ["La vérité de l'application", "La saisie en cours", "Le choix d'un filtre", "Le dernier message affiché"]
+            bonnes: [1]
+            explication: "Les données de référence vivent dans le fichier puis, en semaine 6, dans la base."
       - num: "J24"
         title: "Deux graphiques utiles"
         evaluations: livrable
         contenu: >-
-          Masse salariale par poste, absences du mois, une mesure par axe, lisibilité d'un graphique.
+          La masse salariale par poste et les absences du mois, avec une mesure par axe et une série de
+          données préparée par une fonction testable.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez produire deux graphiques que le gérant comprend en trois secondes, à
+              partir de séries calculées et testées.
+          - titre: Le problème d'abord
+            texte: >-
+              Le tableau donne tout, donc rien : trente lignes ne répondent pas à la question « où part
+              l'argent ». Deux graphiques y répondent, à condition de choisir la bonne forme et de les
+              nourrir avec des séries propres.
+          - titre: La notion
+            texte: >-
+              Streamlit affiche un graphique à partir de données préparées : une liste de couples, un
+              dictionnaire ou un tableau de données. Le travail intéressant est la préparation, pas
+              l'appel d'affichage.
+
+              Préparer une série, c'est agréger, trier et nommer : masse par poste, du plus élevé au plus
+              faible, avec le poste en clé et le montant en valeur. Cette fonction se teste exactement comme
+              un calcul de paie.
+
+              Le choix de la forme suit la question. Comparer des quantités entre catégories appelle des
+              barres. Suivre une évolution dans le temps appelle une ligne. Montrer une part d'un tout
+              peut appeler un camembert, mais seulement avec très peu de parts.
+            figures:
+              - nom: python-graphique-lisible.svg
+                legende: "La même donnée en barres triées et en camembert à douze parts : une seule se lit"
+            code:
+              - titre: La série se prépare, puis s'affiche
+                langage: python
+                source: |
+                  def serie_masse_par_poste(effectif):
+                      """Rend les couples (poste, masse) triés du plus élevé au plus faible."""
+                      masses = {}
+                      for fiche in effectif:
+                          masses[fiche["poste"]] = masses.get(fiche["poste"], 0) + fiche["salaire_fcfa"]
+                      return sorted(masses.items(), key=lambda couple: couple[1], reverse=True)
+          - titre: À la main
+            texte: >-
+              Écrivez serie_masse_par_poste, testez-la sur un effectif de six fiches réparties sur trois
+              postes, puis affichez le résultat en barres dans votre écran.
+
+              Fabriquez ensuite la même donnée en camembert, avec douze postes fictifs. Regardez les deux
+              figures côte à côte et posez-vous la question du gérant : quel poste coûte le plus cher ? La
+              réponse est immédiate sur les barres triées, impossible sur le camembert.
+
+              Ajoutez enfin le second graphique, les absences du mois, et vérifiez que chaque axe porte une
+              seule mesure.
+          - titre: L'astuce du jour
+            texte: >-
+              Une mesure par axe, et des barres triées. Trier par valeur transforme un graphique en réponse :
+              le poste le plus coûteux est à gauche, et la lecture prend une seconde.
+
+              Nommez l'unité sur l'axe, comme vous nommez l'unité dans vos variables depuis la journée 02.
+              Un montant sans unité se lit faux une fois sur deux.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est le camembert à douze parts, illisible par construction : l'œil compare
+              mal des angles proches, et la légende oblige à faire des allers-retours.
+
+              Le second piège est le graphique à deux échelles, qui superpose un effectif et des francs CFA
+              sur la même figure. Il donne une impression de corrélation que les données ne portent pas.
+              Deux graphiques côte à côte disent la même chose sans tromper personne.
+            tableaux:
+              - titre: Choisir la forme selon la question
+                entetes: [Question du gérant, Forme, Piège à éviter]
+                lignes:
+                  - ["Quel poste coûte le plus cher ?", "barres triées", "ordre alphabétique inutile"]
+                  - ["Comment évoluent les absences ?", "ligne dans le temps", "points sans ordre"]
+                  - ["Quelle part pour l'atelier ?", "camembert à trois parts au plus", "douze parts"]
+                  - ["Deux mesures d'un coup ?", "deux graphiques", "deux échelles sur une figure"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez serie_masse_par_poste(effectif) et affichez-la en barres triées. Ajoutez le graphique
+              des absences du mois.
+
+              Les tests livrés vérifient l'ordre des couples rendus, le total par poste, et le
+              comportement sur un effectif vide. Un test vérifie que la préparation ne dépend pas de
+              Streamlit.
+
+              Critères d'acceptation : la série est triée du plus élevé au plus faible ; les totaux sont
+              justes ; les deux graphiques portent une seule mesure chacun.
         livrable: >-
-          Écrire serie_masse_par_poste(effectif) qui rend des couples triés ; le test porte sur l'ordre et les totaux.
+          Écrire serie_masse_par_poste(effectif) qui rend des couples triés ; le test porte sur l'ordre et
+          les totaux.
       - num: "J25R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 24, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 24, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Un graphique est une réponse à une question,
+              pas une décoration.
+            tableaux:
+              - titre: Les cinq points de la journée 24
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Série préparée, "Agréger et trier dans une fonction testable"]
+                  - [Barres triées, "Mettre la plus grande valeur à gauche"]
+                  - [Unité nommée, "Indiquer les francs CFA sur l'axe"]
+                  - [Forme et question, "Choisir barres, ligne ou camembert selon la question"]
+                  - [Deux échelles, "Préférer deux graphiques à une figure trompeuse"]
+        quiz:
+          - question: "Quelle forme répond à « quel poste coûte le plus cher » ?"
+            options: ["Des barres triées par valeur", "Un camembert", "Une ligne", "Un tableau"]
+            bonnes: [1]
+            explication: "Trier par valeur transforme le graphique en réponse immédiate."
+          - question: "Combien de parts au maximum dans un camembert lisible ?"
+            options: ["Trois", "Douze", "Vingt", "Autant qu'on veut"]
+            bonnes: [1]
+            explication: "L'œil compare mal des angles proches ; au-delà, la légende fait tout le travail."
+          - question: "Où se fait le travail intéressant d'un graphique ?"
+            options: ["Dans la préparation de la série", "Dans l'appel d'affichage", "Dans le choix des couleurs", "Dans le navigateur"]
+            bonnes: [1]
+            explication: "La préparation se teste ; l'appel d'affichage, non."
+          - question: "Pourquoi éviter deux échelles sur une figure ?"
+            options: ["Elle suggère une corrélation que les données ne portent pas", "Elle est interdite", "Elle ralentit l'écran", "Elle empêche le tri"]
+            bonnes: [1]
+            explication: "Deux graphiques côte à côte disent la même chose sans tromper."
+          - question: "Que teste-t-on sur serie_masse_par_poste ?"
+            options: ["L'ordre des couples et les totaux", "La couleur des barres", "La taille de la figure", "Le temps de rendu"]
+            bonnes: [1]
+            explication: "Le comportement sur un effectif vide fait aussi partie des cas à couvrir."
       - num: "J25"
         title: "Cache, mise en forme et démonstration"
         evaluations: livrable
         contenu: >-
-          st.cache_data, données périmées, mise en forme de l'écran, scénario de démonstration en deux minutes.
+          Le cache des données, la mise en forme de l'écran, et le scénario de démonstration que vous
+          jouerez en deux minutes.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez rendre votre écran réactif, le présenter proprement, et le montrer à
+              quelqu'un en suivant un scénario écrit.
+          - titre: Le problème d'abord
+            texte: >-
+              Votre écran recharge le fichier à chaque clic, comme vous l'avez constaté en journée 21. Et
+              vous allez devoir le montrer : à un collègue, à un recruteur, au gérant. Une démonstration
+              improvisée rate une fois sur deux.
+          - titre: La notion
+            texte: >-
+              Le décorateur de cache de données mémorise le résultat d'une fonction pour des arguments
+              donnés. Appliqué au chargement de l'effectif, il évite de relire le fichier à chaque
+              exécution du script.
+
+              Le cache a une contrepartie : tant qu'il n'est pas vidé, la donnée affichée est celle du
+              premier chargement. Après une embauche, il faut donc le vider explicitement, sinon le gérant
+              ne voit pas sa propre saisie apparaître.
+
+              La mise en forme se fait avec des colonnes, des onglets et des en-têtes. Trois chiffres en
+              haut, les filtres à gauche, le tableau et les graphiques au centre : la disposition suit
+              l'ordre des questions, pas l'ordre dans lequel vous avez codé.
+            code:
+              - titre: Un chargement mis en cache, et vidé quand il le faut
+                langage: python
+                source: |
+                  import streamlit as st
+
+                  from rh.fichiers import charger_effectif
+
+
+                  @st.cache_data
+                  def effectif_du_fichier(chemin):
+                      """Relit le fichier seulement si le chemin change ou si le cache est vidé."""
+                      return charger_effectif(chemin)
+
+
+                  def apres_embauche():
+                      effectif_du_fichier.clear()   # sans cela, la nouvelle fiche reste invisible
+          - titre: À la main
+            texte: >-
+              Ajoutez le cache à votre chargement, puis cliquez plusieurs fois sur un widget : la page
+              répond plus vite. Ajoutez un affichage de l'heure dans la fonction mise en cache pour
+              constater qu'elle n'est plus rappelée.
+
+              Enregistrez ensuite une embauche sans vider le cache : la nouvelle fiche n'apparaît pas.
+              Ajoutez l'appel qui vide le cache après une création, et recommencez.
+
+              Terminez par la mise en forme : trois colonnes pour les chiffres clés, une barre latérale
+              pour les filtres, et un titre qui dit de quoi parle la page.
+          - titre: L'astuce du jour
+            texte: >-
+              Écrivez votre démonstration, et chronométrez-la. Deux minutes, cinq étapes, dans un ordre
+              fixe : la page d'accueil, un filtre, une embauche refusée, une embauche acceptée, un
+              graphique.
+
+              Un scénario écrit vous évite de chercher vos mots et de cliquer au hasard. Il tient dans un
+              fichier demo.md à la racine du dépôt, et il servira encore à la journée 35.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est le cache qui garde des données périmées. Le symptôme est toujours le
+              même : une modification enregistrée n'apparaît pas, et vous cherchez l'erreur dans le code
+              d'écriture alors que le problème est à la lecture.
+
+              Le second piège est la démonstration sans jeu de données préparé. Montrer une application
+              vide ne prouve rien ; préparez un fichier d'effectif crédible, entièrement fictif, avec une
+              dizaine de personnes réparties sur trois postes.
+            tableaux:
+              - titre: Le scénario de démonstration, deux minutes
+                entetes: [Temps, Ce que vous montrez]
+                lignes:
+                  - ["0 à 20 s", "la page d'accueil et les trois chiffres"]
+                  - ["20 à 50 s", "un filtre par poste et par ancienneté"]
+                  - ["50 s à 1 min 20", "une embauche refusée, avec son message"]
+                  - ["1 min 20 à 1 min 45", "la même embauche corrigée et acceptée"]
+                  - ["1 min 45 à 2 min", "le graphique de la masse par poste"]
+          - titre: Challenge du jour
+            texte: >-
+              Livrez l'écran complet : chiffres clés, filtres, tableau, formulaire et deux graphiques, avec
+              le cache en place et vidé après chaque écriture. Écrivez demo.md avec le scénario minuté.
+
+              Le harnais du jour charge les trois pages de l'application et échoue si l'une lève une
+              exception. Un test vérifie que le cache est vidé après une création.
+
+              Critères d'acceptation : les trois pages se chargent sans exception ; une embauche apparaît
+              immédiatement dans le tableau ; demo.md existe et tient en une page.
         livrable: >-
-          Écrire demo.md et livrer l'écran complet ; le harnais vérifie que les trois pages se chargent sans exception.
+          Écrire demo.md et livrer l'écran complet ; le harnais vérifie que les trois pages se chargent
+          sans exception.
   - title: "Bloc 6 — Semaines 6 et 7 : Django, de la base de données à l'application"
     modules:
       - num: "J26R"
