@@ -2178,6 +2178,7 @@ blocs:
       - num: "J16"
         title: "HTTP en vingt minutes et première route"
         evaluations: livrable
+        archive: depot-python-j16.zip
         contenu: >-
           Requête et réponse, méthode, code de retour, JSON, lancement du serveur avec uvicorn et
           documentation automatique.
@@ -2312,6 +2313,7 @@ blocs:
       - num: "J17"
         title: "Exposer le cœur sans le modifier"
         evaluations: livrable
+        archive: depot-python-j17.zip
         contenu: >-
           Séparer le métier de l'habillage, orienter les dépendances vers le cœur, et comprendre
           concrètement pourquoi le cœur ignore FastAPI.
@@ -2459,6 +2461,7 @@ blocs:
       - num: "J18"
         title: "Écrire : POST, 201 et 422"
         evaluations: livrable
+        archive: depot-python-j18.zip
         contenu: >-
           Recevoir un corps de requête, réutiliser le modèle d'entrée de la journée 15, répondre 201 à une
           création et laisser Pydantic répondre 422.
@@ -2596,6 +2599,7 @@ blocs:
       - num: "J19"
         title: "Paramètres de requête et erreurs métier"
         evaluations: livrable
+        archive: depot-python-j19.zip
         contenu: >-
           Recevoir des paramètres après le point d'interrogation, et traduire chaque erreur métier en un
           code HTTP précis plutôt qu'en panne générale.
@@ -2739,6 +2743,7 @@ blocs:
       - num: "J20"
         title: "Tester l'API et sortir les secrets du code"
         evaluations: livrable
+        archive: depot-python-j20.zip
         contenu: >-
           Une suite de tests d'API, la configuration par variables d'environnement, le fichier d'exemple
           suivi et le fichier réel jamais versionné.
