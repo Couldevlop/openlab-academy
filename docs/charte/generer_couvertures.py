@@ -117,6 +117,15 @@ def glyphe_bouclier(c: str, double: bool = False) -> str:
     return fond + _trait(forme, c, 10) + _trait("M 58 100 L 86 128 L 138 70", c, 10)
 
 
+def glyphe_escalier(c: str) -> str:
+    """Marches qui montent, une par journée : un parcours quotidien se gravit."""
+    marches = []
+    for i in range(4):
+        x, y = 14 + i * 76, 160 - i * 40
+        marches.append(_trait(f"M {x} {y} L {x + 76} {y} L {x + 76} {y - 40}", c, 11))
+    return "".join(marches) + f'<circle cx="{14 + 4 * 76}" cy="{160 - 4 * 40 + 6}" r="18" fill="{c}"/>'
+
+
 def glyphe_boucle(c: str) -> str:
     """Boucle d'exécution d'un agent : percevoir, décider, agir."""
     return (_trait("M 60 96 A 76 76 0 1 1 136 172", c, 11)
@@ -187,6 +196,8 @@ PARCOURS = (
          glyphe=lambda c: glyphe_bouclier(c, double=True)),
     dict(nom="ia-agentique", surtitre="Formation · agents IA",
          titre="IA agentique : concevoir et maîtriser les agents", accent=ORANGE, glyphe=glyphe_boucle),
+    dict(nom="python-application-rh", surtitre="Formation · 35 journées",
+         titre="Bases de Python, jour après jour", accent=JAUNE, glyphe=glyphe_escalier),
 )
 
 

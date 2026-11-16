@@ -16,6 +16,7 @@ _NOM_IMAGE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.(?:jpg|jpeg|png|webp
 _LISTES_PROJET = ("objectifs", "fonctionnalites", "stack", "criteres_acceptation", "livrables")
 # Paramètres qu'un parcours peut surcharger : clé YAML -> champ du domaine Parcours
 _PARAMETRES = {"projets_par_portfolio": "projets_attendus", "heures_par_module": "heures_par_module",
+               "questions_par_quiz": "questions_par_quiz",
                "delai_exercices_minutes": "delai_exercices_minutes", "tentatives_max": "tentatives_max",
                "score_min": "score_min"}
 # Délai d'exercices : 0 est une valeur, et non une absence (les exercices s'ouvrent avec la leçon, pour un

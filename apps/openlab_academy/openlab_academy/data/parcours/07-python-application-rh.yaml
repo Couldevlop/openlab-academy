@@ -1,0 +1,562 @@
+title: Bases de Python, jour après jour
+short_introduction: >-
+  Trente-cinq journées pour partir de zéro et finir avec une application RH ivoirienne que vous montrez :
+  une notion par jour, un challenge par soir, des tests qui disent si c'est juste.
+description: >-
+  <p><b>Prérequis :</b> aucun. La première journée installe Python et exécute votre premier fichier.</p>
+  <p><b>Format :</b> une journée, une notion, un challenge. Chaque journée s'ouvre sur un rappel de la veille
+  en cinq questions, puis la leçon du jour et son épreuve. Comptez une à deux heures par jour, à votre
+  rythme : la journée suivante n'ouvre qu'une fois celle du jour terminée.</p>
+  <p><b>Fil rouge :</b> la même application RH du premier au dernier jour. Trois semaines de Python pur pour
+  le cœur métier (effectif, ancienneté, congés, masse salariale), puis une API avec FastAPI, un écran avec
+  Streamlit, et enfin l'application complète avec Django. Le cœur ne change pas : il survit aux trois
+  habillages, et c'est la leçon d'architecture du parcours.</p>
+  <p><b>Données :</b> entièrement fictives. Le cours explique pourquoi un fichier de paie réel ne quitte pas
+  le poste de travail.</p>
+  <p><b>Évaluation :</b> le quiz du rappel et le challenge du soir, chaque jour, plus un projet final montré
+  en cinq minutes.</p>
+  <p><b>Outillage :</b> aucun service à monter, aucun conteneur. Python, un éditeur, et SQLite pour Django.
+  Les commandes sont données pour Windows, macOS et Linux.</p>
+tags: [Python, Débutant, FastAPI, Streamlit, Django, Tests, RH]
+card_gradient: Orange
+couverture: couverture-python-application-rh.jpg
+progression_sequentielle: true
+parametres:
+  projets_par_portfolio: 0
+  # les quiz des rappels s'écrivent semaine par semaine ; la clé passera à 5 quand les 34 rappels seront
+  # rédigés, pour que le fichier refuse alors tout rappel incomplet
+  questions_par_quiz: 0
+  heures_par_module: 1
+  delai_exercices_minutes: 0
+  tentatives_max: 10
+  score_min: 80
+
+blocs:
+  - title: "Bloc 1 — Semaine 1 : premiers pas"
+    modules:
+      - num: "J01"
+        title: "Installer Python et exécuter son premier fichier"
+        evaluations: livrable
+        contenu: >-
+          Installer Python, exécuter un fichier depuis le terminal, déclarer des variables, afficher avec print. Lire une trace d'erreur de bas en haut.
+        livrable: >-
+          Écrire fiche.py qui expose nom, poste, salaire_fcfa et resume ; les tests livrés importent le module et vérifient les quatre valeurs.
+      - num: "J02R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 01, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J02"
+        title: "Nombres, arrondis et montants en FCFA"
+        evaluations: livrable
+        contenu: >-
+          Entiers et flottants, division entière et division décimale, arrondi, f-strings, écriture d'un montant en francs CFA.
+        livrable: >-
+          Écrire salaire_annuel(mensuel, primes) et formater_fcfa(montant) ; les tests couvrent treize cas dont zéro, un montant à sept chiffres et un arrondi.
+      - num: "J03R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 02, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J03"
+        title: "Décider : if, elif, else"
+        evaluations: livrable
+        contenu: >-
+          Booléens, comparaisons, enchaînement if / elif / else, condition nommée dans une variable.
+        livrable: >-
+          Écrire droit_aux_conges(mois_anciennete) selon la règle du cours ; les tests passent aux bornes 0, 11, 12 et 13.
+      - num: "J04R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 03, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J04"
+        title: "Répéter : for, range et while"
+        evaluations: livrable
+        contenu: >-
+          Boucle for sur une séquence, range, boucle while, accumulation d'un total, affichage une seule fois à la fin.
+        livrable: >-
+          Écrire masse_salariale(salaires) et plus_haut_salaire(salaires) ; les tests couvrent la liste vide, un seul élément et deux salaires ex æquo.
+      - num: "J05R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 04, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J05"
+        title: "Écrire sa première fonction"
+        evaluations: livrable
+        contenu: >-
+          def, paramètres, valeur de retour, docstring, différence entre afficher et rendre une valeur.
+        livrable: >-
+          Regrouper les quatre premières journées dans rh/calculs.py ; les tests refusent tout print dans le module.
+  - title: "Bloc 2 — Semaine 2 : structures de données"
+    modules:
+      - num: "J06R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 05, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J06"
+        title: "Les listes : indexer, trancher, trier"
+        evaluations: livrable
+        contenu: >-
+          Création, index, tranches, ajout, tri en place et copie triée, longueur.
+        livrable: >-
+          Écrire effectif_trie(noms) et trois_derniers(noms) ; les tests couvrent les accents et la liste vide.
+      - num: "J07R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 06, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J07"
+        title: "Les dictionnaires : une fiche salarié"
+        evaluations: livrable
+        contenu: >-
+          Clés et valeurs, lecture sûre avec get, parcours des clés et des valeurs, clés stables en minuscules sans accent.
+        livrable: >-
+          Écrire salarie(nom, poste, date_embauche, salaire_fcfa) et lire_champ(salarie, champ, defaut) ; les tests couvrent une clé absente.
+      - num: "J08R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 07, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J08"
+        title: "Un effectif : liste de dictionnaires"
+        evaluations: livrable
+        contenu: >-
+          Parcourir une liste de fiches, filtrer, regrouper, compréhensions de liste, copie et mutation partagée.
+        livrable: >-
+          Écrire par_poste(effectif) et filtrer_par_salaire(effectif, mini) ; un test prouve que l'effectif d'origine n'a pas bougé.
+      - num: "J09R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 08, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J09"
+        title: "Les dates et l'ancienneté"
+        evaluations: livrable
+        contenu: >-
+          datetime.date, écriture ISO, différence entre deux dates, mois incomplet, date future.
+        livrable: >-
+          Écrire anciennete_en_mois(embauche, aujourdhui) ; les tests couvrent une embauche en cours de mois, le 29 février et une date future refusée.
+      - num: "J10R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 09, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J10"
+        title: "Les chaînes : normaliser et aligner"
+        evaluations: livrable
+        contenu: >-
+          Normaliser une chaîne à l'entrée, découper, joindre, aligner des colonnes pour un état lisible.
+        livrable: >-
+          Écrire etat_par_poste(effectif) qui rend l'état aligné sous forme de chaîne ; le test compare la chaîne exacte.
+  - title: "Bloc 3 — Semaine 3 : fonctions, modules, tests et validation"
+    modules:
+      - num: "J11R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 10, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J11"
+        title: "Modules et paquets : ranger le code"
+        evaluations: livrable
+        contenu: >-
+          import, module et paquet, un module un sujet, garde if __name__ == "__main__", import circulaire.
+        livrable: >-
+          Ranger le code en rh/calculs.py, rh/etats.py et main.py ; les tests importent chaque module isolément.
+      - num: "J12R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 11, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J12"
+        title: "Lire un fichier CSV sans casser les accents"
+        evaluations: livrable
+        contenu: >-
+          Ouvrir avec with, encodage UTF-8, csv.DictReader, chemin construit avec pathlib et jamais concaténé.
+        livrable: >-
+          Écrire charger_effectif(chemin) dans rh/fichiers.py ; les tests vérifient que rh/calculs.py n'importe ni csv ni pathlib.
+      - num: "J13R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 12, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J13"
+        title: "Les erreurs : try, except et erreur métier"
+        evaluations: livrable
+        contenu: >-
+          Lever et attraper une exception, définir une erreur métier, écrire un message qui dit quoi faire, danger du except nu.
+        livrable: >-
+          Lever DonneeInvalide au chargement ; les tests couvrent le fichier absent, la colonne manquante et un salaire illisible.
+      - num: "J14R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 13, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J14"
+        title: "Se tester avec pytest"
+        evaluations: livrable
+        contenu: >-
+          Installer et lancer pytest, nommer un test par une phrase, cas limites, rouge puis vert.
+        livrable: >-
+          Écrire vous-même les trois tests manquants sur les congés ; le harnais vérifie qu'ils échouent sur une implémentation fautive fournie.
+      - num: "J15R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 14, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J15"
+        title: "Valider aux frontières avec Pydantic"
+        evaluations: livrable
+        contenu: >-
+          Modèle d'entrée distinct du modèle métier, validation à la frontière seulement, messages d'erreur exploitables.
+        livrable: >-
+          Écrire SalarieEntrant qui refuse un salaire négatif, une date future et un poste vide ; le cœur reste sans validation et les trois états restent au vert.
+  - title: "Bloc 4 — Semaine 4 : une API avec FastAPI"
+    modules:
+      - num: "J16R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 15, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J16"
+        title: "HTTP en vingt minutes et première route"
+        evaluations: livrable
+        contenu: >-
+          Requête et réponse, méthode, code de retour, JSON, lancement par uvicorn, documentation automatique.
+        livrable: >-
+          Écrire GET /sante qui rend {"etat": "ok"} ; le test passe par TestClient.
+      - num: "J17R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 16, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J17"
+        title: "Exposer le cœur sans le modifier"
+        evaluations: livrable
+        contenu: >-
+          Séparer le métier de l'habillage, dépendances orientées vers le cœur, pourquoi le cœur ignore FastAPI.
+        livrable: >-
+          Écrire GET /salaries et GET /salaries/{matricule} avec un 404 propre ; un test vérifie que rh/ n'importe pas fastapi.
+      - num: "J18R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 17, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J18"
+        title: "Écrire : POST, 201 et 422"
+        evaluations: livrable
+        contenu: >-
+          Corps de requête, réutilisation du modèle d'entrée, code 201, erreurs de validation en 422.
+        livrable: >-
+          Refuser la création sur un salaire négatif avec un 422 qui nomme le champ fautif.
+      - num: "J19R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 18, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J19"
+        title: "Paramètres de requête et erreurs métier"
+        evaluations: livrable
+        contenu: >-
+          Paramètres de requête, traduction d'une erreur métier en code HTTP, ni 500 fourre-tout ni 200 trompeur.
+        livrable: >-
+          Écrire GET /etats/masse-salariale?mois=AAAA-MM ; les tests couvrent un mois invalide (422) et un mois sans données (200 et total nul).
+      - num: "J20R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 19, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J20"
+        title: "Tester l'API et sortir les secrets du code"
+        evaluations: livrable
+        contenu: >-
+          Suite de tests d'API, pydantic-settings, variables d'environnement, fichier .env.exemple suivi et .env jamais versionné.
+        livrable: >-
+          Rendre la suite d'API verte et ajouter le test qui refuse tout secret écrit en dur dans le dépôt.
+  - title: "Bloc 5 — Semaine 5 : un écran avec Streamlit"
+    modules:
+      - num: "J21R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 20, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J21"
+        title: "Premier écran Streamlit"
+        evaluations: livrable
+        contenu: >-
+          Exécution descendante du script, widgets, l'écran appelle le cœur et ne calcule pas.
+        livrable: >-
+          Afficher les trois chiffres de la direction ; les tests portent sur les fonctions de préparation, pas sur l'affichage.
+      - num: "J22R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 21, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J22"
+        title: "Tableaux et filtres"
+        evaluations: livrable
+        contenu: >-
+          Afficher un tableau, filtrer par poste et par ancienneté, garder le filtre dans une fonction testable.
+        livrable: >-
+          Écrire effectif_filtre(effectif, poste, anciennete_min) ; les tests couvrent les filtres cumulés et un résultat vide.
+      - num: "J23R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 22, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J23"
+        title: "Un formulaire d'embauche branché sur le cœur"
+        evaluations: livrable
+        contenu: >-
+          Formulaire, soumission, message d'erreur lisible par un humain, données conservées au rechargement.
+        livrable: >-
+          Afficher la raison d'un refus d'embauche ; le test porte sur la fonction qui traduit l'erreur métier en message.
+      - num: "J24R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 23, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J24"
+        title: "Deux graphiques utiles"
+        evaluations: livrable
+        contenu: >-
+          Masse salariale par poste, absences du mois, une mesure par axe, lisibilité d'un graphique.
+        livrable: >-
+          Écrire serie_masse_par_poste(effectif) qui rend des couples triés ; le test porte sur l'ordre et les totaux.
+      - num: "J25R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 24, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J25"
+        title: "Cache, mise en forme et démonstration"
+        evaluations: livrable
+        contenu: >-
+          st.cache_data, données périmées, mise en forme de l'écran, scénario de démonstration en deux minutes.
+        livrable: >-
+          Écrire demo.md et livrer l'écran complet ; le harnais vérifie que les trois pages se chargent sans exception.
+  - title: "Bloc 6 — Semaines 6 et 7 : Django, de la base de données à l'application"
+    modules:
+      - num: "J26R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 25, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J26"
+        title: "Pourquoi Django, et un projet qui démarre"
+        evaluations: livrable
+        contenu: >-
+          Modèle de Django face à ce que vous avez écrit, startproject, arborescence, SQLite, runserver.
+        livrable: >-
+          Livrer un projet qui démarre et passe manage.py check sans avertissement.
+      - num: "J27R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 26, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J27"
+        title: "Modèles et migrations"
+        evaluations: livrable
+        contenu: >-
+          Champs, relations, contraintes, makemigrations et migrate, une migration par intention.
+        livrable: >-
+          Écrire les modèles Salarie, Poste et Absence avec leurs contraintes ; les tests portent sur l'unicité du matricule.
+      - num: "J28R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 27, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J28"
+        title: "L'ORM : créer, filtrer, agréger"
+        evaluations: livrable
+        contenu: >-
+          QuerySet, filter, aggregate et annotate, pourquoi laisser l'ORM écrire le SQL.
+        livrable: >-
+          Écrire masse_salariale_par_poste() en une seule requête ; un test refuse tout raw( ou tout pourcentage dans les requêtes.
+      - num: "J29R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 28, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J29"
+        title: "L'administration comme back-office"
+        evaluations: livrable
+        contenu: >-
+          Enregistrer un modèle, colonnes affichées, filtres, recherche, ce qu'on n'expose pas.
+        livrable: >-
+          Livrer une administration utilisable ; le test vérifie l'enregistrement des trois modèles.
+      - num: "J30R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 29, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J30"
+        title: "Vues et gabarits"
+        evaluations: livrable
+        contenu: >-
+          Le découpage modèle, vue, gabarit, une vue une responsabilité, le gabarit n'a pas de logique métier.
+        livrable: >-
+          Livrer la liste et la fiche d'un salarié ; les tests portent sur le code de réponse et le contexte.
+      - num: "J31R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 30, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J31"
+        title: "Formulaires et validation côté serveur"
+        evaluations: livrable
+        contenu: >-
+          ModelForm, validation au serveur, affichage des erreurs, pourquoi le navigateur ne suffit pas.
+        livrable: >-
+          Livrer le formulaire d'embauche ; un test prouve qu'un POST invalide ne crée rien.
+      - num: "J32R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 31, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J32"
+        title: "Authentification"
+        evaluations: livrable
+        contenu: >-
+          login, logout, login_required, utilisateur de démonstration, page laissée ouverte par oubli.
+        livrable: >-
+          Protéger les pages sensibles ; un test vérifie qu'un accès anonyme est redirigé.
+      - num: "J33R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 32, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J33"
+        title: "Rôles et permissions"
+        evaluations: livrable
+        contenu: >-
+          Groupes RH et manager, permissions, vérification au serveur, bouton masqué n'est pas page protégée.
+        livrable: >-
+          Cacher les salaires au manager ; un test par rôle couvre chaque page.
+      - num: "J34R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 33, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J34"
+        title: "Une commande de gestion qui réutilise le cœur"
+        evaluations: livrable
+        contenu: >-
+          Commande manage.py, appel du cœur écrit en semaine 3, pourquoi ne pas recoder les règles dans Django.
+        livrable: >-
+          Écrire manage.py importer_effectif fichier.csv ; un test compare le résultat à celui du cœur Python pur.
+      - num: "J35R"
+        title: Rappel de la veille
+        evaluations: quiz
+        contenu: >-
+          Cinq points de la journée 34, à revoir avant d'ouvrir la journée du jour.
+          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
+          votre formateur rouvre la tentative.
+      - num: "J35"
+        title: "Finir et montrer"
+        evaluations: livrable
+        contenu: >-
+          États de l'application, TestCase de Django, check --deploy, DEBUG à False, clé secrète hors du dépôt.
+        livrable: >-
+          Livrer l'application complète avec sa suite verte et un check --deploy sans alerte critique.
+
+capstone:
+  titre: Votre application RH, montrée à quelqu'un
+  duree_h: 3
+  niveau: autonome
+  contexte: >-
+    Le projet final ne demande aucune nouvelle notion : il demande de montrer ce que les trente-cinq journées
+    ont construit. Vous rendez le dépôt de votre application RH, son fichier demo.md, sa suite de tests verte,
+    et vous la présentez en cinq minutes à quelqu'un qui n'a pas suivi le parcours. La présentation compte
+    autant que le code : un travail que personne ne comprend ne se vend pas.
+  objectifs:
+    - Montrer une application qui démarre sur une machine vierge en suivant votre seul fichier LISEZ-MOI.
+    - Expliquer en une minute pourquoi le cœur métier ne connaît ni FastAPI, ni Streamlit, ni Django.
+    - Faire tourner la suite de tests devant votre interlocuteur et commenter ce qu'elle prouve.
+  fonctionnalites:
+    - L'effectif, la fiche d'un salarié et l'embauche, écran et API.
+    - "Les trois états de la direction : effectif par poste, masse salariale, absences du mois."
+    - L'import d'un fichier CSV d'effectif par la commande de gestion.
+  stack:
+    - Python, pytest
+    - FastAPI, Streamlit, Django, SQLite
+  criteres_acceptation:
+    - La suite de tests passe en une commande, sur un dépôt fraîchement récupéré.
+    - Aucun secret dans le dépôt ; le fichier .env.exemple est suivi, le fichier .env ne l'est pas.
+    - Le cœur métier n'importe ni framework, ni fichier, ni réseau.
+    - DEBUG vaut False dans la configuration de démonstration et check --deploy ne lève aucune alerte critique.
+  exigences_specifiques:
+    - Les données livrées sont fictives et le dépôt le dit.
+    - Les montants s'affichent en francs CFA, sans décimale.
+  livrables:
+    - Le dépôt complet de l'application, tests inclus.
+    - "Le fichier demo.md : le scénario de la démonstration, minute par minute."
+    - Une capture de la suite de tests au vert.

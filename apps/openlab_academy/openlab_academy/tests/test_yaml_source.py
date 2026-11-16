@@ -5,7 +5,7 @@ import unittest
 import yaml
 
 from openlab_academy.domain.parcours import Annonce, Niveau, Parcours
-from openlab_academy.domain.reglages import TITRE_LANCEMENT, Reglages
+from openlab_academy.domain.reglages import Reglages
 from openlab_academy.infrastructure.yaml_source import PARCOURS_DIR, FormatInvalide, charger_dossier, depuis_dict
 from openlab_academy.tests.fabriques import parcours_brut
 
@@ -89,6 +89,13 @@ class TestConversion(unittest.TestCase):
     def test_cles_de_lancement_absentes_valent_faux(self):
         p = depuis_dict(parcours_brut(), "t.yaml")
         self.assertEqual((p.gratuit, p.acces_limite_a_la_cohorte, p.mise_en_avant), (False, False, False))
+
+    def test_nombre_de_questions_propre_au_parcours(self):
+        """Un parcours fixe lui-même la taille de ses quiz : un rappel quotidien n'a pas la même épreuve
+        qu'une séance de trois heures."""
+        brut = parcours_brut()
+        brut["parametres"] = {"questions_par_quiz": 0}
+        self.assertEqual(depuis_dict(brut, "t.yaml").questions_par_quiz, 0)
 
     def test_progression_sequentielle_lue(self):
         """Parcours quotidien : la leçon du jour n'ouvre qu'après celle de la veille."""
@@ -219,9 +226,10 @@ class TestChargementDossier(unittest.TestCase):
         lot = charger_dossier(PARCOURS_DIR)
         self.assertTrue(lot)
         complets = [p for p in lot if isinstance(p, Parcours)]
-        self.assertEqual(len(complets), 5)
+        self.assertEqual(len(complets), 6)
         for p in complets:
-            attendus = 0 if p.title == TITRE_LANCEMENT else 10
+            # le parcours de lancement et le parcours quotidien ne passent pas par le portfolio hebdomadaire
+            attendus = 0 if p.projets_attendus == 0 else 10
             self.assertEqual(len(p.portfolio), attendus, p.title)
         self.assertEqual(sorted(p.title for p in lot if isinstance(p, Annonce)),
                          ["Ingénieur Cybersécurité I", "Ingénieur Cybersécurité II"])
