@@ -73,9 +73,10 @@ class TestParcoursPythonRh(unittest.TestCase):
                 self.assertTrue((RESSOURCES / m.archive).is_file(), m.archive)
 
     def test_quiz_de_rappel_a_cinq_questions(self):
-        """Les rappels se rédigent semaine par semaine ; celui qui porte un quiz le porte au complet."""
+        """Chaque rappel porte son quiz complet : sans lui, la leçon du jour s'ouvrirait sans contrôle."""
+        self.assertEqual(self.p.questions_par_quiz, 5)
         for m in self.modules:
-            if not m.quiz:
+            if not m.num.endswith("R"):
                 continue
             with self.subTest(m.num):
                 self.assertEqual(len(m.quiz), 5)

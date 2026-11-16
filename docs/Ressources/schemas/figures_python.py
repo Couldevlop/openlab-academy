@@ -332,6 +332,75 @@ def graphique_lisible() -> Dessin:
     return d
 
 
+def migrations() -> Dessin:
+    """J27 : le modèle change, la migration l'enregistre, chaque base rejoue le même journal."""
+    d = Dessin(760, 310, "Le modèle, la migration et les bases qui suivent")
+    d.texte(380, 34, "La migration est un journal versionné, pas un script jetable.", taille=15, gras=True)
+    d.boite(40, 90, 200, 70, teinte="s1")
+    d.texte(140, 118, "Le modèle change", taille=13, gras=True)
+    d.texte(140, 140, "un champ ajouté", taille=11, couleur="encre2")
+    d.boite(280, 90, 200, 70, teinte="s3")
+    d.texte(380, 118, "La migration", taille=13, gras=True)
+    d.texte(380, 140, "générée, relue, versionnée", taille=10, couleur="encre2")
+    d.fleche(248, 125, 272, 125, teinte="s1")
+    bases = [("votre base", 520), ("celle d'un collègue", 520), ("la production", 520)]
+    for i, (nom, x) in enumerate(bases):
+        y = 72 + i * 56
+        d.boite(x, y, 200, 44, teinte="s2")
+        d.texte(x + 100, y + 27, nom, taille=12)
+        d.fleche(488, 125, 512, y + 22, teinte="s3")
+    d.texte(380, 250, "Une intention par migration : elle se relit, s'annule et se transporte.",
+            taille=12, gras=True, couleur="encre2")
+    d.texte(380, 280, "Modifier la base à la main fait partir la migration suivante d'un état faux.",
+            taille=12, couleur="encre2")
+    return d
+
+
+def django_mvt() -> Dessin:
+    """J30 : d'une adresse à une page, et la place de chaque responsabilité."""
+    d = Dessin(760, 320, "D'une adresse à une page dans Django")
+    d.texte(380, 34, "Chaque couche a une responsabilité, et une seule.", taille=15, gras=True)
+    etapes = [("L'adresse", "désigne une vue", 40, "s1"), ("La vue", "prépare le contexte", 220, "s3"),
+              ("Le modèle", "sert les données", 400, "s2"), ("Le gabarit", "présente, sans calculer", 580, "s1")]
+    for nom, role, x, teinte in etapes:
+        d.boite(x, 110, 150, 76, teinte=teinte)
+        d.texte(x + 75, 140, nom, taille=13, gras=True)
+        d.texte(x + 75, 164, role, taille=10, couleur="encre2")
+    for x in (190, 370, 550):
+        d.fleche(x, 148, x + 28, 148, teinte="attenue")
+    d.boite(220, 232, 330, 50, teinte="critique", tirets=True)
+    d.texte(385, 252, "Une règle métier écrite dans le gabarit", taille=12, gras=True, couleur="critique")
+    d.texte(385, 271, "n'est ni testable, ni réutilisable, et personne ne l'y cherche", taille=10,
+            couleur="encre2")
+    d.texte(380, 306, "Une liste qui interroge la base une fois par ligne : chargez les objets liés.",
+            taille=12, gras=True, couleur="encre2")
+    return d
+
+
+def roles_permissions() -> Dessin:
+    """J33 : deux rôles, quatre pages, et le droit vérifié là où la donnée est servie."""
+    d = Dessin(760, 320, "Deux rôles, quatre pages")
+    d.texte(380, 34, "Le droit se vérifie là où la donnée est servie.", taille=15, gras=True)
+    pages = [("Liste de l'effectif", "avec salaires", "sans salaires"),
+             ("Fiche d'un salarié", "complète", "sans salaire"),
+             ("Masse salariale", "oui", "refus"),
+             ("Absences de l'équipe", "oui", "oui")]
+    d.texte(240, 86, "Page", taille=12, gras=True, ancre="end")
+    d.texte(420, 86, "RH", taille=12, gras=True)
+    d.texte(620, 86, "Manager", taille=12, gras=True)
+    for i, (page, rh, manager) in enumerate(pages):
+        y = 118 + i * 38
+        d.texte(240, y, page, taille=12, ancre="end", couleur="encre2")
+        d.boite(330, y - 18, 180, 26, teinte="s3")
+        d.texte(420, y, rh, taille=11)
+        teinte = "critique" if manager in ("refus",) else "s2"
+        d.boite(530, y - 18, 180, 26, teinte=teinte)
+        d.texte(620, y, manager, taille=11)
+    d.texte(380, 292, "Masquer une colonne n'empêche pas la donnée d'être envoyée dans la réponse.",
+            taille=12, gras=True, couleur="encre2")
+    return d
+
+
 FIGURES_PYTHON = {
     "python-trace-erreur.svg": trace_erreur,
     "python-seuils-conges.svg": seuils_conges,
@@ -347,4 +416,7 @@ FIGURES_PYTHON = {
     "python-codes-http.svg": codes_http,
     "python-streamlit-execution.svg": streamlit_execution,
     "python-graphique-lisible.svg": graphique_lisible,
+    "python-migrations.svg": migrations,
+    "python-django-mvt.svg": django_mvt,
+    "python-roles-permissions.svg": roles_permissions,
 }

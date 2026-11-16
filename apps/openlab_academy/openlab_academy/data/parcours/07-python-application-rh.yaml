@@ -23,9 +23,8 @@ couverture: couverture-python-application-rh.jpg
 progression_sequentielle: true
 parametres:
   projets_par_portfolio: 0
-  # les quiz des rappels s'écrivent semaine par semaine ; la clé passera à 5 quand les 34 rappels seront
-  # rédigés, pour que le fichier refuse alors tout rappel incomplet
-  questions_par_quiz: 0
+  # les trente-quatre rappels portent cinq questions : le fichier refuse désormais un rappel incomplet
+  questions_par_quiz: 5
   heures_par_module: 1
   delai_exercices_minutes: 0
   tentatives_max: 10
@@ -3492,142 +3491,1347 @@ blocs:
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 25, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 25, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Vous entrez dans les deux dernières semaines :
+              l'application prend sa forme définitive.
+            tableaux:
+              - titre: Les cinq points de la journée 25
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Cache de données, "Éviter de relire le fichier à chaque exécution du script"]
+                  - [Cache vidé, "Rafraîchir après une écriture, sinon la saisie reste invisible"]
+                  - [Mise en page, "Disposer l'écran dans l'ordre des questions du gérant"]
+                  - [Scénario, "Écrire et chronométrer une démonstration de deux minutes"]
+                  - [Jeu de données, "Préparer un effectif fictif crédible avant de montrer"]
+        quiz:
+          - question: "Quel est le symptôme d'un cache non vidé ?"
+            options: ["Une modification enregistrée n'apparaît pas", "La page plante", "Les widgets disparaissent", "Le fichier est corrompu"]
+            bonnes: [1]
+            explication: "On cherche alors l'erreur côté écriture alors que le problème est à la lecture."
+          - question: "Que mémorise le cache de données ?"
+            options: ["Le résultat d'une fonction pour des arguments donnés", "La page entière", "Les saisies de l'utilisateur", "Les graphiques"]
+            bonnes: [1]
+            explication: "Changer les arguments suffit à provoquer un nouveau calcul."
+          - question: "Combien de temps dure la démonstration du parcours ?"
+            options: ["Deux minutes", "Dix minutes", "Trente secondes", "Une heure"]
+            bonnes: [1]
+            explication: "Cinq étapes dans un ordre fixe, écrites dans demo.md."
+          - question: "Pourquoi préparer un jeu de données avant une démonstration ?"
+            options: ["Parce qu'une application vide ne prouve rien", "Pour tester la base", "Pour remplir le cache", "Pour éviter les erreurs de saisie"]
+            bonnes: [1]
+            explication: "Une dizaine de fiches fictives réparties sur trois postes suffisent."
+          - question: "Dans quel ordre disposer l'écran ?"
+            options: ["Dans l'ordre des questions du gérant", "Dans l'ordre où le code a été écrit", "Par taille des composants", "Par ordre alphabétique"]
+            bonnes: [1]
+            explication: "Trois chiffres en haut, les filtres à côté, le détail au centre."
       - num: "J26"
         title: "Pourquoi Django, et un projet qui démarre"
         evaluations: livrable
         contenu: >-
-          Modèle de Django face à ce que vous avez écrit, startproject, arborescence, SQLite, runserver.
+          Ce que Django apporte par rapport à ce que vous avez écrit, la commande de création de projet,
+          l'arborescence, SQLite et le serveur de développement.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez créer un projet Django qui démarre et passe sa vérification intégrée,
+              et vous saurez nommer chaque fichier qu'il a créé.
+          - titre: Le problème d'abord
+            texte: >-
+              Votre application tient dans un fichier CSV. Deux personnes ne peuvent pas saisir en même
+              temps, rien n'est protégé par un mot de passe, et une suppression est définitive.
+
+              Django apporte trois choses que vous n'avez pas : une base de données avec son schéma, des
+              utilisateurs avec des droits, et un back-office prêt à l'emploi.
+          - titre: La notion
+            texte: >-
+              Django est un cadre complet : il impose une organisation et fournit beaucoup. Un projet
+              contient des applications, chacune responsable d'un domaine. Votre projet s'appellera rh_web
+              et contiendra une application effectif.
+
+              La base de données du développement est SQLite : un simple fichier, aucun service à
+              installer. C'est suffisant jusqu'à la journée 35, et le passage à une autre base ne change
+              que la configuration.
+
+              Les commandes passent par manage.py : créer une application, appliquer les migrations,
+              lancer le serveur, vérifier le projet. La commande de vérification lit votre configuration et
+              signale les problèmes avant qu'ils ne se manifestent à l'exécution.
+            tableaux:
+              - titre: Ce que Django apporte par rapport à votre application
+                entetes: [Besoin, Votre application, Django]
+                lignes:
+                  - ["Stocker", "un fichier CSV", "une base avec son schéma"]
+                  - ["Modifier à plusieurs", "impossible", "transactions de la base"]
+                  - ["Identifier les personnes", "absent", "utilisateurs et mots de passe"]
+                  - ["Back-office", "à écrire", "fourni, à déclarer"]
+          - titre: À la main
+            texte: >-
+              Installez django, puis créez le projet avec la commande de création, et l'application
+              effectif avec manage.py. Lancez le serveur de développement et ouvrez l'adresse locale : la
+              page d'accueil de Django s'affiche.
+
+              Ouvrez le dossier créé et nommez chaque fichier à voix haute : le fichier de configuration,
+              celui des adresses, celui qui sert de point d'entrée au serveur. Ne modifiez rien encore.
+
+              Lancez enfin la commande de vérification. Elle doit se terminer sans aucun avertissement.
+              Notez le message concernant les migrations non appliquées : c'est le sujet de demain.
+          - titre: L'astuce du jour
+            texte: >-
+              Lisez l'arborescence avant d'écrire la moindre ligne. Django crée une dizaine de fichiers, et
+              ceux qui les ignorent passent les semaines suivantes à chercher où mettre leur code.
+
+              Prenez cinq minutes, aujourd'hui, pour écrire sur une feuille le rôle de chaque fichier. Vous
+              gagnerez ces cinq minutes dès demain.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est de lancer le serveur sans appliquer les migrations initiales. Django
+              affiche un avertissement rouge, l'application semble fonctionner, puis échoue à la première
+              opération sur la base.
+
+              Le second piège est le mélange des noms : le projet et l'application ne portent pas le même
+              nom, et les confondre produit des imports qui ne résolvent pas. Choisissez rh_web pour le
+              projet et effectif pour l'application, et tenez-vous-y.
+          - titre: Challenge du jour
+            texte: >-
+              Livrez un projet qui démarre, avec son application effectif déclarée dans la configuration.
+              La commande de vérification passe sans avertissement.
+
+              Les tests livrés lancent la vérification et échouent si elle signale quoi que ce soit. Un test
+              vérifie que l'application effectif figure bien dans la liste des applications installées.
+
+              Critères d'acceptation : le serveur démarre ; la vérification est muette ; le paquet rh des
+              semaines précédentes est présent dans le dépôt, intact.
         livrable: >-
-          Livrer un projet qui démarre et passe manage.py check sans avertissement.
+          Livrer un projet Django qui démarre et passe sa vérification sans avertissement, avec
+          l'application effectif déclarée.
       - num: "J27R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 26, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 26, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Connaître l'arborescence d'un projet Django
+              fait gagner des heures.
+            tableaux:
+              - titre: Les cinq points de la journée 26
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Projet et application, "Distinguer le projet rh_web de l'application effectif"]
+                  - [manage.py, "Passer les commandes du projet"]
+                  - [SQLite, "Travailler sur une base qui tient dans un fichier"]
+                  - [Vérification, "Lancer le contrôle de configuration et le lire"]
+                  - [Arborescence, "Nommer le rôle de chaque fichier créé"]
+        quiz:
+          - question: "Quelle base de données sert au développement dans ce parcours ?"
+            options: ["SQLite", "PostgreSQL", "MySQL", "Aucune"]
+            bonnes: [1]
+            explication: "Un simple fichier, aucun service à installer : le passage à une autre base ne change que la configuration."
+          - question: "Quelle est la différence entre un projet et une application ?"
+            options: ["Le projet contient des applications responsables chacune d'un domaine", "Ce sont deux mots pour la même chose", "L'application contient des projets", "Le projet est le serveur"]
+            bonnes: [1]
+            explication: "Votre projet rh_web contient l'application effectif."
+          - question: "Que signale la commande de vérification ?"
+            options: ["Les problèmes de configuration avant l'exécution", "Les fautes de syntaxe", "Les tests qui échouent", "Les migrations manquantes uniquement"]
+            bonnes: [1]
+            explication: "Elle doit être muette avant de considérer un projet livrable."
+          - question: "Que se passe-t-il si les migrations initiales ne sont pas appliquées ?"
+            options: ["L'application échoue à la première opération sur la base", "Le serveur refuse de démarrer", "Rien", "Le projet est supprimé"]
+            bonnes: [1]
+            explication: "L'avertissement rouge au démarrage est le signal à ne pas ignorer."
+          - question: "Par quoi passent les commandes du projet ?"
+            options: ["manage.py", "le fichier de configuration", "le serveur", "pip"]
+            bonnes: [1]
+            explication: "Créer une application, migrer, lancer le serveur, vérifier : toutes passent par là."
       - num: "J27"
         title: "Modèles et migrations"
         evaluations: livrable
         contenu: >-
-          Champs, relations, contraintes, makemigrations et migrate, une migration par intention.
+          Décrire les données par des classes, générer les migrations, les appliquer, et comprendre
+          pourquoi une migration est un journal et non un script jetable.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez décrire l'effectif, les postes et les absences dans la base, avec les
+              contraintes qui empêchent les données incohérentes.
+          - titre: Le problème d'abord
+            texte: >-
+              Votre fichier CSV accepte deux salariés avec le même matricule, un poste écrit de trois
+              façons, et une absence qui finit avant de commencer. Aucune de ces incohérences ne doit
+              pouvoir entrer en base.
+          - titre: La notion
+            texte: >-
+              Un modèle est une classe dont les attributs sont des champs typés. Django en déduit le schéma
+              de la base. Une clé étrangère relie deux modèles ; une contrainte d'unicité interdit les
+              doublons ; une contrainte de vérification refuse une valeur absurde.
+
+              Une migration est un fichier Python généré qui décrit le passage d'un état du schéma au
+              suivant. Elle est versionnée et rejouée à l'identique sur chaque environnement : c'est le
+              journal des changements de votre base.
+
+              La règle de travail : une migration par intention. Plusieurs modifications sans rapport dans
+              une même migration deviennent impossibles à relire et à annuler.
+            figures:
+              - nom: python-migrations.svg
+                legende: "Le modèle change, la migration enregistre le passage, la base suit partout pareil"
+            code:
+              - titre: Trois modèles et leurs contraintes
+                langage: python
+                source: |
+                  from django.db import models
+
+
+                  class Poste(models.Model):
+                      libelle = models.CharField(max_length=60, unique=True)
+
+
+                  class Salarie(models.Model):
+                      matricule = models.CharField(max_length=20, unique=True)
+                      nom = models.CharField(max_length=120)
+                      poste = models.ForeignKey(Poste, on_delete=models.PROTECT)
+                      date_embauche = models.DateField()
+                      salaire_fcfa = models.PositiveIntegerField()
+
+
+                  class Absence(models.Model):
+                      salarie = models.ForeignKey(Salarie, on_delete=models.CASCADE)
+                      debut = models.DateField()
+                      fin = models.DateField()
+
+                      class Meta:
+                          constraints = [
+                              models.CheckConstraint(condition=models.Q(fin__gte=models.F("debut")),
+                                                     name="absence_fin_apres_debut"),
+                          ]
+          - titre: À la main
+            texte: >-
+              Écrivez les trois modèles, générez les migrations, puis ouvrez le fichier produit : vous y
+              lisez la création des tables, champ par champ. Appliquez-les.
+
+              Essayez ensuite de créer deux salariés avec le même matricule depuis le shell du projet : la
+              base refuse. Essayez une absence qui finit avant de commencer : la contrainte refuse aussi.
+              Les règles sont tenues par la base, pas seulement par votre code.
+
+              Modifiez enfin un champ, régénérez une migration, et lisez-la : vous voyez l'opération de
+              modification, et non une nouvelle création. C'est le journal qui s'écrit.
+          - titre: L'astuce du jour
+            texte: >-
+              Une migration par intention. Ajouter un champ est une intention ; renommer une table en est
+              une autre. Deux migrations séparées se relisent, s'annulent et se transportent sans douleur.
+
+              Relisez toujours la migration générée avant de l'appliquer. Django devine bien, mais pas
+              toujours : un renommage de champ est parfois interprété comme une suppression suivie d'une
+              création, ce qui perd des données.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est la modification de la base à la main. Ouvrir le fichier SQLite et
+              ajouter une colonne fonctionne un soir et casse tout le reste : la base d'un collègue ne
+              bouge pas, et la prochaine migration part d'un état faux.
+
+              Le second piège est la migration oubliée dans le dépôt. Si le fichier n'est pas versionné,
+              votre schéma n'existe que chez vous : personne d'autre ne peut reconstruire la base.
+          - titre: Challenge du jour
+            texte: >-
+              Livrez les trois modèles avec leurs contraintes, et leurs migrations appliquées.
+
+              Les tests livrés créent un salarié, puis en créent un second avec le même matricule et
+              vérifient que la base refuse. Un autre test vérifie qu'une absence dont la fin précède le
+              début est refusée.
+
+              Critères d'acceptation : trois modèles, trois contraintes ; les migrations sont dans le
+              dépôt ; la base refuse les deux incohérences.
         livrable: >-
-          Écrire les modèles Salarie, Poste et Absence avec leurs contraintes ; les tests portent sur l'unicité du matricule.
+          Écrire les modèles Salarie, Poste et Absence avec leurs contraintes ; les tests portent sur
+          l'unicité du matricule.
       - num: "J28R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 27, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 27, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Les contraintes posées hier protègent vos
+              données pour toute la vie de l'application.
+            tableaux:
+              - titre: Les cinq points de la journée 27
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Modèle, "Décrire des données par une classe à champs typés"]
+                  - [Clé étrangère, "Relier deux modèles et choisir l'effet d'une suppression"]
+                  - [Contrainte, "Interdire un doublon ou une valeur absurde dans la base"]
+                  - [Migration, "Générer, relire et appliquer le fichier de changement"]
+                  - [Journal, "Versionner les migrations pour que la base se reconstruise partout"]
+        quiz:
+          - question: "Qu'est-ce qu'une migration ?"
+            options: ["Un fichier versionné qui décrit un changement de schéma", "Une sauvegarde de la base", "Un script jetable", "Une commande de démarrage"]
+            bonnes: [1]
+            explication: "Rejouée à l'identique partout, elle est le journal des changements de votre base."
+          - question: "Pourquoi ne pas modifier la base à la main ?"
+            options: ["Parce que les autres environnements ne suivront pas", "Parce que SQLite l'interdit", "Parce que c'est plus lent", "Parce que Django le détecte"]
+            bonnes: [1]
+            explication: "La prochaine migration partirait d'un état faux, et le schéma n'existerait que chez vous."
+          - question: "Que fait une contrainte d'unicité sur le matricule ?"
+            options: ["Elle empêche deux salariés d'avoir le même", "Elle trie les salariés", "Elle génère le matricule", "Elle masque les doublons"]
+            bonnes: [1]
+            explication: "La règle est tenue par la base, pas seulement par votre code."
+          - question: "Combien d'intentions par migration ?"
+            options: ["Une", "Autant que possible", "Trois", "Aucune règle"]
+            bonnes: [1]
+            explication: "Des migrations séparées se relisent, s'annulent et se transportent sans douleur."
+          - question: "Pourquoi relire une migration générée ?"
+            options: ["Parce qu'un renommage peut être pris pour une suppression", "Parce qu'elle est illisible", "Parce qu'elle contient des secrets", "Parce qu'elle doit être réécrite à la main"]
+            bonnes: [1]
+            explication: "Une suppression suivie d'une création perd les données de la colonne."
       - num: "J28"
         title: "L'ORM : créer, filtrer, agréger"
         evaluations: livrable
         contenu: >-
-          QuerySet, filter, aggregate et annotate, pourquoi laisser l'ORM écrire le SQL.
+          Les requêtes de Django, les filtres, les agrégations, et la raison pour laquelle on laisse l'ORM
+          écrire le SQL.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez calculer la masse salariale par poste en une seule requête, sans écrire
+              une ligne de SQL.
+          - titre: Le problème d'abord
+            texte: >-
+              Votre état par poste, en semaine 2, parcourait une liste en mémoire. Avec dix mille fiches en
+              base, charger tout l'effectif pour en faire la somme est absurde : la base sait sommer, et
+              elle le fait mieux.
+          - titre: La notion
+            texte: >-
+              Un gestionnaire de modèle donne accès aux enregistrements. La méthode de filtrage accepte des
+              conditions écrites avec des doubles soulignés, par exemple un champ supérieur ou égal à une
+              valeur. Le résultat est paresseux : rien n'est exécuté tant que vous ne parcourez pas.
+
+              L'agrégation calcule sur l'ensemble, le regroupement annote chaque groupe. Masse salariale
+              par poste s'écrit en une ligne : grouper par poste, sommer le salaire.
+
+              L'ORM écrit le SQL à votre place, et surtout il paramètre les valeurs. C'est ce qui empêche
+              l'injection SQL, la faille qui consiste à faire exécuter du SQL par une valeur venue de
+              l'utilisateur. Écrire une requête brute en collant des valeurs rouvre cette porte.
+            code:
+              - titre: Une agrégation par poste, en une requête
+                langage: python
+                source: |
+                  from django.db.models import Sum
+
+                  from effectif.models import Salarie
+
+
+                  def masse_salariale_par_poste():
+                      """Rend les couples (poste, masse) calculés par la base."""
+                      lignes = (Salarie.objects
+                                .values("poste__libelle")
+                                .annotate(masse=Sum("salaire_fcfa"))
+                                .order_by("-masse"))
+                      return [(ligne["poste__libelle"], ligne["masse"]) for ligne in lignes]
+          - titre: À la main
+            texte: >-
+              Depuis le shell du projet, créez quelques salariés, puis écrivez la requête d'agrégation.
+              Affichez la propriété qui montre le SQL produit : vous lisez la requête que la base exécute,
+              avec ses paramètres séparés des valeurs.
+
+              Comparez le temps et la mémoire avec la version qui charge tout en mémoire. Sur trois fiches,
+              aucune différence ; l'intérêt est ailleurs : la base fait ce pour quoi elle est faite, et
+              votre code dit ce qu'il veut, pas comment l'obtenir.
+
+              Essayez enfin de filtrer avec une valeur contenant une apostrophe et un fragment de SQL.
+              Observez que rien ne se passe : la valeur reste une valeur.
+          - titre: L'astuce du jour
+            texte: >-
+              Laissez l'ORM écrire le SQL. Il connaît les particularités de chaque base, il paramètre les
+              valeurs, et il produit une requête que vous pouvez lire quand vous en avez besoin.
+
+              Quand une requête devient illisible en ORM, ce qui arrive, isolez-la dans une fonction au nom
+              explicite plutôt que de la disperser dans une vue. Elle restera lisible et testable.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est la requête brute construite par concaténation avec une valeur venue de
+              l'utilisateur. C'est l'injection SQL, et c'est la faille la plus ancienne et la plus répandue
+              du métier : une valeur bien choisie fait exécuter ce que l'attaquant veut.
+
+              Les tests du jour lisent votre code et échouent s'ils trouvent une requête brute ou un
+              formatage de chaîne dans une requête. Ce n'est pas une question de style : c'est la
+              différence entre une application tenable et une fuite de données.
+            tableaux:
+              - titre: Trois façons d'obtenir la masse par poste
+                entetes: [Écriture, Travail fait par, Risque]
+                lignes:
+                  - ["ORM avec agrégation", "la base", "aucun"]
+                  - ["Chargement puis somme en Python", "votre programme", "mémoire et lenteur"]
+                  - ["SQL brut avec valeurs collées", "la base", "injection SQL"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez masse_salariale_par_poste() en une seule requête, et l'effectif par poste de la même
+              façon.
+
+              Les tests livrés vérifient les totaux et l'ordre, et comparent le résultat à celui du cœur
+              Python pur de la semaine 2 sur le même jeu de données. Un test lit le code de l'application
+              et échoue s'il y trouve une requête brute ou un formatage de chaîne dans une requête.
+
+              Critères d'acceptation : une seule requête par état ; aucun SQL brut ; les résultats
+              coïncident avec ceux du cœur.
         livrable: >-
-          Écrire masse_salariale_par_poste() en une seule requête ; un test refuse tout raw( ou tout pourcentage dans les requêtes.
+          Écrire masse_salariale_par_poste() en une requête ; un test refuse toute requête brute ou
+          valeur collée dans une requête.
       - num: "J29R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 28, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 28, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. L'injection SQL est la faille la plus ancienne
+              du métier, et la plus facile à éviter.
+            tableaux:
+              - titre: Les cinq points de la journée 28
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Filtrer, "Écrire une condition avec la syntaxe à doubles soulignés"]
+                  - [Paresse, "Savoir que la requête ne part qu'au moment du parcours"]
+                  - [Agréger, "Sommer et regrouper dans la base, pas en mémoire"]
+                  - [SQL produit, "Lire la requête générée quand c'est utile"]
+                  - [Injection, "Ne jamais coller une valeur d'utilisateur dans une requête"]
+        quiz:
+          - question: "Qu'est-ce que l'injection SQL ?"
+            options: ["Faire exécuter du SQL par une valeur venue de l'utilisateur", "Insérer des lignes en masse", "Importer un fichier SQL", "Optimiser une requête"]
+            bonnes: [1]
+            explication: "L'ORM paramètre les valeurs : une valeur reste une valeur, jamais du code."
+          - question: "Où se calcule une somme par poste ?"
+            options: ["Dans la base, par agrégation", "En mémoire après chargement", "Dans le gabarit", "Dans le navigateur"]
+            bonnes: [1]
+            explication: "Charger dix mille fiches pour les additionner est absurde quand la base sait le faire."
+          - question: "Quand la requête part-elle vers la base ?"
+            options: ["Au moment du parcours du résultat", "À l'écriture de la ligne", "Au démarrage du serveur", "Jamais"]
+            bonnes: [1]
+            explication: "La paresse permet d'enchaîner filtres et tris avant un seul aller-retour."
+          - question: "Que faire d'une requête ORM devenue illisible ?"
+            options: ["L'isoler dans une fonction au nom explicite", "La réécrire en SQL brut", "La couper en trois requêtes", "L'écrire dans le gabarit"]
+            bonnes: [1]
+            explication: "Elle reste alors lisible, testable, et à un seul endroit."
+          - question: "Que vérifient les tests du jour dans votre code ?"
+            options: ["L'absence de requête brute et de valeur collée", "Le nombre de lignes", "Le temps d'exécution", "Le nom des variables"]
+            bonnes: [1]
+            explication: "Ce n'est pas une question de style : c'est la différence entre une application tenable et une fuite."
       - num: "J29"
         title: "L'administration comme back-office"
         evaluations: livrable
         contenu: >-
-          Enregistrer un modèle, colonnes affichées, filtres, recherche, ce qu'on n'expose pas.
+          Enregistrer les modèles dans l'administration, déclarer les colonnes et les filtres utiles, et
+          décider ce qu'on n'expose pas.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez offrir au gérant un back-office complet pour saisir et corriger
+              l'effectif, sans écrire une page.
+          - titre: Le problème d'abord
+            texte: >-
+              Le gérant doit pouvoir corriger une fiche, ajouter un poste, saisir une absence. Écrire ces
+              écrans prendrait une semaine. Django les fournit, à condition de déclarer ce que vous voulez
+              montrer.
+          - titre: La notion
+            texte: >-
+              L'administration se peuple en enregistrant chaque modèle. Une classe d'administration
+              configure l'affichage : les colonnes de la liste, les filtres latéraux, les champs de
+              recherche, l'ordre par défaut.
+
+              Un compte d'administration se crée en ligne de commande, avec un mot de passe que vous
+              saisissez vous-même. Ce compte n'est pas un compte de démonstration : il donne tous les
+              droits.
+
+              Tout ce qui est enregistré est visible par les personnes qui ont accès à l'administration.
+              C'est une décision, pas un détail : le salaire figure parmi les données les plus sensibles
+              d'une entreprise.
+            code:
+              - titre: Une administration déclarée, pas improvisée
+                langage: python
+                source: |
+                  from django.contrib import admin
+
+                  from effectif.models import Absence, Poste, Salarie
+
+
+                  @admin.register(Salarie)
+                  class SalarieAdmin(admin.ModelAdmin):
+                      list_display = ("matricule", "nom", "poste", "date_embauche")
+                      list_filter = ("poste",)
+                      search_fields = ("matricule", "nom")
+                      ordering = ("nom",)
+
+
+                  admin.site.register(Poste)
+                  admin.site.register(Absence)
+          - titre: À la main
+            texte: >-
+              Créez un compte d'administration, lancez le serveur et connectez-vous. Ajoutez deux postes,
+              trois salariés et une absence.
+
+              Essayez la recherche et le filtre latéral. Puis retirez le salaire de la liste des colonnes
+              affichées et observez : il reste visible dans le formulaire de modification. Masquer une
+              colonne n'est pas protéger une donnée, et c'est la leçon qui prépare la journée 33.
+
+              Vérifiez enfin que la contrainte d'unicité d'hier remonte bien à l'écran : saisissez un
+              matricule déjà pris et lisez le message affiché par le formulaire.
+          - titre: L'astuce du jour
+            texte: >-
+              Déclarez les colonnes et les filtres dont le gérant a besoin, et rien d'autre. Une liste de
+              quinze colonnes est illisible sur un écran d'ordinateur portable et inutilisable sur un
+              téléphone.
+
+              Trois à cinq colonnes, un ou deux filtres, un champ de recherche : c'est ce qui rend un
+              back-office utilisable au quotidien.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est d'exposer tout à tout le monde. L'administration donne par défaut un
+              accès complet aux personnes qui y entrent. Le salaire, la date de naissance et l'adresse
+              appartiennent aux données que seule la fonction RH doit voir.
+
+              Ce n'est pas qu'une question de confiance : c'est une exigence de protection des données
+              personnelles. La journée 33 posera les rôles ; aujourd'hui, prenez simplement conscience de
+              ce que vous ouvrez.
+          - titre: Challenge du jour
+            texte: >-
+              Enregistrez les trois modèles avec une configuration d'affichage utile : colonnes, filtre et
+              recherche sur les salariés.
+
+              Les tests livrés vérifient que les trois modèles sont enregistrés et que la configuration des
+              salariés déclare bien ses colonnes. Un test vérifie qu'aucun compte d'administration n'est
+              créé par une migration : un compte se crée à la main, jamais par du code versionné.
+
+              Critères d'acceptation : les trois modèles sont administrables ; la liste des salariés tient
+              en cinq colonnes au plus ; aucun mot de passe dans le dépôt.
         livrable: >-
-          Livrer une administration utilisable ; le test vérifie l'enregistrement des trois modèles.
+          Livrer une administration utilisable ; le test vérifie l'enregistrement des trois modèles et
+          l'absence de compte créé par migration.
       - num: "J30R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 29, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 29, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Un back-office bien déclaré remplace une
+              semaine de développement.
+            tableaux:
+              - titre: Les cinq points de la journée 29
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Enregistrement, "Rendre un modèle administrable"]
+                  - [Colonnes, "Choisir les colonnes utiles de la liste"]
+                  - [Filtres et recherche, "Rendre une liste exploitable au quotidien"]
+                  - [Compte d'administration, "Créer un compte à la main, jamais par du code"]
+                  - [Exposition, "Décider ce que l'administration montre, et à qui"]
+        quiz:
+          - question: "Masquer une colonne de la liste protège-t-il la donnée ?"
+            options: ["Non, elle reste visible dans le formulaire", "Oui, complètement", "Oui, si le modèle est privé", "Seulement pour les administrateurs"]
+            bonnes: [1]
+            explication: "C'est précisément la leçon qui prépare les rôles de la journée 33."
+          - question: "Combien de colonnes dans une liste utilisable ?"
+            options: ["Trois à cinq", "Quinze", "Toutes", "Une seule"]
+            bonnes: [1]
+            explication: "Au-delà, la liste devient illisible sur un portable et inutilisable sur un téléphone."
+          - question: "Comment créer un compte d'administration ?"
+            options: ["En ligne de commande, avec un mot de passe saisi", "Par une migration", "Dans le fichier de configuration", "Automatiquement au démarrage"]
+            bonnes: [1]
+            explication: "Un compte créé par du code versionné met son mot de passe dans le dépôt."
+          - question: "Qui doit voir les salaires ?"
+            options: ["La fonction RH seulement", "Tout le monde", "Les managers", "Les salariés concernés et personne d'autre"]
+            bonnes: [1]
+            explication: "C'est une exigence de protection des données personnelles, pas une question de confiance."
+          - question: "D'où vient le message d'erreur sur un matricule déjà pris ?"
+            options: ["De la contrainte d'unicité posée en journée 27", "Du gabarit", "Du navigateur", "De l'administration elle-même"]
+            bonnes: [1]
+            explication: "La règle est dans la base ; le formulaire ne fait que la présenter."
       - num: "J30"
         title: "Vues et gabarits"
         evaluations: livrable
         contenu: >-
-          Le découpage modèle, vue, gabarit, une vue une responsabilité, le gabarit n'a pas de logique métier.
+          Le découpage modèle, vue, gabarit, l'écriture d'une liste et d'une fiche, et la règle qui garde
+          toute logique métier hors du gabarit.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez publier deux pages publiques de votre application : la liste de
+              l'effectif et la fiche d'un salarié.
+          - titre: Le problème d'abord
+            texte: >-
+              L'administration sert au gérant, pas aux autres. Il faut des pages à vous, qui affichent ce
+              que vous décidez, avec votre mise en forme, et qui pourront être protégées par un mot de
+              passe en journée 32.
+          - titre: La notion
+            texte: >-
+              Django achemine une requête par les adresses : un motif d'URL désigne une vue. La vue reçoit
+              la requête, prépare un contexte, et rend un gabarit. Le gabarit est un fichier HTML avec des
+              marques qui affichent les valeurs du contexte.
+
+              Le découpage porte un nom chez Django : modèle, vue, gabarit. Le modèle sait ce qu'est une
+              donnée, la vue sait quoi afficher, le gabarit sait comment le présenter.
+
+              Le gabarit ne contient pas de logique métier. Il peut parcourir une liste et afficher une
+              valeur ; il ne calcule pas une masse salariale, il ne décide pas d'un droit. Ce qui demande
+              une règle se calcule dans la vue ou, mieux, dans le cœur.
+            figures:
+              - nom: python-django-mvt.svg
+                legende: "D'une adresse à une page : l'adresse, la vue, le modèle, le gabarit"
+            code:
+              - titre: Une vue qui prépare, un gabarit qui présente
+                langage: python
+                source: |
+                  from django.shortcuts import get_object_or_404, render
+
+                  from effectif.models import Salarie
+
+
+                  def liste_salaries(requete):
+                      salaries = Salarie.objects.select_related("poste").order_by("nom")
+                      return render(requete, "effectif/liste.html", {"salaries": salaries})
+
+
+                  def fiche_salarie(requete, matricule):
+                      salarie = get_object_or_404(Salarie, matricule=matricule)
+                      return render(requete, "effectif/fiche.html", {"salarie": salarie})
+          - titre: À la main
+            texte: >-
+              Écrivez les deux vues, leurs adresses et leurs gabarits. Ouvrez la liste, cliquez sur un nom,
+              atterrissez sur la fiche. Demandez un matricule inexistant : la page 404 s'affiche, parce que
+              la fonction d'accès l'a décidé.
+
+              Ajoutez temporairement un calcul dans le gabarit, par exemple une somme, et constatez à quel
+              point l'écriture devient pénible. Les gabarits sont volontairement limités : c'est une
+              protection, pas une lacune.
+
+              Observez enfin le nombre de requêtes exécutées pour afficher la liste, avec et sans la
+              sélection liée. Sans elle, Django interroge la base une fois par ligne pour obtenir le
+              poste : c'est le problème des requêtes en cascade.
+          - titre: L'astuce du jour
+            texte: >-
+              Une vue, une responsabilité. Une vue qui prépare deux pages à la fois, ou qui décide d'un
+              droit tout en calculant un état, devient illisible en quelques semaines.
+
+              Gardez les vues courtes : lire les paramètres, appeler ce qui calcule, rendre le gabarit.
+              C'est exactement la discipline de la journée 17 avec FastAPI, et c'est pourquoi elle vous
+              paraît familière.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est la logique métier dans le gabarit. Une règle écrite là n'est ni testable,
+              ni réutilisable, et personne ne la cherche à cet endroit.
+
+              Le second piège est la requête en cascade : une liste de cent salariés qui déclenche cent une
+              requêtes parce que chaque ligne va chercher son poste. La sélection liée corrige cela en une
+              ligne, et c'est le premier réflexe de performance à acquérir.
+          - titre: Challenge du jour
+            texte: >-
+              Livrez la liste de l'effectif et la fiche d'un salarié, avec leurs adresses et leurs
+              gabarits.
+
+              Les tests livrés vérifient le code de réponse des deux pages, le contenu du contexte, et le
+              404 sur un matricule inconnu. Un test compte les requêtes exécutées par la liste et échoue
+              au-delà de trois.
+
+              Critères d'acceptation : deux pages fonctionnelles ; aucun calcul dans les gabarits ; pas de
+              requête en cascade.
         livrable: >-
-          Livrer la liste et la fiche d'un salarié ; les tests portent sur le code de réponse et le contexte.
+          Livrer la liste et la fiche d'un salarié ; les tests portent sur le code de réponse, le contexte
+          et le nombre de requêtes.
       - num: "J31R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 30, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 30, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Le découpage de Django reprend la discipline de
+              la journée 17.
+            tableaux:
+              - titre: Les cinq points de la journée 30
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Adresse et vue, "Relier un motif d'URL à une fonction de vue"]
+                  - [Contexte, "Préparer les valeurs que le gabarit affichera"]
+                  - [Gabarit, "Présenter sans calculer"]
+                  - [404, "Rendre une page absente avec le bon code"]
+                  - [Requêtes en cascade, "Charger les objets liés en une seule fois"]
+        quiz:
+          - question: "Que fait une vue ?"
+            options: ["Elle prépare un contexte et rend un gabarit", "Elle écrit le HTML", "Elle crée les tables", "Elle valide les formulaires seulement"]
+            bonnes: [1]
+            explication: "Lire, appeler ce qui calcule, rendre : la même discipline qu'une route d'API."
+          - question: "Que ne doit pas contenir un gabarit ?"
+            options: ["De la logique métier", "Une boucle d'affichage", "Une condition d'affichage", "Du texte"]
+            bonnes: [1]
+            explication: "Une règle écrite là n'est ni testable, ni réutilisable, et personne ne l'y cherche."
+          - question: "Qu'est-ce qu'une requête en cascade ?"
+            options: ["Une requête par ligne affichée, au lieu d'une seule", "Une requête trop longue", "Une transaction imbriquée", "Un filtre à plusieurs critères"]
+            bonnes: [1]
+            explication: "La sélection des objets liés corrige cela en une ligne."
+          - question: "Comment rendre une page 404 proprement ?"
+            options: ["Avec la fonction d'accès qui lève l'absence", "Avec un return None", "Avec une exception générique", "En affichant un message vide"]
+            bonnes: [1]
+            explication: "Le code de réponse fait partie du contrat de la page."
+          - question: "Que signifie le découpage modèle, vue, gabarit ?"
+            options: ["La donnée, la décision d'affichage, la présentation", "Trois fichiers obligatoires", "Trois bases de données", "Trois serveurs"]
+            bonnes: [1]
+            explication: "Chaque couche a une responsabilité, et une seule."
       - num: "J31"
         title: "Formulaires et validation côté serveur"
         evaluations: livrable
         contenu: >-
-          ModelForm, validation au serveur, affichage des erreurs, pourquoi le navigateur ne suffit pas.
+          Le formulaire de Django, la validation au serveur, l'affichage des erreurs, et la raison pour
+          laquelle la validation du navigateur ne protège rien.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez offrir une page d'embauche qui refuse proprement les saisies fausses, et
+              qui ne crée rien tant que tout n'est pas valide.
+          - titre: Le problème d'abord
+            texte: >-
+              Le gérant veut embaucher depuis une page publique de l'application, pas depuis
+              l'administration. Les données arrivent donc du monde extérieur, et tout ce que la semaine 4
+              vous a appris sur la frontière s'applique ici.
+          - titre: La notion
+            texte: >-
+              Un formulaire de modèle décrit les champs à saisir à partir d'un modèle. La vue construit le
+              formulaire avec les données reçues, demande s'il est valide, et n'enregistre que dans ce cas.
+
+              La validation s'exécute au serveur. Les attributs du HTML produit font une première
+              vérification dans le navigateur, qui améliore le confort et ne protège rien : n'importe qui
+              peut envoyer une requête sans passer par la page.
+
+              Les erreurs sont attachées au formulaire, champ par champ, et le gabarit les affiche à côté
+              de chaque saisie. L'utilisateur retrouve ses valeurs, ce qui lui évite de tout retaper.
+            code:
+              - titre: Une vue d'embauche qui ne crée rien de faux
+                langage: python
+                source: |
+                  from django.shortcuts import redirect, render
+
+                  from effectif.forms import SalarieForm
+
+
+                  def embaucher(requete):
+                      if requete.method == "POST":
+                          formulaire = SalarieForm(requete.POST)
+                          if formulaire.is_valid():
+                              salarie = formulaire.save()
+                              return redirect("fiche", matricule=salarie.matricule)
+                      else:
+                          formulaire = SalarieForm()
+                      return render(requete, "effectif/embauche.html", {"formulaire": formulaire})
+          - titre: À la main
+            texte: >-
+              Écrivez le formulaire, la vue et le gabarit. Saisissez une embauche correcte : vous êtes
+              redirigé vers la fiche. Saisissez un matricule déjà pris : la page revient avec l'erreur et
+              vos valeurs.
+
+              Envoyez maintenant la même requête sans passer par la page, avec un outil en ligne de
+              commande qui poste des données. Les contrôles du navigateur n'ont jamais été exécutés, et
+              pourtant la création est refusée : c'est la démonstration que seule la validation du serveur
+              compte.
+
+              Vérifiez enfin qu'aucun enregistrement n'a été créé après un refus. La règle est simple :
+              rien n'est écrit tant que tout n'est pas valide.
+          - titre: L'astuce du jour
+            texte: >-
+              Validez au serveur, et considérez l'écran comme un confort. Cette phrase résume la sécurité
+              des applications web : tout ce qui vient du navigateur est modifiable par celui qui l'envoie.
+
+              La redirection après une création réussie est une autre habitude utile : elle évite qu'un
+              rafraîchissement de page ne crée une seconde fois la même fiche.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est de se fier à la validation du navigateur. Les attributs du HTML sont une
+              aide à la saisie, rien de plus ; une requête directe les ignore totalement.
+
+              Le second piège est l'enregistrement partiel : créer le salarié, puis échouer sur l'absence
+              associée, et laisser la base dans un état incohérent. Tant que vos écritures restent simples,
+              la validation suffit ; dès qu'elles touchent deux tables, il faut une transaction, que Django
+              fournit.
+            tableaux:
+              - titre: Qui protège quoi
+                entetes: [Niveau, Rôle, Contournable]
+                lignes:
+                  - ["Navigateur", "confort de saisie", "oui, trivialement"]
+                  - ["Formulaire du serveur", "refus des données fausses", "non"]
+                  - ["Contraintes de la base", "dernier rempart d'intégrité", "non"]
+          - titre: Challenge du jour
+            texte: >-
+              Livrez la page d'embauche avec son formulaire. Une saisie invalide revient avec ses erreurs
+              et ne crée rien.
+
+              Les tests livrés envoient un POST invalide et vérifient qu'aucun salarié n'a été créé, puis un
+              POST valide et vérifient la redirection. Un test envoie une requête sans passer par la page
+              et vérifie qu'elle est refusée de la même façon.
+
+              Critères d'acceptation : aucune création sur saisie invalide ; les valeurs saisies sont
+              conservées ; une redirection suit la création.
         livrable: >-
           Livrer le formulaire d'embauche ; un test prouve qu'un POST invalide ne crée rien.
       - num: "J32R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 31, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 31, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. La validation au serveur est le premier
+              principe de sécurité du web.
+            tableaux:
+              - titre: Les cinq points de la journée 31
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Formulaire de modèle, "Déclarer les champs à saisir depuis un modèle"]
+                  - [Validation serveur, "Refuser au serveur, quoi qu'ait fait le navigateur"]
+                  - [Erreurs affichées, "Rendre la page avec les erreurs et les valeurs saisies"]
+                  - [Rien n'est écrit, "Ne créer qu'après validation complète"]
+                  - [Redirection, "Rediriger après une création réussie"]
+        quiz:
+          - question: "La validation du navigateur protège-t-elle l'application ?"
+            options: ["Non, elle est contournable", "Oui, totalement", "Oui, si elle est bien écrite", "Seulement en production"]
+            bonnes: [1]
+            explication: "Une requête envoyée directement ignore tous les attributs du HTML."
+          - question: "Que fait la vue si le formulaire est invalide ?"
+            options: ["Elle rend la page avec les erreurs et les valeurs saisies", "Elle crée quand même", "Elle redirige", "Elle lève une exception"]
+            bonnes: [1]
+            explication: "L'utilisateur ne doit pas retaper ce qu'il a déjà saisi."
+          - question: "Pourquoi rediriger après une création ?"
+            options: ["Pour qu'un rafraîchissement ne recrée pas la fiche", "Pour aller plus vite", "Parce que Django l'exige", "Pour vider le cache"]
+            bonnes: [1]
+            explication: "Sans redirection, le navigateur peut renvoyer le même POST."
+          - question: "Qui est le dernier rempart d'intégrité ?"
+            options: ["Les contraintes de la base", "Le navigateur", "Le gabarit", "Le formulaire seul"]
+            bonnes: [1]
+            explication: "C'est pourquoi les contraintes de la journée 27 comptent autant que les formulaires."
+          - question: "Quand faut-il une transaction ?"
+            options: ["Dès qu'une opération touche plusieurs tables", "À chaque lecture", "Jamais avec SQLite", "Seulement en production"]
+            bonnes: [1]
+            explication: "Sans elle, un échec à mi-parcours laisse la base dans un état incohérent."
       - num: "J32"
         title: "Authentification"
         evaluations: livrable
         contenu: >-
-          login, logout, login_required, utilisateur de démonstration, page laissée ouverte par oubli.
+          Connexion, déconnexion, protection d'une page, utilisateur de démonstration, et la page sensible
+          oubliée.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez exiger une connexion pour accéder aux pages de l'effectif, et vérifier
+              par un test qu'un visiteur anonyme est bien redirigé.
+          - titre: Le problème d'abord
+            texte: >-
+              Vos deux pages sont publiques. N'importe qui connaissant l'adresse lit les salaires de toute
+              l'entreprise. Aucune démonstration ne peut être faite dans cet état.
+          - titre: La notion
+            texte: >-
+              Django fournit un modèle d'utilisateur, des vues de connexion et de déconnexion, et un
+              décorateur qui exige une session authentifiée sur une vue. Un visiteur non connecté est
+              redirigé vers la page de connexion, puis ramené à la page demandée.
+
+              Les mots de passe ne sont jamais stockés en clair : Django les transforme par une fonction à
+              sens unique. Vous ne verrez jamais le mot de passe d'un utilisateur, et c'est voulu.
+
+              Un utilisateur de démonstration est utile pendant le développement. Il se crée à la main, il
+              porte un mot de passe que vous choisissez, et il ne doit jamais exister en production.
+            code:
+              - titre: Une page qui exige une session
+                langage: python
+                source: |
+                  from django.contrib.auth.decorators import login_required
+                  from django.shortcuts import render
+
+                  from effectif.models import Salarie
+
+
+                  @login_required
+                  def liste_salaries(requete):
+                      salaries = Salarie.objects.select_related("poste").order_by("nom")
+                      return render(requete, "effectif/liste.html", {"salaries": salaries})
+          - titre: À la main
+            texte: >-
+              Ajoutez les adresses de connexion et de déconnexion, protégez vos deux vues, puis ouvrez la
+              liste dans une fenêtre de navigation privée : vous êtes redirigé vers la connexion.
+
+              Connectez-vous avec un utilisateur créé pour l'occasion, et vérifiez que vous revenez bien sur
+              la page demandée. Déconnectez-vous et constatez le retour à la redirection.
+
+              Faites enfin l'inventaire : listez toutes vos adresses et vérifiez que chacune est soit
+              volontairement publique, soit protégée. C'est cette liste qui fait la différence entre une
+              application protégée et une application qui a l'air protégée.
+          - titre: L'astuce du jour
+            texte: >-
+              Un utilisateur de démonstration, jamais en production. Les comptes de démonstration créés
+              pendant un développement et oubliés sont une cause classique d'intrusion.
+
+              Notez-les quelque part, et prévoyez leur suppression dans votre liste de contrôle de la
+              journée 35.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est la page sensible laissée ouverte. On protège la liste, on oublie la
+              fiche ; on protège les deux, on oublie l'export. L'oubli ne se voit pas, puisque tout
+              fonctionne.
+
+              Le second piège est le mot de passe de démonstration écrit dans le dépôt, souvent dans un
+              fichier de données initiales. Les tests du jour vérifient qu'aucun mot de passe en clair ne
+              figure dans le code versionné.
+            tableaux:
+              - titre: L'inventaire des adresses
+                entetes: [Adresse, Accès attendu]
+                lignes:
+                  - ["la liste de l'effectif", "connecté"]
+                  - ["la fiche d'un salarié", "connecté"]
+                  - ["la page d'embauche", "connecté"]
+                  - ["la page de connexion", "public, par nécessité"]
+          - titre: Challenge du jour
+            texte: >-
+              Protégez toutes les pages de l'effectif, ajoutez la connexion et la déconnexion.
+
+              Les tests livrés appellent chaque page en anonyme et vérifient la redirection, puis les
+              appellent connecté et vérifient le code 200. Un test parcourt la liste des adresses du projet
+              et échoue si l'une d'elles n'est ni déclarée publique, ni protégée.
+
+              Critères d'acceptation : aucune page sensible accessible en anonyme ; aucun mot de passe dans
+              le dépôt ; la redirection ramène à la page demandée après connexion.
         livrable: >-
           Protéger les pages sensibles ; un test vérifie qu'un accès anonyme est redirigé.
       - num: "J33R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 32, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 32, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. L'inventaire des adresses est un exercice à
+              refaire avant chaque mise en ligne.
+            tableaux:
+              - titre: Les cinq points de la journée 32
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Connexion, "Ajouter les pages de connexion et de déconnexion"]
+                  - [Protection d'une vue, "Exiger une session authentifiée"]
+                  - [Redirection, "Ramener l'utilisateur à la page demandée après connexion"]
+                  - [Mots de passe, "Savoir qu'ils ne sont jamais stockés en clair"]
+                  - [Inventaire, "Vérifier que chaque adresse est publique à dessein ou protégée"]
+        quiz:
+          - question: "Que se passe-t-il quand un anonyme demande une page protégée ?"
+            options: ["Il est redirigé vers la connexion", "Il reçoit une erreur 500", "Il voit la page", "Le serveur s'arrête"]
+            bonnes: [1]
+            explication: "Après connexion, il revient à la page demandée."
+          - question: "Comment Django range-t-il un mot de passe ?"
+            options: ["Transformé par une fonction à sens unique", "En clair", "Chiffré avec une clé du projet", "Dans un fichier séparé"]
+            bonnes: [1]
+            explication: "Vous ne verrez jamais le mot de passe d'un utilisateur, et c'est voulu."
+          - question: "Où doit vivre un utilisateur de démonstration ?"
+            options: ["En développement seulement", "En production aussi", "Dans le dépôt", "Dans le gabarit"]
+            bonnes: [1]
+            explication: "Les comptes de démonstration oubliés sont une cause classique d'intrusion."
+          - question: "Quel oubli est le plus fréquent ?"
+            options: ["Une page sensible laissée publique", "Une page protégée deux fois", "Un gabarit manquant", "Une migration en trop"]
+            bonnes: [1]
+            explication: "L'oubli ne se voit pas, puisque tout fonctionne."
+          - question: "Que vérifie le test d'inventaire des adresses ?"
+            options: ["Que chaque adresse est publique à dessein ou protégée", "Que les adresses sont triées", "Que les noms sont courts", "Que les vues existent"]
+            bonnes: [1]
+            explication: "C'est la différence entre une application protégée et une application qui en a l'air."
       - num: "J33"
         title: "Rôles et permissions"
         evaluations: livrable
         contenu: >-
-          Groupes RH et manager, permissions, vérification au serveur, bouton masqué n'est pas page protégée.
+          Des groupes RH et manager, des permissions vérifiées au serveur, et la différence entre masquer
+          un bouton et protéger une page.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez donner à chaque rôle ce qu'il doit voir, et prouver par un test qu'un
+              manager ne peut pas lire un salaire.
+          - titre: Le problème d'abord
+            texte: >-
+              Tous vos utilisateurs connectés voient la même chose. Or le chef d'atelier a besoin de
+              l'effectif et des absences de son équipe, et n'a aucune raison de connaître les salaires.
+          - titre: La notion
+            texte: >-
+              Un groupe rassemble des permissions, et un utilisateur appartient à des groupes. Django crée
+              des permissions par modèle ; vous pouvez en déclarer d'autres, par exemple le droit de
+              consulter les salaires.
+
+              La vérification se fait au serveur, dans la vue : un décorateur exige une permission, ou un
+              test explicite décide quoi afficher. Le gabarit peut masquer un bouton pour le confort, mais
+              ce masquage ne protège rien.
+
+              La règle, qui vaut au-delà de Django : chaque chemin d'accès à une donnée sensible se vérifie
+              là où la donnée est servie, et non là où elle est affichée.
+            figures:
+              - nom: python-roles-permissions.svg
+                legende: "Deux rôles, quatre pages : le droit se vérifie au serveur, page par page"
+            code:
+              - titre: Une permission vérifiée là où la donnée est servie
+                langage: python
+                source: |
+                  from django.contrib.auth.decorators import login_required, permission_required
+                  from django.shortcuts import render
+
+                  from effectif.models import Salarie
+
+                  CHAMPS_PUBLICS = ("matricule", "nom", "poste__libelle")
+
+
+                  @login_required
+                  def liste_salaries(requete):
+                      champs = CHAMPS_PUBLICS
+                      if requete.user.has_perm("effectif.voir_salaire"):
+                          champs = champs + ("salaire_fcfa",)
+                      salaries = Salarie.objects.values(*champs).order_by("nom")
+                      return render(requete, "effectif/liste.html",
+                                    {"salaries": salaries, "champs": champs})
+
+
+                  @login_required
+                  @permission_required("effectif.voir_salaire", raise_exception=True)
+                  def etat_masse_salariale(requete):
+                      return render(requete, "effectif/masse.html", {})
+          - titre: À la main
+            texte: >-
+              Déclarez la permission de consultation des salaires sur le modèle, créez les groupes RH et
+              manager, et attribuez la permission au seul groupe RH. Créez deux utilisateurs, un par
+              groupe.
+
+              Connectez-vous en manager : la colonne des salaires disparaît, et la page de masse salariale
+              répond un refus. Connectez-vous en RH : tout apparaît.
+
+              Faites enfin l'expérience du faux sentiment de sécurité : remettez la colonne dans le gabarit
+              en la masquant par une condition d'affichage, et regardez le contexte envoyé à la page. La
+              donnée est là, dans la réponse, même si elle ne s'affiche pas. C'est pourquoi la requête
+              elle-même ne doit pas la ramener.
+          - titre: L'astuce du jour
+            texte: >-
+              Les droits se vérifient au serveur, et la requête ne ramène que ce que l'utilisateur a le
+              droit de voir. Filtrer les champs dans la requête, comme dans l'extrait du jour, est plus sûr
+              que filtrer à l'affichage.
+
+              Cette habitude vous protège aussi des fuites par les canaux auxquels vous ne pensez pas : une
+              exportation, une réponse d'API, un message d'erreur trop bavard.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est le bouton masqué pris pour une protection. Masquer un lien n'empêche
+              personne de taper l'adresse ; masquer une colonne n'empêche pas la donnée d'être envoyée.
+
+              Le second piège est la permission vérifiée à un seul endroit alors que la donnée a plusieurs
+              portes : la page, l'export, l'API. Chaque porte se vérifie, et c'est pourquoi le test du jour
+              passe en revue chaque page pour chaque rôle.
+            tableaux:
+              - titre: Ce que chaque rôle voit
+                entetes: [Page, RH, Manager]
+                lignes:
+                  - ["Liste de l'effectif", "avec les salaires", "sans les salaires"]
+                  - ["Fiche d'un salarié", "complète", "sans le salaire"]
+                  - ["Masse salariale", "oui", "refus"]
+                  - ["Absences de l'équipe", "oui", "oui"]
+          - titre: Challenge du jour
+            texte: >-
+              Déclarez la permission, créez les deux groupes, et appliquez la règle du tableau ci-dessus.
+
+              Les tests livrés parcourent chaque page pour chaque rôle et vérifient le code de réponse et
+              le contenu. Un test vérifie qu'aucun salaire ne figure dans la réponse envoyée à un manager,
+              même masqué dans la page.
+
+              Critères d'acceptation : deux groupes, une permission ; quatre pages vérifiées pour deux
+              rôles ; aucune donnée sensible dans une réponse non autorisée.
         livrable: >-
-          Cacher les salaires au manager ; un test par rôle couvre chaque page.
+          Cacher les salaires au manager ; un test par rôle couvre chaque page, et vérifie la réponse
+          envoyée, pas seulement l'affichage.
       - num: "J34R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 33, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 33, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Les droits mal posés sont la faille la plus
+              fréquente des applications de gestion.
+            tableaux:
+              - titre: Les cinq points de la journée 33
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Groupe, "Rassembler des permissions et y rattacher des utilisateurs"]
+                  - [Permission déclarée, "Créer un droit propre à votre métier"]
+                  - [Vérification au serveur, "Décider dans la vue, pas dans le gabarit"]
+                  - [Requête filtrée, "Ne ramener que les champs autorisés"]
+                  - [Chaque porte, "Vérifier la page, l'export et l'API séparément"]
+        quiz:
+          - question: "Masquer un bouton protège-t-il une page ?"
+            options: ["Non, l'adresse reste accessible", "Oui", "Oui si l'utilisateur n'est pas administrateur", "Seulement en production"]
+            bonnes: [1]
+            explication: "Le droit se vérifie là où la donnée est servie, pas là où elle est affichée."
+          - question: "Où filtrer les champs sensibles ?"
+            options: ["Dans la requête", "Dans le gabarit", "Dans le navigateur", "Dans le fichier de configuration"]
+            bonnes: [1]
+            explication: "Une donnée absente de la réponse ne peut fuir par aucun canal."
+          - question: "Qu'est-ce qu'un groupe ?"
+            options: ["Un ensemble de permissions attribué à des utilisateurs", "Une équipe de l'entreprise", "Un modèle de données", "Un gabarit partagé"]
+            bonnes: [1]
+            explication: "Les droits se gèrent par rôle, pas utilisateur par utilisateur."
+          - question: "Combien de portes vérifier pour une donnée sensible ?"
+            options: ["Toutes : page, export, API", "Une seule, la principale", "Deux au maximum", "Aucune si l'utilisateur est connecté"]
+            bonnes: [1]
+            explication: "Une permission vérifiée à un seul endroit laisse les autres portes ouvertes."
+          - question: "Que vérifie le test de rôles du jour ?"
+            options: ["Chaque page pour chaque rôle, réponse comprise", "Le nombre de groupes", "La page de connexion", "Le temps de réponse"]
+            bonnes: [1]
+            explication: "Il échoue si un salaire figure dans une réponse envoyée à un manager, même masqué."
       - num: "J34"
         title: "Une commande de gestion qui réutilise le cœur"
         evaluations: livrable
         contenu: >-
-          Commande manage.py, appel du cœur écrit en semaine 3, pourquoi ne pas recoder les règles dans Django.
+          Écrire une commande manage.py qui importe un fichier CSV en appelant le cœur de la semaine 3,
+          sans recoder la moindre règle.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez importer l'effectif du gérant dans la base par une commande, et prouver
+              que le résultat est identique à celui du cœur Python pur.
+          - titre: Le problème d'abord
+            texte: >-
+              Le gérant a toujours son tableur. Il veut charger son fichier dans l'application, sans saisir
+              trente fiches à la main. Et vous avez déjà écrit, en semaine 3, tout ce qu'il faut pour lire
+              et valider ce fichier.
+          - titre: La notion
+            texte: >-
+              Une commande de gestion est une classe placée dans un dossier conventionnel de votre
+              application. Elle déclare ses arguments et exécute son travail. Elle se lance par manage.py,
+              et peut donc être programmée dans une tâche périodique.
+
+              Le point de cette journée est ailleurs que dans la syntaxe : la commande appelle le cœur
+              écrit en semaine 3, charger_effectif et le modèle d'entrée, puis crée les enregistrements.
+              Elle ne relit pas le CSV à sa façon, elle ne revalide pas, elle n'invente aucune règle.
+
+              C'est la preuve finale de la leçon d'architecture du parcours : le cœur a survécu à trois
+              habillages, et il n'a pas changé d'une ligne.
+            code:
+              - titre: La commande appelle le cœur, elle ne le refait pas
+                langage: python
+                source: |
+                  from django.core.management.base import BaseCommand
+
+                  from effectif.models import Poste, Salarie
+                  from rh.fichiers import charger_effectif
+
+
+                  class Command(BaseCommand):
+                      help = "Importe un effectif depuis un fichier CSV."
+
+                      def add_arguments(self, parser):
+                          parser.add_argument("chemin")
+
+                      def handle(self, *args, **options):
+                          fiches = charger_effectif(options["chemin"])
+                          for fiche in fiches:
+                              poste, _ = Poste.objects.get_or_create(libelle=fiche["poste"])
+                              Salarie.objects.update_or_create(
+                                  matricule=fiche["matricule"],
+                                  defaults={"nom": fiche["nom"], "poste": poste,
+                                            "date_embauche": fiche["date_embauche"],
+                                            "salaire_fcfa": fiche["salaire_fcfa"]})
+                          self.stdout.write(f"{len(fiches)} fiches importées.")
+          - titre: À la main
+            texte: >-
+              Écrivez la commande, puis importez votre fichier d'effectif. Vérifiez le nombre de fiches
+              créées dans l'administration.
+
+              Relancez la commande sur le même fichier : aucun doublon n'apparaît, parce que l'écriture met
+              à jour la fiche existante au lieu d'en créer une seconde. Une commande qu'on peut rejouer
+              sans dégât est une commande utilisable.
+
+              Modifiez enfin un salaire dans le fichier et relancez : la base suit. Essayez avec un fichier
+              fautif, et constatez que l'erreur métier de la journée 13 remonte telle quelle, avec son
+              message utile.
+          - titre: L'astuce du jour
+            texte: >-
+              Le cœur survit au troisième habillage. Vous venez de le prouver : la même fonction de
+              chargement sert au programme en ligne de commande de la semaine 3, à l'API de la semaine 4, à
+              l'écran de la semaine 5 et à Django aujourd'hui.
+
+              C'est ce que vous raconterez lors de votre démonstration, et c'est ce qui distingue un
+              développeur d'un assembleur de tutoriels.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est de recoder les règles dans Django, parce que l'ORM offre ses propres
+              validations. Vous auriez alors deux vérités, et c'est une de trop.
+
+              Le second piège est la commande non rejouable, qui crée des doublons à chaque exécution. La
+              règle pratique : une commande d'import se relance sans dégât, et dit ce qu'elle a fait.
+            tableaux:
+              - titre: Le même cœur, quatre appelants
+                entetes: [Appelant, Semaine, Ce qu'il ajoute]
+                lignes:
+                  - ["Programme en ligne de commande", "3", "rien, c'est le cœur nu"]
+                  - ["API FastAPI", "4", "HTTP et codes de retour"]
+                  - ["Écran Streamlit", "5", "widgets et graphiques"]
+                  - ["Commande Django", "6 et 7", "base de données et utilisateurs"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez la commande d'import et rendez-la rejouable sans doublon.
+
+              Les tests livrés importent un fichier de six fiches, comparent le contenu de la base au
+              résultat du cœur Python pur sur le même fichier, puis relancent la commande et vérifient que
+              rien n'a changé. Un test vérifie que la commande n'ouvre aucun fichier elle-même.
+
+              Critères d'acceptation : la commande appelle le cœur ; deux exécutions donnent le même
+              résultat ; une erreur métier remonte avec son message.
         livrable: >-
-          Écrire manage.py importer_effectif fichier.csv ; un test compare le résultat à celui du cœur Python pur.
+          Écrire manage.py importer_effectif fichier.csv ; un test compare le résultat à celui du cœur
+          Python pur et vérifie la relance sans doublon.
       - num: "J35R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 34, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 34, à revoir avant d'ouvrir la dernière leçon. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Demain, vous finissez l'application et vous la
+              montrez.
+            tableaux:
+              - titre: Les cinq points de la journée 34
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Commande de gestion, "Lancer un traitement par manage.py avec ses arguments"]
+                  - [Réutilisation, "Appeler le cœur au lieu de recoder les règles"]
+                  - [Rejouable, "Relancer un import sans créer de doublon"]
+                  - [Une seule vérité, "Refuser d'écrire la même règle à deux endroits"]
+                  - [Compte rendu, "Dire ce que la commande a fait"]
+        quiz:
+          - question: "Que fait la commande d'import avec le fichier ?"
+            options: ["Elle appelle le cœur écrit en semaine 3", "Elle le relit à sa façon", "Elle le copie dans la base", "Elle le convertit en JSON"]
+            bonnes: [1]
+            explication: "Recoder les règles dans Django donnerait deux vérités, et c'est une de trop."
+          - question: "Que doit-il se passer à la seconde exécution d'un import ?"
+            options: ["Rien ne change dans la base", "Les fiches sont dupliquées", "Une erreur est levée", "La base est vidée"]
+            bonnes: [1]
+            explication: "Une commande qu'on peut rejouer sans dégât est une commande utilisable."
+          - question: "Combien d'habillages le cœur a-t-il traversés ?"
+            options: ["Trois", "Un", "Deux", "Quatre"]
+            bonnes: [1]
+            explication: "FastAPI, Streamlit et Django, sans que le cœur change d'une ligne."
+          - question: "Que devient une erreur métier pendant un import ?"
+            options: ["Elle remonte avec son message utile", "Elle est ignorée", "Elle devient une erreur 500", "Elle arrête la base"]
+            bonnes: [1]
+            explication: "C'est l'erreur écrite en journée 13, inchangée depuis."
+          - question: "Pourquoi une commande doit-elle dire ce qu'elle a fait ?"
+            options: ["Parce que personne ne regarde la base après coup", "Pour remplir les journaux", "Parce que Django l'exige", "Pour ralentir l'exécution"]
+            bonnes: [1]
+            explication: "Un compte rendu d'une ligne suffit : le nombre de fiches traitées."
       - num: "J35"
         title: "Finir et montrer"
         evaluations: livrable
         contenu: >-
-          États de l'application, TestCase de Django, check --deploy, DEBUG à False, clé secrète hors du dépôt.
+          Les états de l'application, la suite de tests complète, la vérification de déploiement, le mode
+          de débogage désactivé et la clé secrète hors du dépôt.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez livrer une application complète, testée, configurée pour être montrée, et
+              vous saurez la présenter en cinq minutes.
+          - titre: Le problème d'abord
+            texte: >-
+              Votre application marche sur votre machine. Entre « ça marche chez moi » et « je peux le
+              montrer à quelqu'un », il reste une liste de vérifications que personne ne fait de mémoire.
+          - titre: La notion
+            texte: >-
+              Django fournit une vérification spécifique au déploiement, qui contrôle la configuration de
+              sécurité : mode de débogage, clé secrète, hôtes autorisés, cookies. Elle se lance comme la
+              vérification ordinaire, avec une option supplémentaire.
+
+              Le mode de débogage affiche la trace complète en cas d'erreur, avec les valeurs des
+              variables et des extraits de configuration. C'est précieux en développement et c'est une
+              fuite d'informations en production.
+
+              La clé secrète signe les sessions et les jetons de formulaire. Publiée, elle permet de
+              fabriquer de fausses sessions. Elle se lit dans l'environnement, comme en journée 20, et ne
+              figure jamais dans le dépôt.
+
+              Les tests de Django s'écrivent avec sa propre classe de test, qui prépare une base de test
+              jetable. Vos tests de cœur, eux, restent du pytest ordinaire : ils n'ont pas besoin de base.
+            tableaux:
+              - titre: La liste de contrôle avant de montrer
+                entetes: [Point, Attendu]
+                lignes:
+                  - ["Mode de débogage", "désactivé"]
+                  - ["Clé secrète", "lue dans l'environnement, absente du dépôt"]
+                  - ["Hôtes autorisés", "renseignés explicitement"]
+                  - ["Comptes de démonstration", "listés, et supprimés avant toute mise en ligne"]
+                  - ["Suite de tests", "verte, en une commande"]
+                  - ["Vérification de déploiement", "sans alerte critique"]
+          - titre: À la main
+            texte: >-
+              Lancez la vérification de déploiement avec le mode de débogage encore activé : elle signale
+              plusieurs problèmes. Corrigez-les un par un, en lisant chaque message.
+
+              Désactivez le débogage et provoquez une erreur : vous obtenez une page d'erreur sobre au lieu
+              de la trace. Vérifiez au passage que votre fichier de configuration lit bien la clé secrète
+              depuis l'environnement.
+
+              Lancez enfin la suite complète, cœur et application, en une commande, et vérifiez qu'elle est
+              verte. Une suite qui demande trois commandes différentes ne sera pas lancée par la personne
+              qui récupère votre dépôt.
+          - titre: L'astuce du jour
+            texte: >-
+              Relisez la liste de contrôle avant de montrer, à chaque fois. Un professionnel ne se fie pas
+              à sa mémoire pour six points qui décident de la sécurité d'une application.
+
+              Et préparez votre démonstration dans l'ordre inverse de votre développement : vérifiez
+              d'abord que l'installation depuis zéro fonctionne, ensuite seulement soignez le contenu.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est le mode de débogage laissé actif, parfois pendant des années. Il affiche
+              à n'importe quel visiteur le chemin de vos fichiers, vos variables et une partie de votre
+              configuration.
+
+              Le second piège est la clé secrète versionnée, généralement présente dès la création du
+              projet, puisque Django en écrit une dans le fichier de configuration. La sortir est l'un des
+              tout premiers gestes à faire, et c'est l'objet du challenge d'aujourd'hui.
+          - titre: Challenge du jour
+            texte: >-
+              Livrez l'application complète : les états, les pages, les rôles, la commande d'import, la
+              suite de tests verte et la configuration prête à être montrée.
+
+              Les tests livrés vérifient que le mode de débogage est désactivé dans la configuration de
+              démonstration, que la clé secrète n'est pas en dur, et que la vérification de déploiement ne
+              signale aucune alerte critique.
+
+              Critères d'acceptation : la liste de contrôle est entièrement satisfaite ; la suite passe en
+              une commande ; le fichier demo.md décrit la démonstration de cinq minutes.
         livrable: >-
-          Livrer l'application complète avec sa suite verte et un check --deploy sans alerte critique.
+          Livrer l'application complète avec sa suite verte et une vérification de déploiement sans alerte
+          critique.
 
 capstone:
   titre: Votre application RH, montrée à quelqu'un
