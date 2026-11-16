@@ -1396,72 +1396,727 @@ blocs:
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 10, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 10, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. La normalisation des textes décide de la
+              justesse de tous vos états.
+            tableaux:
+              - titre: Les cinq points de la journée 10
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [strip, "Retirer les espaces de début et de fin"]
+                  - [split et join, "Découper puis recoller pour écraser les espaces multiples"]
+                  - [Casse, "Comparer deux textes sans se faire piéger par les majuscules"]
+                  - [Alignement, "Réserver une largeur dans une f-string pour aligner des colonnes"]
+                  - [Immuabilité, "Savoir qu'une méthode de chaîne rend une nouvelle chaîne"]
+        quiz:
+          - question: "Que fait ' '.join(nom.split()) ?"
+            options: ["Il écrase les espaces multiples", "Il met en majuscules", "Il supprime les accents", "Il trie les mots"]
+            bonnes: [1]
+            explication: "split sans argument sépare sur les blancs et ignore les répétitions ; join recolle avec un espace simple."
+          - question: "Une méthode de chaîne modifie-t-elle la chaîne d'origine ?"
+            options: ["Non, elle en rend une nouvelle", "Oui, toujours", "Seulement strip", "Seulement lower"]
+            bonnes: [1]
+            explication: "Les chaînes sont immuables : c'est la même logique que sorted par rapport à sort."
+          - question: "Où normaliser un nom saisi à la main ?"
+            options: ["À l'entrée, une seule fois", "À chaque comparaison", "À l'affichage seulement", "Jamais"]
+            bonnes: [1]
+            explication: "Normaliser au moment de comparer oblige à y penser partout, et vous oublierez un jour."
+          - question: "Comment aligner un texte à gauche sur douze caractères ?"
+            options: ['f"{poste:<12}"', 'f"{poste:>12}"', 'f"{poste:12}"', 'f"{poste.pad(12)}"']
+            bonnes: [1]
+            explication: "Le signe inférieur aligne à gauche, le signe supérieur à droite, ce qui convient aux nombres."
+          - question: "Deux noms semblent identiques mais la comparaison échoue : que vérifier d'abord ?"
+            options: ["Les espaces invisibles et la casse", "La longueur du fichier", "L'encodage du terminal", "La version de Python"]
+            bonnes: [1]
+            explication: "Afficher la chaîne entre crochets ou demander sa longueur rend les espaces visibles."
       - num: "J11"
         title: "Modules et paquets : ranger le code"
         evaluations: livrable
         contenu: >-
-          import, module et paquet, un module un sujet, garde if __name__ == "__main__", import circulaire.
+          L'import, la différence entre un module et un paquet, la garde du script principal, et la règle
+          d'un module pour un sujet.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez organiser votre application en trois fichiers qui s'importent
+              proprement, au lieu d'un seul fichier qui grossit.
+          - titre: Le problème d'abord
+            texte: >-
+              Votre fichier de calculs contient maintenant les fonctions de cinq journées, et l'état par
+              poste s'y est glissé. Dans trois semaines, l'API et l'écran voudront appeler les calculs sans
+              rien savoir de l'affichage.
+
+              Il faut séparer ce qui calcule de ce qui met en forme, et de ce qui lance le programme.
+          - titre: La notion
+            texte: >-
+              Un module est un fichier Python. Un paquet est un dossier qui contient des modules. L'import
+              rend disponible le contenu d'un module dans un autre : import rh.calculs donne accès aux
+              fonctions par leur chemin complet, from rh.calculs import masse_salariale donne accès à une
+              fonction par son nom seul.
+
+              Le code écrit directement dans un module s'exécute au moment de l'import. C'est pourquoi le
+              point d'entrée d'un programme se protège par la garde if __name__ == "__main__" : le bloc
+              qu'elle contient ne s'exécute que si le fichier est lancé, pas s'il est importé.
+
+              Un import circulaire se produit quand deux modules s'importent mutuellement : Python échoue
+              avec une ImportError. C'est le signe qu'une responsabilité est mal placée, jamais une
+              fatalité technique.
+            figures:
+              - nom: python-modules-arborescence.svg
+                legende: "Trois fichiers, trois responsabilités, et le sens unique des imports"
+            code:
+              - titre: Un point d'entrée qui n'empêche pas l'import
+                langage: python
+                source: |
+                  from rh.calculs import masse_salariale
+                  from rh.etats import etat_par_poste
+
+
+                  def main():
+                      effectif = [{"nom": "Awa", "poste": "RH", "salaire_fcfa": 250000}]
+                      print(etat_par_poste(effectif))
+                      print(masse_salariale([f["salaire_fcfa"] for f in effectif]))
+
+
+                  if __name__ == "__main__":
+                      main()
+          - titre: À la main
+            texte: >-
+              Créez le dossier rh s'il n'existe pas, avec calculs.py et etats.py à l'intérieur, et main.py à
+              côté du dossier. Déplacez etat_par_poste dans etats.py, laissez les calculs dans calculs.py.
+
+              Ajoutez temporairement un print en haut de calculs.py, hors de toute fonction, puis lancez
+              main.py : le message s'affiche alors que vous n'avez rien appelé. C'est la preuve que le code
+              d'un module s'exécute à l'import. Retirez ce print.
+
+              Vérifiez enfin que etats.py peut importer calculs.py, mais que calculs.py n'importe jamais
+              etats.py : les imports vont dans un seul sens, du plus habillé vers le plus central.
+          - titre: L'astuce du jour
+            texte: >-
+              Un module, un sujet. Si vous hésitez sur le fichier où ranger une fonction, c'est souvent que
+              le fichier manque, ou que la fonction fait deux choses.
+
+              Le sens des imports est la vraie information d'architecture : les calculs n'importent rien de
+              l'application ; les états importent les calculs ; le point d'entrée importe les deux. Cette
+              direction unique est exactement ce qui permettra, en journée 17, de brancher FastAPI sans
+              toucher au cœur.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est le code exécuté à l'import. Un script qui lit un fichier ou affiche un
+              état au niveau du module se déclenche dès qu'on l'importe, souvent au pire moment, par exemple
+              pendant les tests.
+
+              Le second piège est l'import circulaire. Quand il apparaît, résistez à la tentation de
+              déplacer l'import à l'intérieur d'une fonction pour faire taire l'erreur : déplacez plutôt la
+              fonction concernée dans le module qui la concerne vraiment.
+            tableaux:
+              - titre: Qui importe qui
+                entetes: [Module, Importe, N'importe jamais]
+                lignes:
+                  - ["rh/calculs.py", "rien du projet", "rh/etats.py, main.py"]
+                  - ["rh/etats.py", "rh/calculs.py", "main.py"]
+                  - ["main.py", "rh/calculs.py et rh/etats.py", "rien de plus"]
+          - titre: Challenge du jour
+            texte: >-
+              Rangez votre code en trois fichiers : rh/calculs.py pour les calculs, rh/etats.py pour la mise
+              en forme, main.py pour le point d'entrée protégé par la garde.
+
+              Les tests livrés importent chaque module isolément et vérifient qu'aucun n'affiche quoi que ce
+              soit à l'import. Un test vérifie que rh/calculs.py n'importe aucun autre module du projet.
+
+              Critères d'acceptation : les trois fichiers existent aux emplacements exacts ; l'import d'un
+              module n'affiche rien ; main.py s'exécute et affiche l'état.
         livrable: >-
-          Ranger le code en rh/calculs.py, rh/etats.py et main.py ; les tests importent chaque module isolément.
+          Ranger le code en rh/calculs.py, rh/etats.py et main.py ; les tests importent chaque module
+          isolément.
       - num: "J12R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 11, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 11, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Le sens des imports est la première décision
+              d'architecture du parcours.
+            tableaux:
+              - titre: Les cinq points de la journée 11
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Module, "Ranger des fonctions dans un fichier dédié à un sujet"]
+                  - [Import, "Rendre disponible une fonction d'un autre module"]
+                  - [Exécution à l'import, "Savoir que le code hors fonction s'exécute à l'import"]
+                  - [Garde principale, "Protéger le point d'entrée avec if __name__"]
+                  - [Sens des imports, "Faire pointer les imports vers le cœur, jamais l'inverse"]
+        quiz:
+          - question: "Que fait if __name__ == '__main__' ?"
+            options: ["Il n'exécute le bloc que si le fichier est lancé directement", "Il déclare le module principal", "Il importe le module", "Il nomme la fonction main"]
+            bonnes: [1]
+            explication: "Sans cette garde, lancer les tests exécuterait le programme entier."
+          - question: "Quand s'exécute le code écrit hors de toute fonction dans un module ?"
+            options: ["À l'import du module", "Jamais", "À l'appel de la première fonction", "À la fin du programme"]
+            bonnes: [1]
+            explication: "C'est pourquoi un module ne doit ni lire de fichier ni afficher au niveau principal."
+          - question: "Quel module peut importer rh/calculs.py ?"
+            options: ["rh/etats.py et main.py", "aucun", "seulement main.py", "seulement rh/etats.py"]
+            bonnes: [1]
+            explication: "Les imports vont de l'habillage vers le cœur : les calculs n'importent rien du projet."
+          - question: "Que signale une ImportError pour import circulaire ?"
+            options: ["Une responsabilité mal placée", "Un défaut de Python", "Un fichier manquant", "Une faute de frappe obligatoire"]
+            bonnes: [1]
+            explication: "La bonne correction déplace la fonction concernée, elle ne cache pas l'import dans une fonction."
+          - question: "Qu'est-ce qu'un paquet en Python ?"
+            options: ["Un dossier qui contient des modules", "Une bibliothèque publiée", "Un fichier compressé", "Un module sans fonction"]
+            bonnes: [1]
+            explication: "Le dossier rh de votre projet est un paquet, et calculs.py l'un de ses modules."
       - num: "J12"
         title: "Lire un fichier CSV sans casser les accents"
         evaluations: livrable
         contenu: >-
-          Ouvrir avec with, encodage UTF-8, csv.DictReader, chemin construit avec pathlib et jamais concaténé.
+          Ouvrir un fichier avec with, choisir l'encodage UTF-8, lire un CSV avec DictReader, et construire
+          un chemin sans jamais concaténer des bouts de texte.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez charger l'effectif depuis un vrai fichier CSV exporté par le gérant, avec
+              les accents intacts et sans chemin codé en dur.
+          - titre: Le problème d'abord
+            texte: >-
+              Jusqu'ici votre effectif est écrit dans le code. Le gérant, lui, tient son personnel dans un
+              tableur, qu'il exporte en CSV. Les noms contiennent des accents, et le fichier n'est pas
+              toujours au même endroit.
+          - titre: La notion
+            texte: >-
+              L'instruction with ouvre un fichier et le referme quoi qu'il arrive, y compris si une erreur
+              survient au milieu. C'est la seule façon d'ouvrir un fichier dans ce parcours.
+
+              L'encodage doit être indiqué explicitement : utf-8 partout. Sans ce paramètre, Python prend
+              l'encodage par défaut du système, qui diffère entre Windows et Linux, et les accents se
+              transforment en caractères illisibles sur l'un des deux.
+
+              Le module csv et sa classe DictReader lisent chaque ligne comme un dictionnaire dont les clés
+              sont les en-têtes de colonnes. Les valeurs arrivent toujours en texte : un salaire doit être
+              converti en entier, une date en objet date.
+
+              Les chemins se construisent avec pathlib : l'opérateur barre oblique assemble les morceaux
+              correctement sur tous les systèmes, là où une concaténation de chaînes produit un chemin
+              valide sous Linux et faux sous Windows.
+            code:
+              - titre: Charger un effectif depuis un CSV
+                langage: python
+                source: |
+                  import csv
+                  from pathlib import Path
+
+
+                  def charger_effectif(chemin):
+                      """Rend la liste des fiches lues dans le fichier CSV."""
+                      fiches = []
+                      with Path(chemin).open(encoding="utf-8", newline="") as fichier:
+                          for ligne in csv.DictReader(fichier):
+                              fiches.append({
+                                  "nom": ligne["nom"],
+                                  "poste": ligne["poste"],
+                                  "date_embauche": ligne["date_embauche"],
+                                  "salaire_fcfa": int(ligne["salaire_fcfa"]),
+                              })
+                      return fiches
+          - titre: À la main
+            texte: >-
+              Créez un fichier effectif.csv avec une ligne d'en-tête et trois salariés, dont un nom
+              accentué. Si vous le fabriquez depuis un tableur, choisissez explicitement l'export en UTF-8.
+
+              Chargez-le avec la fonction ci-dessus et affichez la première fiche. Puis retirez le
+              paramètre encoding et relancez : selon votre système, vous verrez soit le même résultat, soit
+              des caractères abîmés. C'est précisément parce que le comportement dépend de la machine qu'il
+              faut l'écrire explicitement.
+
+              Essayez enfin un chemin qui n'existe pas : Python lève FileNotFoundError. Retenez ce nom,
+              c'est l'erreur que vous traiterez demain.
+          - titre: L'astuce du jour
+            texte: >-
+              with toujours, encodage toujours, chemin construit toujours. Ces trois réflexes évitent trois
+              classes entières de bugs : le fichier resté ouvert, les accents abîmés, et le programme qui ne
+              marche que sur votre machine.
+
+              Prenez l'habitude de recevoir le chemin en paramètre, comme la date du jour en journée 09. Un
+              chemin écrit en dur dans une fonction la rend inutilisable ailleurs, et intestable.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est l'encodage. Il ne se voit pas sur votre machine, se voit chez le client,
+              et produit des noms comme Cï¿½line que personne ne sait corriger ensuite.
+
+              Le second piège est plus structurel : faire lire le fichier par le module de calculs. Les
+              calculs ne doivent connaître ni fichier, ni chemin, ni CSV. La lecture appartient à un module
+              dédié, rh/fichiers.py, et c'est lui qui rend des fiches propres au cœur.
+            tableaux:
+              - titre: Trois réflexes de lecture de fichier
+                entetes: [Réflexe, Écriture, Ce qu'il évite]
+                lignes:
+                  - ["Fermeture garantie", "with ... as fichier", "le fichier resté ouvert après une erreur"]
+                  - ["Encodage explicite", 'encoding="utf-8"', "les accents abîmés sur une autre machine"]
+                  - ["Chemin construit", "Path(dossier) / nom", "le séparateur faux sous Windows"]
+                  - ["Chemin reçu", "charger_effectif(chemin)", "la fonction inutilisable ailleurs"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez charger_effectif(chemin) dans rh/fichiers.py. La fonction rend une liste de fiches,
+              avec le salaire converti en entier et les autres champs en texte.
+
+              Les tests livrés fabriquent un fichier CSV temporaire avec un nom accentué, le chargent, et
+              comparent les fiches obtenues. Un test lit le code source de rh/calculs.py et échoue s'il
+              contient un import de csv ou de pathlib.
+
+              Critères d'acceptation : le fichier est ouvert avec with et encoding ; le chemin est reçu en
+              paramètre ; rh/calculs.py reste sans aucune connaissance des fichiers.
         livrable: >-
-          Écrire charger_effectif(chemin) dans rh/fichiers.py ; les tests vérifient que rh/calculs.py n'importe ni csv ni pathlib.
+          Écrire charger_effectif(chemin) dans rh/fichiers.py ; les tests vérifient que rh/calculs.py
+          n'importe ni csv ni pathlib.
       - num: "J13R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 12, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 12, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. La lecture de fichier est la première frontière
+              de votre application.
+            tableaux:
+              - titre: Les cinq points de la journée 12
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [with, "Ouvrir un fichier qui se referme quoi qu'il arrive"]
+                  - [Encodage, "Écrire explicitement utf-8 à chaque ouverture"]
+                  - [DictReader, "Lire chaque ligne comme un dictionnaire d'en-têtes"]
+                  - [Conversion, "Convertir en entier un champ numérique lu en texte"]
+                  - [Chemin, "Construire un chemin avec pathlib et le recevoir en paramètre"]
+        quiz:
+          - question: "Pourquoi écrire encoding='utf-8' à l'ouverture ?"
+            options: ["Parce que l'encodage par défaut dépend du système", "Parce que Python l'exige", "Pour lire plus vite", "Pour trier les lignes"]
+            bonnes: [1]
+            explication: "Sans ce paramètre, le même programme abîme les accents sur une autre machine."
+          - question: "En quel type arrivent les valeurs lues par DictReader ?"
+            options: ["En texte", "En entier", "Selon la colonne", "En booléen"]
+            bonnes: [1]
+            explication: "Un salaire doit être converti explicitement avec int avant tout calcul."
+          - question: "Que garantit l'instruction with ?"
+            options: ["La fermeture du fichier même en cas d'erreur", "L'encodage correct", "La présence du fichier", "La vitesse de lecture"]
+            bonnes: [1]
+            explication: "C'est la seule façon d'ouvrir un fichier retenue par ce parcours."
+          - question: "Comment assembler un dossier et un nom de fichier ?"
+            options: ["Avec Path(dossier) / nom", "En collant les deux chaînes", "Avec un plus et un antislash", "Avec join"]
+            bonnes: [1]
+            explication: "pathlib choisit le bon séparateur selon le système d'exploitation."
+          - question: "Pourquoi rh/calculs.py n'importe-t-il pas csv ?"
+            options: ["Parce que le cœur ignore d'où viennent les données", "Parce que csv est lent", "Parce que csv est obsolète", "Parce que les tests l'interdisent sans raison"]
+            bonnes: [1]
+            explication: "C'est la règle qui permettra de brancher une API puis une base sans toucher aux calculs."
       - num: "J13"
         title: "Les erreurs : try, except et erreur métier"
         evaluations: livrable
         contenu: >-
-          Lever et attraper une exception, définir une erreur métier, écrire un message qui dit quoi faire, danger du except nu.
+          Attraper une exception, définir une erreur métier propre à l'application, écrire un message qui
+          dit quoi faire, et comprendre pourquoi un except nu est dangereux.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez transformer une panne technique en message compréhensible par le gérant,
+              sans masquer les vraies erreurs de programmation.
+          - titre: Le problème d'abord
+            texte: >-
+              Le fichier du gérant arrive parfois avec une colonne manquante, un salaire écrit « 250 000 »
+              avec un espace, ou simplement un nom de fichier erroné. Aujourd'hui, votre programme s'arrête
+              sur une trace illisible pour lui.
+
+              Il faut distinguer deux familles : les données fausses, que l'utilisateur peut corriger, et
+              les erreurs de programmation, que vous seul pouvez corriger.
+          - titre: La notion
+            texte: >-
+              Le bloc try contient le code qui peut échouer ; le bloc except attrape une exception précise
+              et décide quoi en faire. On attrape toujours un type d'exception nommé, jamais toutes les
+              exceptions sans distinction.
+
+              Une erreur métier est une classe que vous définissez, qui hérite de Exception. Elle porte un
+              message destiné à l'utilisateur. L'écriture raise DonneeInvalide("...") from erreur conserve
+              la cause technique tout en présentant une erreur propre.
+
+              Le message doit dire quoi faire, pas seulement ce qui ne va pas. « Colonne salaire_fcfa
+              absente du fichier effectif.csv » vaut mieux que « erreur de format ».
+            figures:
+              - nom: python-erreur-metier.svg
+                legende: "Une panne technique devient une erreur métier à la frontière, et un message utile"
+            code:
+              - titre: Une erreur métier qui remplace une panne technique
+                langage: python
+                source: |
+                  class DonneeInvalide(Exception):
+                      """Le fichier fourni ne peut pas être exploité tel quel."""
+
+
+                  def lire_salaire(ligne, numero):
+                      try:
+                          return int(ligne["salaire_fcfa"])
+                      except KeyError as erreur:
+                          raise DonneeInvalide(
+                              "Colonne salaire_fcfa absente du fichier.") from erreur
+                      except ValueError as erreur:
+                          raise DonneeInvalide(
+                              f"Salaire illisible ligne {numero} : {ligne['salaire_fcfa']!r}") from erreur
+          - titre: À la main
+            texte: >-
+              Provoquez les trois pannes, une à une. Donnez un nom de fichier inexistant à votre chargement
+              et lisez FileNotFoundError. Retirez une colonne de votre CSV et lisez KeyError. Remplacez un
+              salaire par « 250 000 » avec un espace et lisez ValueError.
+
+              Écrivez ensuite un except qui attrape chacune d'elles et lève votre DonneeInvalide avec un
+              message utile. Relancez et comparez la trace obtenue à celle du début : la dernière ligne dit
+              maintenant quoi corriger dans le fichier.
+
+              Essayez enfin un except nu, sans type, autour de tout votre chargement, puis introduisez une
+              faute de frappe dans un nom de variable. Votre programme signale un fichier invalide alors que
+              le fichier est parfait : c'est exactement le danger.
+          - titre: L'astuce du jour
+            texte: >-
+              Échouez tôt, et dites quoi faire. Une donnée fausse doit être refusée au moment où elle entre,
+              avec un message qui nomme le fichier, la ligne et la correction attendue.
+
+              Une erreur détectée tard coûte beaucoup plus cher : elle se manifeste trois couches plus loin,
+              sous une forme méconnaissable, souvent dans un état déjà affiché au gérant.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est l'except nu, qui attrape tout, y compris vos propres fautes de frappe, et
+              les transforme en message rassurant. Un programme qui ne plante jamais n'est pas un programme
+              robuste, c'est un programme qui ment.
+
+              Deuxième piège : attraper une exception et ne rien en faire. Un except qui se contente de
+              passer efface l'information sans rien régler ; la donnée fausse poursuit son chemin dans les
+              calculs.
+            tableaux:
+              - titre: Qui corrige quoi
+                entetes: [Situation, Famille, Traitement]
+                lignes:
+                  - ["Fichier absent", "donnée fausse", "DonneeInvalide avec le chemin cherché"]
+                  - ["Colonne manquante", "donnée fausse", "DonneeInvalide avec le nom de la colonne"]
+                  - ["Salaire illisible", "donnée fausse", "DonneeInvalide avec la ligne fautive"]
+                  - ["Nom de variable mal tapé", "erreur de programmation", "laisser remonter la trace"]
+          - titre: Challenge du jour
+            texte: >-
+              Faites lever DonneeInvalide par votre chargement dans les trois cas : fichier absent, colonne
+              manquante, salaire illisible. Le message nomme le fichier et, le cas échéant, la colonne ou la
+              ligne fautive.
+
+              Les tests livrés vérifient le type de l'erreur levée et la présence des informations utiles
+              dans le message. Un test vérifie qu'une faute de programmation volontairement introduite
+              continue de remonter telle quelle, au lieu d'être déguisée en DonneeInvalide.
+
+              Critères d'acceptation : aucun except nu dans le projet ; chaque except nomme son type ;
+              chaque message dit quoi corriger.
         livrable: >-
-          Lever DonneeInvalide au chargement ; les tests couvrent le fichier absent, la colonne manquante et un salaire illisible.
+          Lever DonneeInvalide au chargement ; les tests couvrent le fichier absent, la colonne manquante
+          et un salaire illisible.
       - num: "J14R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 13, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 13, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. Le traitement des erreurs sépare un exercice
+              d'école d'un logiciel que quelqu'un utilise.
+            tableaux:
+              - titre: Les cinq points de la journée 13
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [try et except, "Attraper une exception nommée, jamais toutes"]
+                  - [Erreur métier, "Définir une classe d'erreur propre à l'application"]
+                  - [Message utile, "Écrire ce qu'il faut corriger, pas seulement ce qui a échoué"]
+                  - [from erreur, "Conserver la cause technique derrière l'erreur métier"]
+                  - [except nu, "Savoir qu'il masque vos propres fautes de frappe"]
+        quiz:
+          - question: "Pourquoi un except nu est-il dangereux ?"
+            options: ["Il attrape aussi vos fautes de programmation", "Il ralentit le programme", "Il est interdit par Python", "Il efface le fichier"]
+            bonnes: [1]
+            explication: "Un programme qui ne plante jamais n'est pas robuste : il cache l'information."
+          - question: "Que doit contenir le message d'une erreur métier ?"
+            options: ["Ce qu'il faut corriger", "La pile d'appels", "Le nom de la fonction", "La version de Python"]
+            bonnes: [1]
+            explication: "Le lecteur du message est le gérant, pas le développeur."
+          - question: "À quoi sert raise ... from erreur ?"
+            options: ["À conserver la cause technique derrière l'erreur métier", "À relancer la même erreur", "À ignorer l'erreur", "À renommer la fonction"]
+            bonnes: [1]
+            explication: "La trace garde les deux niveaux : le message utile et l'origine technique."
+          - question: "Quelle erreur lève int('250 000') ?"
+            options: ["ValueError", "KeyError", "TypeError", "Aucune"]
+            bonnes: [1]
+            explication: "La chaîne ne représente pas un entier : l'espace la rend illisible pour int."
+          - question: "Une faute de frappe dans un nom de variable, que doit-il se passer ?"
+            options: ["La trace remonte telle quelle", "Elle devient une DonneeInvalide", "Le programme continue", "Elle est ignorée"]
+            bonnes: [1]
+            explication: "C'est une erreur de programmation : la masquer vous priverait du seul signal utile."
       - num: "J14"
         title: "Se tester avec pytest"
         evaluations: livrable
         contenu: >-
-          Installer et lancer pytest, nommer un test par une phrase, cas limites, rouge puis vert.
+          Installer et lancer pytest, nommer un test par une phrase, choisir les cas limites, et travailler
+          en rouge puis vert.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez écrire vos propres tests, au lieu de seulement lancer ceux qu'on vous
+              livre, et choisir les trois cas qui comptent plutôt que dix cas identiques.
+          - titre: Le problème d'abord
+            texte: >-
+              Depuis treize journées, les tests arrivent avec le dépôt du jour. Vous savez les lancer, pas
+              les écrire. Or la règle des congés de la journée 03 va changer : l'entreprise ajoute une
+              condition. Comment savoir que votre modification ne casse pas ce qui marchait ?
+          - titre: La notion
+            texte: >-
+              pytest découvre les fichiers dont le nom commence par test_, les fonctions dont le nom
+              commence par test_, et exécute chacune. Une assertion s'écrit avec le mot assert suivi d'une
+              expression qui doit être vraie.
+
+              Le nom d'un test est une phrase qui dit ce qu'il prouve : test_le_droit_s_ouvre_a_douze_mois
+              vaut mieux que test_conges_2. Quand un test échoue, son nom apparaît seul dans le compte
+              rendu ; il doit suffire à comprendre.
+
+              La méthode de travail est rouge puis vert : écrire d'abord le test qui échoue, vérifier qu'il
+              échoue pour la bonne raison, puis écrire le code qui le fait passer. Un test qui n'a jamais
+              échoué ne prouve rien, car rien ne dit qu'il vérifie quelque chose.
+
+              Pour vérifier qu'une erreur est bien levée, pytest fournit pytest.raises, employé dans un
+              bloc with.
+            code:
+              - titre: Trois tests qui disent ce qu'ils prouvent
+                langage: python
+                source: |
+                  import pytest
+
+                  from rh.calculs import droit_aux_conges
+
+
+                  def test_le_droit_est_ferme_avant_douze_mois():
+                      assert droit_aux_conges(11) is False
+
+
+                  def test_le_droit_s_ouvre_a_douze_mois_exactement():
+                      assert droit_aux_conges(12) is True
+
+
+                  def test_une_anciennete_negative_est_refusee():
+                      with pytest.raises(ValueError):
+                          droit_aux_conges(-1)
+          - titre: À la main
+            texte: >-
+              Installez pytest avec la commande d'installation de paquets de votre système, puis créez un
+              dossier tests avec un fichier test_conges.py contenant les trois tests ci-dessus. Lancez
+              pytest depuis la racine du projet.
+
+              Modifiez volontairement votre règle, en remplaçant le supérieur ou égal par un supérieur
+              strict. Relancez : un seul test échoue, celui des douze mois exactement, et son nom vous dit
+              immédiatement ce qui ne va plus. Remettez la règle correcte.
+
+              Faites l'expérience inverse : écrivez un test sans aucune assertion. pytest l'affiche en
+              vert. Un test sans assertion ne prouve rien et donne une fausse confiance.
+          - titre: L'astuce du jour
+            texte: >-
+              Un test, une phrase. Le nom du test est la spécification exécutable de votre règle métier : il
+              se relit comme une phrase du cahier des charges, et c'est lui qu'on lit en premier quand la
+              suite devient rouge.
+
+              Trois tests bien choisis valent mieux que vingt tests qui vérifient la même chose. Pour une
+              règle à seuil, les trois bons sont : juste avant, exactement sur la borne, juste après.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est le test qui teste l'implémentation au lieu du comportement. Vérifier
+              qu'une fonction utilise une boucle, ou compter le nombre de lignes, revient à interdire toute
+              amélioration future sans casser la suite.
+
+              Le second piège est le test sans assertion, que vous venez de voir : il passe toujours, et il
+              rassure à tort. Relisez vos tests et comptez les assert ; aucun test ne doit en être dépourvu.
+            tableaux:
+              - titre: Choisir les cas d'un test
+                entetes: [Famille de cas, Exemple sur les congés]
+                lignes:
+                  - ["Juste avant la borne", "11 mois, droit fermé"]
+                  - ["Sur la borne", "12 mois, droit ouvert"]
+                  - ["Juste après", "13 mois, droit ouvert"]
+                  - ["Donnée fausse", "ancienneté négative, erreur levée"]
+          - titre: Challenge du jour
+            texte: >-
+              Le dépôt du jour contient une implémentation volontairement fautive de la règle des congés, et
+              un fichier de tests où trois tests manquent. Écrivez-les.
+
+              Le harnais vérifie deux choses : vos trois tests échouent sur l'implémentation fautive, et ils
+              passent sur l'implémentation correcte fournie à part. Un test qui passe dans les deux cas ne
+              prouve rien et fait échouer le challenge.
+
+              Critères d'acceptation : trois tests nommés par une phrase ; chacun contient au moins une
+              assertion ; les trois cas couverts sont la borne, la valeur juste avant et une donnée fausse.
         livrable: >-
-          Écrire vous-même les trois tests manquants sur les congés ; le harnais vérifie qu'ils échouent sur une implémentation fautive fournie.
+          Écrire vous-même les trois tests manquants sur les congés ; le harnais vérifie qu'ils échouent
+          sur une implémentation fautive fournie.
       - num: "J15R"
         title: Rappel de la veille
         evaluations: quiz
         contenu: >-
-          Cinq points de la journée 14, à revoir avant d'ouvrir la journée du jour.
-          Aucune notion nouvelle ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez,
-          votre formateur rouvre la tentative.
+          Cinq points de la journée 14, à revoir avant d'ouvrir la leçon du jour. Aucune notion nouvelle
+          ici. Le quiz se retente jusqu'à dix fois ; si vous les épuisez, votre formateur rouvre la
+          tentative.
+        cours:
+          - titre: Ce qu'il faut avoir retenu d'hier
+            texte: >-
+              Relisez ces cinq points, puis lancez le quiz. À partir d'aujourd'hui, vous écrivez vos tests
+              autant que votre code.
+            tableaux:
+              - titre: Les cinq points de la journée 14
+                entetes: [Point, Ce que vous devez savoir refaire]
+                lignes:
+                  - [Découverte, "Nommer fichiers et fonctions de test avec le préfixe attendu"]
+                  - [assert, "Écrire une assertion qui dit ce qui doit être vrai"]
+                  - [Nom parlant, "Nommer un test par la phrase qu'il prouve"]
+                  - [Rouge puis vert, "Vérifier que le test échoue avant de le faire passer"]
+                  - [pytest.raises, "Vérifier qu'une erreur attendue est bien levée"]
+        quiz:
+          - question: "Pourquoi vérifier qu'un test échoue avant de l'implémenter ?"
+            options: ["Parce qu'un test qui n'a jamais échoué ne prouve rien", "Pour gagner du temps", "Parce que pytest l'exige", "Pour éviter les imports"]
+            bonnes: [1]
+            explication: "Un test sans assertion, ou mal écrit, passe toujours et donne une fausse confiance."
+          - question: "Comment nommer un test ?"
+            options: ["Par la phrase qu'il prouve", "Par un numéro", "Par le nom de la fonction testée", "Par la date"]
+            bonnes: [1]
+            explication: "Le nom apparaît seul dans le compte rendu d'échec : il doit suffire à comprendre."
+          - question: "Comment vérifier qu'une erreur est levée ?"
+            options: ["Avec pytest.raises dans un bloc with", "Avec un try vide", "Avec assert erreur", "En lisant la trace"]
+            bonnes: [1]
+            explication: "Le bloc échoue si l'erreur attendue n'est pas levée."
+          - question: "Quels sont les trois bons cas pour une règle à seuil ?"
+            options: ["Juste avant, sur la borne, juste après", "Trois valeurs au hasard", "Zéro, un, deux", "Les valeurs les plus grandes"]
+            bonnes: [1]
+            explication: "C'est là que se logent les erreurs d'inégalité stricte ou large."
+          - question: "Qu'est-ce qu'un test qui teste l'implémentation ?"
+            options: ["Un test qui interdit toute amélioration sans casser la suite", "Un test très rapide", "Un test sans assertion", "Un test de performance"]
+            bonnes: [1]
+            explication: "Testez le comportement attendu, pas la façon dont il est obtenu."
       - num: "J15"
         title: "Valider aux frontières avec Pydantic"
         evaluations: livrable
         contenu: >-
-          Modèle d'entrée distinct du modèle métier, validation à la frontière seulement, messages d'erreur exploitables.
+          Un modèle d'entrée distinct du modèle métier, la validation à la frontière et nulle part ailleurs,
+          et des messages d'erreur exploitables par l'appelant.
+        cours:
+          - titre: Ce que vous saurez faire ce soir
+            texte: >-
+              Ce soir, vous saurez refuser une donnée fausse dès son entrée dans l'application, avec un
+              message précis, sans parsemer vos calculs de contrôles.
+          - titre: Le problème d'abord
+            texte: >-
+              Votre chargement de fichier refuse déjà les salaires illisibles. Mais rien n'empêche un
+              salaire négatif, une date d'embauche en 2097 ou un poste vide. Ces valeurs traverseront vos
+              calculs et produiront des états absurdes.
+
+              La tentation est d'ajouter un contrôle dans chaque fonction. C'est exactement ce qu'il ne faut
+              pas faire : les calculs deviendraient illisibles et les contrôles finiraient par diverger.
+          - titre: La notion
+            texte: >-
+              Pydantic décrit une donnée attendue par une classe dont les attributs portent un type. À la
+              construction, la bibliothèque vérifie les types, applique vos contraintes, et lève une
+              ValidationError détaillée qui nomme le champ fautif.
+
+              Ce modèle d'entrée est distinct de la fiche manipulée par le cœur. Le modèle d'entrée décrit
+              ce que le monde extérieur a le droit d'envoyer ; la fiche décrit ce avec quoi vos calculs
+              travaillent. Les deux se ressemblent aujourd'hui et divergeront en journée 18.
+
+              La frontière est l'endroit unique où la validation a lieu : le chargement du fichier
+              aujourd'hui, la route de l'API en journée 18, le formulaire en journée 31. Au-delà de la
+              frontière, les données sont réputées saines et le cœur ne contrôle plus rien.
+            figures:
+              - nom: python-frontiere-validation.svg
+                legende: "La validation a lieu à la frontière ; au-delà, le cœur fait confiance"
+            code:
+              - titre: Un modèle d'entrée qui refuse ce qui n'a pas de sens
+                langage: python
+                source: |
+                  from datetime import date
+
+                  from pydantic import BaseModel, Field, field_validator
+
+
+                  class SalarieEntrant(BaseModel):
+                      nom: str = Field(min_length=1)
+                      poste: str = Field(min_length=1)
+                      date_embauche: date
+                      salaire_fcfa: int = Field(ge=0)
+
+                      @field_validator("date_embauche")
+                      @classmethod
+                      def pas_dans_le_futur(cls, valeur: date) -> date:
+                          if valeur > date.today():
+                              raise ValueError("la date d'embauche ne peut pas être dans le futur")
+                          return valeur
+          - titre: À la main
+            texte: >-
+              Installez pydantic, puis construisez un SalarieEntrant valide et affichez-le. Construisez-en
+              ensuite un avec un salaire négatif et lisez la ValidationError : elle nomme le champ, la règle
+              violée et la valeur reçue.
+
+              Essayez un poste vide, puis une date d'embauche dans le futur. Observez que le message reste
+              exploitable dans les trois cas, sans que vous ayez écrit un seul message vous-même pour les
+              deux premiers.
+
+              Branchez enfin le modèle sur votre chargement : chaque ligne du CSV passe par SalarieEntrant
+              avant de devenir une fiche. Une ValidationError se transforme alors en DonneeInvalide, avec le
+              numéro de ligne.
+          - titre: L'astuce du jour
+            texte: >-
+              Un modèle d'entrée distinct du modèle métier. Cette séparation paraît superflue aujourd'hui,
+              où les deux se ressemblent. Elle devient indispensable dès que l'API accepte un champ que le
+              cœur ignore, ou que le cœur calcule un champ que personne n'envoie.
+
+              C'est la même idée que le sens des imports de la journée 11 : les détails du monde extérieur
+              ne remontent pas jusqu'au cœur.
+          - titre: Le piège du jour
+            texte: >-
+              Le piège du jour est de valider partout. Un contrôle répété dans chaque fonction coûte du
+              temps, alourdit la lecture, et crée des divergences : un jour une fonction refusera ce qu'une
+              autre accepte.
+
+              Le second piège est d'exposer à l'utilisateur la ValidationError brute, qui parle de types et
+              de contraintes dans un vocabulaire de bibliothèque. Traduisez-la en message métier, comme vous
+              l'avez fait en journée 13.
+            tableaux:
+              - titre: Où se place chaque responsabilité
+                entetes: [Couche, Rôle, Ce qu'elle ne fait pas]
+                lignes:
+                  - ["Modèle d'entrée", "refuser ce qui n'a pas de sens", "calculer"]
+                  - ["Chargement", "traduire l'erreur en message métier", "valider une seconde fois"]
+                  - ["Cœur de calcul", "calculer sur des données saines", "contrôler les types"]
+          - titre: Challenge du jour
+            texte: >-
+              Écrivez SalarieEntrant et branchez-le sur le chargement. Un salaire négatif, une date future
+              ou un poste vide font échouer la ligne avec une DonneeInvalide qui nomme la ligne et le
+              champ.
+
+              Les tests livrés couvrent les trois refus et vérifient en plus que rh/calculs.py ne contient
+              aucun contrôle de type ni de borne : le cœur reste nu. L'état des trois rapports de la semaine
+              doit rester au vert.
+
+              Critères d'acceptation : la validation n'existe qu'au chargement ; les trois refus donnent un
+              message nommant le champ ; les tests des journées 11 à 14 passent toujours.
         livrable: >-
-          Écrire SalarieEntrant qui refuse un salaire négatif, une date future et un poste vide ; le cœur reste sans validation et les trois états restent au vert.
+          Écrire SalarieEntrant qui refuse salaire négatif, date future et poste vide ; le cœur reste sans
+          validation et les trois états restent au vert.
   - title: "Bloc 4 — Semaine 4 : une API avec FastAPI"
     modules:
       - num: "J16R"

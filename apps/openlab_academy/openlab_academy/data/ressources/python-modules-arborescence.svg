@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" width="760" height="330" role="img" aria-label="Trois modules et le sens unique des imports">
+<title>Trois modules et le sens unique des imports</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="760" height="330" fill="var(--surface)"/>
+<text x="380" y="34" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Les imports vont de l&#x27;habillage vers le cœur.</text>
+<text x="380" y="56" text-anchor="middle" font-size="12" fill="var(--encre2)">Le cœur n&#x27;importe rien du projet : c&#x27;est ce qui le rend réutilisable.</text>
+<rect x="230" y="100" width="300" height="52" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="380" y="122" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">main.py</text>
+<text x="380" y="142" text-anchor="middle" font-size="11" fill="var(--encre2)">lance le programme</text>
+<rect x="230" y="170" width="300" height="52" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="380" y="192" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">rh/etats.py</text>
+<text x="380" y="212" text-anchor="middle" font-size="11" fill="var(--encre2)">met en forme pour l&#x27;humain</text>
+<rect x="230" y="240" width="300" height="52" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="380" y="262" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">rh/calculs.py</text>
+<text x="380" y="282" text-anchor="middle" font-size="11" fill="var(--encre2)">calcule, et rien d&#x27;autre</text>
+<path d="M 380 154 L 380 166" fill="none" stroke="var(--s2)" stroke-width="2" marker-end="url(#pointe-s2)"/>
+<path d="M 380 224 L 380 236" fill="none" stroke="var(--s1)" stroke-width="2" marker-end="url(#pointe-s1)"/>
+<text x="566" y="162" text-anchor="start" font-size="11" fill="var(--encre2)">importe</text>
+<text x="566" y="232" text-anchor="start" font-size="11" fill="var(--encre2)">importe</text>
+<text x="380" y="318" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Une flèche en sens inverse est un import circulaire : déplacez la fonction.</text>
+</svg>

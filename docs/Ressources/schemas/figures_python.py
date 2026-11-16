@@ -146,6 +146,71 @@ def anciennete_mois() -> Dessin:
     return d
 
 
+def modules_arborescence() -> Dessin:
+    """J11 : trois fichiers, trois rôles, et des imports qui ne vont que dans un sens."""
+    d = Dessin(760, 330, "Trois modules et le sens unique des imports")
+    d.texte(380, 34, "Les imports vont de l'habillage vers le cœur.", taille=15, gras=True)
+    d.texte(380, 56, "Le cœur n'importe rien du projet : c'est ce qui le rend réutilisable.",
+            taille=12, couleur="encre2")
+    etages = [("main.py", "lance le programme", 100, "s2"),
+              ("rh/etats.py", "met en forme pour l'humain", 170, "s1"),
+              ("rh/calculs.py", "calcule, et rien d'autre", 240, "s3")]
+    for nom, role, y, teinte in etages:
+        d.boite(230, y, 300, 52, teinte=teinte)
+        d.texte(380, y + 22, nom, taille=14, gras=True)
+        d.texte(380, y + 42, role, taille=11, couleur="encre2")
+    d.fleche(380, 154, 380, 166, teinte="s2")
+    d.fleche(380, 224, 380, 236, teinte="s1")
+    d.texte(566, 162, "importe", taille=11, ancre="start", couleur="encre2")
+    d.texte(566, 232, "importe", taille=11, ancre="start", couleur="encre2")
+    d.texte(380, 318, "Une flèche en sens inverse est un import circulaire : déplacez la fonction.",
+            taille=12, gras=True, couleur="encre2")
+    return d
+
+
+def erreur_metier() -> Dessin:
+    """J13 : la panne technique s'arrête à la frontière et devient un message utile."""
+    d = Dessin(760, 310, "D'une panne technique à un message utile")
+    d.texte(380, 34, "La frontière traduit ; le cœur ne voit que des données saines.",
+            taille=15, gras=True)
+    d.boite(40, 90, 200, 110, teinte="critique")
+    d.texte(140, 118, "Panne technique", taille=13, gras=True, couleur="critique")
+    d.lignes_de_texte(140, 144, ["FileNotFoundError", "KeyError", "ValueError"], taille=11)
+    d.boite(280, 90, 200, 110, teinte="s1")
+    d.texte(380, 118, "Frontière", taille=13, gras=True)
+    d.lignes_de_texte(380, 144, ["try / except nommé", "raise DonneeInvalide", "from erreur"], taille=11)
+    d.boite(520, 90, 200, 110, teinte="s3")
+    d.texte(620, 118, "Message au gérant", taille=13, gras=True)
+    d.lignes_de_texte(620, 144, ["« Colonne salaire_fcfa", "absente du fichier", "effectif.csv »"], taille=11)
+    d.fleche(248, 145, 272, 145, teinte="critique")
+    d.fleche(488, 145, 512, 145, teinte="s3")
+    d.boite(230, 232, 300, 50, teinte="attenue", tirets=True)
+    d.texte(380, 252, "Faute de frappe dans votre code", taille=12, gras=True)
+    d.texte(380, 271, "la trace remonte telle quelle, sans déguisement", taille=11, couleur="encre2")
+    return d
+
+
+def frontiere_validation() -> Dessin:
+    """J15 : un seul endroit valide, et le cœur travaille sur des données réputées saines."""
+    d = Dessin(760, 320, "La validation a lieu à la frontière, une seule fois")
+    d.texte(380, 34, "Un modèle d'entrée à la porte ; aucun contrôle au-delà.", taille=15, gras=True)
+    d.boite(40, 95, 190, 120, teinte="s2")
+    d.texte(135, 122, "Monde extérieur", taille=13, gras=True)
+    d.lignes_de_texte(135, 148, ["fichier CSV", "requête d'API", "formulaire"], taille=11)
+    d.boite(285, 95, 190, 120, teinte="s1")
+    d.texte(380, 122, "SalarieEntrant", taille=13, gras=True)
+    d.lignes_de_texte(380, 148, ["types vérifiés", "salaire positif", "date pas future"], taille=11)
+    d.boite(530, 95, 190, 120, teinte="s3")
+    d.texte(625, 122, "Cœur de calcul", taille=13, gras=True)
+    d.lignes_de_texte(625, 148, ["données saines", "aucun contrôle", "que du métier"], taille=11)
+    d.fleche(238, 155, 277, 155, teinte="s2")
+    d.fleche(483, 155, 522, 155, teinte="s1")
+    d.texte(380, 252, "Refusé ici, avec le champ nommé.", taille=12, gras=True, couleur="s1")
+    d.texte(380, 292, "Valider dans chaque fonction coûte cher et finit par diverger.",
+            taille=12, couleur="encre2")
+    return d
+
+
 FIGURES_PYTHON = {
     "python-trace-erreur.svg": trace_erreur,
     "python-seuils-conges.svg": seuils_conges,
@@ -153,4 +218,7 @@ FIGURES_PYTHON = {
     "python-tranches-liste.svg": tranches_liste,
     "python-copie-liste.svg": copie_liste,
     "python-anciennete-mois.svg": anciennete_mois,
+    "python-modules-arborescence.svg": modules_arborescence,
+    "python-erreur-metier.svg": erreur_metier,
+    "python-frontiere-validation.svg": frontiere_validation,
 }
