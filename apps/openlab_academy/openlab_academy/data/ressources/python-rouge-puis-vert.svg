@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 310" width="760" height="310" role="img" aria-label="Un test rougit d&#x27;abord, puis il verdit">
+<title>Un test rougit d&#x27;abord, puis il verdit</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="760" height="310" fill="var(--surface)"/>
+<text x="380" y="34" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Un test qui passe du premier coup ne prouve rien.</text>
+<text x="380" y="56" text-anchor="middle" font-size="12" fill="var(--encre2)">Faites-le échouer une fois : vous saurez qu&#x27;il regarde la bonne chose.</text>
+<rect x="40" y="104" width="200" height="72" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="140" y="134" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">1. Écrire le test</text>
+<text x="140" y="158" text-anchor="middle" font-size="11" fill="var(--encre2)">il décrit la règle attendue</text>
+<rect x="280" y="104" width="200" height="72" rx="8" class="b-critique" fill="var(--surface)"/>
+<text x="380" y="134" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">2. Le voir rouge</text>
+<text x="380" y="158" text-anchor="middle" font-size="11" fill="var(--encre2)">la règle n&#x27;est pas encore tenue</text>
+<rect x="520" y="104" width="200" height="72" rx="8" class="b-bon" fill="var(--surface)"/>
+<text x="620" y="134" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">3. Le voir vert</text>
+<text x="620" y="158" text-anchor="middle" font-size="11" fill="var(--encre2)">le code tient la règle</text>
+<path d="M 248 140 L 272 140" fill="none" stroke="var(--critique)" stroke-width="2" marker-end="url(#pointe-critique)"/>
+<path d="M 488 140 L 512 140" fill="none" stroke="var(--bon)" stroke-width="2" marker-end="url(#pointe-bon)"/>
+<rect x="140" y="214" width="480" height="62" rx="8" class="b-trait" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="380" y="240" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">Trois tests pour une règle à seuil : 11 mois, 12 mois, 13 mois.</text>
+<text x="380" y="262" text-anchor="middle" font-size="11" fill="var(--encre2)">La borne est l&#x27;endroit où les bugs se logent ; elle mérite son propre test.</text>
+<text x="380" y="298" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Un test porte le nom de la règle, pas le nom de la fonction testée.</text>
+</svg>

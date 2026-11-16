@@ -240,6 +240,9 @@ blocs:
 
                   montant = 3250000
                   print(f"{montant:,} FCFA".replace(",", " "))   # 3 250 000 FCFA
+            figures:
+              - nom: python-arrondi-fcfa.svg
+                legende: "Du calcul à virgule au montant payable : un seul arrondi, à la fin"
           - titre: À la main
             texte: >-
               Ouvrez un terminal et tapez py ou python3 sans nom de fichier : vous entrez dans l'interpréteur
@@ -394,6 +397,14 @@ blocs:
 
               Tapez ensuite "RH" == "rh". Python répond False : la comparaison de textes distingue les
               majuscules des minuscules. Retenez-le, vous le reverrez en journée 10.
+            tableaux:
+              - titre: "Les trois branches, et ce que chacune doit rendre"
+                entetes: ["Ancienneté", "Branche prise", "Droit attendu"]
+                lignes:
+                  - ["11 mois", "if anciennete < 12", "0 jour"]
+                  - ["12 mois", "elif anciennete < 24", "26 jours"]
+                  - ["23 mois", "elif anciennete < 24", "26 jours"]
+                  - ["24 mois", "else", "28 jours"]
           - titre: L'astuce du jour
             texte: >-
               Donnez un nom à votre condition. Écrire anciennete_suffisante = mois_anciennete >= 12, puis
@@ -518,6 +529,9 @@ blocs:
                       total += salaire
 
                   print(total)   # 850000, affiché une fois, après la boucle
+            figures:
+              - nom: python-boucle-for.svg
+                legende: "Un tour par élément, et l'accumulateur déclaré avant la boucle"
           - titre: À la main
             texte: >-
               Tapez la boucle ci-dessus dans un fichier, exécutez-la, puis déplacez le print à l'intérieur
@@ -671,6 +685,13 @@ blocs:
               Retirez tous les print de ces fonctions. Chacune doit se terminer par un return. Dans un
               fichier séparé, importez le module et appelez vos fonctions pour vérifier qu'elles répondent
               comme avant.
+            tableaux:
+              - titre: "Ce qu'une fonction reçoit, ce qu'elle rend"
+                entetes: ["Fonction", "Reçoit", "Rend", "N'affiche pas"]
+                lignes:
+                  - ["salaire_annuel", "mensuel, primes", "un nombre", "aucun print"]
+                  - ["droit_conges", "ancienneté en mois", "un nombre de jours", "aucun print"]
+                  - ["resume_fiche", "nom, poste, salaire", "une phrase", "aucun print"]
           - titre: L'astuce du jour
             texte: >-
               Une fonction, un verbe. calculer, formater, trouver : le nom dit l'action. Si vous ne trouvez
@@ -941,6 +962,9 @@ blocs:
 
                   for cle, valeur in fiche.items():
                       print(cle, ":", valeur)
+            figures:
+              - nom: python-liste-ou-dictionnaire.svg
+                legende: "La même fiche lue par position, puis lue par clé"
           - titre: À la main
             texte: >-
               Dans l'interpréteur, créez la fiche ci-dessus. Demandez fiche["telephone"] : Python répond
@@ -1105,6 +1129,14 @@ blocs:
               La parade de ce parcours est simple et tient en une phrase : une fonction ne modifie jamais ce
               qu'on lui passe. Si elle doit changer quelque chose, elle construit et rend une nouvelle
               structure.
+            tableaux:
+              - titre: "Un effectif, quatre fiches"
+                entetes: ["Nom", "Poste", "Service", "Salaire FCFA"]
+                lignes:
+                  - ["Awa Kone", "Assistante RH", "Administration", "250000"]
+                  - ["Bakary Traore", "Magasinier", "Logistique", "180000"]
+                  - ["Céline Yao", "Chef de production", "Production", "420000"]
+                  - ["Daouda Sanogo", "Commercial", "Commercial", "310000"]
           - titre: L'astuce du jour
             texte: >-
               Une compréhension sur une ligne, une boucle sinon. Une compréhension avec deux filtres et une
@@ -1359,6 +1391,9 @@ blocs:
                   lignes = [("RH", 2, 670000), ("Atelier", 1, 180000)]
                   for poste, effectif, masse in lignes:
                       print(f"{poste:<12}{effectif:>4}{masse:>12}")
+            figures:
+              - nom: python-normaliser-chaine.svg
+                legende: "Mettre deux noms dans la même forme avant de les comparer"
           - titre: À la main
             texte: >-
               Dans l'interpréteur, comparez "  Awa  ".strip() et "  Awa  ". Puis comparez "AWA" == "awa" et
@@ -1651,6 +1686,9 @@ blocs:
                                   "salaire_fcfa": int(ligne["salaire_fcfa"]),
                               })
                       return fiches
+            figures:
+              - nom: python-csv-encodage.svg
+                legende: "Les mêmes octets lus en utf-8, puis sans encodage déclaré"
           - titre: À la main
             texte: >-
               Créez un fichier effectif.csv avec une ligne d'en-tête et trois salariés, dont un nom
@@ -1944,6 +1982,9 @@ blocs:
                   def test_une_anciennete_negative_est_refusee():
                       with pytest.raises(ValueError):
                           droit_aux_conges(-1)
+            figures:
+              - nom: python-rouge-puis-vert.svg
+                legende: "Un test rougit avant de verdir : c'est ainsi qu'il prouve quelque chose"
           - titre: À la main
             texte: >-
               Installez pytest avec la commande d'installation de paquets de votre système, puis créez un
@@ -2254,6 +2295,13 @@ blocs:
               Arrêtez le serveur avec Ctrl+C. Relancez-le une seconde fois sans avoir arrêté le premier :
               le message indique que le port est déjà utilisé. C'est le piège du jour, vous le
               reconnaîtrez.
+            tableaux:
+              - titre: "Les verbes HTTP dont vous aurez besoin cette semaine"
+                entetes: ["Verbe", "Ce qu'il demande", "Exemple de route"]
+                lignes:
+                  - ["GET", "lire, sans rien changer", "/salaries"]
+                  - ["POST", "créer une ressource", "/salaries"]
+                  - ["GET", "lire une ressource précise", "/salaries/12"]
           - titre: L'astuce du jour
             texte: >-
               Lisez /docs avant d'écrire le moindre client. La page est produite à partir de votre code :
@@ -2517,6 +2565,9 @@ blocs:
                   def embaucher(entrant: SalarieEntrant):
                       fiche = entrant.model_dump()
                       return ajouter_salarie(EFFECTIF, fiche)
+            figures:
+              - nom: python-issues-du-post.svg
+                legende: "Les trois issues d'une création : 201, 422, 409"
           - titre: À la main
             texte: >-
               Depuis /docs, essayez la route POST avec une fiche correcte : vous obtenez 201 et la fiche
@@ -2799,6 +2850,9 @@ blocs:
 
 
                   configuration = Configuration()
+            figures:
+              - nom: python-secrets-hors-du-code.svg
+                legende: "Où vit un secret, et où il ne vit jamais"
           - titre: À la main
             texte: >-
               Créez .env.exemple avec les deux variables et des valeurs d'exemple, puis .env avec vos
@@ -2948,6 +3002,13 @@ blocs:
 
               Vérifiez enfin que votre fichier d'écran ne contient aucun calcul : pas de boucle de somme,
               pas de filtre, pas de règle. Tout vient du paquet rh.
+            tableaux:
+              - titre: "Les trois éléments Streamlit de la journée"
+                entetes: ["Élément", "Ce qu'il affiche", "Ce qu'il rend"]
+                lignes:
+                  - ["st.title", "un titre de page", "rien"]
+                  - ["st.metric", "un chiffre mis en avant", "rien"]
+                  - ["st.selectbox", "une liste déroulante", "la valeur choisie"]
           - titre: L'astuce du jour
             texte: >-
               L'écran appelle le cœur, il ne calcule pas. C'est la même règle que pour l'API, et pour la
@@ -3063,6 +3124,9 @@ blocs:
                               continue
                           resultat.append(fiche)
                       return resultat
+            figures:
+              - nom: python-effectif-par-service.svg
+                legende: "Effectif par service : des barres parties de zéro, triées du plus grand au plus petit"
           - titre: À la main
             texte: >-
               Ajoutez à votre écran une liste déroulante des postes et un curseur d'ancienneté minimale.
@@ -3205,6 +3269,9 @@ blocs:
                           st.success("Embauche enregistrée.")
                       except Exception as erreur:
                           st.error(message_d_erreur(erreur))
+            figures:
+              - nom: python-formulaire-vers-coeur.svg
+                legende: "L'écran recueille, le cœur décide, et le refus revient à l'écran"
           - titre: À la main
             texte: >-
               Construisez le formulaire, puis essayez une saisie correcte, un salaire négatif et un poste
@@ -3475,6 +3542,9 @@ blocs:
 
                   def apres_embauche():
                       effectif_du_fichier.clear()   # sans cela, la nouvelle fiche reste invisible
+            figures:
+              - nom: python-effet-du-cache.svg
+                legende: "Quatre passages sur le même écran, avec et sans cache"
           - titre: À la main
             texte: >-
               Ajoutez le cache à votre chargement, puis cliquez plusieurs fois sur un widget : la page
@@ -3609,6 +3679,9 @@ blocs:
                   - ["Modifier à plusieurs", "impossible", "transactions de la base"]
                   - ["Identifier les personnes", "absent", "utilisateurs et mots de passe"]
                   - ["Back-office", "à écrire", "fourni, à déclarer"]
+            figures:
+              - nom: python-projet-django.svg
+                legende: "Ce qu'un projet Django apporte avant la première ligne écrite"
           - titre: À la main
             texte: >-
               Installez django, puis créez le projet avec la commande de création, et l'application
@@ -3763,6 +3836,13 @@ blocs:
 
               Modifiez enfin un champ, régénérez une migration, et lisez-la : vous voyez l'opération de
               modification, et non une nouvelle création. C'est le journal qui s'écrit.
+            tableaux:
+              - titre: "Du modèle à la table, en passant par la migration"
+                entetes: ["Étape", "Commande", "Ce qui change"]
+                lignes:
+                  - ["Décrire", "éditer models.py", "rien dans la base"]
+                  - ["Préparer", "makemigrations", "un fichier de migration"]
+                  - ["Appliquer", "migrate", "la table existe enfin"]
           - titre: L'astuce du jour
             texte: >-
               Une migration par intention. Ajouter un champ est une intention ; renommer une table en est
@@ -3879,6 +3959,9 @@ blocs:
                                 .annotate(masse=Sum("salaire_fcfa"))
                                 .order_by("-masse"))
                       return [(ligne["poste__libelle"], ligne["masse"]) for ligne in lignes]
+            figures:
+              - nom: python-masse-salariale-mois.svg
+                legende: "Masse salariale par mois : la marche de juillet, ce sont trois embauches"
           - titre: À la main
             texte: >-
               Depuis le shell du projet, créez quelques salariés, puis écrivez la requête d'agrégation.
@@ -4019,6 +4102,9 @@ blocs:
 
                   admin.site.register(Poste)
                   admin.site.register(Absence)
+            figures:
+              - nom: python-admin-et-metier.svg
+                legende: "Ce que l'administration couvre, et où elle s'arrête"
           - titre: À la main
             texte: >-
               Créez un compte d'administration, lancez le serveur et connectez-vous. Ajoutez deux postes,
@@ -4030,6 +4116,13 @@ blocs:
 
               Vérifiez enfin que la contrainte d'unicité d'hier remonte bien à l'écran : saisissez un
               matricule déjà pris et lisez le message affiché par le formulaire.
+            tableaux:
+              - titre: "Ce que l'administration donne, et ce qu'elle ne donne pas"
+                entetes: ["Besoin", "L'admin suffit", "Il faut écrire une vue"]
+                lignes:
+                  - ["Corriger une fiche à la main", "oui", "non"]
+                  - ["Chercher par nom", "oui, avec search_fields", "non"]
+                  - ["Un écran pour les managers", "non", "oui"]
           - titre: L'astuce du jour
             texte: >-
               Déclarez les colonnes et les filtres dont le gérant a besoin, et rien d'autre. Une liste de
@@ -4165,6 +4258,13 @@ blocs:
               Observez enfin le nombre de requêtes exécutées pour afficher la liste, avec et sans la
               sélection liée. Sans elle, Django interroge la base une fois par ligne pour obtenir le
               poste : c'est le problème des requêtes en cascade.
+            tableaux:
+              - titre: "Qui fait quoi dans une page Django"
+                entetes: ["Pièce", "Rôle", "Ce qu'elle ne fait pas"]
+                lignes:
+                  - ["La vue", "choisir les données", "mettre en forme"]
+                  - ["Le gabarit", "mettre en forme", "calculer"]
+                  - ["Le cœur métier", "calculer la règle", "connaître le web"]
           - titre: L'astuce du jour
             texte: >-
               Une vue, une responsabilité. Une vue qui prépare deux pages à la fois, ou qui décide d'un
@@ -4283,6 +4383,9 @@ blocs:
                       else:
                           formulaire = SalarieForm()
                       return render(requete, "effectif/embauche.html", {"formulaire": formulaire})
+            figures:
+              - nom: python-double-validation.svg
+                legende: "Le navigateur conseille ; le serveur décide"
           - titre: À la main
             texte: >-
               Écrivez le formulaire, la vue et le gabarit. Saisissez une embauche correcte : vous êtes
@@ -4415,6 +4518,9 @@ blocs:
                   def liste_salaries(requete):
                       salaries = Salarie.objects.select_related("poste").order_by("nom")
                       return render(requete, "effectif/liste.html", {"salaries": salaries})
+            figures:
+              - nom: python-parcours-connexion.svg
+                legende: "Le chemin d'une connexion, du refus au retour sur la page demandée"
           - titre: À la main
             texte: >-
               Ajoutez les adresses de connexion et de déconnexion, protégez vos deux vues, puis ouvrez la
@@ -4708,6 +4814,9 @@ blocs:
                                             "date_embauche": fiche["date_embauche"],
                                             "salaire_fcfa": fiche["salaire_fcfa"]})
                           self.stdout.write(f"{len(fiches)} fiches importées.")
+            figures:
+              - nom: python-coeur-partage.svg
+                legende: "Une règle, trois portes d'entrée : API, écran, commande"
           - titre: À la main
             texte: >-
               Écrivez la commande, puis importez votre fichier d'effectif. Vérifiez le nombre de fiches
@@ -4840,6 +4949,9 @@ blocs:
                   - ["Comptes de démonstration", "listés, et supprimés avant toute mise en ligne"]
                   - ["Suite de tests", "verte, en une commande"]
                   - ["Vérification de déploiement", "sans alerte critique"]
+            figures:
+              - nom: python-sept-semaines.svg
+                legende: "Les sept semaines du parcours, et ce que montre la démonstration finale"
           - titre: À la main
             texte: >-
               Lancez la vérification de déploiement avec le mode de débogage encore activé : elle signale

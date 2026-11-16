@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 320" width="760" height="320" role="img" aria-label="Les sept semaines du parcours, d&#x27;un bout à l&#x27;autre">
+<title>Les sept semaines du parcours, d&#x27;un bout à l&#x27;autre</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="760" height="320" fill="var(--surface)"/>
+<text x="380" y="34" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Trente-cinq journées, sept marches.</text>
+<text x="380" y="56" text-anchor="middle" font-size="12" fill="var(--encre2)">La démonstration finale repart du début : c&#x27;est elle qui rend la route visible.</text>
+<rect x="40" y="214.57" width="80" height="17.43" rx="4" ry="4" fill="var(--s1)"/>
+<rect x="40" y="226" width="80" height="6" fill="var(--s1)"/>
+<text x="80" y="204.57" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">S1</text>
+<text x="80" y="254" text-anchor="middle" font-size="11" fill="var(--encre2)">Les bases</text>
+<rect x="140" y="197.14" width="80" height="34.86" rx="4" ry="4" fill="var(--s1)"/>
+<rect x="140" y="226" width="80" height="6" fill="var(--s1)"/>
+<text x="180" y="187.14" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">S2</text>
+<text x="180" y="254" text-anchor="middle" font-size="11" fill="var(--encre2)">Les données</text>
+<rect x="240" y="179.71" width="80" height="52.29" rx="4" ry="4" fill="var(--s1)"/>
+<rect x="240" y="226" width="80" height="6" fill="var(--s1)"/>
+<text x="280" y="169.71" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">S3</text>
+<text x="280" y="254" text-anchor="middle" font-size="11" fill="var(--encre2)">Le code juste</text>
+<rect x="340" y="162.29" width="80" height="69.71" rx="4" ry="4" fill="var(--s1)"/>
+<rect x="340" y="226" width="80" height="6" fill="var(--s1)"/>
+<text x="380" y="152.29" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">S4</text>
+<text x="380" y="254" text-anchor="middle" font-size="11" fill="var(--encre2)">L&#x27;API</text>
+<rect x="440" y="144.86" width="80" height="87.14" rx="4" ry="4" fill="var(--s1)"/>
+<rect x="440" y="226" width="80" height="6" fill="var(--s1)"/>
+<text x="480" y="134.86" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">S5</text>
+<text x="480" y="254" text-anchor="middle" font-size="11" fill="var(--encre2)">L&#x27;écran</text>
+<rect x="540" y="127.43" width="80" height="104.57" rx="4" ry="4" fill="var(--s3)"/>
+<rect x="540" y="226" width="80" height="6" fill="var(--s3)"/>
+<text x="580" y="117.43" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">S6</text>
+<text x="580" y="254" text-anchor="middle" font-size="11" fill="var(--encre2)">Django</text>
+<rect x="640" y="110" width="80" height="122" rx="4" ry="4" fill="var(--s3)"/>
+<rect x="640" y="226" width="80" height="6" fill="var(--s3)"/>
+<text x="680" y="100" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">S7</text>
+<text x="680" y="254" text-anchor="middle" font-size="11" fill="var(--encre2)">La mise en service</text>
+<line x1="30" y1="232" x2="730" y2="232" stroke="var(--trait)" stroke-width="2"/>
+<text x="380" y="286" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Cinq minutes de démonstration : le problème, l&#x27;écran, une règle refusée, la suite.</text>
+<text x="380" y="308" text-anchor="middle" font-size="12" fill="var(--encre2)">Montrez un refus, pas seulement un succès : c&#x27;est le refus qui prouve la règle.</text>
+</svg>
