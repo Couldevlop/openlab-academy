@@ -133,6 +133,14 @@ class TestEcran(_Socle):
         ligne = next(l for l in ecran.inscrits(self.cours)["lignes"] if l["apprenant"] == self.apprenant)
         self.assertEqual((ligne["offert"], ligne["inscrit"], ligne["reste"]), (True, True, 0))
 
+    def test_l_etat_est_lisible_jamais_une_valeur_brute(self):
+        """L'écran montre « En retard », pas « en_retard » : les libellés sont ceux de l'intendance."""
+        self.offrir()
+        self.inscrire()
+        self.rendre_payant()
+        ligne = next(l for l in ecran.inscrits(self.cours)["lignes"] if l["apprenant"] == self.apprenant)
+        self.assertEqual(ligne["etat"], "En retard")
+
     def test_ecran_reserve_a_l_administration(self):
         frappe.set_user(self.apprenant)
         try:

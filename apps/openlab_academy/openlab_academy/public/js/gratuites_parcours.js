@@ -70,41 +70,50 @@ function inscrire(dialogue, cours, apprenant) {
 	});
 }
 
+function montant(valeur) {
+	// même écriture que les messages de l'intendance : milliers séparés d'une espace, FCFA en suffixe
+	return `${String(Math.round(valeur)).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} ${__("FCFA")}`;
+}
+
 function afficher(dialogue, cours, donnees) {
-	const zone = dialogue.fields_dict.liste.$wrapper.empty();
+	// la charte (openlab.css) tient la mise en forme ; le script ne pose que les classes
+	const zone = dialogue.fields_dict.liste.$wrapper.empty().addClass("ol-gratuites");
+	zone.append('<div class="ol-filet" aria-hidden="true"></div>');
 	if (donnees.gratuit_pour_tous) {
 		zone.append(
-			`<p class="text-muted">${__("Ce parcours est gratuit pour tout le monde (MOOC) : la gratuité par apprenant est sans objet.")}</p>`
+			`<p class="ol-vide">${__("Ce parcours est gratuit pour tout le monde (MOOC) : la gratuité par apprenant est sans objet.")}</p>`
 		);
 		return;
 	}
 	const lignes = donnees.lignes || [];
 	if (!lignes.length) {
-		zone.append(`<p class="text-muted">${__("Aucun inscrit pour le moment.")}</p>`);
+		zone.append(`<p class="ol-vide">${__("Aucun inscrit pour le moment.")}</p>`);
 		return;
 	}
-	const tableau = $(`<table class="table table-bordered" style="margin-top:1rem">
+	const tableau = $(`<table>
 			<thead><tr>
 				<th>${__("Apprenant")}</th><th>${__("Inscrit")}</th><th>${__("État")}</th>
-				<th>${__("Reste dû")}</th><th></th>
+				<th class="ol-montant">${__("Reste dû")}</th><th></th>
 			</tr></thead><tbody></tbody></table>`);
 	const corps = tableau.find("tbody");
 	lignes.forEach((ligne) => {
+		const teinte = ligne.offert ? "ol-etat-offert" : ligne.reste ? "ol-etat-du" : "";
 		const rangee = $(`<tr>
-				<td>${frappe.utils.escape_html(ligne.nom)}<div class="text-muted small">${frappe.utils.escape_html(ligne.apprenant)}</div></td>
+				<td><div class="ol-nom">${frappe.utils.escape_html(ligne.nom)}</div>
+					<div class="ol-courriel">${frappe.utils.escape_html(ligne.apprenant)}</div></td>
 				<td>${ligne.inscrit ? __("Oui") : __("Pas encore")}</td>
-				<td>${ligne.offert ? `<span class="indicator-pill green">${__("Offert")}</span>` : frappe.utils.escape_html(ligne.etat || "")}</td>
-				<td>${ligne.reste ? frappe.format(ligne.reste, { fieldtype: "Int" }) : "—"}</td>
-				<td></td>
+				<td><span class="ol-etat ${teinte}">${ligne.offert ? __("Offert") : frappe.utils.escape_html(ligne.etat || "")}</span></td>
+				<td class="ol-montant">${ligne.reste ? montant(ligne.reste) : "—"}</td>
+				<td class="ol-actions"></td>
 			</tr>`);
 		const actions = rangee.find("td").last();
-		$(`<button class="btn btn-xs ${ligne.offert ? "btn-default" : "btn-primary"}">
+		$(`<button class="ol-action ${ligne.offert ? "" : "ol-action-forte"}">
 				${ligne.offert ? __("Rendre payant") : __("Offrir")}</button>`)
 			.on("click", () => basculer(dialogue, cours, ligne.apprenant, ligne.offert ? 0 : 1, dialogue.get_value("motif")))
 			.appendTo(actions);
 		// le LMS ferme l'auto-inscription des parcours payants : l'inscription part donc d'ici
 		if (ligne.offert && !ligne.inscrit) {
-			$(`<button class="btn btn-xs btn-primary" style="margin-left:.4rem">${__("Inscrire")}</button>`)
+			$(`<button class="ol-action ol-action-forte">${__("Inscrire")}</button>`)
 				.on("click", () => inscrire(dialogue, cours, ligne.apprenant))
 				.appendTo(actions);
 		}

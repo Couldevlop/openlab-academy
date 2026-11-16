@@ -8,6 +8,7 @@ import frappe
 from frappe import _
 
 from openlab_academy.application.gratuites import AccorderGratuite, GratuiteReservee, RetirerGratuite
+from openlab_academy.application.tableaux_paiement import LIBELLES_STATUT
 from openlab_academy.domain.dossier_paiement import reste_du, statut
 from openlab_academy.entrypoints.paiement import jour_courant
 from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT, DepotDossiersFrappe
@@ -29,11 +30,12 @@ def _exiger_le_droit() -> None:
 
 
 def _etat(depot: DepotDossiersFrappe, apprenant: str, cours: str, offert: bool) -> dict:
+    """L'état est rendu lisible ici (les mêmes libellés que l'intendance) : l'écran n'a rien à traduire."""
     enregistre = depot.charger(apprenant, cours)
     if enregistre is None:
-        return {"etat": "offert" if offert else "sans dossier", "reste": 0}
+        return {"etat": _("Offert") if offert else _("Sans dossier"), "reste": 0}
     dossier = enregistre.dossier
-    return {"etat": statut(dossier, jour_courant()).value, "reste": reste_du(dossier),
+    return {"etat": _(LIBELLES_STATUT[statut(dossier, jour_courant())]), "reste": reste_du(dossier),
             "dossier": enregistre.nom}
 
 
