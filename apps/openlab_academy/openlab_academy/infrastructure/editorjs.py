@@ -139,7 +139,12 @@ def _sections(porteur: AvecCours, urls: dict[str, str]) -> list[Rubrique]:
 
 
 def _travaux_pratiques(module: Module, archive_url: str | None) -> Rubrique | None:
-    if not module.travaux_pratiques.strip():
+    """Rubrique des travaux pratiques : le déroulé de la séance, l'archive du jour, ou les deux.
+
+    Une archive citée est toujours livrée, même quand la séance n'a pas de déroulé écrit : sans cela,
+    le dépôt du jour resterait joint à la leçon sans aucun lien pour le télécharger.
+    """
+    if not module.travaux_pratiques.strip() and archive_url is None:
         return None
     blocs = [_titre("Travaux pratiques")]
     blocs += [_bloc("paragraph", text=_e(paragraphe.strip()))

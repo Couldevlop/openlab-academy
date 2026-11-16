@@ -64,6 +64,16 @@ class TestRenduModule(unittest.TestCase):
             with self.subTest(url), self.assertRaises(ValueError):
                 editorjs.lecon_module(m, "D", 3, archive_url=url)
 
+    def test_archive_livree_meme_sans_deroule_de_seance(self):
+        """Le dépôt du jour reste téléchargeable quand la séance n'a pas de déroulé écrit."""
+        m = Module("01", "M", "c", "l", archive="depot-python-j01.zip")
+        b = blocs(editorjs.lecon_module(m, "D", 3, archive_url="/private/files/depot-python-j01.zip"))
+        self.assertEqual([x["type"] for x in b],
+                         ["header", "paragraph", "paragraph", "header", "paragraph", "header",
+                          "paragraph", "assignment"])
+        self.assertIn('<a href="/private/files/depot-python-j01.zip">depot-python-j01.zip</a>',
+                      b[4]["data"]["text"])
+
     def test_aucune_section_travaux_pratiques_sans_contenu(self):
         rendu = texte(editorjs.lecon_module(Module("01", "M", "c", "l", travaux_pratiques="   "), "D", 3))
         self.assertNotIn("Travaux pratiques", rendu)
