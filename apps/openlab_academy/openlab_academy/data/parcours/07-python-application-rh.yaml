@@ -1446,6 +1446,7 @@ blocs:
       - num: "J11"
         title: "Modules et paquets : ranger le code"
         evaluations: livrable
+        archive: depot-python-j11.zip
         contenu: >-
           L'import, la différence entre un module et un paquet, la garde du script principal, et la règle
           d'un module pour un sujet.
@@ -1588,6 +1589,7 @@ blocs:
       - num: "J12"
         title: "Lire un fichier CSV sans casser les accents"
         evaluations: livrable
+        archive: depot-python-j12.zip
         contenu: >-
           Ouvrir un fichier avec with, choisir l'encodage UTF-8, lire un CSV avec DictReader, et construire
           un chemin sans jamais concaténer des bouts de texte.
@@ -1732,6 +1734,7 @@ blocs:
       - num: "J13"
         title: "Les erreurs : try, except et erreur métier"
         evaluations: livrable
+        archive: depot-python-j13.zip
         contenu: >-
           Attraper une exception, définir une erreur métier propre à l'application, écrire un message qui
           dit quoi faire, et comprendre pourquoi un except nu est dangereux.
@@ -1877,6 +1880,7 @@ blocs:
       - num: "J14"
         title: "Se tester avec pytest"
         evaluations: livrable
+        archive: depot-python-j14.zip
         contenu: >-
           Installer et lancer pytest, nommer un test par une phrase, choisir les cas limites, et travailler
           en rouge puis vert.
@@ -2021,6 +2025,7 @@ blocs:
       - num: "J15"
         title: "Valider aux frontières avec Pydantic"
         evaluations: livrable
+        archive: depot-python-j15.zip
         contenu: >-
           Un modèle d'entrée distinct du modèle métier, la validation à la frontière et nulle part ailleurs,
           et des messages d'erreur exploitables par l'appelant.
