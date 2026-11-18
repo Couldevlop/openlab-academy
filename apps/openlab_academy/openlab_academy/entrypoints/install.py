@@ -4,8 +4,12 @@ import frappe
 
 from openlab_academy.domain.reglages import TITRE_LANCEMENT
 from openlab_academy.entrypoints import cohorte, lancement, seed
-from openlab_academy.infrastructure import reglages_evaluation_frappe, reglages_frappe, reglages_source_frappe
+from openlab_academy.infrastructure import (parties_frappe, reglages_evaluation_frappe, reglages_frappe,
+                                            reglages_source_frappe)
+from openlab_academy.infrastructure.retouches_frappe import CHAMP as CHAMP_RETOUCHE
+from openlab_academy.infrastructure.retouches_frappe import SUIVIS
 from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
+from openlab_academy.infrastructure.depot_ouvertures_frappe import CHAMP_DELAI
 from openlab_academy.infrastructure.visibilite_frappe import CHAMP_LIMITE, CHAMP_VIDEO
 
 ROLE_INTENDANT = "Intendant OpenLab"
@@ -88,6 +92,20 @@ def preparer_champs_lancement() -> None:
     _champ_personnalise(PARCOURS, CHAMP_LIMITE, {
         "fieldtype": "Check", "label": "Accès limité aux dates de la cohorte", "default": "0",
         "insert_after": CHAMP_GRATUIT, "permlevel": NIVEAU_GRATUIT})
+    _champ_personnalise(PARCOURS, CHAMP_DELAI, {
+        "fieldtype": "Int", "label": "Délai avant les exercices (minutes)", "default": "-1",
+        "insert_after": CHAMP_LIMITE, "permlevel": NIVEAU_GRATUIT,
+        "description": "Temps d'étude exigé entre l'ouverture d'une leçon de ce parcours et l'accès à ses "
+                       "exercices. 0 : exercices ouverts avec la leçon. -1 : appliquer le délai réglé pour "
+                       "la plateforme entière."})
+    for doctype in SUIVIS:
+        _champ_personnalise(doctype, CHAMP_RETOUCHE, {
+            "fieldtype": "Check", "label": "Retouché dans l'application", "default": "0",
+            "insert_after": "title",
+            "description": "Cochée automatiquement dès qu'une retouche est enregistrée ici : la republication "
+                           "du fichier de parcours laisse alors cette pièce telle quelle. Décochez-la pour que "
+                           "le fichier reprenne la main à la prochaine publication."})
+        frappe.clear_cache(doctype=doctype)
     _champ_personnalise("Course Lesson", CHAMP_VIDEO, {
         "fieldtype": "Attach", "label": "Vidéo de la leçon", "insert_after": "title",
         "description": "Lien YouTube, Vimeo ou fichier vidéo ; affichée en tête de la leçon."})
@@ -116,6 +134,11 @@ def after_install(commit: bool = True) -> None:
     preparer_champs_lancement()
     reglages_frappe.appliquer()
     seed.run(commit=commit)
+    # leçons publiées avant les parties, ou qu'une cohorte en cours interdit de republier : leurs rubriques sont
+    # découpées depuis le contenu en base, pour qu'elles s'éditent une par une sans rien changer à l'affichage
+    parties_frappe.rattraper()
+    if commit:
+        frappe.db.commit()
     preparer_lancement(commit=commit)
 
 
@@ -129,5 +152,10 @@ def after_migrate(commit: bool = True) -> None:
     preparer_champs_lancement()
     reglages_frappe.appliquer()
     seed.run(commit=commit)
+    # leçons publiées avant les parties, ou qu'une cohorte en cours interdit de republier : leurs rubriques sont
+    # découpées depuis le contenu en base, pour qu'elles s'éditent une par une sans rien changer à l'affichage
+    parties_frappe.rattraper()
+    if commit:
+        frappe.db.commit()
     preparer_lancement(commit=commit)
     lancement.retirer_parcours_echus(commit=commit)

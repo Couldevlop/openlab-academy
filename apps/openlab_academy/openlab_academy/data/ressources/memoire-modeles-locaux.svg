@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" width="800" height="360" role="img" aria-label="Mémoire nécessaire pour exécuter un modèle en local, en 4 bits">
+<title>Mémoire nécessaire pour exécuter un modèle en local, en 4 bits</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="800" height="360" fill="var(--surface)"/>
+<rect x="90" y="276.5" width="78" height="11.5" rx="4" ry="4" fill="var(--s3)"/>
+<rect x="90" y="282" width="78" height="6" fill="var(--s3)"/>
+<text x="129" y="266.5" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">2.5 Go</text>
+<text x="129" y="308" text-anchor="middle" font-size="12" fill="var(--encre)">3 à 4 Md</text>
+<text x="129" y="328" text-anchor="middle" font-size="10" fill="var(--encre2)">extraction</text>
+<text x="129" y="343" text-anchor="middle" font-size="10" fill="var(--encre2)">simple</text>
+<rect x="226" y="262.7" width="78" height="25.3" rx="4" ry="4" fill="var(--s3)"/>
+<rect x="226" y="282" width="78" height="6" fill="var(--s3)"/>
+<text x="265" y="252.7" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">5.5 Go</text>
+<text x="265" y="308" text-anchor="middle" font-size="12" fill="var(--encre)">7 à 8 Md</text>
+<text x="265" y="328" text-anchor="middle" font-size="10" fill="var(--encre2)">agent simple</text>
+<rect x="362" y="246.6" width="78" height="41.4" rx="4" ry="4" fill="var(--s3)"/>
+<rect x="362" y="282" width="78" height="6" fill="var(--s3)"/>
+<text x="401" y="236.6" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">9 Go</text>
+<text x="401" y="308" text-anchor="middle" font-size="12" fill="var(--encre)">12 à 14 Md</text>
+<text x="401" y="328" text-anchor="middle" font-size="10" fill="var(--encre2)">point</text>
+<text x="401" y="343" text-anchor="middle" font-size="10" fill="var(--encre2)">d&#x27;équilibre</text>
+<rect x="498" y="196" width="78" height="92" rx="4" ry="4" fill="var(--s1)"/>
+<rect x="498" y="282" width="78" height="6" fill="var(--s1)"/>
+<text x="537" y="186" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">20 Go</text>
+<text x="537" y="308" text-anchor="middle" font-size="12" fill="var(--encre)">30 à 34 Md</text>
+<text x="537" y="328" text-anchor="middle" font-size="10" fill="var(--encre2)">machine équipée</text>
+<rect x="634" y="94.8" width="78" height="193.2" rx="4" ry="4" fill="var(--s2)"/>
+<rect x="634" y="282" width="78" height="6" fill="var(--s2)"/>
+<text x="673" y="84.8" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">42 Go</text>
+<text x="673" y="308" text-anchor="middle" font-size="12" fill="var(--encre)">70 Md</text>
+<text x="673" y="328" text-anchor="middle" font-size="10" fill="var(--encre2)">serveur ou carte</text>
+<text x="673" y="343" text-anchor="middle" font-size="10" fill="var(--encre2)">pro</text>
+<line x1="60" y1="288" x2="740" y2="288" stroke="var(--trait)" stroke-width="1.5"/>
+<text x="400" y="42" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">La mémoire disponible décide du modèle, pas l&#x27;inverse.</text>
+<text x="400" y="64" text-anchor="middle" font-size="12" fill="var(--encre2)">Ordres de grandeur en quantification agressive, à vérifier sur votre machine.</text>
+</svg>

@@ -5,8 +5,9 @@ import unittest
 import yaml
 
 from openlab_academy.domain.parcours import Annonce, Niveau, Parcours
-from openlab_academy.domain.reglages import TITRE_LANCEMENT, Reglages
-from openlab_academy.infrastructure.yaml_source import PARCOURS_DIR, FormatInvalide, charger_dossier, depuis_dict
+from openlab_academy.domain.reglages import Reglages
+from openlab_academy.infrastructure.yaml_source import (PARCOURS_DIR, FormatInvalide, _Lecteur, charger_dossier,
+                                                       depuis_dict)
 from openlab_academy.tests.fabriques import parcours_brut
 
 
@@ -29,6 +30,38 @@ class TestConversion(unittest.TestCase):
         brut["portfolio"] = brut["portfolio"][:3]
         p = depuis_dict(brut, "t.yaml", Reglages())
         self.assertEqual((p.projets_attendus, p.heures_par_module, len(p.portfolio)), (3, 10, 3))
+
+    def test_reglages_des_exercices_injectes_par_defaut(self):
+        p = depuis_dict(parcours_brut(), "t.yaml",
+                        Reglages(delai_exercices_minutes=45, tentatives_max=2, score_min=80))
+        e = p.exercices
+        self.assertEqual((e.delai_minutes, e.tentatives_max, e.score_min), (45, 2, 80))
+
+    def test_exercices_regles_par_le_parcours(self):
+        brut = parcours_brut()
+        brut["parametres"] = {"delai_exercices_minutes": 15, "tentatives_max": 5, "score_min": 70}
+        e = depuis_dict(brut, "t.yaml", Reglages()).exercices
+        self.assertEqual((e.delai_minutes, e.tentatives_max, e.score_min), (15, 5, 70))
+
+    def test_delai_nul_accepte_pour_ouvrir_les_exercices_tout_de_suite(self):
+        """Un parcours qui enchaîne cours et exercice le même soir exige l'ouverture immédiate."""
+        brut = parcours_brut()
+        brut["parametres"] = {"delai_exercices_minutes": 0}
+        self.assertEqual(depuis_dict(brut, "t.yaml").exercices.delai_minutes, 0)
+
+    def test_delai_negatif_refuse(self):
+        """Un parcours qui ne dit rien omet la clé ; la sentinelle « non réglé » n'appartient qu'à la base."""
+        brut = parcours_brut()
+        brut["parametres"] = {"delai_exercices_minutes": -1}
+        with self.assertRaisesRegex(FormatInvalide,
+                                    r"parametres\.delai_exercices_minutes doit valoir au moins 0"):
+            depuis_dict(brut, "t.yaml")
+
+    def test_score_hors_bornes_refuse(self):
+        brut = parcours_brut()
+        brut["parametres"] = {"score_min": 120}
+        with self.assertRaisesRegex(FormatInvalide, "score_min entre 1 et 100"):
+            depuis_dict(brut, "t.yaml")
 
     def test_parametre_inconnu_refuse(self):
         brut = parcours_brut()
@@ -57,6 +90,26 @@ class TestConversion(unittest.TestCase):
     def test_cles_de_lancement_absentes_valent_faux(self):
         p = depuis_dict(parcours_brut(), "t.yaml")
         self.assertEqual((p.gratuit, p.acces_limite_a_la_cohorte, p.mise_en_avant), (False, False, False))
+
+    def test_nombre_de_questions_propre_au_parcours(self):
+        """Un parcours fixe lui-même la taille de ses quiz : un rappel quotidien n'a pas la même épreuve
+        qu'une séance de trois heures."""
+        brut = parcours_brut()
+        brut["parametres"] = {"questions_par_quiz": 0}
+        self.assertEqual(depuis_dict(brut, "t.yaml").questions_par_quiz, 0)
+
+    def test_progression_sequentielle_lue(self):
+        """Parcours quotidien : la leçon du jour n'ouvre qu'après celle de la veille."""
+        brut = parcours_brut()
+        brut["progression_sequentielle"] = True
+        self.assertTrue(depuis_dict(brut, "t.yaml").progression_sequentielle)
+        self.assertFalse(depuis_dict(parcours_brut(), "t.yaml").progression_sequentielle)
+
+    def test_progression_sequentielle_non_booleenne_refusee(self):
+        brut = parcours_brut()
+        brut["progression_sequentielle"] = "oui"
+        with self.assertRaisesRegex(FormatInvalide, "progression_sequentielle doit être un booléen"):
+            depuis_dict(brut, "t.yaml")
 
     def test_cle_de_lancement_non_booleenne_refusee(self):
         for valeur in (1, "oui"):
@@ -174,9 +227,10 @@ class TestChargementDossier(unittest.TestCase):
         lot = charger_dossier(PARCOURS_DIR)
         self.assertTrue(lot)
         complets = [p for p in lot if isinstance(p, Parcours)]
-        self.assertEqual(len(complets), 5)
+        self.assertEqual(len(complets), 6)
         for p in complets:
-            attendus = 0 if p.title == TITRE_LANCEMENT else 10
+            # le parcours de lancement et le parcours quotidien ne passent pas par le portfolio hebdomadaire
+            attendus = 0 if p.projets_attendus == 0 else 10
             self.assertEqual(len(p.portfolio), attendus, p.title)
         self.assertEqual(sorted(p.title for p in lot if isinstance(p, Annonce)),
                          ["Ingénieur Cybersécurité I", "Ingénieur Cybersécurité II"])
@@ -284,3 +338,26 @@ class TestGrilleEtCorrection(unittest.TestCase):
         brut["blocs"][0]["modules"][0]["correction_livrable"] = {"etapes": [{"etape": "zzz"}]}
         with self.assertRaisesRegex(FormatInvalide, r"t\.yaml: blocs\[0\]\.modules\[0\]\.correction_livrable invalide"):
             depuis_dict(brut, "t.yaml")
+
+
+class TestAtelier(unittest.TestCase):
+    """Clé `atelier:` : la séance s'exerce dans l'atelier de code du navigateur."""
+
+    def _module(self, **cles):
+        brut = {"num": "J01", "title": "T", "contenu": "c", "livrable": "l", **cles}
+        return _Lecteur("essai.yaml", Reglages()).module(brut, "modules[0].")
+
+    def test_absente_l_atelier_est_ferme(self):
+        self.assertFalse(self._module().atelier)
+
+    def test_atelier_declare_avec_une_archive(self):
+        self.assertTrue(self._module(archive="depot.zip", atelier=True).atelier)
+
+    def test_atelier_sans_archive_refuse(self):
+        with self.assertRaises(FormatInvalide):
+            self._module(atelier=True)
+
+    def test_atelier_doit_etre_un_booleen(self):
+        with self.assertRaises(FormatInvalide):
+            self._module(archive="depot.zip", atelier="oui")
+

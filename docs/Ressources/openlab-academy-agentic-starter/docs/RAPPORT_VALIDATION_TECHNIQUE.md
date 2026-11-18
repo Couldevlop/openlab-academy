@@ -9,8 +9,8 @@
 ## Résultats
 - `pytest -q` : **16 tests réussis**.
 - `python -m compileall -q src tests` : réussite.
-- `python -m agentic_lab` : exécution réussie ; 5 factures éligibles, exposition de 7 730,00 EUR, aucun envoi.
-- Scénario à 60 jours : 2 factures, 4 990,00 EUR.
+- `python -m agentic_lab` : exécution réussie ; 5 factures éligibles, exposition de 7 730 000 F CFA, aucun envoi.
+- Scénario à 60 jours : 2 factures, 4 990 000 F CFA.
 - Validation/reprise : test d'interruption après demande d'approbation, réouverture de l'état JSON, approbation et enregistrement simulé sans doublon.
 
 ## Limites de cette validation
@@ -27,7 +27,7 @@ formateur.
 - Python : 3.12.6 (Windows), environnement virtuel dédié `.venv`.
 - `py -3.12 -m venv .venv` puis `pip install -e ".[dev]"` : réussis.
 - `pytest -q` : **16 tests réussis**.
-- `python -m agentic_lab` : 5 factures éligibles, exposition de 7 730,00 EUR, aucune relance envoyée, statut
+- `python -m agentic_lab` : 5 factures éligibles, exposition de 7 730 000 F CFA, aucune relance envoyée, statut
   `completed`.
 - `ruff check .` : **All checks passed**. Huit écarts corrigés (tri des imports, `Callable` importé de
   `collections.abc`, alias `datetime.UTC`) ; la capture large de `tools.execute_tool` est conservée et documentée

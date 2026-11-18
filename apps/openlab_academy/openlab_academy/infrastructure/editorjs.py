@@ -5,26 +5,34 @@ Toute donnée issue des parcours ou des réglages est échappée : aucun HTML ac
 import html
 import json
 import re
+from dataclasses import dataclass
 from urllib.parse import parse_qs, urlsplit
 
-from openlab_academy.domain.parcours import Module, Projet
-from openlab_academy.domain.reglages import Reglages
+from openlab_academy.domain.parcours import AvecCours, Extrait, Figure, Module, Projet, Section, Tableau
+from openlab_academy.domain.reglages import Reglages, ReglagesExercices
 
 
 def _e(texte: str) -> str:
-    return html.escape(texte)
+    """Guillemets et apostrophes laissés tels quels : un texte de leçon ne sert jamais de valeur d'attribut, et
+    la même convention vaut pour `html_blocs`, qui relit ce que l'éditeur riche a enregistré."""
+    return html.escape(texte, quote=False)
 
 
 def _bloc(type_: str, **data) -> dict:
     return {"type": type_, "data": data}
 
 
-def _titre(texte: str) -> dict:
-    return _bloc("header", text=texte, level=2)
+def _titre(texte: str, niveau: int = 2) -> dict:
+    """Le texte est celui d'une rubrique du rendu, écrit ici. Un titre venu d'un parcours passe par `_e`
+    chez l'appelant : l'échappement est au plus près de la donnée, et le HTML des rubriques reste lisible."""
+    return _bloc("header", text=texte, level=niveau)
 
 
 def _liste(items) -> dict:
-    return _bloc("list", style="unordered", items=[_e(i) for i in items])
+    """Le LMS rend les listes avec `@editorjs/nested-list` : chaque entrée est un objet `{content, items}`.
+    Une chaîne nue s'affiche « undefined » dans la leçon."""
+    return _bloc("list", style="unordered",
+                 items=[{"content": _e(i), "items": []} for i in items])
 
 
 def _doc(blocks: list[dict]) -> str:
@@ -39,57 +47,245 @@ def _lien_archive(nom: str, url: str) -> dict:
     d'accès des médias de leçon ; toute autre adresse est refusée (OWASP A03, échec fermé)."""
     if not isinstance(url, str) or not _ARCHIVE_PRIVEE.fullmatch(url):
         raise ValueError(f"adresse d'archive non servie par le site : {url!r}")
-    return _bloc("paragraph", text=f'Archive de départ : <a href="{url}">{_e(nom)}</a>')
+    return _bloc("paragraph", text=f'À télécharger : <a href="{url}">{_e(nom)}</a>')
 
 
-def lecon_module(module: Module, devoir: str, heures: int, quiz: str | None = None,
-                 devoir_cas: str | None = None, reglages: Reglages | None = None,
-                 archive_url: str | None = None) -> str:
-    blocs = [
+_ATELIER = re.compile(r"/atelier\?lecon=[A-Za-z0-9%._-]{1,140}")
+
+
+def _lien_atelier(url: str) -> dict:
+    """Lien vers l'atelier de code, qui ouvre le dépôt du jour dans le navigateur.
+
+    L'adresse est celle de la page d'atelier du site, avec la leçon en paramètre ; toute autre
+    adresse est refusée (OWASP A03, échec fermé).
+    """
+    if not isinstance(url, str) or not _ATELIER.fullmatch(url):
+        raise ValueError(f"adresse d'atelier non servie par le site : {url!r}")
+    return _bloc("paragraph", text=('Sans rien installer : <a href="' + url + '">ouvrir le dépôt du jour '
+                                    "dans l'atelier de code</a>, où Python s'exécute dans votre navigateur."))
+
+
+_FIGURE_PRIVEE = re.compile(r"/private/files/[a-z0-9][a-z0-9-]{0,79}\.(?:svg|jpg|png|webp)")
+
+
+def _image(figure: Figure, urls: dict[str, str]) -> dict:
+    """Illustration de la leçon, schéma ou photographie. Comme l'archive, c'est un média privé servi par le
+    contrôle d'accès : une adresse absente du dossier des ressources, ou hors des fichiers privés, est
+    refusée (OWASP A03)."""
+    url = urls.get(figure.nom)
+    if url is None:
+        raise ValueError(f"figure non déposée sur le site : {figure.nom!r}")
+    if not _FIGURE_PRIVEE.fullmatch(url):
+        raise ValueError(f"adresse de figure non servie par le site : {url!r}")
+    return _bloc("image", url=url, caption=_e(figure.legende),
+                 withBorder=False, withBackground=False, stretched=False)
+
+
+def _tableau(tableau: Tableau) -> list[dict]:
+    contenu = [[_e(c) for c in tableau.entetes]] + [[_e(c) for c in ligne] for ligne in tableau.lignes]
+    return [_bloc("paragraph", text=f"<b>{_e(tableau.titre)}</b>"),
+            _bloc("table", withHeadings=True, content=contenu)]
+
+
+def _extrait(extrait: Extrait) -> list[dict]:
+    return [_bloc("paragraph", text=f"<b>{_e(extrait.titre)}</b>"),
+            _bloc("codeBox", code=_e(extrait.code), language=extrait.langage)]
+
+
+def _supports(module: AvecCours | Section, figures_urls: dict[str, str]) -> list[dict]:
+    """La figure ouvre, le tableau tranche, le code montre. Un lecteur qui survole la page doit comprendre la
+    séance avant d'en lire une phrase."""
+    blocs = [_image(f, figures_urls) for f in module.figures]
+    for tableau in module.tableaux:
+        blocs += _tableau(tableau)
+    for extrait in module.extraits:
+        blocs += _extrait(extrait)
+    return blocs
+
+
+def _section(section: Section, figures_urls: dict[str, str]) -> list[dict]:
+    blocs = [_titre(_e(section.titre), niveau=3)]
+    blocs += [_bloc("paragraph", text=_e(p.strip())) for p in section.paragraphes if p.strip()]
+    return blocs + _supports(section, figures_urls)
+
+
+def lecon_module(module: Module, devoir: str | None, heures: int, quiz: str | None = None,
+                 devoir_cas: str | None = None, exercices: ReglagesExercices | None = None,
+                 archive_url: str | None = None, figures_urls: dict[str, str] | None = None,
+                 atelier_url: str | None = None) -> str:
+    return assembler(rubriques_module(module, devoir, heures, quiz, devoir_cas, exercices, archive_url,
+                                      figures_urls, atelier_url))
+
+
+def lecon_projet(projet: Projet, devoir: str, reglages: Reglages,
+                 figures_urls: dict[str, str] | None = None) -> str:
+    return assembler(rubriques_projet(projet, devoir, reglages, figures_urls))
+
+
+# --- rubriques : la leçon se rend partie par partie, chacune éditable seule dans l'application -------------------
+
+@dataclass(frozen=True)
+class Rubrique:
+    """Une partie de leçon : sa clé l'identifie d'une publication à l'autre, son titre est celui rendu en
+    en-tête (vide quand la partie n'en porte pas), ses blocs sont son rendu EditorJS."""
+
+    cle: str
+    titre: str
+    blocs: tuple[dict, ...]
+
+
+def assembler(rubriques) -> str:
+    """Contenu de leçon (JSON EditorJS) obtenu en mettant les rubriques bout à bout, dans leur ordre."""
+    return document([bloc for rubrique in rubriques for bloc in rubrique.blocs])
+
+
+def document(blocs) -> str:
+    """Contenu de leçon (JSON EditorJS) pour une suite de blocs déjà prête."""
+    return _doc(list(blocs))
+
+
+def _rubrique(cle: str, titre: str, blocs: list[dict]) -> Rubrique | None:
+    """Une rubrique sans bloc n'existe pas : une séance sans travaux pratiques n'a pas de partie vide à éditer."""
+    return Rubrique(cle, titre, tuple(blocs)) if blocs else None
+
+
+def _sections(porteur: AvecCours, urls: dict[str, str]) -> list[Rubrique]:
+    return [Rubrique(f"section-{rang}", s.titre, tuple(_section(s, urls)))
+            for rang, s in enumerate(porteur.cours, start=1)]
+
+
+def _travaux_pratiques(module: Module, archive_url: str | None,
+                       atelier_url: str | None = None) -> Rubrique | None:
+    """Rubrique des travaux pratiques : le déroulé de la séance, l'archive du jour, ou les deux.
+
+    Une archive citée est toujours livrée, même quand la séance n'a pas de déroulé écrit : sans cela,
+    le dépôt du jour resterait joint à la leçon sans aucun lien pour le télécharger.
+    """
+    if not module.travaux_pratiques.strip() and archive_url is None:
+        return None
+    atelier_url = atelier_url if module.atelier else None
+    blocs = [_titre("Travaux pratiques")]
+    blocs += [_bloc("paragraph", text=_e(paragraphe.strip()))
+              for paragraphe in re.split(r"\n+", module.travaux_pratiques) if paragraphe.strip()]
+    if archive_url is not None:
+        blocs.append(_lien_archive(module.archive, archive_url))
+    if atelier_url is not None:
+        blocs.append(_lien_atelier(atelier_url))
+    return _rubrique("travaux-pratiques", "Travaux pratiques", blocs)
+
+
+def _consigne_exercices(module: Module, exercices: ReglagesExercices) -> str:
+    return (f"Les exercices s'ouvrent {exercices.delai_minutes} minutes après l'ouverture de la leçon. "
+            f"Quiz de {len(module.quiz)} questions : {exercices.score_min} % de bonnes réponses exigé pour valider "
+            f"la leçon, {exercices.tentatives_max} tentatives au maximum. Après {exercices.tentatives_max} échecs, "
+            "relisez le cours puis demandez à votre formateur de rouvrir le quiz.")
+
+
+# intitulés des rubriques rendues ci-dessus, pour retrouver la clé d'une leçon publiée avant les parties
+PRESENTATION = "Présentation"  # rubrique d'ouverture, sans titre affiché dans la leçon
+DEVOIR_FINAL = "Devoir final"  # rubrique du seul bloc de devoir, en fin d'énoncé de projet
+
+_CLES_PAR_TITRE = {
+    "Contenu du module": "contenu", "Travaux pratiques": "travaux-pratiques", "Livrable": "livrable",
+    "Exercices": "exercices", "Mise en situation": "mise-en-situation", "Contexte": "contexte",
+    "Objectifs": "objectifs", "Fonctionnalités attendues": "fonctionnalites", "Stack": "stack",
+    "Critères d'acceptation": "criteres", "Exigences qualité": "exigences", "Livrables": "livrables",
+    "Barème /20": "bareme",
+}
+
+
+def decouper(blocs) -> list[Rubrique]:
+    """Rubriques d'une leçon déjà en base, découpée à ses titres.
+
+    Sert aux parcours publiés avant les parties, et à ceux qu'une cohorte en cours interdit de republier : leur
+    contenu est repris tel quel, jamais régénéré depuis le fichier, qui a pu changer entre-temps. Les mettre
+    bout à bout redonne donc exactement la leçon."""
+    rubriques: list[Rubrique] = []
+    courants: list[dict] = []
+    titre, cle, sections = PRESENTATION, "entete", 0
+
+    def fermer():
+        if courants:
+            rubriques.append(Rubrique(cle, titre, tuple(courants)))
+
+    for bloc in blocs:
+        if bloc.get("type") == "header":
+            fermer()
+            courants = []
+            # le titre du bloc est du HTML échappé ; la fiche de la partie, elle, affiche du texte
+            titre = html.unescape(bloc.get("data", {}).get("text", ""))
+            cle = _CLES_PAR_TITRE.get(titre)
+            if cle is None:
+                sections += 1
+                cle = f"section-{sections}"
+        courants.append(bloc)
+    fermer()
+    return rubriques
+
+
+def rubriques_module(module: Module, devoir: str | None, heures: int, quiz: str | None = None,
+                     devoir_cas: str | None = None, exercices: ReglagesExercices | None = None,
+                     archive_url: str | None = None,
+                     figures_urls: dict[str, str] | None = None,
+                     atelier_url: str | None = None) -> list[Rubrique]:
+    urls = figures_urls or {}
+    contenu = [
         _titre("Contenu du module"),
         _bloc("paragraph", text=_e(module.contenu)),
-        _bloc("paragraph", text=f"Format : ~{heures} h — 40 % théorie, 60 % pratique."),
     ]
-    if module.travaux_pratiques.strip():
-        blocs.append(_titre("Travaux pratiques"))
-        blocs += [_bloc("paragraph", text=_e(paragraphe.strip()))
-                  for paragraphe in re.split(r"\n+", module.travaux_pratiques) if paragraphe.strip()]
-        if archive_url is not None:
-            blocs.append(_lien_archive(module.archive, archive_url))
-    blocs += [
-        _titre("Livrable"),
-        _bloc("paragraph", text=f"<b>{_e(module.livrable)}</b>"),
-        _bloc("assignment", assignment=devoir),
+    # la répartition théorie/pratique parle du travail à rendre : sans livrable, elle promettrait un exercice absent
+    if devoir:
+        contenu.append(_bloc("paragraph", text=f"Format : ~{heures} h, 40 % de théorie et 60 % de pratique."))
+    contenu += _supports(module, urls)
+    rubriques = [
+        _rubrique("contenu", "Contenu du module", contenu),
+        *_sections(module, urls),
+        _travaux_pratiques(module, archive_url, atelier_url),
     ]
-    if quiz and devoir_cas and reglages:
-        blocs += [
+    if devoir:
+        rubriques.append(_rubrique("livrable", "Livrable", [
+            _titre("Livrable"),
+            _bloc("paragraph", text=f"<b>{_e(module.livrable)}</b>"),
+            _bloc("assignment", assignment=devoir),
+        ]))
+    if quiz and exercices:
+        rubriques.append(_rubrique("exercices", "Exercices", [
             _titre("Exercices"),
-            _bloc("paragraph", text=(
-                f"Les exercices s'ouvrent {reglages.delai_exercices_minutes} minutes après l'ouverture de la leçon. "
-                f"Quiz de {len(module.quiz)} questions : {reglages.score_min} % de bonnes réponses exigé pour valider "
-                f"la leçon, {reglages.tentatives_max} tentatives au maximum. Après {reglages.tentatives_max} échecs, "
-                "relisez le cours puis demandez à votre formateur de rouvrir le quiz.")),
+            _bloc("paragraph", text=_consigne_exercices(module, exercices)),
             _bloc("quiz", quiz=quiz),
+        ]))
+    if devoir_cas:
+        rubriques.append(_rubrique("mise-en-situation", "Mise en situation", [
             _titre("Mise en situation"),
             _bloc("paragraph", text=_e(module.mise_en_situation)),
             _bloc("assignment", assignment=devoir_cas),
-        ]
-    return _doc(blocs)
+        ]))
+    return [r for r in rubriques if r is not None]
 
 
-def lecon_projet(projet: Projet, devoir: str, reglages: Reglages) -> str:
-    return _doc([
-        _bloc("paragraph", text=f"<b>{projet.niveau.libelle}</b> · ~{projet.duree_h} h"),
-        _titre("Contexte"), _bloc("paragraph", text=_e(projet.contexte)),
-        _titre("Objectifs"), _liste(projet.objectifs),
-        _titre("Fonctionnalités attendues"), _liste(projet.fonctionnalites),
-        _titre("Stack"), _liste(projet.stack),
-        _titre("Critères d'acceptation"), _liste(projet.criteres_acceptation),
-        _titre("Exigences qualité"), _liste(reglages.exigences_communes + projet.exigences_specifiques),
-        _titre("Livrables"), _liste(projet.livrables),
-        _titre("Barème /20"), _liste(f"{c.nom} : {c.poids} %" for c in reglages.bareme),
-        _bloc("assignment", assignment=devoir),
-    ])
+def rubriques_projet(projet: Projet, devoir: str, reglages: Reglages,
+                     figures_urls: dict[str, str] | None = None) -> list[Rubrique]:
+    urls = figures_urls or {}
+    contexte = [_titre("Contexte"), _bloc("paragraph", text=_e(projet.contexte))]
+    contexte += _supports(projet, urls)
+    listes = [
+        ("objectifs", "Objectifs", projet.objectifs),
+        ("fonctionnalites", "Fonctionnalités attendues", projet.fonctionnalites),
+        ("stack", "Stack", projet.stack),
+        ("criteres", "Critères d'acceptation", projet.criteres_acceptation),
+        ("exigences", "Exigences qualité", reglages.exigences_communes + projet.exigences_specifiques),
+        ("livrables", "Livrables", projet.livrables),
+        ("bareme", "Barème /20", [f"{c.nom} : {c.poids} %" for c in reglages.bareme]),
+    ]
+    rubriques = [
+        _rubrique("entete", PRESENTATION, [_bloc("paragraph",
+                                       text=f"<b>{projet.niveau.libelle}</b> · ~{projet.duree_h} h")]),
+        _rubrique("contexte", "Contexte", contexte),
+        *_sections(projet, urls),
+        *(_rubrique(cle, titre, [_titre(titre), _liste(items)]) for cle, titre, items in listes),
+        _rubrique("devoir", DEVOIR_FINAL, [_bloc("assignment", assignment=devoir)]),
+    ]
+    return [r for r in rubriques if r is not None]
 
 
 def consigne_module(module: Module) -> str:

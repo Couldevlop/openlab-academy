@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" width="900" height="380" role="img" aria-label="Le trajet d&#x27;une question dans une recherche documentaire">
+<title>Le trajet d&#x27;une question dans une recherche documentaire</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="900" height="380" fill="var(--surface)"/>
+<rect x="22" y="110" width="158" height="76" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="101" y="140" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Question</text>
+<text x="101" y="164" text-anchor="middle" font-size="10" fill="var(--encre2)">reformulée si besoin</text>
+<path d="M 180 148 L 190 148" fill="none" stroke="var(--s1)" stroke-width="2" marker-end="url(#pointe-s1)"/>
+<rect x="198" y="110" width="158" height="76" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="277" y="140" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Recherche</text>
+<text x="277" y="164" text-anchor="middle" font-size="10" fill="var(--encre2)">lexicale et vectorielle</text>
+<path d="M 356 148 L 366 148" fill="none" stroke="var(--s3)" stroke-width="2" marker-end="url(#pointe-s3)"/>
+<rect x="374" y="110" width="158" height="76" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="453" y="140" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Fusion</text>
+<text x="453" y="164" text-anchor="middle" font-size="10" fill="var(--encre2)">les deux listes réunies</text>
+<path d="M 532 148 L 542 148" fill="none" stroke="var(--s3)" stroke-width="2" marker-end="url(#pointe-s3)"/>
+<rect x="550" y="110" width="158" height="76" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="629" y="140" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Sélection</text>
+<text x="629" y="164" text-anchor="middle" font-size="10" fill="var(--encre2)">les k meilleurs passages</text>
+<path d="M 708 148 L 718 148" fill="none" stroke="var(--s3)" stroke-width="2" marker-end="url(#pointe-s3)"/>
+<rect x="726" y="110" width="158" height="76" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="805" y="140" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Réponse</text>
+<text x="805" y="164" text-anchor="middle" font-size="10" fill="var(--encre2)">citations obligatoires</text>
+<rect x="22" y="228" width="334" height="88" rx="8" class="b-trait" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="189" y="252" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">Préparé à l&#x27;avance, une fois</text>
+<text x="189" y="274" text-anchor="middle" font-size="11" fill="var(--encre2)">découpage des documents en passages</text>
+<text x="189" y="289" text-anchor="middle" font-size="11" fill="var(--encre2)">index lexical et vecteurs calculés</text>
+<rect x="546" y="228" width="334" height="88" rx="8" class="b-critique" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="713" y="252" text-anchor="middle" font-size="12" font-weight="600" fill="var(--critique)">Ce qui se vérifie à chaque réponse</text>
+<text x="713" y="274" text-anchor="middle" font-size="11" fill="var(--encre2)">chaque affirmation porte sa source</text>
+<text x="713" y="289" text-anchor="middle" font-size="11" fill="var(--encre2)">un passage non cité ne compte pas</text>
+<text x="450" y="42" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Une recherche documentaire n&#x27;est pas un agent : c&#x27;est un outil que l&#x27;agent appelle.</text>
+<text x="450" y="64" text-anchor="middle" font-size="12" fill="var(--encre2)">Elle répond à une question sur vos documents, et elle cite ses sources.</text>
+<text x="450" y="352" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Si la réponse ne peut pas être citée, l&#x27;agent doit dire qu&#x27;il ne sait pas.</text>
+</svg>

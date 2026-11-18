@@ -1,0 +1,102 @@
+{
+ "doctype": "DocType",
+ "name": "Partie Lecon OpenLab",
+ "module": "OpenLab Academy",
+ "custom": 0,
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "istable": 0,
+ "issingle": 0,
+ "track_changes": 1,
+ "title_field": "titre",
+ "show_title_field_in_link": 1,
+ "field_order": [
+  "lecon",
+  "cle",
+  "rang",
+  "titre",
+  "contenu",
+  "contenu_modifie_en_ligne",
+  "blocs"
+ ],
+ "fields": [
+  {
+   "fieldname": "lecon",
+   "fieldtype": "Link",
+   "label": "Leçon",
+   "options": "Course Lesson",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "cle",
+   "fieldtype": "Data",
+   "label": "Clé de la partie",
+   "reqd": 1,
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "Identifie la partie d'une publication à l'autre : la retouche est reconduite sur cette clé."
+  },
+  {
+   "fieldname": "rang",
+   "fieldtype": "Int",
+   "label": "Rang de lecture",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "titre",
+   "fieldtype": "Data",
+   "label": "Titre",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "contenu",
+   "fieldtype": "Text Editor",
+   "label": "Contenu",
+   "description": "Enregistrer cette partie met la leçon à jour pour les apprenants, sans toucher aux autres parties."
+  },
+  {
+   "fieldname": "contenu_modifie_en_ligne",
+   "fieldtype": "Check",
+   "label": "Retouché dans l'application",
+   "default": "0",
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "Posé à l'enregistrement : la republication du parcours laisse cette partie en place. Décocher rend la main au fichier de parcours."
+  },
+  {
+   "fieldname": "blocs",
+   "fieldtype": "Code",
+   "options": "JSON",
+   "label": "Blocs du fichier de parcours",
+   "read_only": 1,
+   "hidden": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "role": "Moderator",
+   "read": 1,
+   "write": 1,
+   "report": 1
+  }
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-11-15 21:00:00",
+ "modified": "2026-11-15 21:00:00",
+ "sort_field": "rang",
+ "sort_order": "ASC"
+}

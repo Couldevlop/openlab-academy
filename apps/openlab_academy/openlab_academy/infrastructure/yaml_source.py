@@ -5,16 +5,24 @@ import re
 import yaml
 
 from openlab_academy.domain.grille import Grille, GrilleInvalide
-from openlab_academy.domain.parcours import (Annonce, Bloc, Module, Niveau, Parcours, ParcoursInvalide, Projet,
-                                             Question)
+from openlab_academy.domain.parcours import (Annonce, Bloc, Evaluations, Extrait, Figure, Module, Niveau,
+                                             Parcours, ParcoursInvalide, Projet, Question, Section, Tableau)
 from openlab_academy.domain.reglages import Reglages, ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import Chaine
 
 PARCOURS_DIR = pathlib.Path(__file__).parents[1] / "data" / "parcours"
 _NOM_ARCHIVE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.zip")
+_NOM_IMAGE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.(?:jpg|jpeg|png|webp|svg)")
 _LISTES_PROJET = ("objectifs", "fonctionnalites", "stack", "criteres_acceptation", "livrables")
 # Paramètres qu'un parcours peut surcharger : clé YAML -> champ du domaine Parcours
-_PARAMETRES = {"projets_par_portfolio": "projets_attendus", "heures_par_module": "heures_par_module"}
+_PARAMETRES = {"projets_par_portfolio": "projets_attendus", "heures_par_module": "heures_par_module",
+               "questions_par_quiz": "questions_par_quiz",
+               "delai_exercices_minutes": "delai_exercices_minutes", "tentatives_max": "tentatives_max",
+               "score_min": "score_min"}
+# Délai d'exercices : 0 est une valeur, et non une absence (les exercices s'ouvrent avec la leçon, pour un
+# parcours qui enchaîne cours et épreuve le même soir). Un parcours qui ne dit rien omet la clé, et le réglage
+# de la plateforme s'applique ; la sentinelle « non réglé » (-1) n'appartient qu'à la base.
+_MINIMUMS = {"delai_exercices_minutes": 0}
 
 
 def _entier(valeur) -> bool:
@@ -33,7 +41,10 @@ class _Lecteur:
     def parametres(self, d: dict) -> dict:
         valeurs = {"projets_attendus": self.reglages.projets_par_portfolio,
                    "heures_par_module": self.reglages.heures_par_module,
-                   "questions_par_quiz": self.reglages.questions_par_quiz}
+                   "questions_par_quiz": self.reglages.questions_par_quiz,
+                   "delai_exercices_minutes": self.reglages.delai_exercices_minutes,
+                   "tentatives_max": self.reglages.tentatives_max,
+                   "score_min": self.reglages.score_min}
         surcharges = d.get("parametres") or {}
         if not isinstance(surcharges, dict):
             raise FormatInvalide(f"{self.source}: parametres doit être un dictionnaire")
@@ -42,8 +53,26 @@ class _Lecteur:
                 raise FormatInvalide(f"{self.source}: parametres.{cle} inconnu ({sorted(_PARAMETRES)})")
             if not _entier(valeur):
                 raise FormatInvalide(f"{self.source}: parametres.{cle} doit être un entier")
+            minimum = _MINIMUMS.get(cle)
+            if minimum is not None and valeur < minimum:
+                raise FormatInvalide(f"{self.source}: parametres.{cle} doit valoir au moins {minimum} "
+                                     "(sans cette clé, le réglage de la plateforme s'applique)")
             valeurs[_PARAMETRES[cle]] = valeur
         return valeurs
+
+    def evaluations(self, m: dict, chemin: str) -> Evaluations:
+        """Pièces d'évaluation de la séance ; absente, la séance les porte toutes."""
+        if "sans_exercices" in m:
+            raise FormatInvalide(f"{self.source}: {chemin}sans_exercices n'existe plus, utilisez "
+                                 f"evaluations: {Evaluations.AUCUNE.value}")
+        valeur = m.get("evaluations")
+        if valeur is None:
+            return Evaluations.COMPLETES
+        try:
+            return Evaluations(str(valeur))
+        except ValueError:
+            raise FormatInvalide(f"{self.source}: {chemin}evaluations inconnu "
+                                 f"{sorted(e.value for e in Evaluations)}") from None
 
     def booleen(self, d: dict, cle: str) -> bool:
         valeur = d.get(cle, False)
@@ -118,15 +147,104 @@ class _Lecteur:
             raise FormatInvalide(f"{self.source}: {chemin} doit être un nom de fichier .zip sans chemin")
         return nom
 
+    def atelier(self, brut, archive: str, chemin: str) -> bool:
+        """Clé facultative `atelier:` : la séance s'exerce dans l'atelier de code du navigateur.
+
+        Elle n'a de sens qu'avec une archive, puisque l'atelier ouvre les fichiers du dépôt du jour.
+        """
+        if brut is None:
+            return False
+        if not isinstance(brut, bool):
+            raise FormatInvalide(f"{self.source}: {chemin} doit valoir true ou false")
+        if brut and not archive:
+            raise FormatInvalide(f"{self.source}: {chemin} demande une archive pour la séance")
+        return brut
+
+    def couverture(self, brut, chemin: str = "couverture") -> str:
+        """Clé facultative `couverture:` : nom de fichier seul d'une image livrée avec l'application. Jamais un
+        chemin (OWASP A01 : l'image est lue dans le dossier des ressources, pas où le texte l'indique)."""
+        if brut is None:
+            return ""
+        nom = str(brut)
+        if not _NOM_IMAGE.fullmatch(nom):
+            raise FormatInvalide(f"{self.source}: {chemin} doit être un nom d'image sans chemin "
+                                 "(.jpg, .jpeg, .png, .webp ou .svg)")
+        return nom
+
+    def _entrees(self, brut, chemin: str) -> list[dict]:
+        """Une liste de dictionnaires, ou rien. Le message nomme la clé pour qu'un fichier de contenu se
+        corrige sans ouvrir le code."""
+        if brut is None:
+            return []
+        if not isinstance(brut, list) or any(not isinstance(e, dict) for e in brut):
+            raise FormatInvalide(f"{self.source}: {chemin} doit être une liste de dictionnaires")
+        return brut
+
+    def _construire(self, fabrique, chemin: str, **champs):
+        """Les invariants restent dans le domaine ; le lecteur se borne à situer l'erreur dans le fichier."""
+        try:
+            return fabrique(**champs)
+        except ParcoursInvalide as e:
+            raise FormatInvalide(f"{self.source}: {chemin} invalide : {e}") from None
+
+    def figures(self, brut, chemin: str) -> tuple[Figure, ...]:
+        return tuple(
+            self._construire(Figure, f"{chemin}[{i}]", nom=str(f.get("nom") or ""),
+                             legende=str(f.get("legende") or ""))
+            for i, f in enumerate(self._entrees(brut, chemin)))
+
+    def tableaux(self, brut, chemin: str) -> tuple[Tableau, ...]:
+        resultat = []
+        for i, t in enumerate(self._entrees(brut, chemin)):
+            lignes = t.get("lignes")
+            if not isinstance(lignes, list) or any(not isinstance(l, list) for l in lignes):
+                raise FormatInvalide(f"{self.source}: {chemin}[{i}].lignes doit être une liste de listes")
+            resultat.append(self._construire(
+                Tableau, f"{chemin}[{i}]", titre=str(t.get("titre") or ""),
+                entetes=tuple(str(c) for c in (t.get("entetes") or ())),
+                lignes=tuple(tuple(str(c) for c in ligne) for ligne in lignes)))
+        return tuple(resultat)
+
+    def extraits(self, brut, chemin: str) -> tuple[Extrait, ...]:
+        return tuple(
+            self._construire(Extrait, f"{chemin}[{i}]", titre=str(e.get("titre") or ""),
+                             langage=str(e.get("langage") or ""), code=str(e.get("source") or ""))
+            for i, e in enumerate(self._entrees(brut, chemin)))
+
+    def sections(self, brut, chemin: str) -> tuple[Section, ...]:
+        """Clé facultative `cours:` : le chapitre en sections titrées. Le texte d'une section se découpe en
+        paragraphes sur les sauts de ligne, comme les travaux pratiques : un scalaire YAML replié (>-)
+        réduit déjà une ligne vide à un simple saut."""
+        resultat = []
+        for i, s in enumerate(self._entrees(brut, chemin)):
+            ou = f"{chemin}[{i}]"
+            paragraphes = tuple(p.strip() for p in re.split(r"\n+", str(s.get("texte") or "")) if p.strip())
+            resultat.append(self._construire(
+                Section, ou, titre=str(s.get("titre") or ""), paragraphes=paragraphes,
+                figures=self.figures(s.get("figures"), f"{ou}.figures"),
+                tableaux=self.tableaux(s.get("tableaux"), f"{ou}.tableaux"),
+                extraits=self.extraits(s.get("code"), f"{ou}.code")))
+        return tuple(resultat)
+
     def module(self, m: dict, chemin: str) -> Module:
         quiz = m.get("quiz") or []
         if not isinstance(quiz, list):
             raise FormatInvalide(f"{self.source}: {chemin}quiz doit être une liste de questions")
-        return Module(*(str(self.exiger(m, c, chemin)) for c in ("num", "title", "contenu", "livrable")),
+        evaluations = self.evaluations(m, chemin)
+        archive = self.archive(m.get("archive"), f"{chemin}archive")
+        # le livrable n'est exigé que des séances qui en portent un ; le domaine refuse celui qui traîne ailleurs
+        livrable = self.exiger(m, "livrable", chemin) if evaluations.veut_livrable else m.get("livrable")
+        return Module(*(str(self.exiger(m, c, chemin)) for c in ("num", "title", "contenu")), str(livrable or ""),
                       quiz=tuple(self.question(q, f"{chemin}quiz[{i}].") for i, q in enumerate(quiz)),
                       mise_en_situation=str(m.get("mise_en_situation") or ""),
+                      evaluations=evaluations,
                       travaux_pratiques=str(m.get("travaux_pratiques") or ""),
-                      archive=self.archive(m.get("archive"), f"{chemin}archive"),
+                      archive=archive,
+                      atelier=self.atelier(m.get("atelier"), archive, f"{chemin}atelier"),
+                      cours=self.sections(m.get("cours"), f"{chemin}cours"),
+                      figures=self.figures(m.get("figures"), f"{chemin}figures"),
+                      tableaux=self.tableaux(m.get("tableaux"), f"{chemin}tableaux"),
+                      extraits=self.extraits(m.get("code"), f"{chemin}code"),
                       grille_cas=self.grille(m.get("grille_mise_en_situation"), f"{chemin}grille_mise_en_situation"),
                       correction_cas=self.correction(m.get("correction_mise_en_situation"),
                                                      f"{chemin}correction_mise_en_situation"),
@@ -152,6 +270,10 @@ class _Lecteur:
             contexte=str(self.exiger(p, "contexte", chemin)),
             exigences_specifiques=self.textes(p["exigences_specifiques"] or (), f"{chemin}exigences_specifiques"),
             apres_module=None if apres is None else str(apres),
+            cours=self.sections(p.get("cours"), f"{chemin}cours"),
+            figures=self.figures(p.get("figures"), f"{chemin}figures"),
+            tableaux=self.tableaux(p.get("tableaux"), f"{chemin}tableaux"),
+            extraits=self.extraits(p.get("code"), f"{chemin}code"),
             grille=self.grille(p.get("grille"), f"{chemin}grille"),
             correction=self.correction(p.get("correction"), f"{chemin}correction"), **listes,
         )
@@ -162,6 +284,7 @@ class _Lecteur:
             short_introduction=str(self.exiger(d, "short_introduction", "")),
             description=str(self.exiger(d, "description", "")),
             tags=self.textes(d.get("tags") or (), "tags"), card_gradient=str(d.get("card_gradient", "Blue")),
+            couverture=self.couverture(d.get("couverture")),
         )
 
     def element(self, d) -> "Parcours | Annonce":
@@ -188,11 +311,13 @@ class _Lecteur:
             short_introduction=str(self.exiger(d, "short_introduction", "")),
             description=str(self.exiger(d, "description", "")),
             tags=self.textes(d.get("tags") or (), "tags"), card_gradient=str(d.get("card_gradient", "Blue")),
+            couverture=self.couverture(d.get("couverture")),
             blocs=blocs, portfolio=portfolio,
             capstone=self.projet(self.exiger(d, "capstone", ""), "capstone.", False),
             gratuit=self.booleen(d, "gratuit"),
             acces_limite_a_la_cohorte=self.booleen(d, "acces_limite_a_la_cohorte"),
             mise_en_avant=self.booleen(d, "mise_en_avant"),
+            progression_sequentielle=self.booleen(d, "progression_sequentielle"),
             **parametres,
         )
 

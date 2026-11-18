@@ -1,17 +1,24 @@
 """Adaptateur de sortie : implémente le port DepotCatalogue sur les doctypes Frappe LMS."""
 import contextlib
+import dataclasses
 import html
+from urllib.parse import quote
 
 import frappe
 
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.grilles_derivees import grille_par_defaut
 from openlab_academy.domain.parcours import Annonce, Chapitre, Module, Parcours, Question
-from openlab_academy.domain.reglages import Reglages
+from openlab_academy.domain.reglages import Reglages, ReglagesExercices
 from openlab_academy.domain.reglages_evaluation import Chaine, ReglagesEvaluation, TypeExercice
-from openlab_academy.infrastructure import depot_copies_frappe, editorjs, ressources_frappe
+from openlab_academy.infrastructure import (depot_copies_frappe, editorjs, parties_frappe, ressources_frappe,
+                                            retouches_frappe)
 from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
+from openlab_academy.infrastructure.depot_ouvertures_frappe import CHAMP_DELAI
 from openlab_academy.infrastructure.visibilite_frappe import CHAMP_LIMITE, CHAMP_VIDEO
+
+# champ du LMS : une leçon ne s'ouvre qu'une fois la précédente terminée
+CHAMP_SEQUENTIEL = "enforce_lesson_completion"
 
 
 class DepotFrappe:
@@ -29,23 +36,57 @@ class DepotFrappe:
         return bool(frappe.db.count("LMS Enrollment", {"course": cours_id}))
 
     def creer(self, parcours: Parcours | Annonce) -> str:
+        with retouches_frappe.publication():
+            return self._creer(parcours)
+
+    def _creer(self, parcours: Parcours | Annonce) -> str:
         cours = frappe.get_doc({"doctype": "LMS Course", "instructors": [{"instructor": self._reglages.formateur}],
                                 **self._champs(parcours)}).insert(ignore_permissions=True)
+        self._couverture(cours.name, parcours)
         if isinstance(parcours, Parcours):
             self._ecrire_chapitres(cours.name, parcours)
         return cours.name
 
     def remplacer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
+        """Ce qui a été retouché dans l'application est conservé : séances, challenges, questions de quiz et
+        fiche du parcours. Le fichier réécrit tout le reste, et ne reprend une pièce retouchée que lorsque sa
+        case est décochée."""
+        with retouches_frappe.publication():
+            self._remplacer(cours_id, parcours)
+
+    def _remplacer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
         videos = self._videos(cours_id)
+        retouchees = retouches_frappe.relever(cours_id)
+        parties_retouchees = parties_frappe.relever(cours_id)
+        anciens = retouches_frappe.exercices(cours_id)
         self._purger(cours_id)
         # lecture verrouillante : l'instantané de la transaction date d'avant la purge et ne voit pas le `modified`
         # qu'une tâche planifiée du LMS (statistiques horaires) a validé entre-temps ; le verrou la fait attendre
         cours = frappe.get_doc("LMS Course", cours_id, for_update=True)
-        cours.update(self._champs(parcours))
+        cours.update(retouches_frappe.champs_du_parcours(cours_id, self._champs(parcours)))
         cours.set("chapters", [])
         cours.save(ignore_permissions=True)
+        self._couverture(cours_id, parcours)
         if isinstance(parcours, Parcours):
             self._ecrire_chapitres(cours_id, parcours, videos)
+            retouches_frappe.reconduire(cours_id, retouchees, anciens)
+            parties_frappe.reconduire(cours_id, parties_retouchees,
+                                      retouches_frappe.remplacements(cours_id, anciens))
+
+    @staticmethod
+    def _couverture(cours_id: str, parcours: Parcours | Annonce) -> None:
+        """L'image de couverture est jointe après la création : un média ne se joint qu'à un document existant."""
+        if not parcours.couverture:
+            return
+        adresse = ressources_frappe.joindre_couverture(cours_id, parcours.couverture)
+        frappe.db.set_value("LMS Course", cours_id, "image", adresse)
+
+    @staticmethod
+    def _couverture_si_non_retouchee(cours_id: str, parcours: Parcours | Annonce) -> None:
+        """Couverture d'un parcours que la publication laisse par ailleurs tel quel."""
+        if retouches_frappe.fiche_retouchee(cours_id):
+            return
+        DepotFrappe._couverture(cours_id, parcours)
 
     @contextlib.contextmanager
     def unite_de_travail(self):
@@ -70,9 +111,10 @@ class DepotFrappe:
 
     @staticmethod
     def _drapeaux(p: Parcours) -> dict:
-        """Accès limité toujours écrit ; gratuit et mise en avant seulement s'ils sont demandés : absents, la
-        décision de l'administrateur n'est pas écrasée."""
-        drapeaux = {CHAMP_LIMITE: int(p.acces_limite_a_la_cohorte)}
+        """Accès limité, délai des exercices et progression séquentielle toujours écrits ; gratuit et mise en avant seulement s'ils sont
+        demandés : absents, la décision de l'administrateur n'est pas écrasée."""
+        drapeaux = {CHAMP_LIMITE: int(p.acces_limite_a_la_cohorte), CHAMP_DELAI: p.exercices.delai_minutes,
+                    CHAMP_SEQUENTIEL: int(p.progression_sequentielle)}
         if p.gratuit:
             drapeaux[CHAMP_GRATUIT] = 1
         if p.mise_en_avant:
@@ -107,16 +149,16 @@ class DepotFrappe:
 
     def _ecrire_chapitres(self, cours_id: str, parcours: Parcours, videos: dict[str, str] | None = None) -> None:
         videos = videos or {}
-        noms = [self._chapitre(cours_id, c, parcours.heures_par_module, videos) for c in parcours.chapitres()]
+        noms = [self._chapitre(cours_id, c, parcours, videos) for c in parcours.chapitres()]
         cours = frappe.get_doc("LMS Course", cours_id)
         cours.set("chapters", [{"chapter": n} for n in noms])
         cours.save(ignore_permissions=True)
 
-    def _chapitre(self, cours_id: str, chapitre: Chapitre, heures_module: int, videos: dict[str, str]) -> str:
+    def _chapitre(self, cours_id: str, chapitre: Chapitre, parcours: Parcours, videos: dict[str, str]) -> str:
         doc = frappe.get_doc({"doctype": "Course Chapter", "course": cours_id, "title": chapitre.titre}).insert(
             ignore_permissions=True)
         if chapitre.projet is None:
-            noms = [self._lecon_module(cours_id, doc.name, m, heures_module, videos) for m in chapitre.modules]
+            noms = [self._lecon_module(cours_id, doc.name, m, parcours, videos) for m in chapitre.modules]
         else:
             noms = [self._lecon_projet(cours_id, doc.name, chapitre, videos)]
         doc.reload()
@@ -139,8 +181,13 @@ class DepotFrappe:
         depot_copies_frappe.enregistrer_grille_exercice(nom, type_exercice, grille, chaine)
 
     def completer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
-        """Cours conservé tel quel (inscrits) : applique les drapeaux de lancement et crée seulement les grilles
-        manquantes de ses devoirs, par titre."""
+        """Cours conservé tel quel (inscrits) : applique les drapeaux de lancement, rafraîchit la couverture et
+        crée seulement les grilles manquantes de ses devoirs, par titre.
+
+        La couverture est une vitrine, pas du contenu : la poser ne change rien pour les inscrits, et sans cela
+        un parcours en cours garderait à jamais l'image de sa première publication. La fiche retouchée dans
+        l'application reste intouchée, comme pour une republication complète."""
+        self._couverture_si_non_retouchee(cours_id, parcours)
         if isinstance(parcours, Annonce):
             return
         frappe.db.set_value("LMS Course", cours_id, self._drapeaux(parcours))
@@ -160,7 +207,9 @@ class DepotFrappe:
                 p = chapitre.projet
                 yield chapitre.titre, self._type_projet(p), p, p.grille, p.correction
             for m in chapitre.modules:
-                yield f"Livrable {m.num} — {m.title}", TypeExercice.LIVRABLE, None, m.grille_livrable, m.correction_livrable
+                if m.veut_livrable:
+                    yield (f"Livrable {m.num} — {m.title}", TypeExercice.LIVRABLE, None, m.grille_livrable,
+                           m.correction_livrable)
                 if m.quiz:
                     yield (f"Mise en situation {m.num} — {m.title}", TypeExercice.MISE_EN_SITUATION, None,
                            m.grille_cas, m.correction_cas)
@@ -178,38 +227,67 @@ class DepotFrappe:
         devoir = self._devoir(cours_id, ch.titre, editorjs.consigne_projet(ch.projet), type_exercice, ch.projet,
                               ch.projet.grille, ch.projet.correction)
         titre = f"Énoncé — {ch.projet.titre}"
-        return self._nouvelle_lecon(cours_id, chapitre, titre, editorjs.lecon_projet(ch.projet, devoir, self._reglages),
-                                    [{"assessment_type": "LMS Assignment", "assessment_name": devoir}],
-                                    videos.get(titre, "")).name
-
-    def _lecon_module(self, cours_id: str, chapitre: str, m: Module, heures: int, videos: dict[str, str]) -> str:
-        devoir = self._devoir(cours_id, f"Livrable {m.num} — {m.title}", editorjs.consigne_module(m),
-                              TypeExercice.LIVRABLE, grille=m.grille_livrable, chaine=m.correction_livrable)
-        evaluations = [{"assessment_type": "LMS Assignment", "assessment_name": devoir}]
-        titre = f"{m.num} · {m.title}"
-        lecon = self._nouvelle_lecon(cours_id, chapitre, titre, editorjs.lecon_module(m, devoir, heures),
-                                     evaluations, videos.get(titre, ""))
-        # l'archive ne peut être jointe qu'à une leçon existante : le contenu qui la cite est écrit ensuite
-        url = ressources_frappe.joindre(lecon.name, m.archive) if m.archive else None
-        if m.quiz:
-            quiz = self._quiz(cours_id, lecon.name, m)
-            cas = self._devoir(cours_id, f"Mise en situation {m.num} — {m.title}", editorjs.consigne_cas(m),
-                               TypeExercice.MISE_EN_SITUATION, grille=m.grille_cas, chaine=m.correction_cas,
-                               type_="Text")
-            lecon.content = editorjs.lecon_module(m, devoir, heures, quiz, cas, self._reglages, url)
-            lecon.set("assessments", evaluations + [{"assessment_type": "LMS Quiz", "assessment_name": quiz},
-                                                    {"assessment_type": "LMS Assignment", "assessment_name": cas}])
-            lecon.save(ignore_permissions=True)
-        elif url:
-            lecon.content = editorjs.lecon_module(m, devoir, heures, archive_url=url)
-            lecon.save(ignore_permissions=True)
+        # mêmes deux passes que pour une séance : un média ne se joint qu'à une leçon déjà créée
+        sans_media = dataclasses.replace(
+            ch.projet, figures=(), cours=tuple(dataclasses.replace(s, figures=()) for s in ch.projet.cours))
+        lecon = self._nouvelle_lecon(cours_id, chapitre, titre,
+                                     editorjs.lecon_projet(sans_media, devoir, self._reglages),
+                                     [{"assessment_type": "LMS Assignment", "assessment_name": devoir}],
+                                     videos.get(titre, ""))
+        figures = {f.nom: ressources_frappe.joindre(lecon.name, f.nom) for f in ch.projet.toutes_les_figures}
+        rubriques = editorjs.rubriques_projet(ch.projet, devoir, self._reglages, figures)
+        self._poser_parties(lecon, rubriques)
         return lecon.name
 
-    def _quiz(self, cours_id: str, lecon: str, m: Module) -> str:
+    def _lecon_module(self, cours_id: str, chapitre: str, m: Module, parcours: Parcours,
+                      videos: dict[str, str]) -> str:
+        heures = parcours.heures_par_module
+        # une séance de quiz seul (rappel) ne crée pas de devoir : le LMS attendrait un rendu qui n'existe pas
+        devoir = (self._devoir(cours_id, f"Livrable {m.num} — {m.title}", editorjs.consigne_module(m),
+                               TypeExercice.LIVRABLE, grille=m.grille_livrable, chaine=m.correction_livrable)
+                  if m.veut_livrable else None)
+        evaluations = ([{"assessment_type": "LMS Assignment", "assessment_name": devoir}] if devoir else [])
+        titre = f"{m.num} · {m.title}"
+        # un média ne se joint qu'à une leçon existante : la première passe écrit le contenu sans les médias,
+        # la seconde le réécrit une fois les adresses connues
+        sans_media = dataclasses.replace(
+            m, figures=(), cours=tuple(dataclasses.replace(s, figures=()) for s in m.cours))
+        lecon = self._nouvelle_lecon(cours_id, chapitre, titre,
+                                     editorjs.lecon_module(sans_media, devoir, heures),
+                                     evaluations, videos.get(titre, ""))
+        url = ressources_frappe.joindre(lecon.name, m.archive) if m.archive else None
+        figures = {f.nom: ressources_frappe.joindre(lecon.name, f.nom) for f in m.toutes_les_figures}
+        quiz = self._quiz(cours_id, lecon.name, m, parcours.exercices) if m.veut_quiz and m.quiz else None
+        # la mise en situation accompagne le quiz d'une séance complète ; seule, personne ne la corrigerait
+        cas = (self._devoir(cours_id, f"Mise en situation {m.num} — {m.title}", editorjs.consigne_cas(m),
+                            TypeExercice.MISE_EN_SITUATION, grille=m.grille_cas, chaine=m.correction_cas,
+                            type_="Text")
+               if quiz and m.mise_en_situation.strip() else None)
+        # l'atelier ouvre le dépôt du jour dans le navigateur : il n'existe que pour les séances qui le déclarent
+        atelier = f"/atelier?lecon={quote(lecon.name, safe='')}" if m.atelier else None
+        rubriques = editorjs.rubriques_module(m, devoir, heures, quiz, cas, parcours.exercices, url, figures,
+                                              atelier)
+        if quiz:
+            evaluations = evaluations + [{"assessment_type": "LMS Quiz", "assessment_name": quiz}]
+        if cas:
+            evaluations = evaluations + [{"assessment_type": "LMS Assignment", "assessment_name": cas}]
+        lecon.set("assessments", evaluations)
+        self._poser_parties(lecon, rubriques)
+        return lecon.name
+
+    @staticmethod
+    def _poser_parties(lecon, rubriques) -> None:
+        """Dépose les parties de la leçon, puis écrit son contenu assemblé depuis elles : la leçon que lit
+        l'apprenant et les parties qu'édite l'administrateur ne peuvent pas diverger."""
+        lecon.content = editorjs.assembler(rubriques)
+        lecon.save(ignore_permissions=True)
+        parties_frappe.ecrire(lecon.name, rubriques)
+
+    def _quiz(self, cours_id: str, lecon: str, m: Module, exercices: ReglagesExercices) -> str:
         questions = [self._question(q) for q in m.quiz]
         return frappe.get_doc({
             "doctype": "LMS Quiz", "title": f"Quiz {m.num} — {m.title}", "course": cours_id, "lesson": lecon,
-            "max_attempts": self._reglages.tentatives_max, "passing_percentage": self._reglages.score_min,
+            "max_attempts": exercices.tentatives_max, "passing_percentage": exercices.score_min,
             "show_answers": 1, "show_submission_history": 1,
             "questions": [{"question": q, "marks": 1} for q in questions],
         }).insert(ignore_permissions=True).name

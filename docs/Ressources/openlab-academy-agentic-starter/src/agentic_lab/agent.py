@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from agentic_lab.tools import execute_tool
-from agentic_lab.workflow import LocalWorkflow
+from agentic_lab.workflow import LocalWorkflow, montant_lisible
 
 
 @dataclass
@@ -54,12 +54,12 @@ def run_agent(
         )
 
     if len(observations) >= 2 and observations[1]["tool"] == "calculer_exposition":
-        total = observations[1]["result"].get("total_eur", 0.0)
+        total = observations[1]["result"].get("total_fcfa", 0)
         return AgentRun(
             "completed",
             len(observations),
             observations,
-            f"Analyse terminée : {len(facts)} facture(s) éligible(s), exposition de {total:.2f} EUR. Aucune relance envoyée.",
+            f"Analyse terminée : {len(facts)} facture(s) éligible(s), exposition de {montant_lisible(total)}. Aucune relance envoyée.",
         )
     return AgentRun("completed", len(observations), observations, "Plan exécuté sans envoi externe.")
 

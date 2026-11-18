@@ -3,17 +3,8 @@ import unittest
 from openlab_academy.domain.parcours import Bloc, Module, ParcoursInvalide, Question
 from openlab_academy.infrastructure.yaml_source import FormatInvalide, depuis_dict
 from openlab_academy.domain.reglages import Reglages
-from openlab_academy.tests.fabriques import parcours, parcours_brut, question_brute
-
-
-def question(**autres):
-    champs = dict(enonce="Q ?", options=("a", "b", "c"), bonnes=(2,), explication="Parce que b.")
-    champs.update(autres)
-    return Question(**champs)
-
-
-def module_complet(num="01", n=5):
-    return Module(num, "M", "c", "l", quiz=tuple(question() for _ in range(n)), mise_en_situation="Cas pratique")
+from openlab_academy.tests.fabriques import (module_complet, parcours, parcours_brut, question,
+                                              question_brute)
 
 
 class TestQuestion(unittest.TestCase):

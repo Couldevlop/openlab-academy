@@ -74,9 +74,16 @@ jobs:
   # Backend (app Frappe) — tests sur un site réel, couverture ≥ 99 %
   # ==========================================================================
   backend:
-    name: Backend — tests Frappe et couverture
+    name: Backend — tests Frappe (lot ${{ matrix.lot }}/2)
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    # un lot tient en une trentaine de minutes ; au-dela, c'est une derive a regarder, pas a absorber
+    timeout-minutes: 50
+
+    strategy:
+      # un lot rouge ne doit pas annuler l'autre : on veut les deux verdicts du meme coup
+      fail-fast: false
+      matrix:
+        lot: [1, 2]
 
     services:
       mariadb:
@@ -101,6 +108,18 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+
+      # les schémas livrés doivent être ceux que le script rend : une figure corrigée dans le code et
+      # oubliée dans le dépôt se verrait sinon seulement à la relecture de la leçon
+      - name: Schémas SVG à jour
+        run: python docs/Ressources/construire_schemas.py --verifier
+
+      # même règle pour les archives du fil rouge : l'archive livrée doit être celle que le
+      # script rend à partir du parcours, sinon un carnet servirait du code déjà corrigé
+      - name: Archives du fil rouge à jour
+        run: |
+          pip install --quiet pyyaml
+          python docs/Ressources/construire_notebooks.py --verifier
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -146,17 +165,117 @@ jobs:
           # e-mails (bundled_asset sur un manifeste absent) ; un manifeste vide suffit, le CSS absent est ignoré
           mkdir -p sites/assets && [ -f sites/assets/assets.json ] || echo '{}' > sites/assets/assets.json
 
-      # même commande que docker/dev-test.sh
-      - name: Run tests with coverage
+      # même commande que docker/dev-test.sh, mais module par module : run-tests ne prend qu'un module
+      # à la fois, et c'est le seul découpage que frappe offre. Le surcoût est d'environ six secondes
+      # d'amorçage par module, soit quatre minutes sur le lot : le prix de la certitude, car ce chemin
+      # est celui qu'utilise déjà le script local.
+      - name: Tests du lot ${{ matrix.lot }} avec couverture
         working-directory: /home/runner/frappe-bench/sites
+        env:
+          TESTS: ${{ github.workspace }}/apps/openlab_academy/openlab_academy/tests
+          REPARTITEUR: ${{ github.workspace }}/.github/scripts/lots_de_tests.py
         run: |
           ../env/bin/pip install -q coverage
-          ../env/bin/coverage run --branch --source=../apps/openlab_academy/openlab_academy \
-            --omit='*/tests/*,*/hooks.py' -m frappe.utils.bench_helper frappe --site test_site \
-            run-tests --skip-before-tests --app openlab_academy && status=0 || status=$?
-          # rapport affiché même si un test échoue
-          ../env/bin/coverage report -m --skip-covered --fail-under=99 && cov=0 || cov=$?
-          exit $(( status || cov ))
+          modules=$(python "$REPARTITEUR" "$TESTS" --lot ${{ matrix.lot }} --sur 2)
+          attendus=$(python "$REPARTITEUR" "$TESTS" --lot ${{ matrix.lot }} --sur 2 --compter)
+          echo "lot ${{ matrix.lot }} : $(echo "$modules" | wc -l) modules, $attendus tests attendus"
+          status=0
+          executes=0
+          # jeton de neutralisation : la sortie d'un test ne doit pas pouvoir se faire lire comme une
+          # commande de workflow quand son journal est verse plus bas
+          jeton="journal-$(date +%s%N)"
+          for module in $modules; do
+            if ../env/bin/coverage run -a --branch --source=../apps/openlab_academy/openlab_academy \
+                 --omit='*/tests/*,*/hooks.py' -m frappe.utils.bench_helper frappe --site test_site \
+                 run-tests --skip-before-tests --module "$module" > "/tmp/$module.log" 2>&1; then
+              code=0
+            else
+              code=$?
+              status=$code
+            fi
+            # « || true » tient meme si pipefail est actif : un module en erreur n'imprime aucun
+            # compteur, et c'est precisement la que le diagnostic ci-dessous est le plus utile
+            n=$(grep -oE '^Ran [0-9]+ test' "/tmp/$module.log" | grep -oE '[0-9]+' | head -1 || true)
+            executes=$(( executes + ${n:-0} ))
+            # un module qui n'exécute rien est le pire défaut d'une suite découpée : il passe pour vert
+            if [ "${n:-0}" -eq 0 ]; then
+              echo "::error::$module n'a exécuté aucun test"
+              status=1
+            fi
+            grep -E '^(FAIL|ERROR):|^FAILED|^Ran ' "/tmp/$module.log" | sed "s|^|[$module] |" || true
+            # un module fautif verse son journal : sans la trace, diagnostiquer coute une execution de plus
+            if [ "$code" -ne 0 ] || [ "${n:-0}" -eq 0 ]; then
+              echo "::group::journal de $module"
+              echo "::stop-commands::$jeton"
+              tail -120 "/tmp/$module.log"
+              echo "::$jeton::"
+              echo "::endgroup::"
+            fi
+          done
+          echo "tests exécutés : $executes, attendus : $attendus"
+          if [ "$executes" -lt "$attendus" ]; then
+            echo "::error::$(( attendus - executes )) test(s) du lot n'ont pas été exécutés"
+            status=1
+          fi
+          exit $status
+
+      # la barrière de couverture porte sur les deux lots réunis : seule, la couverture d'un lot est
+      # forcément sous le seuil, puisqu'il n'exerce que la moitié du code
+      # « always » : la mesure d'un lot rouge est valable, et le cumul doit pouvoir conclure. Sans cela,
+      # GitHub saute cette etape des qu'un test echoue, et le job de couverture ne recoit qu'une mesure.
+      - name: Garder la couverture du lot
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: couverture-lot-${{ matrix.lot }}
+          path: /home/runner/frappe-bench/sites/.coverage
+          include-hidden-files: true # « .coverage » commence par un point
+          retention-days: 1
+          if-no-files-found: error
+
+  # ==========================================================================
+  # Couverture cumulée des deux lots — la barrière des 99 % s'applique ici
+  # ==========================================================================
+  couverture:
+    name: Backend — couverture cumulée ≥ 99 %
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    needs: backend
+    # les lots peuvent être rouges : on veut quand même savoir où en est la couverture
+    if: ${{ !cancelled() }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: couverture-lot-*
+          path: /tmp/couverture
+
+      # les lots ont mesuré l'app installée dans le banc : coverage a retenu ces chemins absolus. On les
+      # recrée, sinon le rapport ne retrouve pas les sources et ne peut plus dire quelles lignes manquent.
+      - name: Cumuler et appliquer la barrière
+        run: |
+          pip install -q coverage
+          mkdir -p /home/runner/frappe-bench/apps /home/runner/frappe-bench/sites
+          cp -r "$GITHUB_WORKSPACE/apps/openlab_academy" /home/runner/frappe-bench/apps/openlab_academy
+          cd /home/runner/frappe-bench/sites
+          lots=0
+          for fichier in /tmp/couverture/couverture-lot-*/.coverage; do
+            lots=$(( lots + 1 ))
+            cp "$fichier" ".coverage.lot$lots"
+          done
+          if [ "$lots" -ne 2 ]; then
+            echo "::error::$lots fichier(s) de couverture au lieu de 2 : un lot n'a rien rendu"
+            exit 1
+          fi
+          coverage combine
+          coverage report -m --skip-covered --omit='*/tests/*,*/hooks.py' --fail-under=99
 
   # ==========================================================================
   # Sécurité — analyse statique, secrets, dépendances du front
@@ -191,6 +310,7 @@ jobs:
           docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1             detect --source=/repo --config=/repo/.gitleaks.toml --redact --no-banner --exit-code 1
 
       # le backend n'a aucune dépendance Python propre (pyproject : dependencies = []) : seul le front en a
+      # un avis de sévérité haute sans correctif publié en amont est toléré s'il est inscrit,
+      # justifié et daté dans exceptions-audit.json ; tout le reste fait échouer la chaîne
       - name: npm audit (dépendances de production du front)
-        working-directory: apps/openlab_academy/frontend
-        run: npm audit --omit=dev --audit-level=high
+        run: python .github/scripts/audit_front.py apps/openlab_academy/frontend

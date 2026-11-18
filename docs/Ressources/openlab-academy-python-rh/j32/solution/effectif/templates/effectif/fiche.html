@@ -1,0 +1,10 @@
+{% extends "effectif/base.html" %}
+{% block titre %}{{ salarie.nom }}{% endblock %}
+{% block contenu %}
+  <h1>{{ salarie.nom }}</h1>
+  <dl>
+    <dt>Matricule</dt><dd>{{ salarie.matricule }}</dd>
+    <dt>Poste</dt><dd>{{ salarie.poste.libelle }}</dd>
+    <dt>Date d'embauche</dt><dd>{{ salarie.date_embauche }}</dd>
+  </dl>
+{% endblock %}

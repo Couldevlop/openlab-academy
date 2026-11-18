@@ -83,6 +83,26 @@ RYTHMES_DEFAUT = (
 
 
 @dataclass(frozen=True)
+class ReglagesExercices:
+    """Exercices de fin de leçon : délai de déblocage, tentatives et score exigé.
+
+    Les mêmes règles valent pour la plateforme entière et pour un parcours qui les redéfinit.
+    """
+
+    delai_minutes: int
+    tentatives_max: int
+    score_min: int
+
+    def __post_init__(self):
+        if self.delai_minutes < 0:
+            raise ReglagesInvalides("delai_exercices_minutes ne peut pas être négatif")
+        if self.tentatives_max <= 0:
+            raise ReglagesInvalides("tentatives_max doit être positif")
+        if not 1 <= self.score_min <= 100:
+            raise ReglagesInvalides("score_min entre 1 et 100 %")
+
+
+@dataclass(frozen=True)
 class Reglages:
     projets_par_portfolio: int = 10
     heures_par_module: int = 8
@@ -142,6 +162,11 @@ class Reglages:
         for code in codes:
             if codes.count(code) > 1:
                 raise ReglagesInvalides(f"code de rythme « {code} » en double")
+
+    @property
+    def exercices(self) -> ReglagesExercices:
+        """Réglages des exercices de la plateforme : ceux qu'un parcours applique s'il ne les redéfinit pas."""
+        return ReglagesExercices(self.delai_exercices_minutes, self.tentatives_max, self.score_min)
 
     def rythme(self, code: str) -> Rythme:
         for r in self.rythmes:

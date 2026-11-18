@@ -1,0 +1,25 @@
+{% extends "effectif/base.html" %}
+{% block titre %}Salariés{% endblock %}
+{% block contenu %}
+  <h1>Salariés</h1>
+  <table>
+    <thead><tr><th>Matricule</th><th>Nom</th><th>Poste</th></tr></thead>
+    <tbody>
+      {% for salarie in salaries %}
+        <tr>
+          <td><a href="{% url 'fiche-salarie' salarie.matricule %}">{{ salarie.matricule }}</a></td>
+          <td>{{ salarie.nom }}</td>
+          <td>{{ salarie.poste.libelle }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="3">Aucun salarié enregistré.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <h2>Masse salariale par poste</h2>
+  <ul>
+    {% for poste, mesures in etat.items %}
+      <li>{{ poste }} : {{ mesures.effectif }} salarié(s), {{ mesures.masse_fcfa }} FCFA</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

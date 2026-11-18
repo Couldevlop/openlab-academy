@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 320" width="760" height="320" role="img" aria-label="Quel code pour quelle situation">
+<title>Quel code pour quelle situation</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="760" height="320" fill="var(--surface)"/>
+<text x="380" y="34" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Le code est une information, pas une décoration.</text>
+<rect x="60" y="80" width="90" height="40" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="105" y="106" text-anchor="middle" font-size="16" font-weight="600" fill="var(--encre)">200</text>
+<text x="180" y="98" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Réussite</text>
+<text x="180" y="116" text-anchor="start" font-size="11" fill="var(--encre2)">le mois demandé, avec son total</text>
+<rect x="60" y="132" width="90" height="40" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="105" y="158" text-anchor="middle" font-size="16" font-weight="600" fill="var(--encre)">200</text>
+<text x="180" y="150" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Réussite vide</text>
+<text x="180" y="168" text-anchor="start" font-size="11" fill="var(--encre2)">aucun salarié ce mois : total nul</text>
+<rect x="60" y="184" width="90" height="40" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="105" y="210" text-anchor="middle" font-size="16" font-weight="600" fill="var(--encre)">422</text>
+<text x="180" y="202" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Faute de l&#x27;appelant</text>
+<text x="180" y="220" text-anchor="start" font-size="11" fill="var(--encre2)">le mois est mal écrit</text>
+<rect x="60" y="236" width="90" height="40" rx="8" class="b-critique" fill="var(--surface)"/>
+<text x="105" y="262" text-anchor="middle" font-size="16" font-weight="600" fill="var(--encre)">500</text>
+<text x="180" y="254" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Panne de votre côté</text>
+<text x="180" y="272" text-anchor="start" font-size="11" fill="var(--encre2)">à corriger, jamais à renvoyer sciemment</text>
+<rect x="60" y="292" width="640" height="0.1" rx="8" class="b-trait" fill="var(--surface)"/>
+<text x="380" y="300" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Le pire n&#x27;est pas le 500 : c&#x27;est le 200 renvoyé après une erreur étouffée.</text>
+</svg>

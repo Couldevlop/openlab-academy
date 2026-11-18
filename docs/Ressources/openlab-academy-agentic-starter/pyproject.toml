@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openlab-agentic-lab"
-version = "0.2.0"
+version = "0.3.0"
 description = "Socle pédagogique OpenLab Academy pour comprendre et tester les agents IA"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"

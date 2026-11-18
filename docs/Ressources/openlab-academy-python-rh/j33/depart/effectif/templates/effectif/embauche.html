@@ -1,0 +1,10 @@
+{% extends "effectif/base.html" %}
+{% block titre %}Embauche{% endblock %}
+{% block contenu %}
+  <h1>Embaucher un salarié</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ formulaire.as_p }}
+    <button type="submit">Enregistrer</button>
+  </form>
+{% endblock %}

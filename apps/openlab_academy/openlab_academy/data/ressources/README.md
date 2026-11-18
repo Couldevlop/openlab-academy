@@ -5,7 +5,7 @@ fermé, ni caché, ni bloqué, et dont la leçon est accessible (contrôle des m
 `entrypoints/lms.py: serve_resource`). Une leçon les cite par la clé `archive:` de son module, qui n'accepte qu'un
 nom de fichier `.zip`, jamais un chemin.
 
-## `socle-ia-agentique-v0.2.0.zip`
+## `socle-ia-agentique-v0.3.0.zip`
 
 Dépôt de départ du parcours « IA agentique », produit à partir de
 `docs/Ressources/openlab-academy-agentic-starter/` après les corrections de lint du 12 novembre 2026. Les supports

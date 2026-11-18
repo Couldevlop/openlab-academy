@@ -1,6 +1,6 @@
 title: AI Engineer
 short_introduction: >-
-  Parcours II · ingénierie des applications LLM — RAG, agents, MCP, evals, guardrails et observabilité,
+  Parcours II · ingénierie des applications LLM : RAG, agents, MCP, evals, guardrails et observabilité,
   jusqu'à la mise en production.
 description: >-
   <p><b>Prérequis :</b> bases de programmation Python, Git, notions HTTP/JSON (ou parcours Développeur Python).</p>
@@ -9,6 +9,7 @@ description: >-
   <p><b>Fil conducteur :</b> des applications IA utiles en Afrique de l'Ouest, souveraines quand c'est
   nécessaire (modèles open source hébergés localement).</p>
   <p><b>Évaluation :</b> livrables hebdomadaires 20 %, portfolio 40 %, capstone 40 %.</p>
+couverture: couverture-ai-engineer.jpg
 tags: [IA, LLM, RAG, Agents, MCP, LangGraph, Evals]
 card_gradient: Purple
 
@@ -503,9 +504,9 @@ portfolio:
       - Concevoir des schémas d'outils sûrs
       - Gérer les erreurs d'outils
     fonctionnalites:
-      - Outil 1 — base SQL des commandes (lecture seule, requêtes paramétrées)
-      - Outil 2 — API de suivi de livraison
-      - Outil 3 — FAQ et conditions générales (fichiers)
+      - Outil 1, base SQL des commandes (lecture seule, requêtes paramétrées)
+      - Outil 2, API de suivi de livraison
+      - Outil 3, FAQ et conditions générales (fichiers)
       - Appels d'outils parallèles et reprise sur erreur
       - Escalade vers un humain si l'agent ne sait pas
     stack: [Python, uv, SDK LLM (tool use), SQLite ou PostgreSQL, FastAPI, pytest]

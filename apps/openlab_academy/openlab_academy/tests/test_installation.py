@@ -41,6 +41,19 @@ class TestReglages(FrappeTestCase):
         self.assertEqual(frappe.db.count("Currency", {"name": "XOF"}), 1)
 
 
+def sans_publication():
+    """Hook exerce sans republier le catalogue.
+
+    `seed.run` republie les huit parcours, soit plus de mille sections : deux minutes par appel depuis que le
+    parcours Python a ete reecrit. Les tests qui verifient l'orchestration du hook — champs personnalises, fin de
+    l'assistant, choix de l'administrateur, passage au parcours de lancement — n'ont pas besoin de ce travail :
+    le site de test est deja peuple par l'installation. Ils remplacent donc la publication par un mouchard et
+    verifient qu'elle est bien demandee. La publication elle-meme reste couverte, sur le vrai catalogue, par
+    test_after_install_configure_et_publie et test_after_migrate_republie_les_parcours.
+    """
+    return mock.patch.object(install.seed, "run", return_value={})
+
+
 class TestInstallation(FrappeTestCase):
     def setUp(self):
         frappe.db.set_single_value(REGLAGES, "ouverture_lancement", None)  # indépendant de l'état du banc
@@ -69,7 +82,8 @@ class TestInstallation(FrappeTestCase):
 
     def test_migration_site_existant(self):
         """Un site déjà installé, réglé sur l'ancien parcours pilote, passe au parcours de lancement."""
-        install.after_migrate(commit=False)
+        with sans_publication():
+            install.after_migrate(commit=False)
         frappe.db.set_single_value(REGLAGES, "parcours_pilote", FONDAMENTAUX)
         commande.ouvrir_pilote(commit=False)
         supprimer_cohortes({"title": TITRE_FENETRE})
@@ -81,7 +95,9 @@ class TestInstallation(FrappeTestCase):
         avant = frappe.get_all("LMS Batch", {"title": ("like", f"Promo 1 — {FONDAMENTAUX}%")},
                                ["name", "start_date", "end_date"])
         self.assertTrue(avant)
-        install.after_migrate(commit=False)
+        with sans_publication() as publication:
+            install.after_migrate(commit=False)
+        publication.assert_called_once()
         doc = frappe.get_doc(REGLAGES)
         self.assertEqual(doc.parcours_pilote, TITRE_LANCEMENT)
         self.assertEqual(doc.phase_lancement, 1)
@@ -95,14 +111,16 @@ class TestInstallation(FrappeTestCase):
 
     def test_choix_de_l_administrateur_conserve(self):
         """Une fois le lancement initialisé, une migration ne remet rien en cause."""
-        install.after_migrate(commit=False)
+        with sans_publication():
+            install.after_migrate(commit=False)
         doc = frappe.get_doc(REGLAGES)
         doc.phase_lancement = 0
         doc.parcours_pilote = FONDAMENTAUX
         doc.set("parcours_lancement", [])
         doc.lancement_initialise = 1
         doc.save(ignore_permissions=True)
-        install.after_migrate(commit=False)
+        with sans_publication():
+            install.after_migrate(commit=False)
         doc = frappe.get_doc(REGLAGES)
         self.assertEqual((doc.phase_lancement, doc.parcours_pilote, len(doc.parcours_lancement)),
                          (0, FONDAMENTAUX, 0))
@@ -118,7 +136,8 @@ class TestInstallation(FrappeTestCase):
         """Un site déjà installé reçoit aussi les réglages : sinon le bureau /app reste sur l'assistant, sans barre."""
         frappe.db.set_value("Installed Application", {"app_name": "lms"}, "is_setup_complete", 0)
         frappe.db.set_default("desktop:home_page", "setup-wizard")
-        install.after_migrate(commit=False)
+        with sans_publication():
+            install.after_migrate(commit=False)
         self.assertEqual(frappe.db.get_value("Installed Application", {"app_name": "lms"}, "is_setup_complete"), 1)
         self.assertEqual(frappe.db.get_default("desktop:home_page"), "workspace")
 
@@ -136,7 +155,8 @@ class TestChampsLancement(FrappeTestCase):
         frappe.db.commit()
 
     def test_champs_de_lancement_crees(self):
-        frappe.db.delete("Custom Field", {"fieldname": ["in", ["acces_limite_cohorte", "video_lecon"]]})
+        frappe.db.delete("Custom Field", {"fieldname": ["in", ["acces_limite_cohorte", "video_lecon",
+                                                               "delai_exercices_minutes"]]})
         install.preparer_champs_lancement()
         install.preparer_champs_lancement()
         (limite,) = frappe.get_all("Custom Field", {"dt": "LMS Course", "fieldname": "acces_limite_cohorte"},
@@ -148,6 +168,10 @@ class TestChampsLancement(FrappeTestCase):
         self.assertEqual((video.fieldtype, video.label, video.description, video.insert_after),
                          ("Attach", "Vidéo de la leçon",
                           "Lien YouTube, Vimeo ou fichier vidéo ; affichée en tête de la leçon.", "title"))
+        (delai,) = frappe.get_all("Custom Field", {"dt": "LMS Course", "fieldname": "delai_exercices_minutes"},
+                                  ["fieldtype", "label", "permlevel"])
+        self.assertEqual((delai.fieldtype, delai.label, delai.permlevel),
+                         ("Int", "Délai avant les exercices (minutes)", 1))
 
     def test_champs_remis_a_jour_et_appel_a_l_installation(self):
         nom = frappe.db.get_value("Custom Field", {"dt": "LMS Course", "fieldname": "acces_limite_cohorte"})
@@ -157,5 +181,7 @@ class TestChampsLancement(FrappeTestCase):
                          (1, "Accès limité aux dates de la cohorte"))
         for fonction in (install.after_install, install.after_migrate):
             frappe.db.delete("Custom Field", {"fieldname": "video_lecon"})
-            fonction(commit=False)
+            with sans_publication() as publication:
+                fonction(commit=False)
+            publication.assert_called_once()
             self.assertTrue(frappe.db.exists("Custom Field", {"dt": "Course Lesson", "fieldname": "video_lecon"}))

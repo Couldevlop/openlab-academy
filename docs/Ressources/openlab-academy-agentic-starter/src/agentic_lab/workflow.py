@@ -48,6 +48,10 @@ def _empty_state() -> dict[str, Any]:
     }
 
 
+def montant_lisible(montant: int) -> str:
+    """Un montant en francs CFA, écrit comme on l'écrit sur une facture : groupes de mille espacés."""
+    return f"{int(montant):,}".replace(",", "\u00a0") + "\u00a0F CFA"
+
 class WorkflowError(Exception):
     """Erreur métier contrôlée, destinée à être présentée à l'agent."""
 
@@ -91,7 +95,7 @@ class LocalWorkflow:
             with self.data_path.open("r", encoding="utf-8-sig", newline="") as handle:
                 reader = csv.DictReader(handle)
                 required = {
-                    "facture_id", "client_ref", "montant_eur", "retard_jours",
+                    "facture_id", "client_ref", "montant_fcfa", "retard_jours",
                     "statut_litige", "dernier_palier", "date_derniere_relance",
                     "note_non_fiable",
                 }
@@ -103,7 +107,7 @@ class LocalWorkflow:
                         invoices.append({
                             "facture_id": row["facture_id"],
                             "client_ref": row["client_ref"],
-                            "montant_eur": round(float(row["montant_eur"]), 2),
+                            "montant_fcfa": int(round(float(row["montant_fcfa"]))),
                             "retard_jours": int(row["retard_jours"]),
                             "statut_litige": row["statut_litige"],
                             "dernier_palier": int(row["dernier_palier"]),
@@ -156,7 +160,7 @@ class LocalWorkflow:
         return {
             "ok": True,
             "nombre": len(invoices),
-            "total_eur": round(sum(item["montant_eur"] for item in invoices), 2),
+            "total_fcfa": sum(item["montant_fcfa"] for item in invoices),
             "facture_ids": args.facture_ids,
         }
 
@@ -197,7 +201,7 @@ class LocalWorkflow:
         body = (
             f"Objet : Suivi de la facture {invoice['facture_id']}\n\n"
             f"Bonjour, nous vous invitons à vérifier le règlement de la facture "
-            f"{invoice['facture_id']} d'un montant de {invoice['montant_eur']:.2f} EUR, "
+            f"{invoice['facture_id']} d'un montant de {montant_lisible(invoice['montant_fcfa'])}, "
             f"présentant {invoice['retard_jours']} jours de retard. "
             f"Merci de nous indiquer votre situation.\n\nCordialement."
         )

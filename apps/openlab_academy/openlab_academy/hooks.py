@@ -13,6 +13,8 @@ after_request = ["openlab_academy.entrypoints.http.after_request"]
 before_request = ["openlab_academy.entrypoints.http.before_request"]
 app_include_css = ["/assets/openlab_academy/css/openlab.css"]
 app_include_js = ["/assets/openlab_academy/js/simulateur_impact.js"]
+# fiche d'un parcours : bouton « Inscrits et gratuités » (offrir le parcours à un apprenant, ou le rendre payant)
+doctype_js = {"LMS Course": "public/js/gratuites_parcours.js"}
 web_include_css = ["/assets/openlab_academy/css/openlab.css"]
 
 # écrans d'évaluation (relecture, correcteur, retour) : une page, routée côté navigateur
@@ -64,17 +66,27 @@ permission_query_conditions = {
 }
 doc_events = {
     "User": {"after_insert": "openlab_academy.entrypoints.langue.initialiser_langue"},
-    "LMS Course": {"on_update": "openlab_academy.entrypoints.paiement.parcours_enregistre"},
+    "LMS Course": {"on_update": ["openlab_academy.entrypoints.paiement.parcours_enregistre",
+                                 "openlab_academy.infrastructure.retouches_frappe.retouche"]},
     # inscription directe à un parcours payant refusée hors cohorte (le dossier naît de l'inscription à la cohorte)
     # puis rattachée à la cohorte-fenêtre d'un parcours limité à ses dates
     "LMS Enrollment": {
         "before_insert": "openlab_academy.entrypoints.paiement.avant_inscription_parcours",
-        "after_insert": "openlab_academy.entrypoints.lancement.rejoindre_cohorte",
+        "after_insert": ["openlab_academy.entrypoints.lancement.rejoindre_cohorte",
+                         # parcours offert : le dossier naît quand même, puis se dispense
+                         "openlab_academy.entrypoints.paiement.apres_inscription_parcours"],
     },
     "LMS Batch Enrollment": {
         "before_insert": "openlab_academy.entrypoints.paiement.avant_inscription",
         "after_insert": "openlab_academy.entrypoints.paiement.apres_inscription",
     },
+    # une pièce retouchée dans l'application n'est plus réécrite par le fichier de parcours
+    "Course Lesson": {"on_update": "openlab_academy.infrastructure.retouches_frappe.retouche",
+                      "on_trash": "openlab_academy.infrastructure.parties_frappe.oublier"},
+    "LMS Assignment": {"on_update": "openlab_academy.infrastructure.retouches_frappe.retouche"},
+    "LMS Question": {"on_update": "openlab_academy.infrastructure.retouches_frappe.retouche"},
+    # une partie de séance enregistrée met la leçon à jour, sans toucher aux autres parties
+    "Partie Lecon OpenLab": {"on_update": "openlab_academy.infrastructure.parties_frappe.marquer"},
     "LMS Quiz Submission": {"before_insert": "openlab_academy.entrypoints.lms.avant_soumission_quiz"},
     "LMS Certificate": {"before_insert": "openlab_academy.entrypoints.lms.avant_certificat"},
     "LMS Assignment Submission": {

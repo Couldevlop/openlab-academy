@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" width="760" height="330" role="img" aria-label="Barres triées contre camembert à douze parts">
+<title>Barres triées contre camembert à douze parts</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="760" height="330" fill="var(--surface)"/>
+<text x="380" y="34" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">La même donnée, deux formes : une seule répond à la question.</text>
+<text x="190" y="62" text-anchor="middle" font-size="13" font-weight="600" fill="var(--s3)">Barres triées</text>
+<rect x="60" y="110" width="32" height="120" rx="4" ry="4" fill="var(--s3)"/>
+<rect x="60" y="224" width="32" height="6" fill="var(--s3)"/>
+<rect x="104" y="134" width="32" height="96" rx="4" ry="4" fill="var(--s3)"/>
+<rect x="104" y="224" width="32" height="6" fill="var(--s3)"/>
+<rect x="148" y="156" width="32" height="74" rx="4" ry="4" fill="var(--s3)"/>
+<rect x="148" y="224" width="32" height="6" fill="var(--s3)"/>
+<rect x="192" y="172" width="32" height="58" rx="4" ry="4" fill="var(--s3)"/>
+<rect x="192" y="224" width="32" height="6" fill="var(--s3)"/>
+<rect x="236" y="190" width="32" height="40" rx="4" ry="4" fill="var(--s3)"/>
+<rect x="236" y="224" width="32" height="6" fill="var(--s3)"/>
+<rect x="280" y="202" width="32" height="28" rx="4" ry="4" fill="var(--s3)"/>
+<rect x="280" y="224" width="32" height="6" fill="var(--s3)"/>
+<line x1="50" y1="232" x2="340" y2="232" stroke="var(--trait)" stroke-width="2"/>
+<text x="190" y="252" text-anchor="middle" font-size="11" fill="var(--encre2)">en FCFA, du plus cher au moins cher</text>
+<text x="190" y="274" text-anchor="middle" font-size="12" font-weight="600" fill="var(--s3)">lecture immédiate</text>
+<text x="570" y="62" text-anchor="middle" font-size="13" font-weight="600" fill="var(--critique)">Camembert à douze parts</text>
+<path d="M 570 160 L 642.00 160.00 A 72 72 0 0 1 632.35 196.00 Z" fill="none" stroke="var(--critique)" stroke-width="1.5"/>
+<path d="M 570 160 L 632.35 196.00 A 72 72 0 0 1 606.00 222.35 Z" fill="none" stroke="var(--critique)" stroke-width="1.5"/>
+<path d="M 570 160 L 606.00 222.35 A 72 72 0 0 1 570.00 232.00 Z" fill="none" stroke="var(--critique)" stroke-width="1.5"/>
+<path d="M 570 160 L 570.00 232.00 A 72 72 0 0 1 534.00 222.35 Z" fill="none" stroke="var(--critique)" stroke-width="1.5"/>
+<path d="M 570 160 L 534.00 222.35 A 72 72 0 0 1 507.65 196.00 Z" fill="none" stroke="var(--critique)" stroke-width="1.5"/>
+<path d="M 570 160 L 507.65 196.00 A 72 72 0 0 1 498.00 160.00 Z" fill="none" stroke="var(--critique)" stroke-width="1.5"/>
+<path d="M 570 160 L 498.00 160.00 A 72 72 0 0 1 507.65 124.00 Z" fill="none" stroke="var(--critique)" stroke-width="1.5"/>
+<path d="M 570 160 L 507.65 124.00 A 72 72 0 0 1 534.00 97.65 Z" fill="none" stroke="var(--critique)" stroke-width="1.5"/>
+<path d="M 570 160 L 534.00 97.65 A 72 72 0 0 1 570.00 88.00 Z" fill="none" stroke="var(--critique)" stroke-width="1.5"/>
+<path d="M 570 160 L 570.00 88.00 A 72 72 0 0 1 606.00 97.65 Z" fill="none" stroke="var(--critique)" stroke-width="1.5"/>
+<path d="M 570 160 L 606.00 97.65 A 72 72 0 0 1 632.35 124.00 Z" fill="none" stroke="var(--critique)" stroke-width="1.5"/>
+<path d="M 570 160 L 632.35 124.00 A 72 72 0 0 1 642.00 160.00 Z" fill="none" stroke="var(--critique)" stroke-width="1.5"/>
+<text x="570" y="252" text-anchor="middle" font-size="11" fill="var(--encre2)">douze angles proches, une légende à décoder</text>
+<text x="570" y="274" text-anchor="middle" font-size="12" font-weight="600" fill="var(--critique)">lecture impossible</text>
+<text x="380" y="314" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Une mesure par axe, et jamais deux échelles sur une même figure.</text>
+</svg>

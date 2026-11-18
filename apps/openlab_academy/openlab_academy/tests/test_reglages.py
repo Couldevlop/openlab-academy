@@ -1,7 +1,8 @@
 import dataclasses
 import unittest
 
-from openlab_academy.domain.reglages import TITRE_LANCEMENT, CritereBareme, Reglages, ReglagesInvalides, Rythme
+from openlab_academy.domain.reglages import (TITRE_LANCEMENT, CritereBareme, Reglages, ReglagesExercices,
+                                             ReglagesInvalides, Rythme)
 
 JOURS_SEMAINE = ("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche")
 
@@ -124,3 +125,22 @@ class TestRechercheRythme(unittest.TestCase):
     def test_code_inconnu(self):
         with self.assertRaisesRegex(ReglagesInvalides, r"rythme « turbo » inconnu : \['standard', 'intensif'\]"):
             Reglages().rythme("turbo")
+
+
+class TestReglagesExercices(unittest.TestCase):
+    def test_tires_des_reglages_de_la_plateforme(self):
+        e = Reglages(delai_exercices_minutes=45, tentatives_max=2, score_min=80).exercices
+        self.assertEqual((e.delai_minutes, e.tentatives_max, e.score_min), (45, 2, 80))
+
+    def test_delai_negatif_refuse(self):
+        with self.assertRaisesRegex(ReglagesInvalides, "delai_exercices_minutes ne peut pas être négatif"):
+            ReglagesExercices(delai_minutes=-1, tentatives_max=3, score_min=100)
+
+    def test_tentatives_positives(self):
+        with self.assertRaisesRegex(ReglagesInvalides, "tentatives_max doit être positif"):
+            ReglagesExercices(delai_minutes=60, tentatives_max=0, score_min=100)
+
+    def test_score_entre_1_et_100(self):
+        for valeur in (0, 101):
+            with self.subTest(valeur), self.assertRaisesRegex(ReglagesInvalides, "score_min entre 1 et 100"):
+                ReglagesExercices(delai_minutes=60, tentatives_max=3, score_min=valeur)

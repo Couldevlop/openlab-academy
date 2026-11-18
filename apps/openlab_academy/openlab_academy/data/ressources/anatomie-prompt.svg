@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 440" width="820" height="440" role="img" aria-label="Les couches d&#x27;un prompt d&#x27;agent">
+<title>Les couches d&#x27;un prompt d&#x27;agent</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="820" height="440" fill="var(--surface)"/>
+<rect x="140" y="92" width="540" height="44" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="170" y="119" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Rôle et mission</text>
+<text x="660" y="119" text-anchor="end" font-size="11" fill="var(--encre2)">ce que l&#x27;agent est et ce qu&#x27;il doit obtenir</text>
+<rect x="140" y="144" width="540" height="44" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="170" y="171" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Contraintes dures</text>
+<text x="660" y="171" text-anchor="end" font-size="11" fill="var(--encre2)">ce qui est interdit, en toutes lettres</text>
+<rect x="140" y="196" width="540" height="44" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="170" y="223" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Outils disponibles</text>
+<text x="660" y="223" text-anchor="end" font-size="11" fill="var(--encre2)">nom, usage, arguments, effet de bord</text>
+<rect x="140" y="248" width="540" height="44" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="170" y="275" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Format de sortie</text>
+<text x="660" y="275" text-anchor="end" font-size="11" fill="var(--encre2)">la forme exacte attendue, montrée</text>
+<rect x="140" y="300" width="540" height="44" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="170" y="327" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Exemples</text>
+<text x="660" y="327" text-anchor="end" font-size="11" fill="var(--encre2)">deux cas, dont un cas limite</text>
+<rect x="140" y="360" width="540" height="56" rx="8" class="b-critique" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="170" y="382" text-anchor="start" font-size="13" font-weight="600" fill="var(--critique)">Données lues par l&#x27;agent</text>
+<text x="170" y="402" text-anchor="start" font-size="11" fill="var(--encre2)">factures, documents, résultats d&#x27;outils : citées, jamais fusionnées avec les consignes</text>
+<path d="M 410 352 L 410 358" fill="none" stroke="var(--critique)" stroke-width="2" marker-end="url(#pointe-critique)"/>
+<text x="410" y="40" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Un prompt d&#x27;agent s&#x27;écrit en couches, de la plus stable à la plus volatile.</text>
+<text x="410" y="62" text-anchor="middle" font-size="12" fill="var(--encre2)">Les quatre premières changent rarement ; la dernière change à chaque exécution.</text>
+<text x="410" y="434" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Une consigne et une donnée qui se ressemblent à l&#x27;écran se confondront aussi dans le modèle.</text>
+</svg>

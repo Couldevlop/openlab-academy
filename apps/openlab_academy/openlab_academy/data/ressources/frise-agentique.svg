@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" width="900" height="420" role="img" aria-label="De 1966 à aujourd&#x27;hui : cinq âges de l&#x27;agentique">
+<title>De 1966 à aujourd&#x27;hui : cinq âges de l&#x27;agentique</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="900" height="420" fill="var(--surface)"/>
+<text x="104" y="84" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">1966–1985</text>
+<rect x="24" y="96" width="160" height="108" rx="8" class="b-attenue" fill="var(--surface)"/>
+<text x="104" y="124" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Programmes</text>
+<text x="104" y="142" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">symboliques</text>
+<text x="104" y="168" text-anchor="middle" font-size="11" fill="var(--encre2)">ELIZA, SHRDLU,</text>
+<text x="104" y="183" text-anchor="middle" font-size="11" fill="var(--encre2)">systèmes experts</text>
+<text x="104" y="232" text-anchor="middle" font-size="11" fill="var(--encre2)">règles écrites à la</text>
+<text x="104" y="247" text-anchor="middle" font-size="11" fill="var(--encre2)">main</text>
+<path d="M 184 150 L 196 150" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<text x="280" y="84" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">1986–2005</text>
+<rect x="200" y="96" width="160" height="108" rx="8" class="b-attenue" fill="var(--surface)"/>
+<text x="280" y="124" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Agents</text>
+<text x="280" y="142" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">logiciels</text>
+<text x="280" y="168" text-anchor="middle" font-size="11" fill="var(--encre2)">agents BDI,</text>
+<text x="280" y="183" text-anchor="middle" font-size="11" fill="var(--encre2)">systèmes multi-agents</text>
+<text x="280" y="232" text-anchor="middle" font-size="11" fill="var(--encre2)">autonomie théorisée</text>
+<path d="M 360 150 L 372 150" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<text x="456" y="84" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">2006–2016</text>
+<rect x="376" y="96" width="160" height="108" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="456" y="124" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Apprentissage</text>
+<text x="456" y="168" text-anchor="middle" font-size="11" fill="var(--encre2)">apprentissage profond,</text>
+<text x="456" y="183" text-anchor="middle" font-size="11" fill="var(--encre2)">renforcement, AlphaGo</text>
+<text x="456" y="232" text-anchor="middle" font-size="11" fill="var(--encre2)">l&#x27;agent apprend sa</text>
+<text x="456" y="247" text-anchor="middle" font-size="11" fill="var(--encre2)">politique</text>
+<path d="M 536 150 L 548 150" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<text x="632" y="84" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">2017–2021</text>
+<rect x="552" y="96" width="160" height="108" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="632" y="124" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Transformeur</text>
+<text x="632" y="168" text-anchor="middle" font-size="11" fill="var(--encre2)">attention, GPT,</text>
+<text x="632" y="183" text-anchor="middle" font-size="11" fill="var(--encre2)">prompting</text>
+<text x="632" y="232" text-anchor="middle" font-size="11" fill="var(--encre2)">le langage devient</text>
+<text x="632" y="247" text-anchor="middle" font-size="11" fill="var(--encre2)">interface</text>
+<path d="M 712 150 L 724 150" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<text x="808" y="84" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">2022–2026</text>
+<rect x="728" y="96" width="160" height="108" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="808" y="124" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Agents outillés</text>
+<text x="808" y="168" text-anchor="middle" font-size="11" fill="var(--encre2)">ReAct, tool calling,</text>
+<text x="808" y="183" text-anchor="middle" font-size="11" fill="var(--encre2)">MCP, A2A</text>
+<text x="808" y="232" text-anchor="middle" font-size="11" fill="var(--encre2)">le modèle agit sur</text>
+<text x="808" y="247" text-anchor="middle" font-size="11" fill="var(--encre2)">le monde</text>
+<text x="450" y="40" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Rien n&#x27;a commencé en 2022 : chaque âge a légué une idée qui sert encore.</text>
+<text x="450" y="62" text-anchor="middle" font-size="12" fill="var(--encre2)">La boucle percevoir, décider, agir date des agents logiciels ; le modèle n&#x27;a fait que remplacer les règles.</text>
+<rect x="140" y="296" width="620" height="68" rx="8" class="b-s2" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="450" y="320" text-anchor="middle" font-size="13" font-weight="600" fill="var(--s2)">Ce qui est vraiment nouveau depuis 2022</text>
+<text x="450" y="342" text-anchor="middle" font-size="11" fill="var(--encre2)">un seul modèle généraliste sait choisir l&#x27;outil, lire le résultat et recommencer, sans code spécifique.</text>
+<text x="450" y="392" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Les échecs de chaque âge sont instructifs : ils reviennent dès qu&#x27;on retire une borne.</text>
+</svg>

@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 360" width="880" height="360" role="img" aria-label="Les trois mémoires d&#x27;un agent, et ce qui les distingue">
+<title>Les trois mémoires d&#x27;un agent, et ce qui les distingue</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="880" height="360" fill="var(--surface)"/>
+<rect x="24" y="92" width="268" height="180" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="158" y="120" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Mémoire de travail</text>
+<text x="158" y="142" text-anchor="middle" font-size="11" fill="var(--encre2)">l&#x27;historique du tour en cours</text>
+<text x="158" y="174" text-anchor="middle" font-size="11" fill="var(--encre2)">Vit le temps d&#x27;une exécution</text>
+<text x="158" y="200" text-anchor="middle" font-size="11" fill="var(--encre2)">Payée à chaque appel</text>
+<text x="158" y="226" text-anchor="middle" font-size="11" fill="var(--encre2)">Bornée par un résumé</text>
+<text x="158" y="292" text-anchor="middle" font-size="12" font-weight="600" fill="var(--s1)">le contexte</text>
+<rect x="310" y="92" width="268" height="180" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="444" y="120" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Mémoire des faits</text>
+<text x="444" y="142" text-anchor="middle" font-size="11" fill="var(--encre2)">ce que l&#x27;agent a déjà fait</text>
+<text x="444" y="174" text-anchor="middle" font-size="11" fill="var(--encre2)">Survit au programme</text>
+<text x="444" y="200" text-anchor="middle" font-size="11" fill="var(--encre2)">Relue à la reprise</text>
+<text x="444" y="226" text-anchor="middle" font-size="11" fill="var(--encre2)">Clé d&#x27;idempotence</text>
+<text x="444" y="292" text-anchor="middle" font-size="12" font-weight="600" fill="var(--s3)">le fichier d&#x27;état</text>
+<rect x="596" y="92" width="268" height="180" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="730" y="120" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Mémoire des connaissances</text>
+<text x="730" y="142" text-anchor="middle" font-size="11" fill="var(--encre2)">ce que l&#x27;organisation sait</text>
+<text x="730" y="174" text-anchor="middle" font-size="11" fill="var(--encre2)">Indépendante des exécutions</text>
+<text x="730" y="200" text-anchor="middle" font-size="11" fill="var(--encre2)">Interrogée par un outil</text>
+<text x="730" y="226" text-anchor="middle" font-size="11" fill="var(--encre2)">Citée dans la réponse</text>
+<text x="730" y="292" text-anchor="middle" font-size="12" font-weight="600" fill="var(--s2)">l&#x27;index documentaire</text>
+<text x="440" y="42" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Confondre ces trois mémoires est la cause la plus fréquente de contextes obèses.</text>
+<text x="440" y="64" text-anchor="middle" font-size="12" fill="var(--encre2)">Chacune a sa durée de vie, son support et son coût.</text>
+<text x="440" y="336" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Règle : ce qui peut être relu par un outil ne reste pas dans le contexte.</text>
+</svg>

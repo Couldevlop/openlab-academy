@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 350" width="760" height="350" role="img" aria-label="Masse salariale mois par mois">
+<title>Masse salariale mois par mois</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="760" height="350" fill="var(--surface)"/>
+<text x="380" y="34" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Une somme agrégée par mois raconte une histoire.</text>
+<text x="380" y="56" text-anchor="middle" font-size="12" fill="var(--encre2)">La marche de juillet, ce sont trois embauches : la courbe pose la question.</text>
+<line x1="70" y1="266" x2="710" y2="266" stroke="var(--trait)" stroke-width="2"/>
+<line x1="70" y1="90" x2="70" y2="266" stroke="var(--trait)" stroke-width="2"/>
+<text x="70" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">jan</text>
+<text x="128.18" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">fév</text>
+<text x="186.36" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">mar</text>
+<text x="244.55" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">avr</text>
+<text x="302.73" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">mai</text>
+<text x="360.91" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">juin</text>
+<text x="419.09" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">juil</text>
+<text x="477.27" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">août</text>
+<text x="535.45" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">sep</text>
+<text x="593.64" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">oct</text>
+<text x="651.82" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">nov</text>
+<text x="710" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">déc</text>
+<path d="M 70.00 234.00 L 128.18 234.00 L 186.36 224.86 L 244.55 224.86 L 302.73 224.86 L 360.91 215.71 L 419.09 147.14 L 477.27 147.14 L 535.45 138.00 L 593.64 138.00 L 651.82 124.29 L 710.00 124.29" fill="none" stroke="var(--s1)" stroke-width="3"/>
+<circle cx="70.00" cy="234.00" r="4" fill="var(--s1)"/>
+<circle cx="128.18" cy="234.00" r="4" fill="var(--s1)"/>
+<circle cx="186.36" cy="224.86" r="4" fill="var(--s1)"/>
+<circle cx="244.55" cy="224.86" r="4" fill="var(--s1)"/>
+<circle cx="302.73" cy="224.86" r="4" fill="var(--s1)"/>
+<circle cx="360.91" cy="215.71" r="4" fill="var(--s1)"/>
+<circle cx="419.09" cy="147.14" r="4" fill="var(--s1)"/>
+<circle cx="477.27" cy="147.14" r="4" fill="var(--s1)"/>
+<circle cx="535.45" cy="138.00" r="4" fill="var(--s1)"/>
+<circle cx="593.64" cy="138.00" r="4" fill="var(--s1)"/>
+<circle cx="651.82" cy="124.29" r="4" fill="var(--s1)"/>
+<circle cx="710.00" cy="124.29" r="4" fill="var(--s1)"/>
+<line x1="419.09" y1="96" x2="419.09" y2="266" stroke="var(--s2)" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="427.09" y="92" text-anchor="start" font-size="11" fill="var(--s2)">trois embauches en juillet</text>
+<text x="64" y="74" text-anchor="start" font-size="11" fill="var(--encre2)">millions de FCFA</text>
+<text x="380" y="322" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Une agrégation par mois se demande à la base, pas en parcourant les fiches.</text>
+<text x="380" y="344" text-anchor="middle" font-size="12" fill="var(--encre2)">Une requête rend douze lignes ; mille allers-retours en rendraient autant, bien plus lentement.</text>
+</svg>
