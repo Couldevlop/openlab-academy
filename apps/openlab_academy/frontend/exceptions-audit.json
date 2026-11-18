@@ -1,0 +1,12 @@
+{
+  "lisezmoi": "Avis de securite tolerees pour les dependances de production du front. Une exception n'est recevable que si l'amont n'a publie aucune version corrigee et que l'impact en production est nul ou maitrise. Chaque entree porte une date de revue : passee cette date, la chaine d'integration echoue a nouveau.",
+  "exceptions": [
+    {
+      "avis": "GHSA-fc5q-39xc-vjpf",
+      "paquet": "picomatch",
+      "titre": "picomatch vulnerable to ReDoS through single-branch repeated extglobs",
+      "raison": "Aucune version corrigee ne existe a ce jour : l'avis couvre toutes les versions publiees, jusqu'a la 4.0.7 incluse. picomatch n'est tire que par la chaine de construction (vite, unplugin, tinyglobby) et n'est jamais servi au navigateur : aucun motif glob ne provient d'une entree utilisateur en production. Le seul correctif propose par npm est une retrogradation majeure de vite, qui casserait la construction.",
+      "revoir_avant": "2027-01-31"
+    }
+  ]
+}

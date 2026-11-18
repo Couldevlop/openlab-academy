@@ -203,6 +203,7 @@ jobs:
           docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1             detect --source=/repo --config=/repo/.gitleaks.toml --redact --no-banner --exit-code 1
 
       # le backend n'a aucune dépendance Python propre (pyproject : dependencies = []) : seul le front en a
+      # un avis de sévérité haute sans correctif publié en amont est toléré s'il est inscrit,
+      # justifié et daté dans exceptions-audit.json ; tout le reste fait échouer la chaîne
       - name: npm audit (dépendances de production du front)
-        working-directory: apps/openlab_academy/frontend
-        run: npm audit --omit=dev --audit-level=high
+        run: python .github/scripts/audit_front.py apps/openlab_academy/frontend
