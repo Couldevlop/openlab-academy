@@ -679,9 +679,12 @@ blocs:
               dictionnaire de Python s'agrandit tout seul au fil des insertions.
 
               Vérifiez enfin ce que vous avez construit avec trois assertions : une clé rangée se retrouve,
-              une clé absente ne lève pas d'erreur mais rend la valeur par défaut, et deux clés qui tombent
-              dans le même seau se distinguent correctement. Ces trois assertions sont votre preuve, et elles
-              entrent dans votre rendu.
+              une clé absente ne lève pas d'erreur mais rend la valeur par défaut, et une collision ne perd
+              aucune clé. Pour la troisième, ne cherchez pas deux clés qui collisionnent : Python change la
+              valeur de hachage des chaînes à chaque exécution, vous ne pourriez pas les nommer d'avance.
+              Forcez la collision par le nombre — deux seaux et trois clés, donc un seau en porte au moins
+              deux — puis vérifiez que les trois clés se relisent correctement. Ces trois assertions sont
+              votre preuve, et elles entrent dans votre rendu.
             tableaux:
               - titre: "Ce que la table de hachage sait faire, et ce qu'elle ne sait pas"
                 entetes: [Question posée, Coût, Pourquoi]
@@ -722,13 +725,25 @@ blocs:
                           return [len(seau) for seau in self.seaux]
 
 
+                  CATALOGUE = [("CACAO-A", 1200), ("CACAO-B", 950), ("CAFE-A", 1800)]
+
                   table = TableSimple()
-                  for code, prix_fcfa in [("CACAO-A", 1200), ("CACAO-B", 950), ("CAFE-A", 1800)]:
+                  for code, prix_fcfa in CATALOGUE:
                       table.ranger(code, prix_fcfa)
 
                   assert table.lire("CACAO-B") == 950
                   assert table.lire("INCONNU", 0) == 0
                   print(table.remplissage())
+
+                  # Deux seaux et trois cles : un seau en contient forcement au moins deux. On n'a pas besoin
+                  # de savoir lesquelles — Python change la valeur de hachage des chaines a chaque execution —
+                  # il suffit de constater la collision, et que les trois cles se relisent quand meme.
+                  serree = TableSimple(nombre_de_seaux=2)
+                  for code, prix_fcfa in CATALOGUE:
+                      serree.ranger(code, prix_fcfa)
+
+                  assert max(serree.remplissage()) >= 2
+                  assert [serree.lire(code) for code, _ in CATALOGUE] == [prix for _, prix in CATALOGUE]
           - titre: "Le geste technique : les compréhensions, et leur limite"
             texte: >-
               Une compréhension transforme une collection en une autre en une ligne lisible. Elle remplace la
@@ -1404,30 +1419,31 @@ blocs:
 
 
                   # Premiere implementation : on parcourt la grille a chaque demande.
-                  def tarif_fcfa(depart: str, arrivee: str) -> int:
+                  def tarif_par_parcours(depart: str, arrivee: str) -> int:
                       for ville_depart, ville_arrivee, prix_fcfa in GRILLE:
                           if (ville_depart, ville_arrivee) == (depart, arrivee):
                               return prix_fcfa
                       raise ValueError(f"aucun tarif pour {depart} vers {arrivee}")
 
 
-                  # Deuxieme implementation : on construit l'index une fois. Meme contrat, meme nom.
+                  # Deuxieme implementation : on construit l'index une fois. Meme contrat.
                   _INDEX = {(depart, arrivee): prix for depart, arrivee, prix in GRILLE}
 
 
-                  def tarif_fcfa(depart: str, arrivee: str) -> int:  # noqa: F811
+                  def tarif_par_index(depart: str, arrivee: str) -> int:
                       try:
                           return _INDEX[(depart, arrivee)]
                       except KeyError:
                           raise ValueError(f"aucun tarif pour {depart} vers {arrivee}") from None
 
 
-                  # L'appelant et les tests ne changent pas d'une ligne.
-                  assert tarif_fcfa("Abidjan", "Bouake") == 7_000
-                  try:
-                      tarif_fcfa("Abidjan", "Daloa")
-                  except ValueError as refus:
-                      print(refus)
+                  # Le contrat, verifie sur les deux : c'est lui qui est stable, pas l'implementation.
+                  for tarif_fcfa in (tarif_par_parcours, tarif_par_index):
+                      assert tarif_fcfa("Abidjan", "Bouake") == 7_000
+                      try:
+                          tarif_fcfa("Abidjan", "Daloa")
+                      except ValueError as refus:
+                          print(refus)
           - titre: "À la main : le tarificateur de la compagnie"
             texte: >-
               Premier temps, écrivez la fonction de tarif avec ses validations, et appelez-la depuis le même
@@ -4039,6 +4055,9 @@ blocs:
               - titre: "debogage.py, s'arrêter seulement quand cela devient intéressant"
                 langage: python
                 source: |
+                  PRIX_PAR_QUALITE = {"A": 1_200, "B": 950, "C": 700}   # FCFA par kilo
+
+
                   def prix_lot(lot: dict) -> int:
                       # arret conditionnel : on ne s'arrete que sur le cas suspect
                       if lot["qualite"] == "A" and lot["humide"]:
@@ -4046,6 +4065,9 @@ blocs:
                       base = lot["poids_kg"] * PRIX_PAR_QUALITE[lot["qualite"]]
                       return round(base * 0.90) if lot["humide"] else base
 
+
+                  print(prix_lot({"qualite": "B", "poids_kg": 100, "humide": False}))   # 95 000, aucun arret
+                  print(prix_lot({"qualite": "A", "poids_kg": 100, "humide": True}))    # ouvre le debogueur
 
                   # dans le debogueur, les questions qui font avancer l'enquete :
                   #   p lot                 -> la valeur complete du dictionnaire
