@@ -682,8 +682,8 @@ blocs:
               une clé absente ne lève pas d'erreur mais rend la valeur par défaut, et une collision ne perd
               aucune clé. Pour la troisième, ne cherchez pas deux clés qui collisionnent : Python change la
               valeur de hachage des chaînes à chaque exécution, vous ne pourriez pas les nommer d'avance.
-              Forcez la collision par le nombre — deux seaux et trois clés, donc un seau en porte au moins
-              deux — puis vérifiez que les trois clés se relisent correctement. Ces trois assertions sont
+              Forcez la collision par le nombre : deux seaux et trois clés, donc un seau en porte au moins
+              deux. Vérifiez ensuite que les trois clés se relisent correctement. Ces trois assertions sont
               votre preuve, et elles entrent dans votre rendu.
             tableaux:
               - titre: "Ce que la table de hachage sait faire, et ce qu'elle ne sait pas"
@@ -736,8 +736,8 @@ blocs:
                   print(table.remplissage())
 
                   # Deux seaux et trois cles : un seau en contient forcement au moins deux. On n'a pas besoin
-                  # de savoir lesquelles — Python change la valeur de hachage des chaines a chaque execution —
-                  # il suffit de constater la collision, et que les trois cles se relisent quand meme.
+                  # de savoir lesquelles (Python change la valeur de hachage des chaines a chaque
+                  # execution) : il suffit de constater la collision, et que les trois cles se relisent.
                   serree = TableSimple(nombre_de_seaux=2)
                   for code, prix_fcfa in CATALOGUE:
                       serree.ranger(code, prix_fcfa)
@@ -3144,7 +3144,7 @@ blocs:
               Comparez vos annotations aux mesures. Si une mesure contredit votre lecture, c'est votre lecture
               qui doit changer, et vous devez savoir dire pourquoi. Attention au piège : any s'arrête au
               premier élément trouvé, donc le coût ne se paie que sur les produits jamais vendus. C'est
-              pourquoi le jeu d'essai concentre les ventes sur quelques produits — comme un vrai catalogue.
+              pourquoi le jeu d'essai concentre les ventes sur quelques produits, comme un vrai catalogue.
 
               Troisième temps : une seule des six fonctions est quadratique. Corrigez-la, sans toucher aux
               autres, et sans changer son comportement : les tests existants doivent rester verts.
@@ -4113,8 +4113,8 @@ blocs:
               vous ayez à tout raconter. Et il devient, une fois le bug corrigé, la matière du message de
               commit et du test de non-régression.
 
-              Exercez-vous par échange, à deux : chacun prend une copie du projet de l'autre — celui du module
-              précédent convient, cinq cents à mille cinq cents lignes — y introduit trois défauts sur une
+              Exercez-vous par échange, à deux : chacun prend une copie du projet de l'autre (celui du module
+              précédent convient, cinq cents à mille cinq cents lignes), y introduit trois défauts sur une
               branche, et la rend. Vous débusquez les trois défauts du projet que vous ne connaissez pas, ce
               qui est exactement la situation réelle. Seul, prenez votre propre projet et introduisez les
               trois défauts avant de ne plus y toucher pendant une semaine : la mémoire aura assez oublié.
@@ -5762,7 +5762,7 @@ blocs:
               nuance, car c'est l'erreur de diagnostic la plus courante : les tâches restantes ne sont pas
               toutes dans le cycle. Certaines s'attendent mutuellement, les autres sont simplement bloquées
               derrière elles. Il faut donc suivre les dépendances jusqu'à revenir sur ses pas pour nommer le
-              cycle réel, et dire des autres qu'elles sont bloquées — sans quoi la personne d'astreinte
+              cycle réel, et dire des autres qu'elles sont bloquées. Sans quoi la personne d'astreinte
               cherchera un défaut dans une tâche parfaitement saine.
 
               L'exception porte ici un nom métier et transporte les deux listes séparément. C'est la différence
@@ -5834,7 +5834,7 @@ blocs:
 
               Deuxième temps, varier. Ajoutez volontairement une dépendance fautive, par exemple en déclarant
               que le nettoyage attend l'agrégation, et vérifiez que votre code lève bien l'exception de cycle
-              en nommant les trois tâches du cycle — nettoyer, joindre, agréger — et la quatrième, publier,
+              en nommant les trois tâches du cycle (nettoyer, joindre, agréger) et la quatrième, publier,
               comme simplement bloquée. Ni l'une ni l'autre des deux listes ne doit contenir une tâche de
               l'autre. Un test qui attend une exception sans vérifier son contenu ne prouve presque rien.
 
