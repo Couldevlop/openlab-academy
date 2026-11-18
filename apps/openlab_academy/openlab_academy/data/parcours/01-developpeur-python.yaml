@@ -478,10 +478,10 @@ blocs:
             options: ["3.5", "3", "4", "1"]
             bonnes: [2]
             explication: "// est la division entière."
-          - question: "Que vaut 7 % 2 ?"
-            options: ["1", "3", "3.5", "0"]
+          - question: "Votre traitement passe de 1 000 à 10 000 éléments, et son temps de 0,2 s à 20 s. Qu'en déduisez-vous ?"
+            options: ["Le temps croît comme le carré de la quantité", "Le temps croît proportionnellement à la quantité", "La machine était occupée pendant la mesure", "Rien : il aurait fallu mesurer en millisecondes"]
             bonnes: [1]
-            explication: "% renvoie le reste de la division."
+            explication: "La quantité est multipliée par 10, le temps par 100. C'est le rapport entre deux mesures qui renseigne, jamais une mesure seule."
           - question: "Quel mot-clé introduit une condition alternative ?"
             options: ["elif", "elseif", "else if", "case"]
             bonnes: [1]
@@ -1029,10 +1029,10 @@ blocs:
             options: ["set", "list", "tuple", "str"]
             bonnes: [1]
             explication: "Un ensemble ne contient que des éléments uniques."
-          - question: "Que renvoie 'Abidjan'[0:3] ?"
-            options: ["'Abi'", "'Abid'", "'bid'", "'jan'"]
+          - question: "Pourquoi une liste ne peut-elle pas servir de clé de dictionnaire ?"
+            options: ["Parce qu'elle est modifiable : sa valeur de hachage changerait et la clé deviendrait introuvable", "Parce qu'elle peut contenir des doublons", "Parce qu'elle n'est pas ordonnée", "Parce qu'elle occupe trop de mémoire"]
             bonnes: [1]
-            explication: "Le slicing va de l'indice 0 inclus à 3 exclu."
+            explication: "Le dictionnaire range la clé dans un seau calculé depuis son hachage. Une clé qui change de valeur change de seau : elle resterait introuvable là où elle a été rangée."
           - question: "Comment lire une clé absente d'un dict sans provoquer d'erreur ?"
             options: ["d.get('cle', 0)", "d['cle']", "d.cle", "d.read('cle')"]
             bonnes: [1]
@@ -1550,10 +1550,10 @@ blocs:
             options: ["Un tuple d'arguments positionnels", "Un dictionnaire", "Une liste obligatoire", "Rien"]
             bonnes: [1]
             explication: "*args regroupe les arguments positionnels supplémentaires dans un tuple."
-          - question: "Et avec **kwargs ?"
-            options: ["Un dictionnaire d'arguments nommés", "Un tuple", "Un entier", "Une chaîne"]
+          - question: "Qu'arrive-t-il à une fonction récursive dont le cas de base n'est jamais atteint ?"
+            options: ["Elle empile les appels jusqu'à épuiser la pile et lève RecursionError", "Elle renvoie None", "Elle boucle sans jamais consommer de mémoire", "Python détecte le cycle et s'arrête proprement"]
             bonnes: [1]
-            explication: "**kwargs regroupe les arguments nommés supplémentaires."
+            explication: "Chaque appel empile un contexte. Sans cas de base atteignable, la pile se remplit : l'arrêt vers mille appels est une protection, pas une solution."
           - question: "Une variable définie dans une fonction est par défaut :"
             options: ["locale à la fonction", "globale", "partagée entre modules", "constante"]
             bonnes: [1]
@@ -2164,10 +2164,10 @@ blocs:
             options: ["protéger l'état interne d'un objet derrière ses méthodes", "copier un objet", "hériter de plusieurs classes", "convertir un objet en texte"]
             bonnes: [1]
             explication: "On empêche les modifications incohérentes de l'état."
-          - question: "Quelle méthode spéciale définit l'affichage lisible d'un objet avec print ?"
-            options: ["__str__", "__len__", "__eq__", "__call__"]
+          - question: "Vous insérez sans cesse en tête d'une collection. Quelle structure choisissez-vous, et pourquoi ?"
+            options: ["Une liste chaînée ou une file à deux bouts : l'insertion en tête y coûte un temps constant", "Une liste Python : insert(0, x) est aussi rapide qu'append", "Un dictionnaire, puisqu'il garde l'ordre d'insertion", "Un ensemble, le plus rapide des quatre"]
             bonnes: [1]
-            explication: "__str__ fournit la représentation lisible."
+            explication: "insert(0, x) décale tous les éléments déjà présents : son coût croît avec la taille. Une liste chaînée ou un deque insère en tête à coût constant."
           - question: "« Une voiture a un moteur » se modélise plutôt par :"
             options: ["la composition", "l'héritage", "une variable globale", "un décorateur"]
             bonnes: [1]
@@ -2728,10 +2728,10 @@ blocs:
             options: ["pathlib", "random", "math", "socket"]
             bonnes: [1]
             explication: "pathlib gère les chemins indépendamment du système d'exploitation."
-          - question: "Quel encodage choisir par défaut pour du texte en français ?"
-            options: ["utf-8", "ascii", "latin-1 toujours", "Aucun"]
+          - question: "Pourquoi une assertion ne doit-elle jamais valider une donnée venue de l'utilisateur ?"
+            options: ["Parce que python -O les supprime toutes : la vérification disparaîtrait en production", "Parce qu'elle est plus lente qu'un if", "Parce qu'elle ne peut pas porter de message", "Parce qu'elle ne fonctionne pas à l'intérieur d'une fonction"]
             bonnes: [1]
-            explication: "UTF-8 gère tous les caractères accentués et est la norme actuelle."
+            explication: "assert vérifie ce que le programme croit de lui-même. Une donnée extérieure se valide par un test explicite qui lève une exception métier, car les assertions peuvent être désactivées."
       - num: "06"
         title: Python idiomatique
         contenu: >-
@@ -3196,10 +3196,10 @@ blocs:
             options: ["La cohérence des types annotés", "La vitesse du code", "Les fautes d'orthographe", "La sécurité réseau"]
             bonnes: [1]
             explication: "Ils détectent des erreurs de type avant l'exécution."
-          - question: "Selon la PEP 8, une variable s'écrit de préférence :"
-            options: ["en snake_case", "en CamelCase", "en MAJUSCULES", "avec des tirets"]
+          - question: "Vous testez des milliers de fois la présence d'une valeur dans une collection de cent mille éléments. Quel coût sépare une liste d'un ensemble ?"
+            options: ["O(n) pour la liste, O(1) en moyenne pour l'ensemble", "O(1) pour les deux", "O(log n) pour la liste, O(n) pour l'ensemble", "Aucun : « in » va aussi vite sur les deux"]
             bonnes: [1]
-            explication: "snake_case pour variables et fonctions, CamelCase pour les classes."
+            explication: "« in » parcourt une liste élément par élément ; sur un ensemble ou un dictionnaire, il calcule un hachage et va droit au seau. C'est la boucle cachée la plus coûteuse des programmes débutants."
       - num: "07"
         title: Environnements & packaging
         contenu: >-
@@ -3682,10 +3682,10 @@ blocs:
             options: ["d'exécuter des vérifications avant chaque commit", "de publier un package", "de créer une branche", "de déployer en production"]
             bonnes: [1]
             explication: "Lint, formatage ou tests rapides bloquent un commit non conforme."
-          - question: "Faut-il versionner le dossier .venv ?"
-            options: ["Non, il est recréé à partir des dépendances", "Oui, toujours", "Seulement en production", "Seulement sous Windows"]
+          - question: "Votre programme est appelé depuis un enchaînement de commandes. Où écrivez-vous l'erreur, et que renvoyez-vous ?"
+            options: ["Sur la sortie d'erreur, avec un code de retour différent de zéro", "Sur la sortie standard, avec un code de retour de zéro", "Sur la sortie standard, avec un code de retour différent de zéro", "Dans un fichier de journal ; le code de retour n'a pas d'importance"]
             bonnes: [1]
-            explication: "L'environnement est propre à chaque machine."
+            explication: "La sortie standard porte le résultat, que la commande suivante consomme ; la sortie d'erreur porte les messages. Le code de retour est ce que teste le script appelant : zéro veut dire réussi."
           - question: "Que signifie un passage de 1.4.2 à 2.0.0 en versionnage sémantique ?"
             options: ["Une rupture de compatibilité", "Une correction de bug", "Une nouvelle fonction compatible", "Rien de particulier"]
             bonnes: [1]
@@ -4207,10 +4207,10 @@ blocs:
             options: ["un test qui échoue", "le code complet", "la documentation", "le déploiement"]
             bonnes: [1]
             explication: "Cycle rouge, vert, refactorisation."
-          - question: "Un mock sert à :"
-            options: ["remplacer une dépendance externe pendant un test", "accélérer la production", "chiffrer des données", "générer de la documentation"]
+          - question: "Un comportement correct hier est faux aujourd'hui, et cent commits séparent les deux états. Quel geste trouve le commit fautif le plus vite ?"
+            options: ["git bisect, qui coupe l'intervalle en deux à chaque essai : sept essais pour cent commits", "Relire les cent commits dans l'ordre", "Revenir au dernier état correct et tout réécrire", "Ajouter des affichages partout, puis relancer"]
             bonnes: [1]
-            explication: "On isole le code testé d'un service externe (API, e-mail…)."
+            explication: "La dichotomie est le seul geste dont le coût croît comme le logarithme du nombre de commits. Avec un test qui échoue, git bisect run l'automatise entièrement."
       - num: "09"
         title: Python asynchrone & API
         contenu: >-
@@ -4717,10 +4717,10 @@ blocs:
             options: ["dans une fonction déclarée async", "n'importe où", "uniquement dans une classe", "uniquement dans les tests"]
             bonnes: [1]
             explication: "await suspend une coroutine en attendant un résultat."
-          - question: "Quelle bibliothèque fait des requêtes HTTP synchrones et asynchrones ?"
-            options: ["httpx", "math", "csv", "pathlib"]
+          - question: "Votre appel renvoie un code HTTP 404. Qu'est-ce que cela prouve déjà ?"
+            options: ["Que la résolution DNS, la connexion TCP et la poignée de main TLS ont toutes réussi", "Que le serveur est en panne", "Que le certificat est invalide", "Que le nom de domaine n'existe pas"]
             bonnes: [1]
-            explication: "httpx propose les deux styles d'API."
+            explication: "Un code HTTP, même d'erreur, est une réponse applicative : elle n'a pu arriver que parce que les trois étapes en dessous ont abouti. On diagnostique du bas vers le haut."
           - question: "Pourquoi fixer un timeout sur chaque requête ?"
             options: ["Pour ne pas rester bloqué indéfiniment", "Pour accélérer le serveur", "Pour chiffrer la réponse", "Pour réduire le prix"]
             bonnes: [1]
@@ -5294,10 +5294,10 @@ blocs:
             options: ["les requêtes paramétrées", "masquer les erreurs", "un mot de passe long", "le HTTPS"]
             bonnes: [1]
             explication: "Les paramètres sont transmis séparément du texte de la requête."
-          - question: "Un ORM comme SQLAlchemy permet :"
-            options: ["de manipuler la base via des objets Python", "de remplacer la base de données", "de chiffrer le disque", "d'héberger un site"]
+          - question: "Un index existe sur la colonne « ville ». Laquelle de ces conditions ne pourra pas s'en servir ?"
+            options: ["WHERE lower(ville) = 'abidjan'", "WHERE ville = 'Abidjan'", "WHERE ville LIKE 'Abi%'", "WHERE ville > 'M'"]
             bonnes: [1]
-            explication: "Il traduit des objets et expressions Python en SQL."
+            explication: "L'index contient les valeurs de la colonne, pas le résultat d'une fonction appliquée dessus. Il faut écrire la condition sur la colonne nue, ou créer un index sur l'expression."
           - question: "À quoi sert une migration Alembic ?"
             options: ["Faire évoluer le schéma de base de façon versionnée", "Sauvegarder les données", "Déployer le front", "Tester l'API"]
             bonnes: [1]
@@ -5903,10 +5903,10 @@ blocs:
             options: ["Les opérations vectorisées sont beaucoup plus rapides", "Les boucles sont interdites", "Elles modifient les types", "Elles suppriment des lignes"]
             bonnes: [1]
             explication: "La vectorisation exécute le calcul en code compilé."
-          - question: "Polars se distingue notamment par :"
-            options: ["une exécution parallèle et paresseuse", "l'absence de typage", "une syntaxe SQL obligatoire", "le fait d'être un tableur"]
+          - question: "Dans un graphe non pondéré, quel parcours donne le plus court chemin entre deux sommets ?"
+            options: ["Le parcours en largeur, qui explore par cercles de distance croissante", "Le parcours en profondeur, qui descend d'abord au plus loin", "Les deux, indifféremment", "Aucun des deux : il faut l'algorithme de Dijkstra"]
             bonnes: [1]
-            explication: "Son mode lazy optimise le plan d'exécution avant de calculer."
+            explication: "En largeur, tout sommet atteint au tour n est à n arêtes du départ : le premier chemin trouvé est donc le plus court. Dijkstra ne devient nécessaire que si les arêtes portent des poids."
           - question: "Quelle méthode donne un aperçu rapide des colonnes et des types ?"
             options: ["df.info()", "df.plot()", "df.to_csv()", "df.drop()"]
             bonnes: [1]
@@ -6435,7 +6435,10 @@ blocs:
                   - [Sécurité, secrets versionnés ou conteneur privilégié, la liste de contrôle est entièrement verte, analyse des dépendances automatisée et documentée]
                   - [Chaîne, aucune vérification automatique, "tests, analyse statique et image construits", "la chaîne bloque et l'a déjà prouvé"]
                   - [Soutenance, lecture de diapositives, "un cas qui réussit, un qui échoue proprement", une décision technique défendue avec son alternative]
-        livrable: Application Python complète, testée et conteneurisée.
+                  - [Relecture, des remarques vagues ou aucune relecture rendue, "des remarques précises, classées bloquantes ou facultatives, et une décision argumentée", votre relecture a fait corriger un défaut réel et l'échange est resté sur le code]
+        livrable: >-
+          Application Python complète, testée et conteneurisée ; et, notée au même titre, une demande de
+          fusion ouverte sur le projet d'un camarade avec la relecture argumentée de celle d'un autre.
         mise_en_situation: "Votre application fonctionne sur votre poste mais pas sur le serveur de production. Décrivez comment la conteneurisation, la configuration par variables d'environnement et les journaux structurés auraient évité ce problème."
         quiz:
           - question: "Un Dockerfile multi-stage permet :"
@@ -6450,10 +6453,10 @@ blocs:
             options: ["Pour limiter les dégâts en cas de compromission", "Pour accélérer le démarrage", "Parce que Docker l'interdit", "Pour économiser la mémoire"]
             bonnes: [1]
             explication: "C'est le principe du moindre privilège."
-          - question: "Un journal structuré (JSON) facilite :"
-            options: ["la recherche et l'analyse automatiques", "la compression du code", "la compilation", "le design"]
+          - question: "Pourquoi limiter une demande de fusion à trois ou quatre cents lignes ?"
+            options: ["Parce qu'au-delà, le relecteur survole et ne voit plus les défauts", "Parce que Git refuse les différences plus grandes", "Parce que la chaîne d'intégration serait trop lente", "Parce que les conflits deviendraient impossibles à résoudre"]
             bonnes: [1]
-            explication: "Les outils d'observabilité filtrent par champ."
+            explication: "La qualité d'une relecture s'effondre avec la taille du changement. Découper en demandes courtes et indépendantes est ce qui fait qu'une relecture trouve réellement quelque chose."
           - question: "Dans une architecture hexagonale, le domaine métier :"
             options: ["ne dépend pas de l'infrastructure", "dépend de la base de données", "contient l'interface web", "contient les tests"]
             bonnes: [1]
