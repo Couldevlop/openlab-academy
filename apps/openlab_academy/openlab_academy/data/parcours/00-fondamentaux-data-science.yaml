@@ -1,14 +1,15 @@
 title: Fondamentaux de la Data Science
 short_introduction: >-
-  Parcours 0 · socle commun — les bases mathématiques, statistiques et l'outillage
+  Parcours 0 · socle commun : les bases mathématiques, statistiques et l'outillage
   avant toute spécialisation AI, Data ou Cybersécurité.
 description: >-
-  <p><b>Prérequis :</b> aucun — un niveau lycée en mathématiques suffit.</p>
+  <p><b>Prérequis :</b> aucun. Un niveau lycée en mathématiques suffit.</p>
   <p><b>Format :</b> 1 module par semaine (~8 h, 40 % théorie, 60 % pratique), un livrable par module,
   10 semaines projet intercalées et un capstone devant jury.</p>
   <p><b>Rôle :</b> installer le vocabulaire, les maths et l'outillage communs aux parcours
   Développeur Python, AI Engineer, Data Engineer et Cybersécurité.</p>
   <p><b>Évaluation :</b> livrables hebdomadaires 20 %, portfolio 40 %, capstone 40 %.</p>
+couverture: couverture-fondamentaux-data-science.jpg
 tags: [Data Science, Python, Statistiques, SQL, Machine Learning]
 card_gradient: Blue
 
@@ -20,6 +21,74 @@ blocs:
         contenu: >-
           Qu'est-ce que la data science : rôles (analyst, engineer, scientist), cycle de vie d'un projet
           (CRISP-DM), notions d'IA, de ML et de données. Panorama de l'outillage.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous savez traduire une demande métier floue en une question à
+              laquelle des données peuvent répondre, vous situez les rôles de l'équipe data, et vous
+              reconnaissez à quelle étape du cycle de vie se trouve un projet.
+
+              C'est la compétence la plus rentable du parcours et la moins enseignée : un modèle excellent qui
+              répond à la mauvaise question ne sert à personne.
+          - titre: "Le problème d'abord"
+            texte: >-
+              Le directeur d'une chaîne de pharmacies d'Abidjan vous dit : « je veux de l'intelligence
+              artificielle pour mieux gérer mes stocks ». Cette phrase n'est pas une question data : c'est un
+              souhait. Elle ne dit ni ce qu'il faut prévoir, ni sur quel horizon, ni ce qu'on fera du
+              résultat.
+
+              Votre travail consiste à la transformer en une question précise, par exemple : pour chaque
+              officine et chaque référence, combien d'unités seront vendues la semaine prochaine, afin de
+              passer commande le vendredi. Une question data porte toujours une décision, une granularité et
+              un horizon.
+          - titre: "La notion : rôles, cycle de vie, et question bien posée"
+            texte: >-
+              Trois métiers se partagent la chaîne. L'analyste répond à des questions sur le passé et prépare
+              la décision. L'ingénieur data construit et fiabilise les flux qui amènent les données. Le
+              scientifique des données construit des modèles qui généralisent. Dans une petite structure, une
+              seule personne porte les trois casquettes, mais les gestes restent distincts.
+
+              Le cycle de vie d'un projet tient en six étapes : cadrer, collecter, explorer, modéliser,
+              évaluer, mettre en service. On y revient en boucle, et la plupart des projets échouent faute de
+              cadrage, jamais faute d'algorithme.
+
+              Une question bien posée précise la décision qu'elle éclaire, l'unité observée, l'horizon de
+              temps, la mesure de succès, et ce qui sera fait si la réponse est négative.
+          - titre: "À la main : la note de cadrage"
+            texte: >-
+              Prenez une demande réelle de votre entourage professionnel et écrivez la note de cadrage en une
+              page. Le tableau ci-dessous en donne la trame : chaque ligne vide signale un risque, pas un
+              détail à compléter plus tard.
+
+              Confrontez votre note au demandeur. L'exercice révèle presque toujours deux choses : la décision
+              n'était pas celle qu'on croyait, et la donnée nécessaire n'existe pas encore.
+            tableaux:
+              - titre: "La trame d'une note de cadrage"
+                entetes: [Rubrique, Question posée, Exemple pharmacie]
+                lignes:
+                  - [Décision, "qu'est-ce qui changera", la commande du vendredi]
+                  - [Unité, une ligne décrit quoi, une référence dans une officine]
+                  - [Horizon, sur quelle période, les sept jours suivants]
+                  - [Succès, comment on mesure, ruptures divisées par deux]
+                  - [Données, ce qui existe déjà, deux ans de ventes par ticket]
+                  - [Risque, ce qui ferait échouer, "les ruptures passées faussent l'historique"]
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est la question sans décision. « Comprendre nos clients » n'engage aucune
+              action, donc aucun critère de succès.
+
+              Le deuxième est la donnée supposée. On cadre un projet sur un historique dont personne n'a
+              vérifié l'existence, et le projet s'arrête à la collecte.
+
+              Le troisième est le succès défini après coup. Si la mesure de succès est choisie quand les
+              résultats sont connus, le projet a toujours réussi, et personne ne le croit.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez la note de cadrage d'un problème métier traduit en question data : une page, les six
+              rubriques remplies, et une phrase qui dit ce qu'on fera si le modèle ne tient pas ses promesses.
+
+              Critères d'acceptation : la décision est nommée, l'unité observée est sans ambiguïté, la mesure
+              de succès est chiffrée, et les données citées ont été vues, pas supposées.
         livrable: Note de cadrage d'un problème métier traduit en question data.
         mise_en_situation: "Le directeur commercial d'une société de distribution à Abidjan constate une baisse des ventes à Bouaké et vous demande « de faire de la data ». Rédigez en une demi-page la question data précise que vous poseriez, les données nécessaires et l'indicateur qui permettra de mesurer le succès."
         quiz:
@@ -48,6 +117,83 @@ blocs:
         contenu: >-
           Terminal, navigation fichiers, environnements (uv, venv), bases de Git et GitHub,
           notebooks Jupyter.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous vous déplacez dans une arborescence depuis un terminal, vous
+              isolez un environnement de travail, vous versionnez votre travail avec Git, et vous publiez un
+              dépôt qu'un collègue peut cloner et exécuter.
+
+              Ces gestes paraissent éloignés de la data science. Ils en sont pourtant la condition : une
+              analyse qu'on ne peut ni retrouver ni rejouer n'est pas un résultat, c'est un souvenir.
+          - titre: "Le problème d'abord"
+            texte: >-
+              Une analyse circule par courriel sous le nom analyse_finale_v3_corrigee.ipynb. Trois personnes
+              en possèdent une version différente, les chiffres ne concordent pas, et personne ne sait
+              laquelle a servi à la présentation du conseil.
+
+              Le versionnement répond exactement à ce problème : une histoire unique, datée, attribuée, où
+              chaque état du travail porte un message qui explique pourquoi il a changé.
+          - titre: "La notion : terminal, environnement, dépôt"
+            texte: >-
+              Le terminal manipule des chemins. Apprenez cinq commandes et vous êtes autonome : se déplacer,
+              lister, créer un dossier, copier, supprimer. Un chemin absolu part de la racine, un chemin
+              relatif part de l'endroit où vous êtes.
+
+              Un environnement isolé contient les bibliothèques d'un seul projet. Avec uv, la création et
+              l'installation tiennent en deux commandes, et le fichier de verrouillage garantit que votre
+              collègue installera exactement les mêmes versions.
+
+              Git enregistre des états successifs. Un commit réunit des modifications qui vont ensemble et
+              porte un message à l'impératif qui dit pourquoi. Une branche permet d'essayer sans casser la
+              version qui marche. GitHub n'est qu'un endroit où le dépôt est aussi stocké.
+          - titre: "À la main : votre premier dépôt"
+            texte: >-
+              Créez le dossier du projet, initialisez le dépôt, écrivez le fichier d'exclusions avant tout le
+              reste, puis faites votre premier commit. L'ordre compte : un secret ou un gros fichier de
+              données entré une fois dans l'histoire y reste.
+
+              Un notebook se versionne mal, car il contient aussi ses sorties. Videz les sorties avant de
+              valider, ou extrayez le code réutilisable dans des fichiers Python.
+            tableaux:
+              - titre: "Ce qui entre dans le dépôt, et ce qui n'y entre jamais"
+                entetes: [Fichier, Versionné, Pourquoi]
+                lignes:
+                  - [code et notebooks, oui, "c'est le travail"]
+                  - [pyproject.toml et verrou, oui, "pour rejouer à l'identique"]
+                  - [jeux de données volumineux, non, le dépôt gonfle et devient inutilisable]
+                  - [fichier .env, non, il contient des secrets]
+                  - [dossier .venv, non, "il se reconstruit d'une commande"]
+            code:
+              - titre: Les premières commandes du projet
+                langage: bash
+                source: |
+                  mkdir ventes-pharmacie && cd ventes-pharmacie
+                  git init
+
+                  printf '.venv/\ndonnees/*.csv\n.env\n.ipynb_checkpoints/\n' > .gitignore
+
+                  uv venv && uv add pandas jupyterlab
+                  git add .gitignore pyproject.toml uv.lock
+                  git commit -m "Poser le squelette du projet et ses dependances"
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est le commit fourre-tout, qui mélange dix changements sans rapport. Son
+              message ne peut rien dire d'utile, et il devient impossible de revenir en arrière proprement.
+
+              Le deuxième est le secret commité. Retirer le fichier ensuite ne suffit pas : il reste dans
+              l'histoire, et la clé doit être révoquée.
+
+              Le troisième est le notebook versionné avec ses sorties : chaque exécution produit une
+              différence illisible, et les revues deviennent impossibles.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez un dépôt versionné contenant un premier notebook exécutable : fichier d'exclusions,
+              dépendances déclarées et verrouillées, au moins cinq commits au message clair, et un LISEZ-MOI
+              qui donne les commandes d'installation et d'exécution.
+
+              Critères d'acceptation : un collègue clone, installe et exécute le notebook sans vous poser de
+              question, aucun secret ni gros fichier n'est présent dans l'histoire du dépôt.
         livrable: Dépôt versionné contenant un premier notebook exécutable.
         mise_en_situation: "Votre collègue a modifié un notebook partagé et le projet ne fonctionne plus. Décrivez les commandes Git qui vous permettent de voir ce qui a changé et de revenir à la dernière version fonctionnelle sans perdre son travail."
         quiz:
@@ -76,6 +222,86 @@ blocs:
         contenu: >-
           Variables, types, structures de données, boucles, fonctions ; NumPy pour le calcul vectoriel.
           Orienté manipulation de données, sans prérequis de développement.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous écrivez le Python nécessaire à l'analyse : types, collections,
+              boucles, fonctions, et surtout le calcul vectorisé avec NumPy, qui remplace les boucles par des
+              opérations sur des tableaux entiers.
+
+              Le but n'est pas de devenir développeur : c'est d'écrire sans effort les quelques dizaines de
+              lignes qui séparent un fichier brut d'un chiffre que l'on peut défendre.
+          - titre: "Le problème d'abord"
+            texte: >-
+              On vous remet deux ans de ventes de la chaîne de pharmacies : un million de lignes. Vous voulez
+              la moyenne mobile sur sept jours par référence. Écrite avec des boucles Python, l'opération
+              prend plusieurs minutes et sature la mémoire ; vectorisée, elle prend moins d'une seconde.
+
+              La différence n'est pas une question de patience. Une analyse qui prend trois minutes à chaque
+              essai décourage l'exploration, et l'exploration est le cœur du métier.
+          - titre: "La notion : du tableau Python au tableau NumPy"
+            texte: >-
+              Une liste Python contient des objets de types quelconques, chacun avec son enveloppe. Un tableau
+              NumPy contient des nombres d'un seul type, contigus en mémoire : les opérations s'appliquent à
+              tout le tableau d'un coup, dans du code compilé.
+
+              La vectorisation remplace la boucle par une expression. Additionner deux tableaux, multiplier
+              par un coefficient, filtrer par un masque booléen : chaque opération porte sur des millions de
+              valeurs sans qu'une boucle Python n'apparaisse.
+
+              La diffusion, ou broadcasting, étend automatiquement les dimensions compatibles : soustraire un
+              vecteur de moyennes à une matrice de mesures s'écrit en une ligne, sans recopie.
+          - titre: "À la main : du prix unitaire au chiffre d'affaires"
+            texte: >-
+              Partez de deux tableaux, les quantités et les prix, et calculez le chiffre d'affaires par ligne,
+              puis le total, puis la part des lignes au-dessus d'un seuil. Comparez le temps d'exécution avec
+              la version à boucle sur un million de lignes.
+
+              Remarquez le masque booléen : il se lit comme la phrase qu'il traduit, et il remplace un test
+              dans une boucle.
+            tableaux:
+              - titre: Boucle Python ou NumPy
+                entetes: [Opération, Avec une boucle, Avec NumPy]
+                lignes:
+                  - [Multiplier deux colonnes, une ligne par élément, a * b]
+                  - [Filtrer, un test par élément, "a[a > seuil]"]
+                  - [Moyenne par groupe, "un dictionnaire d'accumulateurs", une agrégation]
+                  - [Un million de lignes, plusieurs secondes, quelques millisecondes]
+            code:
+              - titre: "vectorisation.py, les mêmes calculs sans boucle"
+                langage: python
+                source: |
+                  import numpy as np
+
+                  quantites = np.array([3, 1, 12, 5, 2])
+                  prix_fcfa = np.array([1500, 22000, 800, 3400, 12000])
+
+                  chiffre_affaires = quantites * prix_fcfa
+                  total = chiffre_affaires.sum()
+
+                  grosses_lignes = chiffre_affaires > 10_000
+                  part = grosses_lignes.mean()
+
+                  print(total, round(part * 100, 1), "%")
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est le type qui change sans prévenir : un tableau d'entiers divisé devient un
+              tableau de flottants, et un identifiant commençant par zéro perd son zéro s'il est lu comme un
+              nombre.
+
+              Le deuxième est la vue prise pour une copie. Une tranche de tableau NumPy partage la mémoire de
+              l'original : la modifier modifie l'original. Employez copy quand vous voulez un tableau séparé.
+
+              Le troisième est la valeur manquante contagieuse : une seule valeur non définie suffit à rendre
+              une moyenne non définie. Traitez-la explicitement, jamais par distraction.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez un notebook d'analyse chiffrée sur un petit jeu de données : chargement, cinq indicateurs
+              calculés sans boucle, un commentaire par indicateur qui dit ce qu'il montre, et une conclusion
+              de trois lignes.
+
+              Critères d'acceptation : aucune boucle Python sur les lignes du jeu de données, les types sont
+              déclarés au chargement, et les valeurs manquantes sont traitées explicitement.
         livrable: Notebook d'analyse chiffrée sur un petit jeu de données.
         mise_en_situation: "Une coopérative vous transmet la liste des pesées de cacao de la semaine (une valeur en kg par livraison). Écrivez en Python le calcul du total, de la moyenne et du nombre de livraisons supérieures à 500 kg, puis expliquez votre démarche."
         quiz:
@@ -106,6 +332,76 @@ blocs:
         contenu: >-
           Moyenne, médiane, variance, distributions, corrélation, échantillonnage, biais courants.
           Lecture critique d'un chiffre.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous décrivez un jeu de données avec les bons indicateurs, vous
+              reconnaissez une distribution asymétrique, vous mesurez une relation entre deux variables, et
+              vous dites ce qu'un échantillon permet et ne permet pas de conclure.
+
+              C'est la semaine qui vous apprend à vous méfier de la moyenne, l'indicateur le plus employé et
+              le plus trompeur de tous.
+          - titre: "Le problème d'abord"
+            texte: >-
+              On vous annonce que le panier moyen des pharmacies est de douze mille francs. Vous regardez la
+              distribution : la moitié des tickets est sous quatre mille francs, et quelques commandes
+              d'officines tirent la moyenne vers le haut.
+
+              La moyenne est exacte et la conclusion qu'on en tire est fausse. Décrire honnêtement une
+              distribution asymétrique demande au moins trois nombres : une médiane, un écart, et les
+              extrêmes.
+          - titre: "La notion : centre, dispersion, forme, relation"
+            texte: >-
+              Le centre se résume par la moyenne quand la distribution est symétrique, par la médiane sinon.
+              La médiane résiste aux valeurs extrêmes, la moyenne non.
+
+              La dispersion se mesure par l'écart type, ou par l'écart interquartile, plus robuste. Un centre
+              sans dispersion ne dit rien : deux équipes de même salaire moyen peuvent être payées très
+              différemment.
+
+              La forme se voit sur un histogramme : symétrique, asymétrique à droite, bimodale. Une
+              distribution bimodale signale souvent deux populations mélangées, qu'il faut séparer avant
+              d'analyser.
+
+              La corrélation mesure une relation linéaire entre deux variables, entre moins un et un. Elle ne
+              dit rien de la causalité, et elle ne voit pas les relations non linéaires.
+          - titre: "À la main : le rapport descriptif"
+            texte: >-
+              Décrivez votre jeu de données avec la trame du tableau : effectif, valeurs manquantes, centre,
+              dispersion, extrêmes, forme. Puis tracez l'histogramme et regardez si ce que vous aviez conclu
+              tient encore.
+
+              Posez-vous la question de la population : vos données décrivent-elles tous les clients, ou
+              seulement ceux qui ont acheté ? Le biais de sélection est invisible dans les chiffres et fatal
+              pour les conclusions.
+            tableaux:
+              - titre: Le minimum à publier pour décrire une variable
+                entetes: [Indicateur, "Ce qu'il dit", Quand il trompe]
+                lignes:
+                  - [Moyenne, le centre, distribution asymétrique]
+                  - [Médiane, le centre robuste, distribution bimodale]
+                  - [Écart type, la dispersion, présence de valeurs extrêmes]
+                  - [Effectif, la base de calcul, petits groupes présentés comme des tendances]
+                  - [Valeurs manquantes, ce qui est absent, "absence systématique, non aléatoire"]
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est la moyenne de pourcentages. Faire la moyenne de taux calculés sur des
+              effectifs différents donne un résultat faux ; il faut pondérer.
+
+              Le deuxième est le paradoxe de Simpson : une tendance observée dans chaque groupe peut
+              s'inverser quand on agrège les groupes. Regardez toujours vos chiffres groupe par groupe.
+
+              Le troisième est la corrélation prise pour une cause. Deux séries qui montent ensemble partagent
+              souvent une cause commune, par exemple la saison ou l'inflation.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez un rapport statistique commenté sur un jeu de données réel : description de chaque
+              variable utile, deux graphiques, une relation étudiée, et une section honnête sur les limites de
+              l'échantillon.
+
+              Critères d'acceptation : aucune moyenne publiée sans mesure de dispersion et effectif, chaque
+              graphique porte un titre qui énonce le constat, et les limites sont écrites avant les
+              conclusions.
         livrable: Rapport statistique commenté sur un dataset réel.
         mise_en_situation: "Un journal annonce que « le salaire moyen à Abidjan a augmenté de 20 % ». Expliquez en quelques lignes pourquoi ce chiffre peut être trompeur et quelles statistiques complémentaires vous demanderiez."
         quiz:
@@ -134,6 +430,73 @@ blocs:
         contenu: >-
           Probabilités de base, loi normale, intervalles de confiance, tests d'hypothèse,
           p-value et ses pièges.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous raisonnez sur l'incertitude : vous construisez un intervalle de
+              confiance, vous conduisez un test d'hypothèse, vous interprétez une valeur p sans lui faire dire
+              ce qu'elle ne dit pas, et vous dimensionnez un test A/B avant de le lancer.
+
+              Le résultat visé est une phrase que vous pourrez défendre devant un directeur : « la différence
+              observée est compatible avec le hasard » ou « elle ne l'est pas, voici de combien ».
+          - titre: "Le problème d'abord"
+            texte: >-
+              La chaîne de pharmacies teste un nouvel agencement du rayon. Sur deux semaines, l'officine test
+              vend 4 % de plus que l'officine témoin. Faut-il déployer l'agencement partout ?
+
+              La question n'est pas de savoir si 4 % est beaucoup. Elle est de savoir si un écart de cette
+              taille pouvait apparaître par simple fluctuation, et combien de temps il aurait fallu observer
+              pour trancher.
+          - titre: "La notion : hasard, intervalle, décision"
+            texte: >-
+              Un échantillon donne une estimation, jamais la vérité. L'intervalle de confiance exprime
+              l'incertitude de cette estimation : quatre-vingt-quinze fois sur cent, un intervalle construit
+              de cette façon contient la vraie valeur.
+
+              Un test d'hypothèse part de l'hypothèse nulle, celle qui dit qu'il ne se passe rien, et demande
+              : si elle était vraie, quelle serait la probabilité d'observer un écart au moins aussi grand que
+              celui-là. C'est la valeur p. Une petite valeur p rend l'hypothèse nulle peu plausible ; elle ne
+              donne ni la probabilité que votre théorie soit vraie, ni l'importance de l'effet.
+
+              La taille d'échantillon se calcule avant le test, à partir de l'effet minimal qui vous
+              intéresserait. Un test trop petit ne détecte rien ; un test énorme rend significatif un effet
+              sans portée pratique.
+          - titre: "À la main : un test A/B de bout en bout"
+            texte: >-
+              Dimensionnez d'abord : quel écart vaut la peine d'être détecté, et combien de tickets faut-il
+              pour cela. Lancez ensuite, et ne regardez pas les résultats tous les matins : regarder jusqu'à
+              ce que ce soit significatif fabrique des résultats faux.
+
+              Concluez en trois nombres : l'écart estimé, son intervalle de confiance, et la valeur p. Puis
+              traduisez en francs : un écart de 4 % sur le chiffre d'affaires d'une officine, cela fait
+              combien par mois, et combien coûte le réagencement.
+            tableaux:
+              - titre: "Ce que dit une valeur p, et ce qu'elle ne dit pas"
+                entetes: [Affirmation, Vrai ou faux]
+                lignes:
+                  - ["Une petite valeur p rend l'hypothèse nulle peu plausible", vrai]
+                  - ["Une petite valeur p mesure la taille de l'effet", faux]
+                  - ["0,05 est un seuil naturel", "faux, c'est une convention"]
+                  - ["Un test non significatif prouve l'absence d'effet", faux]
+                  - [Regarder les résultats en continu est sans conséquence, faux]
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est l'arrêt opportuniste : interrompre le test dès qu'il devient significatif.
+              Avec cette méthode, presque tout devient significatif un jour ou l'autre.
+
+              Le deuxième est la multiplication des tests. Comparer vingt variantes produit en moyenne une
+              fausse découverte au seuil de 5 % ; corrigez pour la multiplicité ou annoncez-la.
+
+              Le troisième est la significativité confondue avec l'importance. Sur un million d'observations,
+              un écart de 0,1 % devient significatif et reste sans intérêt pour la décision.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez un test A/B interprété de bout en bout : protocole écrit avant le test, calcul de la
+              taille d'échantillon, analyse, intervalle de confiance, valeur p, et une recommandation chiffrée
+              en francs.
+
+              Critères d'acceptation : le protocole est daté avant les données, l'analyse n'a pas été répétée
+              en cours de route, et la recommandation distingue l'effet statistique de l'intérêt économique.
         livrable: Test A/B interprété de bout en bout.
         mise_en_situation: "Une banque teste deux messages de relance. Le message B obtient 12 % de paiements contre 10 % pour A, sur 300 clients chacun. Le directeur veut généraliser B dès demain. Que lui répondez-vous et quelles vérifications faites-vous ?"
         quiz:
@@ -160,8 +523,96 @@ blocs:
       - num: "06"
         title: Algèbre linéaire & calcul
         contenu: >-
-          Vecteurs, matrices, produit matriciel, notion de dérivée et de gradient — le minimum
+          Vecteurs, matrices, produit matriciel, notion de dérivée et de gradient, le minimum
           pour comprendre le ML et le deep learning.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous manipulez vecteurs et matrices sans crainte, vous comprenez ce
+              que calcule un produit matriciel, vous savez ce qu'est une dérivée et un gradient, et vous
+              ajustez une régression linéaire à la main.
+
+              Nous n'enseignons pas les mathématiques pour elles-mêmes : nous enseignons le minimum qui permet
+              de comprendre ce que fait un modèle au lieu de l'appeler à l'aveugle.
+          - titre: "Le problème d'abord"
+            texte: >-
+              Une bibliothèque vous donne un modèle en trois lignes et un coefficient de 0,78. Que signifie ce
+              nombre, pourquoi l'algorithme s'est-il arrêté là, et qu'est-ce qui changerait si une colonne
+              était exprimée en milliers plutôt qu'en unités ?
+
+              Sans un minimum d'algèbre et de calcul différentiel, ces questions restent sans réponse, et vous
+              ne pouvez ni déboguer un modèle qui diverge ni expliquer un résultat à un directeur.
+          - titre: "La notion : vecteurs, matrices, pente"
+            texte: >-
+              Un vecteur est une liste de nombres qui décrit une observation : les caractéristiques d'une
+              officine, par exemple. Une matrice empile ces observations en lignes et les caractéristiques en
+              colonnes. Un jeu de données tabulaire est une matrice.
+
+              Le produit matriciel combine des colonnes avec des poids. Prédire, dans un modèle linéaire,
+              c'est exactement cela : multiplier la matrice des observations par le vecteur des coefficients.
+
+              La dérivée mesure la pente d'une fonction : de combien le résultat change si l'entrée bouge un
+              peu. Le gradient est le vecteur des dérivées, une par coefficient. La descente de gradient
+              avance à petits pas dans la direction qui fait baisser l'erreur ; c'est la mécanique qui
+              entraîne presque tous les modèles, de la régression aux réseaux de neurones.
+          - titre: "À la main : la régression linéaire sans bibliothèque"
+            texte: >-
+              Implémentez la descente de gradient pour une régression simple. Vingt lignes suffisent, et elles
+              rendent concret ce que fait la bibliothèque que vous emploierez ensuite.
+
+              Faites varier le pas d'apprentissage : trop petit, l'algorithme n'arrive jamais ; trop grand, il
+              diverge. Faites varier aussi l'échelle d'une colonne, et constatez pourquoi la normalisation
+              n'est pas une coquetterie.
+            tableaux:
+              - titre: "Le vocabulaire minimal, traduit"
+                entetes: [Terme mathématique, "Ce que c'est dans vos données"]
+                lignes:
+                  - [Vecteur, "une ligne du tableau, une observation"]
+                  - [Matrice, le tableau entier]
+                  - [Produit matriciel, la prédiction du modèle linéaire]
+                  - [Gradient, "la direction qui fait baisser l'erreur"]
+                  - ["Pas d'apprentissage", la taille des enjambées vers la solution]
+            code:
+              - titre: "descente.py, vingt lignes qui entraînent un modèle"
+                langage: python
+                source: |
+                  import numpy as np
+
+
+                  def descente(X, y, pas=0.01, etapes=1000):
+                      n, p = X.shape
+                      coefficients = np.zeros(p)
+                      for _ in range(etapes):
+                          prediction = X @ coefficients
+                          erreur = prediction - y
+                          gradient = (2 / n) * (X.T @ erreur)
+                          coefficients -= pas * gradient
+                      return coefficients
+
+
+                  X = np.array([[1.0, 2.0], [1.0, 4.0], [1.0, 6.0], [1.0, 8.0]])
+                  y = np.array([3.0, 5.0, 7.0, 9.0])
+                  print(descente(X, y))
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est l'échelle. Une colonne en francs et une colonne en années n'ont pas le même
+              ordre de grandeur : sans normalisation, la descente de gradient zigzague ou diverge.
+
+              Le deuxième est la colinéarité. Deux colonnes qui disent la même chose rendent les coefficients
+              instables : ils peuvent changer de signe d'un échantillon à l'autre.
+
+              Le troisième est le coefficient interprété comme une cause. Un coefficient dit comment la
+              prédiction bouge quand la variable bouge, toutes choses égales par ailleurs dans le modèle, ce
+              qui n'est pas la même chose que dans la réalité.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez une fiche de synthèse appliquée : la régression linéaire implémentée à la main, comparée
+              à la version d'une bibliothèque, avec une page qui explique le rôle du pas d'apprentissage et de
+              la normalisation, courbe d'erreur à l'appui.
+
+              Critères d'acceptation : votre implémentation retrouve les coefficients de la bibliothèque à la
+              troisième décimale, et la fiche explique pourquoi en employant les mots gradient, pas et échelle
+              à bon escient.
         livrable: Fiche de synthèse appliquée (régression linéaire à la main).
         mise_en_situation: "On vous donne trois appartements (surface, loyer) : (40 m², 150 000 FCFA), (60, 210 000), (80, 270 000). Calculez à la main la droite loyer = a × surface + b et estimez le loyer d'un 70 m². Montrez vos calculs."
         quiz:
@@ -190,8 +641,94 @@ blocs:
       - num: "07"
         title: Manipulation avec pandas
         contenu: >-
-          Chargement, nettoyage, valeurs manquantes, jointures, agrégations, pivots — avec pandas
+          Chargement, nettoyage, valeurs manquantes, jointures, agrégations et pivots avec pandas
           et une ouverture sur Polars. Le cœur du métier au quotidien.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous chargez, nettoyez, joignez, agrégez et pivotez des données avec
+              pandas, et vous livrez un jeu de données propre dont chaque transformation est tracée.
+
+              Le nettoyage occupe la plus grande part du temps de tout professionnel de la donnée. C'est aussi
+              la part où se jouent les erreurs les plus graves, parce qu'elles sont invisibles dans le
+              résultat final.
+          - titre: "Le problème d'abord"
+            texte: >-
+              Vous recevez les ventes de douze officines : douze fichiers, des colonnes nommées différemment,
+              des dates au format français ici et américain là, des codes produits avec et sans zéro initial,
+              et une officine qui a envoyé deux fois le mois de mars.
+
+              Chacun de ces défauts, traité à la main, se reproduira le mois prochain. Un pipeline de
+              nettoyage écrit une fois les traite tous, et consigne ce qu'il a trouvé.
+          - titre: "La notion : charger, aligner, joindre, agréger"
+            texte: >-
+              Déclarez les types au chargement. Un code produit est une chaîne, pas un nombre ; une date est
+              une date, pas une chaîne. Ce seul geste évite la moitié des bugs d'analyse.
+
+              Les valeurs manquantes se traitent explicitement, et le choix se justifie : écarter la ligne,
+              remplacer par une valeur, ou garder l'absence comme information. L'absence est souvent
+              informative : un champ vide peut signaler un circuit de saisie différent.
+
+              Une jointure combine deux tables par une clé. Vérifiez toujours les effectifs avant et après :
+              une jointure qui multiplie les lignes signale une clé non unique, et une jointure qui en perd
+              signale des clés absentes.
+
+              Une agrégation résume par groupe, et un pivot réorganise en tableau croisé. Ensemble, ils
+              répondent à la plupart des questions d'analyse.
+          - titre: "À la main : le pipeline de nettoyage"
+            texte: >-
+              Écrivez le nettoyage comme une suite de fonctions courtes, chacune prenant un tableau et en
+              rendant un autre. Mesurez les effectifs à chaque étape : c'est votre journal de bord.
+
+              Vérifiez la jointure explicitement avec l'indicateur de provenance, qui dit pour chaque ligne si
+              elle vient des deux tables ou d'une seule. Les lignes venues d'un seul côté méritent un regard.
+            tableaux:
+              - titre: Les quatre questions à poser à toute jointure
+                entetes: [Question, Comment vérifier, "Ce qu'un écart signale"]
+                lignes:
+                  - [La clé est-elle unique à droite, un comptage des doublons, des lignes multipliées]
+                  - [Toutes les clés existent-elles, "l'indicateur de provenance", un référentiel incomplet]
+                  - [Les types coïncident-ils, comparer les types des clés, aucune correspondance]
+                  - ["L'effectif a-t-il changé", compter avant et après, une perte silencieuse]
+            code:
+              - titre: "nettoyage.py, charger, vérifier, joindre"
+                langage: python
+                source: |
+                  import pandas as pd
+
+                  ventes = pd.read_csv(
+                      "ventes.csv",
+                      dtype={"code_produit": "string", "officine": "string"},
+                      parse_dates=["date"],
+                      encoding="utf-8",
+                  )
+
+                  avant = len(ventes)
+                  ventes = ventes.drop_duplicates(subset=["officine", "date", "code_produit"])
+                  print(f"doublons retires : {avant - len(ventes)}")
+
+                  produits = pd.read_csv("produits.csv", dtype={"code_produit": "string"})
+                  jointure = ventes.merge(produits, on="code_produit", how="left", indicator=True)
+                  print(jointure["_merge"].value_counts())
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est la modification en chaîne, qui produit l'avertissement sur la copie. Vous
+              croyez modifier le tableau et vous modifiez une copie temporaire.
+
+              Le deuxième est le remplissage automatique des valeurs manquantes par zéro ou par la moyenne,
+              sans y penser. Toute imputation déforme la distribution et doit être assumée.
+
+              Le troisième est la date lue comme une chaîne : le tri devient alphabétique, et le mois de
+              décembre passe avant février.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez un jeu de données brut nettoyé et documenté : le pipeline de nettoyage, un rapport des
+              effectifs étape par étape, un dictionnaire des variables, et les décisions d'imputation
+              justifiées.
+
+              Critères d'acceptation : le pipeline se rejoue d'une commande sur les fichiers bruts, aucune
+              retouche manuelle, les jointures sont vérifiées, et chaque décision de nettoyage tient en une
+              phrase justifiée.
         livrable: Jeu de données brut nettoyé et documenté.
         mise_en_situation: "Vous recevez un fichier Excel de ventes avec des dates dans trois formats, des montants écrits « 15 000 F » et des clients en double. Décrivez étape par étape le nettoyage pandas que vous appliquez et comment vous vérifiez le résultat."
         quiz:
@@ -220,6 +757,78 @@ blocs:
         contenu: >-
           Matplotlib, seaborn et Plotly, choix du bon graphique, lisibilité, storytelling visuel,
           erreurs à éviter.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous choisissez le graphique qui convient à la question, vous le
+              rendez lisible sans effort, et vous assemblez quelques graphiques en un tableau de bord qui
+              raconte une histoire au lieu d'exposer des chiffres.
+
+              Un graphique est un argument. Il doit pouvoir être défendu, et il peut être malhonnête sans que
+              personne ne s'en aperçoive.
+          - titre: "Le problème d'abord"
+            texte: >-
+              On vous demande un tableau de bord des ventes. La tentation est d'afficher tout ce qu'on sait :
+              douze graphiques, trois camemberts, un nuage de points coloré par officine.
+
+              Le lecteur ne retient rien. Un bon tableau de bord répond à trois questions au plus, dans
+              l'ordre où le lecteur se les pose, et chaque graphique porte en titre la réponse, pas le nom des
+              variables.
+            figures:
+              - nom: python-graphique-lisible.svg
+                legende: "Un titre qui énonce le constat vaut mieux qu'un titre qui nomme les axes"
+          - titre: "La notion : la forme suit la question"
+            texte: >-
+              Comparer des catégories appelle des barres, triées par valeur, horizontales si les libellés sont
+              longs. Suivre une évolution appelle une courbe, avec le temps en abscisse. Montrer une
+              distribution appelle un histogramme ou une boîte à moustaches. Montrer une relation entre deux
+              variables continues appelle un nuage de points.
+
+              Évitez le camembert au-delà de trois parts : l'œil compare mal des angles. Évitez les axes
+              tronqués pour les barres, qui exagèrent les écarts. Évitez la troisième dimension, toujours.
+
+              La couleur porte du sens ou ne sert à rien. Une couleur par catégorie quand elles sont peu
+              nombreuses, un dégradé pour une quantité, et deux teintes opposées pour un écart autour d'une
+              référence. Pensez aux lecteurs qui distinguent mal le rouge et le vert.
+            figures:
+              - nom: python-effectif-par-service.svg
+                legende: "Des barres triées, un axe à zéro, des libellés lisibles"
+          - titre: "À la main : du graphique brut au graphique défendable"
+            texte: >-
+              Prenez un graphique produit par défaut et améliorez-le en cinq gestes : trier, nommer les
+              unités, porter l'axe à zéro, écrire un titre qui énonce le constat, et retirer tout ce qui ne
+              porte pas d'information.
+
+              Faites ensuite lire votre graphique à quelqu'un qui ne connaît pas le sujet, sans explication.
+              Ce qu'il comprend seul est ce que le graphique dit vraiment.
+            tableaux:
+              - titre: Choisir la forme en une ligne
+                entetes: [La question, La forme, À éviter]
+                lignes:
+                  - [Qui vend le plus, barres triées, camembert]
+                  - [Comment cela évolue, courbe, barres par mois]
+                  - ["Comment c'est réparti", histogramme, la seule moyenne]
+                  - [Les deux variables sont-elles liées, nuage de points, deux courbes superposées]
+                  - [Quelle part du total, barres empilées à 100 %, camemberts multiples]
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est l'axe tronqué sur un graphique en barres : il transforme un écart de 2 % en
+              montagne. Sur une courbe, un axe non nul se défend, à condition de le signaler.
+
+              Le deuxième est le graphique sans effectif. Une barre à 80 % calculée sur cinq observations ne
+              vaut pas une barre à 80 % calculée sur cinq mille.
+
+              Le troisième est la surcharge : grille épaisse, étiquettes sur chaque point, légende redondante.
+              Chaque élément retiré sans perte d'information rend le constat plus net.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez un mini tableau de bord d'exploration d'un jeu de données : trois à cinq graphiques qui
+              répondent chacun à une question explicite, une mise en page qui suit l'ordre de lecture, et une
+              page de commentaire.
+
+              Critères d'acceptation : chaque graphique porte un titre qui énonce un constat, les axes sont
+              nommés avec leurs unités, les effectifs sont visibles, et un lecteur extérieur résume le message
+              en une phrase sans votre aide.
         livrable: Mini-dashboard d'exploration d'un jeu de données.
         mise_en_situation: "Un responsable vous présente un camembert à 12 parts pour comparer les ventes de 12 produits et un graphique dont l'axe vertical commence à 90. Expliquez les problèmes et proposez de meilleurs graphiques."
         quiz:
@@ -248,6 +857,89 @@ blocs:
         contenu: >-
           SELECT, WHERE, GROUP BY, jointures simples, agrégations. Interroger une base relationnelle
           (SQLite, DuckDB) sans intermédiaire.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de cette semaine, vous interrogez une base relationnelle en SQL : sélectionner,
+              filtrer, regrouper, joindre, et répondre à une question métier en une requête plutôt qu'en
+              exportant tout vers un tableur.
+
+              SQL a cinquante ans et reste la langue commune des données. Vous en aurez besoin dans tous les
+              parcours de spécialisation.
+          - titre: "Le problème d'abord"
+            texte: >-
+              La question est simple : quelles sont les dix références les plus vendues en octobre dans les
+              officines du Plateau, et quelle part représentent-elles du chiffre d'affaires ?
+
+              Exporter trois millions de lignes vers un tableur pour y répondre est lent, fragile et
+              irreproductible. La même question s'écrit en huit lignes de SQL et s'exécute là où vivent les
+              données.
+          - titre: "La notion : l'ordre logique d'une requête"
+            texte: >-
+              Une requête s'écrit dans un ordre, et s'exécute dans un autre. Le serveur commence par les
+              tables et leurs jointures, applique le filtre des lignes, regroupe, filtre les groupes, puis
+              sélectionne les colonnes, trie et limite.
+
+              Comprendre cet ordre explique presque toutes les erreurs de débutant : pourquoi on ne peut pas
+              filtrer sur une agrégation dans la clause de filtrage des lignes, et pourquoi un alias de
+              sélection n'est pas toujours utilisable ailleurs.
+
+              Une jointure interne ne garde que les correspondances ; une jointure externe à gauche garde
+              toutes les lignes de gauche et laisse des trous à droite. Le choix change les effectifs, donc
+              les conclusions.
+          - titre: "À la main : vingt requêtes qui couvrent le métier"
+            texte: >-
+              Écrivez la requête du problème posé, puis déclinez : par officine, par mois, avec un seuil, avec
+              une jointure sur le référentiel produits. Vérifiez chaque résultat par un comptage simple.
+
+              Prenez l'habitude de lire le plan d'exécution quand une requête traîne. Il indique si un index
+              est employé ou si le serveur parcourt toute la table.
+            tableaux:
+              - titre: "L'ordre d'exécution, et ce qu'il implique"
+                entetes: [Étape, Clause, Conséquence pratique]
+                lignes:
+                  - [1, FROM et JOIN, les effectifs se jouent ici]
+                  - [2, WHERE, "filtre des lignes, avant regroupement"]
+                  - [3, GROUP BY, une ligne par groupe]
+                  - [4, HAVING, "filtre des groupes, après agrégation"]
+                  - [5, SELECT, les alias naissent ici]
+                  - [6, ORDER BY et LIMIT, le tri porte sur le résultat]
+            code:
+              - titre: "top_references.sql, une question métier en huit lignes"
+                langage: sql
+                source: |
+                  SELECT p.libelle,
+                         SUM(v.quantite)                AS unites,
+                         SUM(v.quantite * v.prix_fcfa)  AS chiffre_fcfa
+                  FROM vente v
+                  JOIN produit p ON p.code = v.code_produit
+                  JOIN officine o ON o.id = v.officine_id
+                  WHERE v.date >= '2026-10-01' AND v.date < '2026-11-01'
+                    AND o.quartier = 'Plateau'
+                  GROUP BY p.libelle
+                  HAVING SUM(v.quantite) > 50
+                  ORDER BY chiffre_fcfa DESC
+                  LIMIT 10;
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est la valeur nulle dans une comparaison : elle n'est ni égale ni différente de
+              quoi que ce soit. Employez les opérateurs prévus pour l'absence.
+
+              Le deuxième est le comptage qui compte les lignes au lieu des entités distinctes après une
+              jointure qui multiplie. Comptez explicitement les valeurs distinctes quand c'est ce que vous
+              voulez.
+
+              Le troisième est la jointure externe suivie d'un filtre sur la table de droite : le filtre
+              annule l'effet de la jointure externe et la transforme en jointure interne.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez vingt requêtes sur une base d'exemple, de la sélection simple à l'agrégation avec
+              jointures, chacune accompagnée de la question métier à laquelle elle répond et d'une
+              vérification du résultat.
+
+              Critères d'acceptation : chaque requête est lisible et indentée, les jointures sont justifiées,
+              et au moins trois requêtes mettent en évidence un piège de la semaine, valeur nulle, comptage
+              distinct ou jointure externe.
         livrable: 20 requêtes sur une base d'exemple.
         mise_en_situation: "La direction veut connaître les cinq meilleurs clients de l'année et leur chiffre d'affaires, à partir des tables clients et ventes. Écrivez la requête SQL et expliquez chaque clause."
         quiz:
@@ -276,6 +968,97 @@ blocs:
         contenu: >-
           Apprentissage supervisé vs non supervisé, train/test, sur-apprentissage, première régression
           et première classification avec scikit-learn.
+        cours:
+          - titre: Ce que vous saurez faire à la fin de la semaine
+            texte: >-
+              À la fin de ces dernières semaines, vous distinguez l'apprentissage supervisé du non supervisé,
+              vous séparez correctement vos données, vous entraînez un premier modèle, et surtout vous
+              l'évaluez honnêtement.
+
+              L'évaluation honnête est la compétence qui sépare un professionnel d'un amateur. Entraîner un
+              modèle prend trois lignes ; savoir ce qu'il vaut vraiment prend une semaine d'apprentissage.
+          - titre: "Le problème d'abord"
+            texte: >-
+              Votre premier modèle prédit les ruptures de stock avec 97 % de bonnes réponses. Le directeur est
+              ravi. Vous regardez les données : il y a 97 % de jours sans rupture, et le modèle prédit
+              toujours « pas de rupture ».
+
+              Le taux de bonnes réponses est inutilisable sur des classes déséquilibrées. Choisir la mesure
+              d'évaluation avant d'entraîner est la décision la plus importante du projet.
+          - titre: "La notion : séparer, entraîner, évaluer"
+            texte: >-
+              En apprentissage supervisé, chaque observation porte une réponse connue et le modèle apprend à
+              la reproduire sur des cas nouveaux. En non supervisé, il n'y a pas de réponse : l'algorithme
+              regroupe ou réduit, et c'est à vous d'interpréter.
+
+              La séparation des données est sacrée. Le modèle apprend sur l'ensemble d'entraînement, se règle
+              sur l'ensemble de validation, et ne voit l'ensemble de test qu'une seule fois, à la fin. Toute
+              information du test qui remonte dans l'entraînement, même indirectement par la normalisation,
+              est une fuite, et le résultat annoncé devient faux.
+
+              Le sur-apprentissage est le modèle qui retient les exemples au lieu d'apprendre la règle :
+              excellent sur l'entraînement, médiocre sur des données nouvelles. On le détecte en comparant les
+              deux performances, jamais en regardant la seule performance d'entraînement.
+
+              La mesure se choisit selon le coût des erreurs. Rater une rupture coûte une vente perdue ;
+              annoncer une rupture qui n'arrive pas coûte un surstock. Les deux coûts ne sont pas égaux, donc
+              le taux de bonnes réponses ne convient pas.
+          - titre: "À la main : un modèle évalué honnêtement"
+            texte: >-
+              Séparez d'abord, et séparez selon le temps si vos données sont temporelles : apprendre sur
+              novembre pour prédire octobre n'a aucun sens et flatte les résultats.
+
+              Comparez toujours à une référence naïve : prédire la valeur de la veille, ou la classe
+              majoritaire. Un modèle qui ne bat pas cette référence ne mérite pas d'être mis en service,
+              quelle que soit son élégance.
+            tableaux:
+              - titre: "Choisir la mesure selon le coût de l'erreur"
+                entetes: [Situation, Mesure utile, Mesure trompeuse]
+                lignes:
+                  - [Classes équilibrées, taux de bonnes réponses, aucune en particulier]
+                  - [Événement rare, rappel et précision, taux de bonnes réponses]
+                  - [Coût asymétrique, rappel à précision fixée, moyenne des deux]
+                  - ["Prédiction d'un montant", erreur absolue moyenne, coefficient de détermination seul]
+            code:
+              - titre: "modele.py, séparation, référence naïve, évaluation"
+                langage: python
+                source: |
+                  from sklearn.model_selection import train_test_split
+                  from sklearn.linear_model import LogisticRegression
+                  from sklearn.metrics import classification_report
+                  from sklearn.dummy import DummyClassifier
+
+                  X_train, X_test, y_train, y_test = train_test_split(
+                      X, y, test_size=0.2, random_state=42, stratify=y
+                  )
+
+                  naif = DummyClassifier(strategy="most_frequent").fit(X_train, y_train)
+                  modele = LogisticRegression(max_iter=1000, class_weight="balanced").fit(X_train, y_train)
+
+                  print("reference naive")
+                  print(classification_report(y_test, naif.predict(X_test), zero_division=0))
+                  print("modele")
+                  print(classification_report(y_test, modele.predict(X_test), zero_division=0))
+          - titre: Les pièges de la semaine
+            texte: >-
+              Le premier piège est la fuite de données : une colonne calculée après l'événement, une
+              normalisation ajustée sur tout le jeu, ou une séparation aléatoire sur des données temporelles.
+              Un score trop beau est toujours une fuite jusqu'à preuve du contraire.
+
+              Le deuxième est le réglage sur l'ensemble de test. Si vous choisissez vos réglages en regardant
+              le test, le test n'évalue plus rien.
+
+              Le troisième est l'absence de référence naïve. Sans elle, on ne sait pas si le modèle apporte
+              quoi que ce soit.
+          - titre: Le livrable de la semaine
+            texte: >-
+              Rendez un modèle prédictif simple évalué correctement : question posée, séparation justifiée,
+              référence naïve, mesure choisie avant l'entraînement et expliquée, et une conclusion qui dit si
+              le modèle mérite d'être mis en service.
+
+              Critères d'acceptation : l'ensemble de test n'a servi qu'une fois, la référence naïve est
+              présente, la mesure est justifiée par le coût des erreurs, et vous savez nommer la fuite de
+              données que vous avez cherchée et écartée.
         livrable: Modèle prédictif simple évalué correctement.
         mise_en_situation: "Votre modèle prédit le défaut de paiement avec 99 % d'exactitude, alors que seulement 1 % des clients font défaut. Votre manager est ravi. Expliquez-lui pourquoi ce chiffre ne suffit pas et quelles métriques regarder."
         quiz:

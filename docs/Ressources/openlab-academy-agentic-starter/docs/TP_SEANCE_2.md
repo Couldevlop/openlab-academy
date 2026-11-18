@@ -14,7 +14,7 @@ source .venv/bin/activate       # Windows : .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -e ".[dev]"
 pytest -q                       # attendu : 16 passed
-python -m agentic_lab            # attendu : 5 factures, 7 730,00 EUR
+python -m agentic_lab            # attendu : 5 factures, 7 730 000 F CFA
 ```
 
 ## Déroulé indicatif — 3 heures

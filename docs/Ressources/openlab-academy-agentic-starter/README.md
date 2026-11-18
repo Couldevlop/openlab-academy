@@ -1,6 +1,6 @@
 # OpenLab Academy — Socle Python IA agentique
 
-Version pédagogique 0.2.0 — Python 3.11 à 3.13 — 8 séances / 24 heures.
+Version pédagogique 0.3.0 — Python 3.11 à 3.13 — 8 séances / 24 heures.
 
 ## Objectif
 Comprendre une boucle agentique et la faire évoluer sur un même cas métier : un agent de recouvrement assisté et contrôlé. Le dépôt commence sans framework et sans fournisseur de modèle. Les décisions sont simulées afin d'isoler les appels d'outils, les contrats, les observations, les règles métier et les garde-fous.
@@ -36,7 +36,7 @@ python -m agentic_lab
 pytest
 ```
 
-Le premier scénario liste les factures ayant au moins 30 jours de retard, exclut les litiges, puis calcule l'exposition. Résultat attendu : 5 factures, 7 730,00 EUR. L'état local de démonstration est écrit dans `.local/state.json` et est ignoré par Git.
+Le premier scénario liste les factures ayant au moins 30 jours de retard, exclut les litiges, puis calcule l'exposition. Résultat attendu : 5 factures, 7 730 000 F CFA. L'état local de démonstration est écrit dans `.local/state.json` et est ignoré par Git.
 
 ## Architecture du socle
 

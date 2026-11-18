@@ -10,7 +10,8 @@ from openlab_academy.domain.parcours import Bloc
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.entrypoints import lms
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
-from openlab_academy.infrastructure.depot_ouvertures_frappe import DepotOuverturesFrappe
+from openlab_academy.infrastructure.depot_ouvertures_frappe import (CHAMP_DELAI, DelaiExercicesFrappe,
+                                                                    DepotOuverturesFrappe)
 from openlab_academy.tests.fabriques import parcours
 from openlab_academy.tests.test_blocage_frappe import sans_phase_de_lancement
 from openlab_academy.tests.test_exercices_frappe import module
@@ -71,6 +72,29 @@ class TestVerrouExercices(FrappeTestCase):
         lms.get_lesson(self.cours, 1, 1)
         frappe.set_user("Administrator")
         self.assertFalse(frappe.db.exists("Ouverture Lecon OpenLab", {"apprenant": "Guest"}))
+
+    def test_delai_du_parcours_applique_a_la_soumission(self):
+        frappe.db.set_value("LMS Course", self.cours, CHAMP_DELAI, 15)
+        self.ouvrir(il_y_a_minutes=10)
+        frappe.set_user(ELEVE)
+        with self.assertRaisesRegex(frappe.ValidationError, "encore 5 minutes"):
+            self.soumettre_quiz()
+
+    def test_delai_du_parcours_pose_a_la_publication(self):
+        self.assertEqual(DelaiExercicesFrappe().minutes(self.lecon), 60)
+
+    def test_parcours_sans_delai_replie_sur_le_reglage_global(self):
+        """-1 : le parcours ne dit rien, le réglage de la plateforme s'applique."""
+        frappe.db.set_value("LMS Course", self.cours, CHAMP_DELAI, -1)
+        self.assertIsNone(DelaiExercicesFrappe().minutes(self.lecon))
+
+    def test_delai_nul_du_parcours_ouvre_les_exercices_tout_de_suite(self):
+        """0 est une valeur, pas une absence : les exercices s'ouvrent avec la leçon."""
+        frappe.db.set_value("LMS Course", self.cours, CHAMP_DELAI, 0)
+        self.assertEqual(DelaiExercicesFrappe().minutes(self.lecon), 0)
+        self.ouvrir(il_y_a_minutes=0)
+        frappe.set_user(ELEVE)
+        self.soumettre_quiz()
 
     def test_quiz_refuse_avant_une_heure(self):
         self.ouvrir(il_y_a_minutes=20)

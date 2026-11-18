@@ -23,7 +23,10 @@ git switch -c feat/mon-sujet
    - `backend` : site Frappe réel sur les références épinglées, suite complète, **couverture ≥ 99 %** ;
    - `securite` : Semgrep (Python, JavaScript, secrets), Gitleaks sur l'historique — version figée, avec une
      exception à deux conditions pour les identifiants inventés des tests de canaux (`.gitleaks.toml`) — et
-     `npm audit --omit=dev --audit-level=high` sur le front. Le backend n'a aucune dépendance Python propre.
+     `.github/scripts/audit_front.py` sur le front — mêmes exigences que
+     `npm audit --omit=dev --audit-level=high`, à ceci près qu'un avis de sévérité haute sans correctif
+     publié en amont passe s'il est inscrit, justifié et daté dans `exceptions-audit.json`, et qu'il échoue
+     de nouveau dès qu'un correctif sort ou que la date de revue tombe. Le backend n'a aucune dépendance Python propre.
      Restent quatre avis **modérés** non bloquants, hérités de `frappe-ui` (XSS d'Apache ECharts) : aucun
      correctif n'existe sans sortir de la version de `frappe-ui` qu'impose le LMS ;
 1bis. **`gardien.yml`** — sur toute PR vers `main` : refuse une source autre que `develop`. Il vise la PR

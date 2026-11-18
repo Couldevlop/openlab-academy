@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 350" width="760" height="350" role="img" aria-label="Effectif par service, en barres">
+<title>Effectif par service, en barres</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="760" height="350" fill="var(--surface)"/>
+<text x="380" y="34" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Compter par service avant de filtrer.</text>
+<text x="380" y="56" text-anchor="middle" font-size="12" fill="var(--encre2)">Une barre par service, triée : la lecture ne demande aucun effort.</text>
+<line x1="60" y1="266" x2="716" y2="266" stroke="var(--trait)" stroke-width="2"/>
+<rect x="84" y="96" width="84" height="170" rx="4" ry="4" fill="var(--s1)"/>
+<rect x="84" y="260" width="84" height="6" fill="var(--s1)"/>
+<text x="126" y="86" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">18</text>
+<text x="126" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">Production</text>
+<rect x="212" y="152.67" width="84" height="113.33" rx="4" ry="4" fill="var(--s1)"/>
+<rect x="212" y="260" width="84" height="6" fill="var(--s1)"/>
+<text x="254" y="142.67" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">12</text>
+<text x="254" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">Commercial</text>
+<rect x="340" y="181" width="84" height="85" rx="4" ry="4" fill="var(--s1)"/>
+<rect x="340" y="260" width="84" height="6" fill="var(--s1)"/>
+<text x="382" y="171" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">9</text>
+<text x="382" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">Logistique</text>
+<rect x="468" y="209.33" width="84" height="56.67" rx="4" ry="4" fill="var(--s2)"/>
+<rect x="468" y="260" width="84" height="6" fill="var(--s2)"/>
+<text x="510" y="199.33" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">6</text>
+<text x="510" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">Administration</text>
+<rect x="596" y="237.67" width="84" height="28.33" rx="4" ry="4" fill="var(--s2)"/>
+<rect x="596" y="260" width="84" height="6" fill="var(--s2)"/>
+<text x="638" y="227.67" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">3</text>
+<text x="638" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">Direction</text>
+<text x="380" y="322" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Les barres partent de zéro : couper l&#x27;axe exagère les écarts.</text>
+<text x="380" y="344" text-anchor="middle" font-size="12" fill="var(--encre2)">Classez du plus grand au plus petit ; l&#x27;ordre alphabétique ne dit rien.</text>
+</svg>

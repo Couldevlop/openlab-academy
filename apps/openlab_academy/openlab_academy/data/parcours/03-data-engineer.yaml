@@ -1,6 +1,6 @@
 title: Data Engineer
 short_introduction: >-
-  Parcours III · pipelines et plateformes de données — SQL avancé, modélisation, dbt, Spark, Kafka,
+  Parcours III · pipelines et plateformes de données : SQL avancé, modélisation, dbt, Spark, Kafka,
   orchestration, cloud et qualité des données.
 description: >-
   <p><b>Prérequis :</b> logique de programmation, notions de bases de données (ou parcours Développeur Python).</p>
@@ -9,6 +9,7 @@ description: >-
   <p><b>Fil conducteur :</b> des plateformes de données pour les filières et entreprises d'Afrique de l'Ouest,
   avec une attention constante aux coûts.</p>
   <p><b>Évaluation :</b> livrables hebdomadaires 20 %, portfolio 40 %, capstone 40 %.</p>
+couverture: couverture-data-engineer.jpg
 tags: [Data Engineering, SQL, dbt, Spark, Kafka, Airflow, Cloud]
 card_gradient: Amber
 

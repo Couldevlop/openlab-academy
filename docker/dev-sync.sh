@@ -23,4 +23,6 @@ docker exec -u root "$C" chown -R frappe:frappe "$B/apps/openlab_academy"
 docker exec -u frappe -w "$B" "$C" bash -lc '
   find apps/openlab_academy -name "__pycache__" -prune -exec rm -rf {} +
   ./env/bin/pip install -q -e apps/openlab_academy
-  grep -qx openlab_academy sites/apps.txt || printf "\nopenlab_academy" >> sites/apps.txt'
+  grep -qx openlab_academy sites/apps.txt || printf "\nopenlab_academy" >> sites/apps.txt
+  # assets servis par le site (logo du bureau, feuilles de style) : lien refait a chaque copie, sinon 404 sur /assets
+  ln -sfn "$PWD/apps/openlab_academy/openlab_academy/public" sites/assets/openlab_academy'

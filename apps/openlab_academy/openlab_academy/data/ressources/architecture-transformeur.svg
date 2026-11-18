@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 480" width="940" height="480" role="img" aria-label="Dans le moteur : la pile, et ce que l&#x27;attention résout">
+<title>Dans le moteur : la pile, et ce que l&#x27;attention résout</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="940" height="480" fill="var(--surface)"/>
+<rect x="40" y="76" width="420" height="40" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="250" y="101" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">Texte découpé en jetons</text>
+<path d="M 250 116 L 250 128" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="40" y="128" width="420" height="40" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="250" y="153" text-anchor="middle" font-size="12" fill="var(--encre)">Plongements + position</text>
+<path d="M 250 168 L 250 180" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="40" y="180" width="420" height="40" rx="8" class="b-s2" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="250" y="205" text-anchor="middle" font-size="12" fill="var(--encre)">Attention multi-tête : chaque jeton regarde les autres</text>
+<path d="M 250 220 L 250 232" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="40" y="232" width="420" height="40" rx="8" class="b-s2" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="250" y="257" text-anchor="middle" font-size="12" fill="var(--encre)">Réseau dense : transformation apprise</text>
+<path d="M 250 272 L 250 284" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="40" y="284" width="420" height="40" rx="8" class="b-s2" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="250" y="309" text-anchor="middle" font-size="12" fill="var(--encre)">Normalisation + connexion résiduelle</text>
+<path d="M 250 324 L 250 336" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="40" y="336" width="420" height="40" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="250" y="361" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre)">Projection sur le vocabulaire</text>
+<rect x="474" y="196" width="22" height="160" rx="8" class="b-trait" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="520" y="268" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">x N</text>
+<text x="520" y="288" text-anchor="start" font-size="10" fill="var(--encre2)">32 à 120 couches</text>
+<text x="40" y="52" text-anchor="start" font-size="15" font-weight="600" fill="var(--encre)">La même brique, empilée, du texte à la probabilité du jeton suivant</text>
+<text x="690" y="76" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">À quoi regarde « il » ?</text>
+<rect x="600" y="104" width="10.4" height="14" rx="4" ry="4" fill="var(--attenue)"/>
+<rect x="600" y="112" width="10.4" height="6" fill="var(--attenue)"/>
+<text x="594" y="116" text-anchor="end" font-size="10" fill="var(--encre2)">le</text>
+<text x="616.4" y="116" text-anchor="start" font-size="10" fill="var(--encre2)">2 %</text>
+<rect x="600" y="126" width="151.2" height="14" rx="4" ry="4" fill="var(--s2)"/>
+<rect x="600" y="134" width="151.2" height="6" fill="var(--s2)"/>
+<text x="594" y="138" text-anchor="end" font-size="10" fill="var(--encre2)">trophée</text>
+<text x="757.2" y="138" text-anchor="start" font-size="10" fill="var(--encre2)">46 %</text>
+<rect x="600" y="148" width="16.8" height="14" rx="4" ry="4" fill="var(--attenue)"/>
+<rect x="600" y="156" width="16.8" height="6" fill="var(--attenue)"/>
+<text x="594" y="160" text-anchor="end" font-size="10" fill="var(--encre2)">n&#x27;entre</text>
+<text x="622.8" y="160" text-anchor="start" font-size="10" fill="var(--encre2)">4 %</text>
+<rect x="600" y="170" width="10.4" height="14" rx="4" ry="4" fill="var(--attenue)"/>
+<rect x="600" y="178" width="10.4" height="6" fill="var(--attenue)"/>
+<text x="594" y="182" text-anchor="end" font-size="10" fill="var(--encre2)">pas</text>
+<text x="616.4" y="182" text-anchor="start" font-size="10" fill="var(--encre2)">2 %</text>
+<rect x="600" y="192" width="13.6" height="14" rx="4" ry="4" fill="var(--attenue)"/>
+<rect x="600" y="200" width="13.6" height="6" fill="var(--attenue)"/>
+<text x="594" y="204" text-anchor="end" font-size="10" fill="var(--encre2)">dans</text>
+<text x="619.6" y="204" text-anchor="start" font-size="10" fill="var(--encre2)">3 %</text>
+<rect x="600" y="214" width="16.8" height="14" rx="4" ry="4" fill="var(--attenue)"/>
+<rect x="600" y="222" width="16.8" height="6" fill="var(--attenue)"/>
+<text x="594" y="226" text-anchor="end" font-size="10" fill="var(--encre2)">la</text>
+<text x="622.8" y="226" text-anchor="start" font-size="10" fill="var(--encre2)">4 %</text>
+<rect x="600" y="236" width="58.4" height="14" rx="4" ry="4" fill="var(--s2)"/>
+<rect x="600" y="244" width="58.4" height="6" fill="var(--s2)"/>
+<text x="594" y="248" text-anchor="end" font-size="10" fill="var(--encre2)">valise</text>
+<text x="664.4" y="248" text-anchor="start" font-size="10" fill="var(--encre2)">17 %</text>
+<rect x="600" y="258" width="16.8" height="14" rx="4" ry="4" fill="var(--attenue)"/>
+<rect x="600" y="266" width="16.8" height="6" fill="var(--attenue)"/>
+<text x="594" y="270" text-anchor="end" font-size="10" fill="var(--encre2)">car</text>
+<text x="622.8" y="270" text-anchor="start" font-size="10" fill="var(--encre2)">4 %</text>
+<rect x="600" y="280" width="26.4" height="14" rx="4" ry="4" fill="var(--attenue)"/>
+<rect x="600" y="288" width="26.4" height="6" fill="var(--attenue)"/>
+<text x="594" y="292" text-anchor="end" font-size="10" fill="var(--encre2)">il</text>
+<text x="632.4" y="292" text-anchor="start" font-size="10" fill="var(--encre2)">7 %</text>
+<rect x="600" y="302" width="13.6" height="14" rx="4" ry="4" fill="var(--attenue)"/>
+<rect x="600" y="310" width="13.6" height="6" fill="var(--attenue)"/>
+<text x="594" y="314" text-anchor="end" font-size="10" fill="var(--encre2)">est</text>
+<text x="619.6" y="314" text-anchor="start" font-size="10" fill="var(--encre2)">3 %</text>
+<rect x="600" y="324" width="16.8" height="14" rx="4" ry="4" fill="var(--attenue)"/>
+<rect x="600" y="332" width="16.8" height="6" fill="var(--attenue)"/>
+<text x="594" y="336" text-anchor="end" font-size="10" fill="var(--encre2)">trop</text>
+<text x="622.8" y="336" text-anchor="start" font-size="10" fill="var(--encre2)">4 %</text>
+<rect x="600" y="346" width="16.8" height="14" rx="4" ry="4" fill="var(--attenue)"/>
+<rect x="600" y="354" width="16.8" height="6" fill="var(--attenue)"/>
+<text x="594" y="358" text-anchor="end" font-size="10" fill="var(--encre2)">grand</text>
+<text x="622.8" y="358" text-anchor="start" font-size="10" fill="var(--encre2)">4 %</text>
+<text x="740" y="404" text-anchor="middle" font-size="11" fill="var(--encre2)">Aucune règle de grammaire ne dit que « il » désigne le trophée :</text>
+<text x="740" y="422" text-anchor="middle" font-size="11" fill="var(--encre2)">le modèle l&#x27;a appris, et son attention le montre.</text>
+<text x="470" y="464" text-anchor="middle" font-size="11" font-weight="600" fill="var(--encre2)">La phrase entière est traitée d&#x27;un bloc : l&#x27;entraînement se parallélise, et deux jetons distants se lient directement.</text>
+</svg>

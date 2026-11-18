@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Atelier de code — OpenLab Academy</title>
+<link rel="icon" href="/assets/openlab_academy/images/logo.svg">
+<link rel="stylesheet" href="/assets/openlab_academy/atelier/atelier.css?v={{ version }}">
+<script>window.csrf_token = {{ csrf_token | tojson }};
+window.atelier_lecon = {{ lecon | tojson }};</script>
+<script defer src="/assets/openlab_academy/atelier/atelier.js?v={{ version }}"></script>
+</head>
+<body>
+<header class="barre">
+  <div class="barre-titre">
+    <strong id="titre">Atelier de code</strong>
+    <span id="archive" class="archive"></span>
+  </div>
+  <div class="barre-actions">
+    <button id="executer" type="button" disabled>Exécuter le fichier</button>
+    <button id="tester" type="button" disabled>Lancer les tests</button>
+    <a id="retour" class="retour" href="/lms/courses">Retour à la leçon</a>
+  </div>
+</header>
+<p id="etat" class="etat">Préparation de Python dans votre navigateur…</p>
+<main class="atelier">
+  <nav class="fichiers" aria-label="Fichiers du dépôt du jour"><ul id="liste"></ul></nav>
+  <section class="edition">
+    <label class="invisible" for="code">Fichier ouvert</label>
+    <textarea id="code" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+  </section>
+  <section class="console" aria-live="polite">
+    <div class="console-titre">Sortie</div>
+    <pre id="sortie"></pre>
+  </section>
+</main>
+<noscript>Activez JavaScript pour ouvrir l'atelier de code.</noscript>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 392" width="760" height="392" role="img" aria-label="Temps de réponse d&#x27;un écran, avec et sans cache">
+<title>Temps de réponse d&#x27;un écran, avec et sans cache</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="760" height="392" fill="var(--surface)"/>
+<text x="380" y="34" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Le cache ne rend pas le calcul rapide : il l&#x27;évite.</text>
+<text x="380" y="56" text-anchor="middle" font-size="12" fill="var(--encre2)">Même écran, même fichier de 5000 lignes, quatre interactions de suite.</text>
+<text x="40" y="122" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Sans cache</text>
+<rect x="230" y="104" width="367.50" height="16" rx="4" fill="var(--s2)"/>
+<text x="607.5" y="117" text-anchor="start" font-size="11" fill="var(--encre2)">2.1 s</text>
+<text x="220" y="117" text-anchor="end" font-size="11" fill="var(--attenue)">passage 1</text>
+<rect x="230" y="128" width="367.50" height="16" rx="4" fill="var(--s2)"/>
+<text x="607.5" y="141" text-anchor="start" font-size="11" fill="var(--encre2)">2.1 s</text>
+<text x="220" y="141" text-anchor="end" font-size="11" fill="var(--attenue)">passage 2</text>
+<rect x="230" y="152" width="350.00" height="16" rx="4" fill="var(--s2)"/>
+<text x="590" y="165" text-anchor="start" font-size="11" fill="var(--encre2)">2.0 s</text>
+<text x="220" y="165" text-anchor="end" font-size="11" fill="var(--attenue)">passage 3</text>
+<rect x="230" y="176" width="367.50" height="16" rx="4" fill="var(--s2)"/>
+<text x="607.5" y="189" text-anchor="start" font-size="11" fill="var(--encre2)">2.1 s</text>
+<text x="220" y="189" text-anchor="end" font-size="11" fill="var(--attenue)">passage 4</text>
+<text x="40" y="242" text-anchor="start" font-size="13" font-weight="600" fill="var(--encre)">Avec cache</text>
+<rect x="230" y="224" width="367.50" height="16" rx="4" fill="var(--s1)"/>
+<text x="607.5" y="237" text-anchor="start" font-size="11" fill="var(--encre2)">2.1 s</text>
+<text x="220" y="237" text-anchor="end" font-size="11" fill="var(--attenue)">passage 1</text>
+<rect x="230" y="248" width="17.50" height="16" rx="4" fill="var(--s1)"/>
+<text x="257.5" y="261" text-anchor="start" font-size="11" fill="var(--encre2)">0.1 s</text>
+<text x="220" y="261" text-anchor="end" font-size="11" fill="var(--attenue)">passage 2</text>
+<rect x="230" y="272" width="17.50" height="16" rx="4" fill="var(--s1)"/>
+<text x="257.5" y="285" text-anchor="start" font-size="11" fill="var(--encre2)">0.1 s</text>
+<text x="220" y="285" text-anchor="end" font-size="11" fill="var(--attenue)">passage 3</text>
+<rect x="230" y="296" width="17.50" height="16" rx="4" fill="var(--s1)"/>
+<text x="257.5" y="309" text-anchor="start" font-size="11" fill="var(--encre2)">0.1 s</text>
+<text x="220" y="309" text-anchor="end" font-size="11" fill="var(--attenue)">passage 4</text>
+<text x="380" y="352" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Le premier passage coûte autant : c&#x27;est lui qui remplit le cache.</text>
+<text x="380" y="376" text-anchor="middle" font-size="12" fill="var(--encre2)">Un cache sans durée de vie finit par servir des chiffres faux.</text>
+</svg>

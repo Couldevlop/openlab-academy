@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 440" width="940" height="440" role="img" aria-label="De la question à la réponse sourcée">
+<title>De la question à la réponse sourcée</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="940" height="440" fill="var(--surface)"/>
+<rect x="24" y="84" width="272" height="86" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="160" y="110" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">1 Question</text>
+<text x="160" y="132" text-anchor="middle" font-size="10" fill="var(--encre2)">« quel est le délai</text>
+<text x="160" y="148" text-anchor="middle" font-size="10" fill="var(--encre2)">de préavis ? »</text>
+<path d="M 296 127 L 330 127" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="330" y="84" width="272" height="86" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="466" y="110" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">2 Vectorisation</text>
+<text x="466" y="132" text-anchor="middle" font-size="10" fill="var(--encre2)">la question devient</text>
+<text x="466" y="148" text-anchor="middle" font-size="10" fill="var(--encre2)">un vecteur</text>
+<path d="M 602 127 L 636 127" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="636" y="84" width="272" height="86" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="772" y="110" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">3 Recherche</text>
+<text x="772" y="132" text-anchor="middle" font-size="10" fill="var(--encre2)">les passages proches</text>
+<text x="772" y="148" text-anchor="middle" font-size="10" fill="var(--encre2)">sont retrouvés</text>
+<rect x="24" y="196" width="272" height="86" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="160" y="222" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">4 Extraits</text>
+<text x="160" y="244" text-anchor="middle" font-size="10" fill="var(--encre2)">trois à cinq passages,</text>
+<text x="160" y="260" text-anchor="middle" font-size="10" fill="var(--encre2)">avec leur référence</text>
+<path d="M 296 239 L 330 239" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="330" y="196" width="272" height="86" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="466" y="222" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">5 Prompt augmenté</text>
+<text x="466" y="244" text-anchor="middle" font-size="10" fill="var(--encre2)">question + extraits</text>
+<text x="466" y="260" text-anchor="middle" font-size="10" fill="var(--encre2)">+ « réponds à partir de ceci »</text>
+<path d="M 602 239 L 636 239" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="636" y="196" width="272" height="86" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="772" y="222" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">6 Réponse sourcée</text>
+<text x="772" y="244" text-anchor="middle" font-size="10" fill="var(--encre2)">ancrée, citant</text>
+<text x="772" y="260" text-anchor="middle" font-size="10" fill="var(--encre2)">le document et la page</text>
+<path d="M 160 170 L 160 196" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<text x="24" y="52" text-anchor="start" font-size="15" font-weight="600" fill="var(--encre)">Aucun entraînement : on change seulement ce que le modèle a sous les yeux</text>
+<rect x="24" y="320" width="440" height="96" rx="8" class="b-bon" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="244" y="344" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">Ce que la méthode résout</text>
+<text x="244" y="366" text-anchor="middle" font-size="10" fill="var(--encre2)">répondre sur des documents privés ou récents</text>
+<text x="244" y="381" text-anchor="middle" font-size="10" fill="var(--encre2)">citer une source vérifiable, page par page</text>
+<text x="244" y="396" text-anchor="middle" font-size="10" fill="var(--encre2)">mettre à jour la connaissance sans réentraîner</text>
+<rect x="490" y="320" width="426" height="96" rx="8" class="b-critique" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="703" y="344" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">Ce qu&#x27;elle ne répare pas</text>
+<text x="703" y="366" text-anchor="middle" font-size="10" fill="var(--encre2)">une base documentaire mal rangée ou périmée</text>
+<text x="703" y="381" text-anchor="middle" font-size="10" fill="var(--encre2)">des documents scannés sans reconnaissance de texte</text>
+<text x="703" y="396" text-anchor="middle" font-size="10" fill="var(--encre2)">une question dont la réponse n&#x27;existe nulle part</text>
+</svg>

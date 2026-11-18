@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 290" width="760" height="290" role="img" aria-label="Les seuils du droit aux congés, et leurs bornes">
+<title>Les seuils du droit aux congés, et leurs bornes</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="760" height="290" fill="var(--surface)"/>
+<text x="380" y="34" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Une règle à seuils se dessine avant de s&#x27;écrire.</text>
+<text x="380" y="56" text-anchor="middle" font-size="12" fill="var(--encre2)">Les bugs se logent aux bornes : 11 mois, 12 mois, 13 mois.</text>
+<line x1="60" y1="170" x2="700" y2="170" stroke="var(--trait)" stroke-width="2"/>
+<line x1="60" y1="163" x2="60" y2="177" stroke="var(--trait)" stroke-width="2"/>
+<text x="60" y="196" text-anchor="middle" font-size="12" fill="var(--encre2)">0</text>
+<line x1="273" y1="163" x2="273" y2="177" stroke="var(--trait)" stroke-width="2"/>
+<text x="273" y="196" text-anchor="middle" font-size="12" fill="var(--encre2)">6</text>
+<line x1="486" y1="163" x2="486" y2="177" stroke="var(--trait)" stroke-width="2"/>
+<text x="486" y="196" text-anchor="middle" font-size="12" fill="var(--encre2)">12</text>
+<line x1="700" y1="163" x2="700" y2="177" stroke="var(--trait)" stroke-width="2"/>
+<text x="700" y="196" text-anchor="middle" font-size="12" fill="var(--encre2)">24 mois</text>
+<rect x="60" y="108" width="426" height="48" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="273" y="130" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">moins de 12 mois</text>
+<text x="273" y="148" text-anchor="middle" font-size="11" fill="var(--encre2)">aucun droit</text>
+<rect x="486" y="108" width="214" height="48" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="593" y="130" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">12 mois et plus</text>
+<text x="593" y="148" text-anchor="middle" font-size="11" fill="var(--encre2)">droit ouvert</text>
+<text x="486" y="232" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">La borne appartient à la seconde zone : 12 mois ouvre le droit.</text>
+<text x="380" y="262" text-anchor="middle" font-size="12" fill="var(--encre2)">Écrivez un test pour 11, un pour 12, un pour 13. Les trois, pas un seul.</text>
+</svg>

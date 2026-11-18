@@ -8,7 +8,7 @@ import yaml
 from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy.application.publier_parcours import PublierParcours, Statut
-from openlab_academy.domain.parcours import Annonce, Bloc, Module
+from openlab_academy.domain.parcours import Annonce, Bloc, Module, Niveau
 from openlab_academy.entrypoints import install, seed
 from openlab_academy.infrastructure import contenus_parcours_frappe as contenus
 from openlab_academy.infrastructure import ressources_frappe
@@ -16,7 +16,7 @@ from openlab_academy.infrastructure.depot_frappe import DepotFrappe
 from openlab_academy.tests.fabriques import parcours, parcours_brut, projet
 
 TITRE = "Parcours de test seed"
-ARCHIVE = "socle-ia-agentique-v0.2.0.zip"
+ARCHIVE = "socle-ia-agentique-v0.3.0.zip"
 
 
 def compter(cours):
@@ -97,6 +97,19 @@ class TestDepotFrappe(FrappeTestCase):
         self.assertEqual(frappe.db.get_value("LMS Course", nom, ["parcours_gratuit", "acces_limite_cohorte", "featured"]),
                          (0, 0, 0))
 
+    def test_progression_sequentielle_publiee_et_republiee(self):
+        """Le parcours quotidien verrouille ses leçons ; celui qui ne le demande pas les laisse libres."""
+        nom = self.depot.creer(parcours(title=TITRE, progression_sequentielle=True))
+        self.assertEqual(frappe.db.get_value("LMS Course", nom, "enforce_lesson_completion"), 1)
+        self.depot.remplacer(nom, parcours(title=TITRE))
+        self.assertEqual(frappe.db.get_value("LMS Course", nom, "enforce_lesson_completion"), 0)
+
+    def test_completer_applique_la_progression_sequentielle(self):
+        """Parcours à inscrits : le verrou suit aussi, sinon la promo en cours garderait l'ancien régime."""
+        nom = self.depot.creer(self.p)
+        self.depot.completer(nom, parcours(title=TITRE, progression_sequentielle=True))
+        self.assertEqual(frappe.db.get_value("LMS Course", nom, "enforce_lesson_completion"), 1)
+
     def test_archive_jointe_en_fichier_prive_et_citee_par_la_lecon(self):
         """L'archive est un fichier privé attaché à la leçon : seul le contrôle des médias du LMS la sert, donc
         seul un membre dont le parcours est ouvert et la leçon accessible peut la télécharger."""
@@ -107,13 +120,28 @@ class TestDepotFrappe(FrappeTestCase):
                                           "attached_to_name": la_lecon.name, "file_name": ARCHIVE})
         self.assertEqual((fichier.is_private, fichier.attached_to_field), (1, "content"))
         liens = [b["data"]["text"] for b in json.loads(la_lecon.content)["blocks"] if b["type"] == "paragraph"]
-        self.assertIn(f'Archive de départ : <a href="{fichier.file_url}">{ARCHIVE}</a>', liens)
+        self.assertIn(f'À télécharger : <a href="{fichier.file_url}">{ARCHIVE}</a>', liens)
         # cette leçon avoue l'archive, et aucune référence ne la réserve aux instructeurs : l'apprenant du
         # parcours ouvert y a droit. Les mêmes octets servent plusieurs parcours (le socle du parcours livré) :
         # les autres leçons qui la citent sont donc attendues, seule la réserve aux instructeurs est interdite.
         references = contenus.references_avouees(fichier.file_url)
         self.assertIn((la_lecon.name, False, nom), references)
         self.assertFalse([r for r in references if r[1]], references)
+
+    def test_figure_du_guide_de_projet_jointe_a_la_lecon_et_citee(self):
+        """Le guide de réalisation du projet final porte ses schémas comme une séance : fichiers privés
+        attachés à la leçon, servis par le contrôle d'accès du LMS."""
+        from openlab_academy.domain.parcours import Figure, Section
+        figure = Figure("boucle-agent.svg", "La boucle d'un agent")
+        cap = projet(titre="Cap", apres_module=None, niveau=Niveau.AUTONOME, duree_h=60,
+                     cours=(Section("Cadrer", ("Écrire la mission.",), figures=(figure,)),))
+        nom = self.depot.creer(parcours(title=TITRE, capstone=cap))
+        la_lecon = lecon(nom, "Énoncé — Cap")
+        fichier = frappe.get_doc("File", {"attached_to_doctype": "Course Lesson",
+                                          "attached_to_name": la_lecon.name, "file_name": figure.nom})
+        self.assertEqual((fichier.is_private, fichier.attached_to_field), (1, "content"))
+        images = [b for b in json.loads(la_lecon.content)["blocks"] if b["type"] == "image"]
+        self.assertEqual([b["data"]["url"] for b in images], [fichier.file_url])
 
     def test_archive_deja_jointe_reutilisee(self):
         """Une archive jointe deux fois à la même leçon ne crée pas un second fichier."""

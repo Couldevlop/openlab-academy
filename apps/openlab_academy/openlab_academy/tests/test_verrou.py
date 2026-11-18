@@ -39,6 +39,14 @@ class DepotOuverturesEnMemoire:
         self.ouvertures[(apprenant, lecon)] = quand
 
 
+class DelaiEnMemoire:
+    def __init__(self, delais):
+        self.delais = delais
+
+    def minutes(self, lecon):
+        return self.delais.get(lecon)
+
+
 class TestCasDUsage(unittest.TestCase):
     def test_seule_la_premiere_ouverture_compte(self):
         depot, horloge = DepotOuverturesEnMemoire(), [H0]
@@ -57,3 +65,20 @@ class TestCasDUsage(unittest.TestCase):
             tot.executer("a@x.ci", "L1")
         VerifierAccesExercices(depot, Reglages(delai_exercices_minutes=30),
                                lambda: H0 + datetime.timedelta(minutes=30)).executer("a@x.ci", "L1")
+
+    def test_delai_du_parcours_prefere_au_reglage_global(self):
+        depot = DepotOuverturesEnMemoire()
+        depot.enregistrer("a@x.ci", "L1", H0)
+        verifier = VerifierAccesExercices(depot, Reglages(delai_exercices_minutes=60),
+                                          lambda: H0 + datetime.timedelta(minutes=10),
+                                          DelaiEnMemoire({"L1": 15}))
+        with self.assertRaisesRegex(ExercicesVerrouilles, "encore 5 minutes"):
+            verifier.executer("a@x.ci", "L1")
+
+    def test_repli_sur_le_reglage_global_sans_delai_de_parcours(self):
+        depot = DepotOuverturesEnMemoire()
+        depot.enregistrer("a@x.ci", "L1", H0)
+        verifier = VerifierAccesExercices(depot, Reglages(delai_exercices_minutes=30),
+                                          lambda: H0 + datetime.timedelta(minutes=20), DelaiEnMemoire({}))
+        with self.assertRaisesRegex(ExercicesVerrouilles, "encore 10 minutes"):
+            verifier.executer("a@x.ci", "L1")

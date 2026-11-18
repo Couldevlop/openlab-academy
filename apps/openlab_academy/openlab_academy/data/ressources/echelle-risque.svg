@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 376" width="760" height="376" role="img" aria-label="Échelle de risque des actions et frontière d&#x27;autonomie">
+<title>Échelle de risque des actions et frontière d&#x27;autonomie</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="760" height="376" fill="var(--surface)"/>
+<text x="234" y="99" text-anchor="end" font-size="12" fill="var(--encre)">Lire les factures</text>
+<rect x="250" y="76" width="60" height="32" rx="4" ry="4" fill="var(--bon)"/>
+<rect x="250" y="102" width="60" height="6" fill="var(--bon)"/>
+<text x="234" y="153" text-anchor="end" font-size="12" fill="var(--encre)">Calculer l&#x27;exposition</text>
+<rect x="250" y="130" width="95" height="32" rx="4" ry="4" fill="var(--bon)"/>
+<rect x="250" y="156" width="95" height="6" fill="var(--bon)"/>
+<text x="234" y="207" text-anchor="end" font-size="12" fill="var(--encre)">Rédiger un brouillon</text>
+<rect x="250" y="184" width="150" height="32" rx="4" ry="4" fill="var(--attention)"/>
+<rect x="250" y="210" width="150" height="6" fill="var(--attention)"/>
+<text x="234" y="261" text-anchor="end" font-size="12" fill="var(--encre)">Enregistrer une simulation</text>
+<rect x="250" y="238" width="250" height="32" rx="4" ry="4" fill="var(--serieux)"/>
+<rect x="250" y="264" width="250" height="6" fill="var(--serieux)"/>
+<text x="234" y="315" text-anchor="end" font-size="12" fill="var(--encre)">Envoyer une relance</text>
+<rect x="250" y="292" width="340" height="32" rx="4" ry="4" fill="var(--critique)"/>
+<rect x="250" y="318" width="340" height="6" fill="var(--critique)"/>
+<line x1="470" y1="58" x2="470" y2="340" stroke="var(--critique)" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="470" y="44" text-anchor="middle" font-size="12" font-weight="600" fill="var(--critique)">frontière d&#x27;autonomie acceptable</text>
+<text x="360" y="362" text-anchor="middle" font-size="11" fill="var(--encre2)">automatique</text>
+<text x="600" y="362" text-anchor="middle" font-size="11" fill="var(--encre2)">accord humain exigé</text>
+</svg>

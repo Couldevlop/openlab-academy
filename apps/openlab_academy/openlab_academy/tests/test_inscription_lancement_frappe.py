@@ -326,4 +326,6 @@ class TestRattachement(Base):
     def test_hooks_declares(self):
         self.assertEqual(hooks.doc_events[INSCRIPTION], {
             "before_insert": "openlab_academy.entrypoints.paiement.avant_inscription_parcours",
-            "after_insert": "openlab_academy.entrypoints.lancement.rejoindre_cohorte"})
+            # l'ordre compte : la cohorte est rejointe avant que le dossier du parcours offert se dispense
+            "after_insert": ["openlab_academy.entrypoints.lancement.rejoindre_cohorte",
+                             "openlab_academy.entrypoints.paiement.apres_inscription_parcours"]})

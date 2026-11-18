@@ -8,7 +8,7 @@ def test_demo_returns_expected_summary(tmp_path):
     result = run_agent(max_steps=5, workflow=workflow)
     assert result.status == "completed"
     assert "5 facture(s)" in result.final_text
-    assert "7730.00 EUR" in result.final_text
+    assert "7 730 000 F CFA" in result.final_text  # espaces insecables
     assert all(item["tool"] != "envoyer_email" for item in result.observations)
 
 

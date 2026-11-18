@@ -1,0 +1,88 @@
+{
+ "doctype": "DocType",
+ "name": "Gratuite Apprenant OpenLab",
+ "module": "OpenLab Academy",
+ "custom": 0,
+ "engine": "InnoDB",
+ "autoname": "hash",
+ "istable": 0,
+ "issingle": 0,
+ "track_changes": 1,
+ "field_order": [
+  "apprenant",
+  "parcours",
+  "accordee_le",
+  "accordee_par",
+  "motif"
+ ],
+ "fields": [
+  {
+   "fieldname": "apprenant",
+   "fieldtype": "Link",
+   "label": "Apprenant",
+   "options": "User",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "parcours",
+   "fieldtype": "Link",
+   "label": "Parcours",
+   "options": "LMS Course",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "accordee_le",
+   "fieldtype": "Datetime",
+   "label": "Offert le",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "accordee_par",
+   "fieldtype": "Link",
+   "label": "Offert par",
+   "options": "User",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "motif",
+   "fieldtype": "Data",
+   "label": "Motif",
+   "in_list_view": 1,
+   "description": "Bourse, partenariat, geste commercial : ce que l'intendance lira dans six mois."
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "role": "Intendant OpenLab",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  }
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-11-15 23:00:00",
+ "modified": "2026-11-15 23:00:00",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

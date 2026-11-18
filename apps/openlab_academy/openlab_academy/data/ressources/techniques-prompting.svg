@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 420" width="860" height="420" role="img" aria-label="Ce qui agit sur la qualité d&#x27;un prompt, et ce qui n&#x27;agit pas">
+<title>Ce qui agit sur la qualité d&#x27;un prompt, et ce qui n&#x27;agit pas</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="860" height="420" fill="var(--surface)"/>
+<rect x="30" y="110" width="380" height="44" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="48" y="130" text-anchor="start" font-size="12" font-weight="600" fill="var(--encre)">Objectif précis et vérifiable</text>
+<text x="48" y="146" text-anchor="start" font-size="10" fill="var(--encre2)">toujours</text>
+<rect x="30" y="164" width="380" height="44" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="48" y="184" text-anchor="start" font-size="12" font-weight="600" fill="var(--encre)">Format de sortie montré, pas décrit</text>
+<text x="48" y="200" text-anchor="start" font-size="10" fill="var(--encre2)">toujours</text>
+<rect x="30" y="218" width="380" height="44" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="48" y="238" text-anchor="start" font-size="12" font-weight="600" fill="var(--encre)">Deux exemples, dont un cas limite</text>
+<text x="48" y="254" text-anchor="start" font-size="10" fill="var(--encre2)">tâches ambiguës</text>
+<rect x="30" y="272" width="380" height="44" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="48" y="292" text-anchor="start" font-size="12" font-weight="600" fill="var(--encre)">Découper en plusieurs appels</text>
+<text x="48" y="308" text-anchor="start" font-size="10" fill="var(--encre2)">tâche à étapes</text>
+<rect x="30" y="326" width="380" height="44" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="48" y="346" text-anchor="start" font-size="12" font-weight="600" fill="var(--encre)">Demander de citer la source</text>
+<text x="48" y="362" text-anchor="start" font-size="10" fill="var(--encre2)">réponses sur documents</text>
+<rect x="450" y="110" width="380" height="44" rx="8" class="b-attenue" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="468" y="130" text-anchor="start" font-size="12" fill="var(--encre2)">« Tu es un expert mondial »</text>
+<text x="468" y="146" text-anchor="start" font-size="10" fill="var(--attenue)">aucun effet mesurable</text>
+<rect x="450" y="164" width="380" height="44" rx="8" class="b-attenue" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="468" y="184" text-anchor="start" font-size="12" fill="var(--encre2)">Menaces ou récompenses</text>
+<text x="468" y="200" text-anchor="start" font-size="10" fill="var(--attenue)">aucun effet mesurable</text>
+<rect x="450" y="218" width="380" height="44" rx="8" class="b-attenue" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="468" y="238" text-anchor="start" font-size="12" fill="var(--encre2)">« Sois précis » sans critère</text>
+<text x="468" y="254" text-anchor="start" font-size="10" fill="var(--attenue)">trop vague pour agir</text>
+<rect x="450" y="272" width="380" height="44" rx="8" class="b-attenue" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="468" y="292" text-anchor="start" font-size="12" fill="var(--encre2)">Prompt de quatre pages</text>
+<text x="468" y="308" text-anchor="start" font-size="10" fill="var(--attenue)">dilue et coûte à chaque tour</text>
+<rect x="450" y="326" width="380" height="44" rx="8" class="b-attenue" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="468" y="346" text-anchor="start" font-size="12" fill="var(--encre2)">Raisonnement imposé pas à pas</text>
+<text x="468" y="362" text-anchor="start" font-size="10" fill="var(--attenue)">déjà interne aux modèles récents</text>
+<text x="220" y="90" text-anchor="middle" font-size="14" font-weight="600" fill="var(--s3)">Ce qui agit</text>
+<text x="640" y="90" text-anchor="middle" font-size="14" font-weight="600" fill="var(--attenue)">Ce qui relève du folklore</text>
+<text x="430" y="42" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Un prompt se juge sur un jeu de cas, pas sur une impression.</text>
+<text x="430" y="64" text-anchor="middle" font-size="12" fill="var(--encre2)">Toute recette qui ne survit pas à vingt cas mesurés est une superstition.</text>
+<text x="430" y="404" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Changez une chose à la fois, et remesurez : c&#x27;est la seule méthode qui progresse.</text>
+</svg>

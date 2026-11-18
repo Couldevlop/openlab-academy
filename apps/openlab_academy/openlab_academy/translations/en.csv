@@ -1,20 +1,29 @@
-Langue non prise en charge.,Language not supported.
 Accès limité aux dates de la cohorte,Access limited to the cohort dates
-Vidéo de la leçon,Lesson video
-"Lien YouTube, Vimeo ou fichier vidéo ; affichée en tête de la leçon.","YouTube or Vimeo link, or video file; shown at the top of the lesson."
-Lancement,Launch
-Phase de lancement,Launch phase
-Cochée : seuls les parcours ci-dessous sont visibles des apprenants et des visiteurs.,Ticked: only the courses below are visible to learners and visitors.
-Parcours visibles pendant le lancement,Courses visible during the launch
-Date d'ouverture du parcours de lancement,Launch course opening date
-Lancement initialisé,Launch initialised
-Parcours Lancement OpenLab,OpenLab launch course
-Parcours,Course
 Ce parcours est fermé,This course is closed
-« {0} » ouvrira le {1}.,"“{0}” opens on {1}."
-« {0} » était ouvert du {1} au {2}. Votre progression et votre certificat restent dans votre profil.,"“{0}” was open from {1} to {2}. Your progress and your certificate stay in your profile."
-Voir le catalogue,View the catalogue
-Les inscriptions à ce parcours sont fermées.,Enrollment for this course is closed.
 Ce parcours n'est pas disponible pour le moment.,This course is not available at the moment.
+Ce parcours n'est pas offert à cette personne : offrez-le d'abord.,This course has not been gifted to this person: gift it first.
+Cette leçon n'a pas de dépôt du jour.,This lesson has no daily repository.
+Cochée : seuls les parcours ci-dessous sont visibles des apprenants et des visiteurs.,Ticked: only the courses below are visible to learners and visitors.
+Connectez-vous pour ouvrir l'atelier.,Log in to open the workshop.
+Date d'ouverture du parcours de lancement,Launch course opening date
+Lancement,Launch
+Lancement initialisé,Launch initialised
+Langue non prise en charge.,Language not supported.
+Les inscriptions à ce parcours sont fermées.,Enrollment for this course is closed.
+Leçon introuvable,Lesson not found
+"Lien YouTube, Vimeo ou fichier vidéo ; affichée en tête de la leçon.","YouTube or Vimeo link, or video file; shown at the top of the lesson."
+Offert,Gifted
+Parcours,Course
+Parcours Lancement OpenLab,OpenLab launch course
 Parcours fermé,Course closed
 Parcours indisponible,Course unavailable
+Parcours ou apprenant introuvable.,Course or learner not found.
+Parcours visibles pendant le lancement,Courses visible during the launch
+Partie Lecon OpenLab,Lesson Part
+Phase de lancement,Launch phase
+Réservé à l'administrateur et à l'intendant.,Restricted to the administrator and the OpenLab steward.
+Sans dossier,No payment file
+Vidéo de la leçon,Lesson video
+Voir le catalogue,View the catalogue
+« {0} » ouvrira le {1}.,“{0}” opens on {1}.
+« {0} » était ouvert du {1} au {2}. Votre progression et votre certificat restent dans votre profil.,“{0}” was open from {1} to {2}. Your progress and your certificate stay in your profile.

@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 420" width="940" height="420" role="img" aria-label="Du commit à la production, sans geste manuel">
+<title>Du commit à la production, sans geste manuel</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="940" height="420" fill="var(--surface)"/>
+<rect x="28" y="118" width="150" height="84" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="103" y="150" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">commit</text>
+<text x="103" y="176" text-anchor="middle" font-size="10" fill="var(--encre2)">branche de travail</text>
+<path d="M 178 160 L 206 160" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="208" y="118" width="150" height="84" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="283" y="150" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">tests</text>
+<text x="283" y="176" text-anchor="middle" font-size="10" fill="var(--encre2)">unitaires et critères</text>
+<path d="M 358 160 L 386 160" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="388" y="118" width="150" height="84" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="463" y="150" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">image</text>
+<text x="463" y="176" text-anchor="middle" font-size="10" fill="var(--encre2)">conteneur épinglé</text>
+<path d="M 538 160 L 566 160" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="568" y="118" width="150" height="84" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="643" y="150" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">recette</text>
+<text x="643" y="176" text-anchor="middle" font-size="10" fill="var(--encre2)">scénario complet</text>
+<path d="M 718 160 L 746 160" fill="none" stroke="var(--attenue)" stroke-width="2" marker-end="url(#pointe-attenue)"/>
+<rect x="748" y="118" width="150" height="84" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="823" y="150" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">production</text>
+<text x="823" y="176" text-anchor="middle" font-size="10" fill="var(--encre2)">après approbation</text>
+<text x="470" y="42" text-anchor="middle" font-size="15" font-weight="600" fill="var(--encre)">Chaque étape peut refuser de passer la suivante.</text>
+<text x="470" y="66" text-anchor="middle" font-size="12" fill="var(--encre2)">Un déploiement manuel est un déploiement que personne ne sait rejouer.</text>
+<rect x="28" y="236" width="330" height="96" rx="8" class="b-trait" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="193" y="262" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">Ce qui bloque le passage</text>
+<text x="193" y="286" text-anchor="middle" font-size="11" fill="var(--encre2)">un test rouge, un critère d&#x27;acceptation</text>
+<text x="193" y="306" text-anchor="middle" font-size="11" fill="var(--encre2)">échoué, un secret absent, une image</text>
+<text x="193" y="326" text-anchor="middle" font-size="11" fill="var(--encre2)">non reproductible.</text>
+<rect x="392" y="236" width="330" height="96" rx="8" class="b-trait" fill="var(--surface)" stroke-dasharray="5 4"/>
+<text x="557" y="262" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">Ce qui ne voyage jamais dans l&#x27;image</text>
+<text x="557" y="286" text-anchor="middle" font-size="11" fill="var(--encre2)">les clés d&#x27;API, la base de données,</text>
+<text x="557" y="306" text-anchor="middle" font-size="11" fill="var(--encre2)">les traces, le fichier d&#x27;état : tout cela</text>
+<text x="557" y="326" text-anchor="middle" font-size="11" fill="var(--encre2)">vient de l&#x27;extérieur, au démarrage.</text>
+<rect x="756" y="236" width="156" height="96" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="834" y="262" text-anchor="middle" font-size="13" font-weight="600" fill="var(--encre)">Retour arrière</text>
+<text x="834" y="288" text-anchor="middle" font-size="11" fill="var(--encre2)">l&#x27;image précédente</text>
+<text x="834" y="308" text-anchor="middle" font-size="11" fill="var(--encre2)">reste déployable</text>
+<text x="834" y="328" text-anchor="middle" font-size="11" fill="var(--encre2)">en une commande.</text>
+<text x="470" y="392" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Un agent se déploie comme un service : versionné, reproductible, réversible.</text>
+</svg>

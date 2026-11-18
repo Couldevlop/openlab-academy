@@ -14,7 +14,7 @@ import zipfile
 RACINE = pathlib.Path(__file__).resolve().parents[2]
 SOURCE = RACINE / "docs" / "Ressources" / "openlab-academy-agentic-starter"
 CIBLE = RACINE / "apps" / "openlab_academy" / "openlab_academy" / "data" / "ressources"
-NOM = "socle-ia-agentique-v0.2.0.zip"
+NOM = "socle-ia-agentique-v0.3.0.zip"
 PREFIXE = "openlab-academy-agentic-starter"
 
 DOSSIERS_EXCLUS = {".venv", ".local", "__pycache__", ".pytest_cache", ".ruff_cache", "dist", "build"}

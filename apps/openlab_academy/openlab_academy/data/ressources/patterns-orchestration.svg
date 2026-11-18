@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 372" width="780" height="372" role="img" aria-label="Quatre patterns d&#x27;orchestration">
+<title>Quatre patterns d&#x27;orchestration</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="780" height="372" fill="var(--surface)"/>
+<text x="190" y="44" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Chaînage</text>
+<rect x="30" y="64" width="96" height="32" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="78" y="85" text-anchor="middle" font-size="11" fill="var(--encre)">extraire</text>
+<rect x="158" y="64" width="96" height="32" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="206" y="85" text-anchor="middle" font-size="11" fill="var(--encre)">calculer</text>
+<path d="M 142 80 L 154 80" fill="none" stroke="var(--s3)" stroke-width="2" marker-end="url(#pointe-s3)"/>
+<rect x="286" y="64" width="96" height="32" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="334" y="85" text-anchor="middle" font-size="11" fill="var(--encre)">rédiger</text>
+<path d="M 270 80 L 282 80" fill="none" stroke="var(--s3)" stroke-width="2" marker-end="url(#pointe-s3)"/>
+<text x="190" y="124" text-anchor="middle" font-size="11" fill="var(--encre2)">chaque étape consomme la précédente</text>
+<text x="590" y="44" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Routage</text>
+<rect x="434" y="64" width="96" height="32" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="482" y="85" text-anchor="middle" font-size="11" fill="var(--encre)">classer</text>
+<rect x="620" y="48" width="96" height="32" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="668" y="69" text-anchor="middle" font-size="11" fill="var(--encre)">litige</text>
+<path d="M 534 80 L 614 64" fill="none" stroke="var(--s2)" stroke-width="2" marker-end="url(#pointe-s2)"/>
+<rect x="620" y="92" width="96" height="32" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="668" y="113" text-anchor="middle" font-size="11" fill="var(--encre)">relance</text>
+<path d="M 534 80 L 614 108" fill="none" stroke="var(--s2)" stroke-width="2" marker-end="url(#pointe-s2)"/>
+<text x="590" y="150" text-anchor="middle" font-size="11" fill="var(--encre2)">un seul chemin est emprunté</text>
+<text x="190" y="196" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Parallélisation</text>
+<rect x="30" y="216" width="96" height="32" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="78" y="237" text-anchor="middle" font-size="11" fill="var(--encre)">segmenter</text>
+<rect x="158" y="200" width="96" height="32" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="206" y="221" text-anchor="middle" font-size="11" fill="var(--encre)">lot A</text>
+<path d="M 130 232 L 152 216" fill="none" stroke="var(--s1)" stroke-width="2" marker-end="url(#pointe-s1)"/>
+<rect x="158" y="244" width="96" height="32" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="206" y="265" text-anchor="middle" font-size="11" fill="var(--encre)">lot B</text>
+<path d="M 130 232 L 152 260" fill="none" stroke="var(--s1)" stroke-width="2" marker-end="url(#pointe-s1)"/>
+<rect x="286" y="216" width="96" height="32" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="334" y="237" text-anchor="middle" font-size="11" fill="var(--encre)">fusionner</text>
+<path d="M 256 216 L 280 232" fill="none" stroke="var(--s1)" stroke-width="2" marker-end="url(#pointe-s1)"/>
+<path d="M 256 260 L 280 232" fill="none" stroke="var(--s1)" stroke-width="2" marker-end="url(#pointe-s1)"/>
+<text x="205" y="304" text-anchor="middle" font-size="11" fill="var(--encre2)">les lots ne se parlent pas</text>
+<text x="590" y="196" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">Réflexion</text>
+<rect x="470" y="216" width="96" height="32" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="518" y="237" text-anchor="middle" font-size="11" fill="var(--encre)">produire</text>
+<rect x="626" y="216" width="96" height="32" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="674" y="237" text-anchor="middle" font-size="11" fill="var(--encre)">critiquer</text>
+<path d="M 568 226 L 620 226" fill="none" stroke="var(--s2)" stroke-width="2" marker-end="url(#pointe-s2)"/>
+<path d="M 674 248 q 0 40 -78 40 q -78 0 -78 -40" fill="none" stroke="var(--s2)" stroke-width="2" marker-end="url(#pointe-s2)"/>
+<text x="590" y="304" text-anchor="middle" font-size="11" fill="var(--encre2)">une passe de plus, bornée</text>
+<text x="390" y="352" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Le pattern se choisit sur la dépendance entre les étapes, pas sur la mode du moment.</text>
+</svg>

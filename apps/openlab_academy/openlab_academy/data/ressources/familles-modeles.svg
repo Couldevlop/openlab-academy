@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 380" width="860" height="380" role="img" aria-label="Trois familles de modèles, et ce que vous recevez vraiment">
+<title>Trois familles de modèles, et ce que vous recevez vraiment</title>
+<defs><marker id="pointe-attenue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--attenue)"/></marker><marker id="pointe-s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s1)"/></marker><marker id="pointe-s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s2)"/></marker><marker id="pointe-s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--s3)"/></marker><marker id="pointe-critique" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--critique)"/></marker><marker id="pointe-bon" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bon)"/></marker></defs>
+<style>
+svg{font-family:system-ui, -apple-system, "Segoe UI", sans-serif;background:var(--surface)}
+:root{
+  --surface: #fcfcfb;
+  --encre: #0b0b0b;
+  --encre2: #52514e;
+  --attenue: #898781;
+  --trait: #c3c2b7;
+  --grille: #e1e0d9;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface: #1a1a19;
+  --encre: #f0efec;
+  --encre2: #c3c2b7;
+  --attenue: #898781;
+  --trait: #383835;
+  --grille: #2c2c2a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --bon: #0ca30c;
+  --attention: #fab219;
+  --serieux: #ec835a;
+  --critique: #d03b3b;
+}}
+rect[class^='b-']{stroke-width:1.5}
+.b-surface{stroke:var(--surface)}
+.b-encre{stroke:var(--encre)}
+.b-encre2{stroke:var(--encre2)}
+.b-attenue{stroke:var(--attenue)}
+.b-trait{stroke:var(--trait)}
+.b-grille{stroke:var(--grille)}
+.b-s1{stroke:var(--s1)}
+.b-s2{stroke:var(--s2)}
+.b-s3{stroke:var(--s3)}
+.b-bon{stroke:var(--bon)}
+.b-attention{stroke:var(--attention)}
+.b-serieux{stroke:var(--serieux)}
+.b-critique{stroke:var(--critique)}
+</style>
+<rect width="860" height="380" fill="var(--surface)"/>
+<rect x="24" y="86" width="262" height="196" rx="8" class="b-s2" fill="var(--surface)"/>
+<text x="155" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="var(--encre)">Propriétaire</text>
+<text x="155" y="140" text-anchor="middle" font-size="12" fill="var(--encre2)">une API et une facture</text>
+<text x="155" y="172" text-anchor="middle" font-size="11" fill="var(--encre2)">Pas de poids, pas de données</text>
+<text x="155" y="196" text-anchor="middle" font-size="11" fill="var(--encre2)">Mise à jour subie</text>
+<text x="155" y="220" text-anchor="middle" font-size="11" fill="var(--encre2)">Données envoyées au fournisseur</text>
+<text x="155" y="306" text-anchor="middle" font-size="12" fill="var(--s2)">le meilleur niveau, le moins</text>
+<text x="155" y="321" text-anchor="middle" font-size="12" fill="var(--s2)">de maîtrise</text>
+<rect x="302" y="86" width="262" height="196" rx="8" class="b-s1" fill="var(--surface)"/>
+<text x="433" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="var(--encre)">Poids ouverts</text>
+<text x="433" y="140" text-anchor="middle" font-size="12" fill="var(--encre2)">les poids, pas la recette</text>
+<text x="433" y="172" text-anchor="middle" font-size="11" fill="var(--encre2)">Exécution locale possible</text>
+<text x="433" y="196" text-anchor="middle" font-size="11" fill="var(--encre2)">Réglage fin autorisé</text>
+<text x="433" y="220" text-anchor="middle" font-size="11" fill="var(--encre2)">Licence parfois restrictive</text>
+<text x="433" y="306" text-anchor="middle" font-size="12" fill="var(--s1)">le compromis le plus fréquent</text>
+<rect x="580" y="86" width="262" height="196" rx="8" class="b-s3" fill="var(--surface)"/>
+<text x="711" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="var(--encre)">Pleinement ouvert</text>
+<text x="711" y="140" text-anchor="middle" font-size="12" fill="var(--encre2)">poids, données et code</text>
+<text x="711" y="172" text-anchor="middle" font-size="11" fill="var(--encre2)">Reproductible et auditable</text>
+<text x="711" y="196" text-anchor="middle" font-size="11" fill="var(--encre2)">Souveraineté réelle</text>
+<text x="711" y="220" text-anchor="middle" font-size="11" fill="var(--encre2)">Niveau souvent en retrait</text>
+<text x="711" y="306" text-anchor="middle" font-size="12" fill="var(--s3)">le seul vérifiable de bout en</text>
+<text x="711" y="321" text-anchor="middle" font-size="12" fill="var(--s3)">bout</text>
+<text x="430" y="40" text-anchor="middle" font-size="14" font-weight="600" fill="var(--encre)">« Open source » recouvre trois réalités très différentes.</text>
+<text x="430" y="62" text-anchor="middle" font-size="12" fill="var(--encre2)">La question utile n&#x27;est pas le nom de la licence, mais ce que vous pouvez exécuter, vérifier et garder.</text>
+<text x="430" y="358" text-anchor="middle" font-size="12" font-weight="600" fill="var(--encre2)">Pour un agent : la famille choisie décide de l&#x27;endroit où vont vos données et du coût par exécution.</text>
+</svg>
