@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="/assets/openlab_academy/atelier/atelier.css?v={{ version }}">
 <script>window.csrf_token = {{ csrf_token | tojson }};
 window.atelier_lecon = {{ lecon | tojson }};</script>
+<script defer src="/assets/openlab_academy/atelier/carnet.js?v={{ version }}"></script>
 <script defer src="/assets/openlab_academy/atelier/atelier.js?v={{ version }}"></script>
 </head>
 <body>
@@ -29,6 +30,8 @@ window.atelier_lecon = {{ lecon | tojson }};</script>
   <section class="edition">
     <label class="invisible" for="code">Fichier ouvert</label>
     <textarea id="code" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+    <!-- carnet Jupyter : les cellules remplacent la zone de texte, chacune avec sa sortie -->
+    <div id="carnet" class="carnet" hidden></div>
   </section>
   <section class="console" aria-live="polite">
     <div class="console-titre">Sortie</div>
