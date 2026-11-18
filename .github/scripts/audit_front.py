@@ -72,6 +72,37 @@ def _avis(rapport: dict) -> dict[str, dict]:
     return trouves
 
 
+def _inexpliques(rapport: dict) -> list[str]:
+    """Les paquets de severite haute qu'aucun avis du rapport n'explique.
+
+    npm decrit une faille soit par un avis (un objet dans « via »), soit par le nom du
+    paquet dont elle est heritee (une chaine). Un paquet dont la chaine ne mene a aucun
+    avis du rapport echapperait au controle : il est refuse.
+    """
+    failles = rapport.get("vulnerabilities") or {}
+    inexpliques = []
+    for nom, faille in sorted(failles.items()):
+        if faille.get("severity") not in SEVERITES:
+            continue
+        liens = faille.get("via") or []
+        if not liens:
+            inexpliques.append(f"{nom} : severite haute sans avis ni origine")
+            continue
+        for via in liens:
+            if isinstance(via, dict):
+                continue
+            if isinstance(via, str) and via in failles:
+                continue
+            inexpliques.append(f"{nom} : origine « {via} » absente du rapport")
+    # recoupement avec les compteurs de npm : un avis qui echappe au parcours se voit ici
+    compteurs = (rapport.get("metadata") or {}).get("vulnerabilities") or {}
+    attendus = sum(compteurs.get(severite, 0) for severite in SEVERITES)
+    comptes = sum(1 for f in failles.values() if f.get("severity") in SEVERITES)
+    if attendus != comptes:
+        inexpliques.append(f"npm annonce {attendus} paquets de severite haute, {comptes} lus")
+    return inexpliques
+
+
 def _correctif_sans_rupture(correctif) -> bool:
     """Un correctif applicable sans changement majeur. Toute forme inconnue est tenue pour tel."""
     if correctif is True:
@@ -81,6 +112,12 @@ def _correctif_sans_rupture(correctif) -> bool:
     if isinstance(correctif, dict):
         return not correctif.get("isSemVerMajor")
     return True
+
+
+def _declares(exception: dict) -> set[str]:
+    """Les paquets que la tolerance couvre : « paquet », ou la liste « paquets »."""
+    declares = exception.get("paquets") or [exception.get("paquet")]
+    return {str(nom) for nom in declares if nom}
 
 
 def _exceptions(fichier: pathlib.Path, aujourdhui: datetime.date) -> dict[str, dict]:
@@ -115,8 +152,9 @@ def main() -> int:
     aujourdhui = datetime.date.today()
     exceptions = _exceptions(dossier / "exceptions-audit.json", aujourdhui)
 
-    avis = _avis(_audit(dossier))
-    refus = []
+    rapport = _audit(dossier)
+    avis = _avis(rapport)
+    refus = _inexpliques(rapport)
     for identifiant, detail in sorted(avis.items()):
         paquets = ", ".join(sorted(detail["paquets"]))
         if not IDENTIFIANT.match(identifiant):
@@ -134,6 +172,9 @@ def main() -> int:
             refus.append(f"{identifiant} ({paquets}) : exception expiree le {revue}, a reexaminer")
         elif _correctif_sans_rupture(detail["correctif"]):
             refus.append(f"{identifiant} ({paquets}) : un correctif existe desormais, mettez a jour")
+        elif detail["paquets"] - _declares(exception):
+            hors = ", ".join(sorted(detail["paquets"] - _declares(exception)))
+            refus.append(f"{identifiant} : l'avis touche desormais {hors}, hors du perimetre tolere")
         else:
             print(f"  tolere   {identifiant}  {paquets}  revue avant le {revue}")
             print(f"           {exception['raison']}")
