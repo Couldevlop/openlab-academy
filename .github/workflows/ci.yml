@@ -181,10 +181,18 @@ jobs:
           echo "lot ${{ matrix.lot }} : $(echo "$modules" | wc -l) modules, $attendus tests attendus"
           status=0
           executes=0
+          # jeton de neutralisation : la sortie d'un test ne doit pas pouvoir se faire lire comme une
+          # commande de workflow quand son journal est verse plus bas
+          jeton="journal-$(date +%s%N)"
           for module in $modules; do
-            ../env/bin/coverage run -a --branch --source=../apps/openlab_academy/openlab_academy \
-              --omit='*/tests/*,*/hooks.py' -m frappe.utils.bench_helper frappe --site test_site \
-              run-tests --skip-before-tests --module "$module" > "/tmp/$module.log" 2>&1 || status=$?
+            if ../env/bin/coverage run -a --branch --source=../apps/openlab_academy/openlab_academy \
+                 --omit='*/tests/*,*/hooks.py' -m frappe.utils.bench_helper frappe --site test_site \
+                 run-tests --skip-before-tests --module "$module" > "/tmp/$module.log" 2>&1; then
+              code=0
+            else
+              code=$?
+              status=$code
+            fi
             # « || true » tient meme si pipefail est actif : un module en erreur n'imprime aucun
             # compteur, et c'est precisement la que le diagnostic ci-dessous est le plus utile
             n=$(grep -oE '^Ran [0-9]+ test' "/tmp/$module.log" | grep -oE '[0-9]+' | head -1 || true)
@@ -196,9 +204,11 @@ jobs:
             fi
             grep -E '^(FAIL|ERROR):|^FAILED|^Ran ' "/tmp/$module.log" | sed "s|^|[$module] |" || true
             # un module fautif verse son journal : sans la trace, diagnostiquer coute une execution de plus
-            if ! grep -qE '^OK' "/tmp/$module.log"; then
+            if [ "$code" -ne 0 ] || [ "${n:-0}" -eq 0 ]; then
               echo "::group::journal de $module"
+              echo "::stop-commands::$jeton"
               tail -120 "/tmp/$module.log"
+              echo "::$jeton::"
               echo "::endgroup::"
             fi
           done
