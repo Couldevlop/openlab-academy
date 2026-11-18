@@ -22,9 +22,11 @@ def salarie():
 def compte(nom, groupe=None, superutilisateur=False):
     """Crée un compte de test, éventuellement membre d'un groupe."""
     modele = get_user_model()
-    utilisateur = (modele.objects.create_superuser(nom, password="mot-de-passe-de-test-1")
+    # force_login installe la session sans verifier d'identifiants : aucun mot de passe
+    # n'est necessaire, et aucun ne doit etre ecrit en dur.
+    utilisateur = (modele.objects.create_superuser(nom)
                    if superutilisateur
-                   else modele.objects.create_user(nom, password="mot-de-passe-de-test-1"))
+                   else modele.objects.create_user(nom))
     if groupe:
         utilisateur.groups.add(Group.objects.get_or_create(name=groupe)[0])
     return utilisateur

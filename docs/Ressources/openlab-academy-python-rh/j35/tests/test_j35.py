@@ -66,6 +66,6 @@ def test_le_mode_debug_est_eteint_en_production():
 def test_les_pages_de_l_effectif_repondent_toujours(client):
     from django.contrib.auth import get_user_model
     from django.urls import reverse
-    agent = get_user_model().objects.create_user("agent", password="mot-de-passe-de-test-1")
+    agent = get_user_model().objects.create_user("agent")
     client.force_login(agent)
     assert client.get(reverse("salaries")).status_code == 200

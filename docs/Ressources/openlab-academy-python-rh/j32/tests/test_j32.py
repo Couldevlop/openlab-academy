@@ -7,13 +7,12 @@ from django.urls import reverse
 
 from effectif.models import Poste, Salarie
 
-MOT_DE_PASSE = "mot-de-passe-de-test-1"
 
 
 @pytest.fixture()
 def agent():
     """Un compte de test, membre de l'équipe RH."""
-    return get_user_model().objects.create_user("agent-rh", password=MOT_DE_PASSE)
+    return get_user_model().objects.create_user("agent-rh")
 
 
 @pytest.fixture()

@@ -32,7 +32,7 @@ def test_la_liste_d_administration_repond_a_l_equipe_rh(client):
     poste = Poste.objects.create(libelle="RH")
     Salarie.objects.create(matricule="A001", nom="Awa", poste=poste,
                            date_embauche=date(2024, 3, 1), salaire_fcfa=250000)
-    get_user_model().objects.create_superuser("agent-rh", password="mot-de-passe-de-test-1")
+    get_user_model().objects.create_superuser("agent-rh")
     client.force_login(get_user_model().objects.get(username="agent-rh"))
     reponse = client.get("/admin/effectif/salarie/")
     assert reponse.status_code == 200
