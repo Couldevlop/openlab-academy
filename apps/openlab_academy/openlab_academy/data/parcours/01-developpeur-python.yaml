@@ -5138,7 +5138,9 @@ blocs:
             texte: >-
               Une protection que rien ne vérifie finit par disparaître au détour d'une correction pressée. Le
               test d'injection est court, il se lit comme une démonstration, et il reste dans la suite pour
-              toujours : une valeur hostile est fournie, et la table est encore là après.
+              toujours : une valeur hostile est fournie, et la table est encore là après. Il tourne sur une
+              base en mémoire, sans serveur à installer : le marqueur de paramètre change d'un pilote à
+              l'autre (« ? » pour SQLite, « %s » pour PostgreSQL), le principe ne change jamais.
 
               Le masquage des données personnelles se traite à un seul endroit, au moment d'écrire le journal,
               jamais à chaque appel. Une fonction de masquage et un filtre de journalisation suffisent : le
@@ -5152,25 +5154,41 @@ blocs:
                 langage: python
                 source: |
                   import re
+                  import sqlite3
 
-                  MASQUE = re.compile(r"\b(\d{2})\d{4}(\d{2})\b")   # 0748123456 -> 07****56
+                  import pytest
+
+                  MASQUE = re.compile(r"\b(\d{2})\d{6}(\d{2})\b")   # 0748123456 -> 07******56
 
 
                   def masquer(message: str) -> str:
-                      return MASQUE.sub(r"\1****\2", message)
+                      return MASQUE.sub(r"\1******\2", message)
+
+
+                  @pytest.fixture
+                  def connexion():
+                      """Une base jetable, en memoire : la demonstration tourne partout, sans serveur a installer."""
+                      base = sqlite3.connect(":memory:")
+                      base.execute("CREATE TABLE vente (code_produit TEXT, quantite INTEGER)")
+                      base.execute("INSERT INTO vente VALUES ('003421', 12)")
+                      yield base
+                      base.close()
 
 
                   def test_une_valeur_hostile_ne_detruit_pas_la_table(connexion):
                       hostile = "003421'); DROP TABLE vente; --"
+                      # « ? » est le marqueur de sqlite, « %s » celui de psycopg : dans les deux cas ce
+                      # n'est pas un format de chaine, c'est le pilote qui lie la valeur. Une
+                      # concatenation, elle, aurait execute le DROP.
                       curseur = connexion.execute(
-                          "SELECT SUM(quantite) FROM vente WHERE code_produit = %s", (hostile,)
+                          "SELECT SUM(quantite) FROM vente WHERE code_produit = ?", (hostile,)
                       )
-                      assert curseur.fetchone()[0] is None          # aucune vente, et surtout :
-                      assert connexion.execute("SELECT COUNT(*) FROM vente").fetchone()[0] > 0
+                      assert curseur.fetchone()[0] is None
+                      assert connexion.execute("SELECT COUNT(*) FROM vente").fetchone()[0] == 1
 
 
                   def test_le_journal_ne_contient_aucun_numero_en_clair():
-                      assert masquer("paiement recu de 0748123456") == "paiement recu de 07****56"
+                      assert masquer("paiement recu de 0748123456") == "paiement recu de 07******56"
           - titre: Les erreurs que vous allez voir
             texte: >-
               Ces messages sont ceux d'un serveur PostgreSQL et de SQLAlchemy. Ils sont précis : ils nomment
