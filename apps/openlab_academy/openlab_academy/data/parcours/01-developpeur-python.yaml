@@ -5736,13 +5736,17 @@ blocs:
 
               Le tri topologique répond aux deux d'un coup. On retire à chaque tour les tâches dont toutes les
               dépendances sont déjà satisfaites, et on les ajoute à l'ordre d'exécution. Si à un tour plus
-              aucune tâche n'est prête alors qu'il en reste, c'est qu'elles s'attendent mutuellement : le
-              graphe contient un cycle, et les tâches restantes le composent.
+              aucune tâche n'est prête alors qu'il en reste, le graphe contient un cycle. Attention à la
+              nuance, car c'est l'erreur de diagnostic la plus courante : les tâches restantes ne sont pas
+              toutes dans le cycle. Certaines s'attendent mutuellement, les autres sont simplement bloquées
+              derrière elles. Il faut donc suivre les dépendances jusqu'à revenir sur ses pas pour nommer le
+              cycle réel, et dire des autres qu'elles sont bloquées — sans quoi la personne d'astreinte
+              cherchera un défaut dans une tâche parfaitement saine.
 
-              L'exception porte ici un nom métier et transporte la liste des tâches fautives. C'est la
-              différence entre un message qui dit « erreur dans le pipeline » et un message qui dit exactement
-              quelles trois tâches forment la boucle. La personne d'astreinte, à trois heures du matin, ne
-              lira pas votre code : elle lira ce message.
+              L'exception porte ici un nom métier et transporte les deux listes séparément. C'est la différence
+              entre un message qui dit « erreur dans le pipeline » et un message qui dit « nettoyer attend
+              agreger, agreger attend joindre, joindre attend nettoyer ; bloquées par lui : publier ». La
+              personne d'astreinte, à trois heures du matin, ne lira pas votre code : elle lira ce message.
 
               Remarquez enfin le tri des tâches prêtes par ordre alphabétique. Il ne sert pas à l'algorithme,
               il sert à vous : il rend la sortie reproductible, donc testable. Deux exécutions sur les mêmes
@@ -5754,9 +5758,23 @@ blocs:
                   class CycleDetecte(Exception):
                       """Des taches s'attendent mutuellement : le pipeline ne peut pas demarrer."""
 
-                      def __init__(self, taches: set[str]) -> None:
-                          self.taches = taches
-                          super().__init__("cycle de dependances entre : " + ", ".join(sorted(taches)))
+                      def __init__(self, cycle: list[str], bloquees: set[str]) -> None:
+                          self.cycle, self.bloquees = cycle, bloquees
+                          attentes = [f"{nom} attend {cycle[(i + 1) % len(cycle)]}" for i, nom in enumerate(cycle)]
+                          message = "cycle de dependances : " + ", ".join(attentes)
+                          if bloquees:
+                              message += " ; bloquees par lui : " + ", ".join(sorted(bloquees))
+                          super().__init__(message)
+
+
+                  def _un_cycle(restantes: dict[str, set[str]]) -> list[str]:
+                      """Un cycle reel, dans l'ordre des attentes : on suit les dependances jusqu'a revenir sur ses pas."""
+                      chemin = [min(restantes)]
+                      while True:
+                          suivant = min(restantes[chemin[-1]] & restantes.keys())
+                          if suivant in chemin:
+                              return chemin[chemin.index(suivant):]
+                          chemin.append(suivant)
 
 
                   def ordre_execution(taches: dict[str, list[str]]) -> list[str]:
@@ -5766,7 +5784,8 @@ blocs:
                       while restantes:
                           prets = sorted(nom for nom, avant in restantes.items() if not avant)
                           if not prets:
-                              raise CycleDetecte(set(restantes))
+                              cycle = _un_cycle(restantes)
+                              raise CycleDetecte(cycle, set(restantes) - set(cycle))
                           for nom in prets:
                               del restantes[nom]
                               ordre.append(nom)
@@ -5793,8 +5812,9 @@ blocs:
 
               Deuxième temps, varier. Ajoutez volontairement une dépendance fautive, par exemple en déclarant
               que le nettoyage attend l'agrégation, et vérifiez que votre code lève bien l'exception de cycle
-              avec les quatre tâches concernées, ni plus ni moins. Un test qui attend une exception sans
-              vérifier son contenu ne prouve presque rien.
+              en nommant les trois tâches du cycle — nettoyer, joindre, agréger — et la quatrième, publier,
+              comme simplement bloquée. Ni l'une ni l'autre des deux listes ne doit contenir une tâche de
+              l'autre. Un test qui attend une exception sans vérifier son contenu ne prouve presque rien.
 
               Troisième temps, créer. Étendez l'ordonnanceur pour qu'il rende non pas une liste mais une liste
               de vagues : les tâches de la première vague n'attendent rien et peuvent s'exécuter en parallèle,
