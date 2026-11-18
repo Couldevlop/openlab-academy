@@ -1,15 +1,20 @@
-# Origine des illustrations photographiques
+# Origine des illustrations
 
-Les schémas (`*.svg`) sont construits par `docs/Ressources/construire_schemas.py`.
-Les photographies (`*.jpg`) proviennent d'Unsplash, sous licence Unsplash :
-usage gratuit, y compris commercial, sans autorisation ni attribution obligatoire.
-L'attribution est donnée ici par courtoisie et pour la traçabilité.
+Trois origines, qu'il ne faut pas confondre :
+
+- Les schémas (`*.svg`) sont construits par `docs/Ressources/construire_schemas.py`.
+- Les **couvertures** (`couverture-*.jpg`) sont dessinées par
+  `docs/charte/generer_couvertures.py` : aucune n'est une photographie, aucune ne
+  vient d'une banque d'images, et aucune n'a donc à être créditée ici.
+- Les photographies de corps de leçon (`corps-*.jpg`) proviennent d'Unsplash, sous
+  licence Unsplash : usage gratuit, y compris commercial, sans autorisation ni
+  attribution obligatoire. L'attribution est donnée ci-dessous par courtoisie et pour
+  la traçabilité.
 
 Licence : https://unsplash.com/license
 
 | Fichier | Identifiant Unsplash |
 |---|---|
-| couverture-ia-agentique.jpg | `photo-1684369175809-f9642140a1bd` |
 | corps-01b.jpg | `photo-1603037833672-35f4d722d5db` |
 | corps-02a.jpg | `photo-1622555473213-4fc6bc77d1d7` |
 | corps-02b.jpg | `photo-1562408590-e32931084e23` |
