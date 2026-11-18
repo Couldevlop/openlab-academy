@@ -50,7 +50,10 @@ SANS_DEPOT = {"05"}
 
 
 def _parcours() -> dict:
-    return yaml.safe_load(PARCOURS.read_text(encoding="utf-8"))
+    # les fins de ligne sont normalisees : un poste Windows et la chaine d'integration
+    # doivent produire exactement la meme archive, donc la meme empreinte
+    brut = PARCOURS.read_text(encoding="utf-8").replace(chr(13) + chr(10), chr(10))
+    return yaml.safe_load(brut)
 
 
 def _modules(donnees: dict):
@@ -213,8 +216,19 @@ def _zip(racine: str, contenu: dict[str, str]) -> bytes:
             info = zipfile.ZipInfo(f"{racine}/{chemin}", HORODATAGE)
             info.external_attr = 0o644 << 16
             info.compress_type = zipfile.ZIP_DEFLATED
-            zip_.writestr(info, contenu[chemin].encode("utf-8"))
+            texte = contenu[chemin].replace(chr(13) + chr(10), chr(10))
+            zip_.writestr(info, texte.encode("utf-8"))
     return tampon.getvalue()
+
+
+def _entrees(octets: bytes) -> dict[str, bytes]:
+    """Les fichiers d'une archive, nom par nom. La comparaison porte sur ce que l'archive
+    sert, jamais sur ses octets compresses : le compresseur varie d'une version de Python
+    a l'autre, et la chaine d'integration ne doit pas echouer pour cette raison."""
+    if not octets:
+        return {}
+    with zipfile.ZipFile(io.BytesIO(octets)) as zip_:
+        return {info.filename: zip_.read(info) for info in zip_.infolist()}
 
 
 def main() -> int:
@@ -229,7 +243,8 @@ def main() -> int:
         empreinte = hashlib.sha256(contenu).hexdigest()[:12]
         if verifier:
             actuel = cible.read_bytes() if cible.exists() else b""
-            etat = "identique" if actuel == contenu else "DIFFERENT"
+            memes = _entrees(actuel) == _entrees(contenu)
+            etat = "identique" if memes else "DIFFERENT"
             ecarts += etat == "DIFFERENT"
             print(f"  {etat:10} {cible.name}  {empreinte}")
         else:
