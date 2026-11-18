@@ -20,3 +20,5 @@ docker/secrets/
 !apps/openlab_academy/openlab_academy/public/images/logo*.png
 sh.exe.stackdump
 skills-lock.json
+.claude/
+.agents/
