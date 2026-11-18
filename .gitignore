@@ -14,6 +14,8 @@ docker/secrets/
 # Documents et captures : jamais versionnés (sauf logos)
 *.docx
 *.xlsx
+*.pptx
+*.pdf
 *.png
 *.PNG
 !docs/charte/logo/**/*.png
@@ -22,3 +24,5 @@ sh.exe.stackdump
 skills-lock.json
 .claude/
 .agents/
+CLAUDE.md
+AGENTS.md
