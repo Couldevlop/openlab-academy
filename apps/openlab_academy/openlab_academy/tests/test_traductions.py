@@ -82,3 +82,8 @@ class TestSurchargesLms(FrappeTestCase):
         fr = get_all_translations("fr")
         self.assertEqual(fr["Home"], "Accueil")
         self.assertEqual(fr["Enroll Now"], "S'inscrire")
+
+    def test_le_bouton_du_quiz_valide_la_reponse(self):
+        """LMS traduit « Check » par « Case à cocher », le nom d'un champ, alors que ce bouton valide la
+        réponse de l'apprenant. L'erreur vient de lms/locale/fr.po ; notre surcharge la corrige."""
+        self.assertEqual(get_all_translations("fr")["Check"], "Vérifier")
