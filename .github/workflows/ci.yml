@@ -195,6 +195,12 @@ jobs:
               status=1
             fi
             grep -E '^(FAIL|ERROR):|^FAILED|^Ran ' "/tmp/$module.log" | sed "s|^|[$module] |" || true
+            # un module fautif verse son journal : sans la trace, diagnostiquer coute une execution de plus
+            if ! grep -qE '^OK' "/tmp/$module.log"; then
+              echo "::group::journal de $module"
+              tail -120 "/tmp/$module.log"
+              echo "::endgroup::"
+            fi
           done
           echo "tests exécutés : $executes, attendus : $attendus"
           if [ "$executes" -lt "$attendus" ]; then
@@ -205,7 +211,10 @@ jobs:
 
       # la barrière de couverture porte sur les deux lots réunis : seule, la couverture d'un lot est
       # forcément sous le seuil, puisqu'il n'exerce que la moitié du code
+      # « always » : la mesure d'un lot rouge est valable, et le cumul doit pouvoir conclure. Sans cela,
+      # GitHub saute cette etape des qu'un test echoue, et le job de couverture ne recoit qu'une mesure.
       - name: Garder la couverture du lot
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: couverture-lot-${{ matrix.lot }}
