@@ -1,40 +1,34 @@
-"Use ""Mark for Review"" to flag questions you want to revisit before submitting.",Utilisez « Marquer pour relecture » pour signaler les questions à revoir avant d'envoyer.
 Answer all questions before you submit. You can navigate freely between them.,Répondez à toutes les questions avant d'envoyer. Vous pouvez naviguer librement entre elles.
-Assignment submitted successfully,Devoir envoyé
 Assignment,Devoir
+Assignment submitted successfully,Devoir envoyé
 Assignments,Devoirs
-attempt,tentative
 Attempted Questions,Questions traitées
 Attempts,Tentatives
-attempts,tentatives
-Back to Course,Retour au cours
 Back,Retour
+Back to Course,Retour au cours
 Batches,Cohortes
 Before you start,Avant de commencer
-Certificate of completion,Certificat de réussite
 Certificate,Certificat
-certificate,certificat
+Certificate of completion,Certificat de réussite
 Certificates,Certificats
+Check,Vérifier
 Closes,Ferme le
 Closing or refreshing the page will submit your quiz automatically.,Fermer ou recharger la page envoie automatiquement votre quiz.
-Complete your profile,Complétez votre profil
 Complete,Terminer
+Complete your profile,Complétez votre profil
 Completed,Terminé
-completed,terminé
 Continue Learning,Reprendre la formation
 Correct,Bonne réponse
-Course content,Contenu du cours
 Course Creator,Auteur du cours
-Course creator,Auteur du cours
 Course Progress,Progression
+Course content,Contenu du cours
+Course creator,Auteur du cours
 Courses,Cours
-courses,cours
 Dashboard,Tableau de bord
 Description,Description
 Duration,Durée
 Enroll Now,S'inscrire
 Enrolled,Inscrit
-enrolled,inscrit
 Enter a URL,Saisissez une adresse
 Enter a URL.,Saisissez une adresse.
 Free,Gratuit
@@ -44,10 +38,8 @@ Home,Accueil
 Instructors,Formateurs
 Jobs,Offres
 Lesson,Leçon
-lesson,leçon
-Lessons Completed,Leçons terminées
 Lessons,Leçons
-lessons,leçons
+Lessons Completed,Leçons terminées
 Login,Se connecter
 Logout,Se déconnecter
 Mark for review,Marquer pour relecture
@@ -67,8 +59,8 @@ Programs,Programmes
 Published,Publié
 Question,Question
 Questions,Questions
-Quiz topics,quiz
 Quiz,Quiz
+Quiz topics,quiz
 Related Courses,Cours associés
 Result,Résultat
 Reviews,Avis
@@ -80,7 +72,6 @@ Start Learning,Commencer la formation
 Start Quiz,Commencer le quiz
 Statistics,Statistiques
 Students,Apprenants
-students,apprenants
 Submission,Votre réponse
 Submit,Envoyer
 This course includes:,Ce cours comprend :
@@ -88,8 +79,18 @@ Time limit,Durée limite
 Title,Titre
 Try Again,Réessayer
 Unlimited,Illimité
+"Use ""Mark for Review"" to flag questions you want to revisit before submitting.",Utilisez « Marquer pour relecture » pour signaler les questions à revoir avant d'envoyer.
 Write your answer here,Rédigez votre réponse ici
 Zen Mode,Mode lecture
+attempt,tentative
+attempts,tentatives
+certificate,certificat
+completed,terminé
+courses,cours
+enrolled,inscrit
+lesson,leçon
+lessons,leçons
+students,apprenants
 {0} left,{0} restantes
 {0} of {1} lessons completed,{0} leçons terminées sur {1}
 {0} {1} allowed,{0} {1} autorisées
