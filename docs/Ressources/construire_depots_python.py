@@ -109,23 +109,13 @@ def archive(entrees: dict[str, bytes]) -> bytes:
         for nom in sorted(entrees):
             info = zipfile.ZipInfo(nom, date_time=HORODATAGE)
             info.external_attr = 0o644 << 16
-            info.create_system = 0
+            info.create_system = arbre.SYSTEME
             zip_.writestr(info, entrees[nom])
     return tampon.getvalue()
 
 
 def construire() -> dict[str, bytes]:
     return {f"depot-python-{journee.name}.zip": archive(contenu(journee)) for journee in journees()}
-
-
-def entrees(octets: bytes) -> dict[str, bytes]:
-    """Ce que l'archive sert, jamais ses octets compressés : zlib ne rend pas les mêmes octets d'une
-    version à l'autre, et la chaîne d'intégration ne doit pas échouer pour cette raison. L'empreinte
-    reste comparée à celle de l'archive livrée, qui est le fichier du dépôt, pas une reconstruction."""
-    if not octets:
-        return {}
-    with zipfile.ZipFile(io.BytesIO(octets)) as zip_:
-        return {info.filename: zip_.read(info) for info in zip_.infolist()}
 
 
 def eprouver(interpreteur: str = sys.executable, retenues: list[str] | None = None) -> list[str]:
@@ -183,7 +173,7 @@ def main() -> int:
         empreintes[nom] = hashlib.sha256(octets).hexdigest()
         if arguments.verifier:
             livree = fichier.read_bytes() if fichier.is_file() else b""
-            if entrees(livree) != entrees(octets):
+            if arbre.servi(livree) != arbre.servi(octets):
                 ecarts.append(nom)
             continue
         fichier.write_bytes(octets)

@@ -25,9 +25,11 @@ import sys
 import zipfile
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "notebooks"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 import yaml  # noqa: E402
 
+import arbre  # noqa: E402  (l'import suit l'ajout du dossier au chemin)
 from cellules import AMORCE, SEANCES  # noqa: E402
 
 RACINE = pathlib.Path(__file__).resolve().parents[2]
@@ -215,20 +217,11 @@ def _zip(racine: str, contenu: dict[str, str]) -> bytes:
         for chemin in sorted(contenu):
             info = zipfile.ZipInfo(f"{racine}/{chemin}", HORODATAGE)
             info.external_attr = 0o644 << 16
+            info.create_system = arbre.SYSTEME
             info.compress_type = zipfile.ZIP_DEFLATED
             texte = contenu[chemin].replace(chr(13) + chr(10), chr(10))
             zip_.writestr(info, texte.encode("utf-8"))
     return tampon.getvalue()
-
-
-def _entrees(octets: bytes) -> dict[str, bytes]:
-    """Les fichiers d'une archive, nom par nom. La comparaison porte sur ce que l'archive
-    sert, jamais sur ses octets compresses : le compresseur varie d'une version de Python
-    a l'autre, et la chaine d'integration ne doit pas echouer pour cette raison."""
-    if not octets:
-        return {}
-    with zipfile.ZipFile(io.BytesIO(octets)) as zip_:
-        return {info.filename: zip_.read(info) for info in zip_.infolist()}
 
 
 def main() -> int:
@@ -243,7 +236,7 @@ def main() -> int:
         empreinte = hashlib.sha256(contenu).hexdigest()[:12]
         if verifier:
             actuel = cible.read_bytes() if cible.exists() else b""
-            memes = _entrees(actuel) == _entrees(contenu)
+            memes = arbre.servi(actuel) == arbre.servi(contenu)
             etat = "identique" if memes else "DIFFERENT"
             ecarts += etat == "DIFFERENT"
             print(f"  {etat:10} {cible.name}  {empreinte}")

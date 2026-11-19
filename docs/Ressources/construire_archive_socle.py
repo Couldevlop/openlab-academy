@@ -61,19 +61,12 @@ def assembler() -> bytes:
             info = zipfile.ZipInfo(f"{PREFIXE}/{fichier.relative_to(SOURCE).as_posix()}", (2026, 11, 12, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o644 << 16
+            info.create_system = arbre.SYSTEME
             octets = fichier.read_bytes()
             if fichier.suffix.lower() not in arbre.BINAIRES:
                 octets = octets.replace(CRLF, LF)
             zip_.writestr(info, octets)
     return tampon.getvalue()
-
-
-def entrees(octets: bytes) -> dict[str, bytes]:
-    """Ce que l'archive sert, jamais ses octets compressés."""
-    if not octets:
-        return {}
-    with zipfile.ZipFile(io.BytesIO(octets)) as zip_:
-        return {info.filename: zip_.read(info) for info in zip_.infolist()}
 
 
 def construire() -> pathlib.Path:
@@ -91,14 +84,14 @@ def main() -> int:
     construite = assembler()
     if options.verifier:
         livree = CIBLE / NOM
-        if entrees(livree.read_bytes() if livree.is_file() else b"") != entrees(construite):
+        if arbre.servi(livree.read_bytes() if livree.is_file() else b"") != arbre.servi(construite):
             print(f"archive à reconstruire : {NOM}")
             return 1
         print(f"{NOM} : identique à la source")
         return 0
 
     chemin = construire()
-    print(f"{chemin.relative_to(RACINE)} : {len(entrees(construite))} fichiers, "
+    print(f"{chemin.relative_to(RACINE)} : {len(arbre.servi(construite)) - 1} fichiers, "
           f"{chemin.stat().st_size} octets")
     print(f"sha256 : {hashlib.sha256(construite).hexdigest()}")
     return 0
