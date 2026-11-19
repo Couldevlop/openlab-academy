@@ -109,7 +109,7 @@ def archive(entrees: dict[str, bytes]) -> bytes:
         for nom in sorted(entrees):
             info = zipfile.ZipInfo(nom, date_time=HORODATAGE)
             info.external_attr = 0o644 << 16
-            info.create_system = 0
+            info.create_system = arbre.SYSTEME
             zip_.writestr(info, entrees[nom])
     return tampon.getvalue()
 
@@ -172,7 +172,8 @@ def main() -> int:
         fichier = DESTINATION / nom
         empreintes[nom] = hashlib.sha256(octets).hexdigest()
         if arguments.verifier:
-            if not fichier.is_file() or fichier.read_bytes() != octets:
+            livree = fichier.read_bytes() if fichier.is_file() else b""
+            if arbre.servi(livree) != arbre.servi(octets):
                 ecarts.append(nom)
             continue
         fichier.write_bytes(octets)
@@ -180,8 +181,10 @@ def main() -> int:
 
     if arguments.verifier:
         attendues = json.loads(EMPREINTES.read_text(encoding="utf-8")) if EMPREINTES.is_file() else {}
-        ecarts += [f"{nom} (empreinte)" for nom, valeur in empreintes.items()
-                   if attendues.get(nom) != valeur]
+        # l'empreinte porte sur le fichier livré : c'est lui que l'application sert et que le test relit
+        ecarts += [f"{nom} (empreinte)" for nom in empreintes
+                   if not (DESTINATION / nom).is_file()
+                   or attendues.get(nom) != hashlib.sha256((DESTINATION / nom).read_bytes()).hexdigest()]
         for nom in sorted(set(ecarts)):
             print(f"  ECART     {nom}")
         print(f"{len(empreintes)} archives vérifiées, {len(set(ecarts))} écarts.")

@@ -48,18 +48,10 @@ def archiver(contenu: dict[str, bytes]) -> bytes:
         for chemin in sorted(contenu):
             info = zipfile.ZipInfo(chemin, HORODATAGE)
             info.external_attr = 0o644 << 16
+            info.create_system = arbre.SYSTEME
             info.compress_type = zipfile.ZIP_DEFLATED
             zip_.writestr(info, contenu[chemin])
     return tampon.getvalue()
-
-
-def entrees(octets: bytes) -> dict[str, bytes]:
-    """Ce que l'archive sert, jamais ses octets compressés : le compresseur varie d'une version de
-    Python à l'autre, et la chaîne d'intégration ne doit pas échouer pour cette raison."""
-    if not octets:
-        return {}
-    with zipfile.ZipFile(io.BytesIO(octets)) as zip_:
-        return {info.filename: zip_.read(info) for info in zip_.infolist()}
 
 
 def eprouver(lab: pathlib.Path) -> list[str]:
@@ -101,7 +93,7 @@ def main() -> int:
         if options.eprouver:
             soucis += eprouver(lab)
         if options.verifier:
-            if entrees(archive.read_bytes() if archive.exists() else b"") != entrees(construite):
+            if arbre.servi(archive.read_bytes() if archive.exists() else b"") != arbre.servi(construite):
                 ecarts.append(archive.name)
             continue
         archive.parent.mkdir(parents=True, exist_ok=True)
