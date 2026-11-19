@@ -20,9 +20,25 @@ modules d'integration que leur nom ne declarait pas, soit dix minutes de poids q
 voyait pas. Elle ne sert plus que de dernier recours, pour un module jamais mesure.
 
 Un module absent de la table n'est jamais ecarte : il recoit l'estimation, et le repartiteur le dit sur
-la sortie d'erreur. La table se refait en une commande, depuis le journal d'une execution complete :
+la sortie d'erreur.
+
+Un seul releve ne suffit pas : la table garde la **moyenne** des executions mesurees, pas la derniere.
+Chaque nouveau releve s'y fond, et les executions fondues sont inscrites dedans :
 
     gh run view <id> --log | python .github/scripts/lots_de_tests.py <dossier> --mesurer - --execution <id>
+
+Il faut dire ce que cette ponderation ne peut pas faire, sous peine de lui preter un pouvoir qu'elle
+n'a pas. Les deux lots tournent sur deux coureurs distincts, dont la vitesse varie de pres de moitie.
+A l'execution 44559182784, les treize modules du lot 2 ont **tous** mis au moins 1,10 fois leur temps
+moyen, 1,44 fois a la mediane, quand ceux du lot 1 etaient a 1,05 : la suite entiere est passee de 42
+a 55,9 min. Ce n'est pas du bruit par module, c'est une machine plus lente, et aucune ponderation ne
+la rattrape -- les lots etaient prevus a 25,1 et 25,2 min, ils ont mis 27,1 et 37,0.
+
+Ce que la table garantit est donc plus modeste, et c'etait le vrai defaut : aucun module ne pese deux
+cents fois moins que son cout reel, donc aucun lot ne peut recevoir dix minutes de travail invisible.
+L'equilibre en temps d'horloge se gagne ailleurs : en raccourcissant un lot, pas en affinant sa pesee.
+C'est aussi la vraie raison de passer a trois lots -- non pour equilibrer, mais pour qu'un coureur
+lent ne puisse plus approcher le delai de cinquante minutes.
 """
 import argparse
 import ast
