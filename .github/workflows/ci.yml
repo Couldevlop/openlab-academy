@@ -137,6 +137,11 @@ jobs:
           python docs/Ressources/construire_archive_socle.py --verifier
           python docs/Ressources/construire_depots_python.py --verifier
 
+      # le découpage de la suite décide de ce qui est exercé : un module laissé hors des lots rend la
+      # chaîne verte sur du code que plus personne n'exécute. Ses tests passent donc avant les siens.
+      - name: Répartiteur des lots de tests
+        run: python -m unittest discover -s .github/scripts -p "test_*.py"
+
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
