@@ -9,7 +9,12 @@ dans les ressources de l'application, d'où la publication la joint à la leçon
 """
 import hashlib
 import pathlib
+import sys
 import zipfile
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))  # `python -I` : chemin du script
+
+import arbre  # noqa: E402  (l'import suit l'ajout du dossier au chemin)
 
 RACINE = pathlib.Path(__file__).resolve().parents[2]
 SOURCE = RACINE / "docs" / "Ressources" / "openlab-academy-agentic-starter"
@@ -17,7 +22,7 @@ CIBLE = RACINE / "apps" / "openlab_academy" / "openlab_academy" / "data" / "ress
 NOM = "socle-ia-agentique-v0.3.0.zip"
 PREFIXE = "openlab-academy-agentic-starter"
 
-DOSSIERS_EXCLUS = {".venv", ".local", "__pycache__", ".pytest_cache", ".ruff_cache", "dist", "build"}
+DOSSIERS_EXCLUS = arbre.DOSSIERS_EXCLUS  # une seule liste pour toutes les archives du dépôt
 # supports du formateur : déroulés minutés et indices graduels, qui ne sont pas distribués aux apprenants
 FICHIERS_EXCLUS = {"docs/SUPPORTS.md"}
 

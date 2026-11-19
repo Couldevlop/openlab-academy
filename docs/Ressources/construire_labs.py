@@ -28,28 +28,18 @@ import tempfile
 import zipfile
 
 ICI = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(ICI))  # `python -I` ne met pas le dossier du script sur le chemin
+
+import arbre  # noqa: E402  (l'import suit l'ajout du dossier au chemin)
+
 LABS = ICI / "labs"
 DESTINATION = ICI.parents[1] / "apps" / "openlab_academy" / "openlab_academy" / "data" / "ressources"
 HORODATAGE = (1980, 1, 1, 0, 0, 0)  # figé : une archive ne change que si son contenu change
-BINAIRES = {".png", ".jpg", ".jpeg", ".webp", ".pdf", ".zip"}
 
 
 def fichiers(lab: pathlib.Path) -> dict[str, bytes]:
-    """Le contenu du lab, chemin relatif par chemin relatif, fins de ligne normalisées.
-
-    Git peut rendre l'arbre en CRLF sous Windows et en LF ailleurs ; sans cette normalisation, la
-    même source produirait deux archives différentes selon la machine qui construit.
-    """
-    contenu = {}
-    for chemin in sorted(p for p in lab.rglob("*") if p.is_file()):
-        relatif = chemin.relative_to(lab).as_posix()
-        if "__pycache__" in relatif or relatif.endswith(".pyc"):
-            continue
-        octets = chemin.read_bytes()
-        if chemin.suffix.lower() not in BINAIRES:
-            octets = octets.replace(b"\r\n", b"\n")
-        contenu[relatif] = octets
-    return contenu
+    """Le contenu du lab, prêt à empaqueter : voir `arbre` pour ce qui en est exclu, et pourquoi."""
+    return arbre.fichiers(lab)
 
 
 def archiver(contenu: dict[str, bytes]) -> bytes:
