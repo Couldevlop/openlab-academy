@@ -77,8 +77,19 @@ jobs:
               | grep -oE '[0-9]+$')
           fi
           echo "PR #$numero"
+          # Le gardien se déclenche sur cette PR, contrairement à ce qu'on attendait d'une PR ouverte avec
+          # GITHUB_TOKEN. Fusionner dans la seconde le laisse sans rien à lire : son exécution échoue au
+          # démarrage, sans aucun job, et la promotion porte une croix rouge qui ne dit rien de l'état du
+          # code. On lui laisse le temps de s'enregistrer puis de conclure, sans jamais retenir la
+          # promotion plus de deux minutes : le gardien ne vérifie ici qu'une règle déjà vraie par
+          # construction (la PR vient de develop), il ne doit pas pouvoir bloquer la livraison.
+          sleep 20
+          timeout 120 gh pr checks "$numero" --watch --interval 10 > /dev/null 2>&1 || true
+          # Pendant cette attente, develop peut recevoir un commit que la CI n'a pas encore validé : la
+          # tête de la PR ne serait plus celle qu'on a vérifiée. GitHub refuse la fusion si elle a bougé.
+          tete=$(git rev-parse HEAD)
           # la PR porte le commit que la CI vient de valider : fusion sans écraser l'historique
-          gh pr merge "$numero" --merge
+          gh pr merge "$numero" --merge --match-head-commit "$tete"
 
   # la fusion ci-dessus est faite avec GITHUB_TOKEN : elle ne declenchera ni la CI de main, ni la release.
   # L'arbre fusionne est celui que la CI de develop vient de valider ; la livraison est donc appelee ici.
