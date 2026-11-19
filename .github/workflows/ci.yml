@@ -121,6 +121,14 @@ jobs:
           pip install --quiet pyyaml
           python docs/Ressources/construire_notebooks.py --verifier
 
+      # les labs de cybersécurité : l'archive doit être celle que le script rend, et surtout les tests
+      # livrés doivent être rouges sur le squelette et verts sur le corrigé — un lab dont les tests
+      # passent déjà ne demande rien, un lab dont le corrigé échoue ne peut pas se rendre
+      - name: Labs de cybersécurité à jour et éprouvés
+        run: |
+          pip install --quiet pytest
+          python docs/Ressources/construire_labs.py --verifier --eprouver
+
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
