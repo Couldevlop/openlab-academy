@@ -24,7 +24,9 @@ TAILLE_MAX = 200_000
 # et un « corrige/ » ainsi décalé passerait à travers un simple début de chemin.
 IGNORES = ("corrige",)
 # .ipynb : le carnet de la séance s'ouvre et s'exécute cellule par cellule dans l'atelier
-EXTENSIONS = (".py", ".md", ".txt", ".csv", ".cfg", ".toml", ".json", ".ipynb")
+# .log et .yml : la matière des labs de cybersécurité — les journaux à analyser, et le montage du
+# lab local, que l'apprenant lit dans l'atelier même quand il ne peut pas le faire tourner
+EXTENSIONS = (".py", ".md", ".txt", ".csv", ".cfg", ".toml", ".json", ".ipynb", ".log", ".yml")
 
 
 def _lecon_ouverte(lecon: str) -> str:
