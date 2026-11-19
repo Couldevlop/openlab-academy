@@ -53,12 +53,17 @@ def assembler() -> bytes:
     if not SOURCE.is_dir():
         raise SystemExit(f"dépôt de départ introuvable : {SOURCE}")
     tampon = io.BytesIO()
-    # date fixe, entrées triées, fins de ligne normalisées : la même source rend la même archive sur
-    # toute machine. Sans la normalisation, l'archive construite sous Windows diffère de celle du
-    # serveur sur chaque fichier texte, et sa vérification n'a plus aucun sens.
+    # date fixe, fins de ligne normalisées, entrées triées sur leur nom dans l'archive : la même
+    # source rend la même archive sur toute machine. Les trois comptent. Sans la normalisation,
+    # l'archive construite sous Windows diffère de celle du serveur sur chaque fichier texte ; et
+    # trier sur le chemin du disque donnait deux ordres, parce que `Path` se compare sans tenir
+    # compte de la casse sous Windows et en tenant compte d'elle ailleurs.
+    fichiers = {f"{PREFIXE}/{c.relative_to(SOURCE).as_posix()}": c
+                for c in SOURCE.rglob("*") if c.is_file() and retenu(c)}
     with zipfile.ZipFile(tampon, "w", zipfile.ZIP_DEFLATED) as zip_:
-        for fichier in sorted(c for c in SOURCE.rglob("*") if c.is_file() and retenu(c)):
-            info = zipfile.ZipInfo(f"{PREFIXE}/{fichier.relative_to(SOURCE).as_posix()}", (2026, 11, 12, 0, 0, 0))
+        for nom in sorted(fichiers):
+            fichier = fichiers[nom]
+            info = zipfile.ZipInfo(nom, (2026, 11, 12, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o644 << 16
             info.create_system = arbre.SYSTEME
