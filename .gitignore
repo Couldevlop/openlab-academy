@@ -9,6 +9,8 @@ node_modules/
 apps/openlab_academy/openlab_academy/public/espace/
 apps/openlab_academy/frontend/coverage/
 credentials-local.md
+# notes de travail : contiennent des identifiants en clair
+doc.txt
 docker/secrets/
 
 # Documents et captures : jamais versionnés (sauf logos)
