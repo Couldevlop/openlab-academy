@@ -113,6 +113,32 @@ class TestAtelierApi(FrappeTestCase):
             fichiers = atelier_api.ouvrir(self.lecon)["fichiers"]
         self.assertEqual([f["nom"] for f in fichiers], ["a.md", "b.py"])
 
+    def test_le_corrige_est_ecarte_meme_sous_un_dossier_de_tete(self):
+        """Une archive de carnet range tout sous un dossier de tête : « corrige/ » s'y trouve décalé, et un
+        simple début de chemin le laisserait passer — soit le corrigé servi à l'apprenant."""
+        fichiers = self._fichiers_de({"carnet-01/corrige/solution.py": "print('triche')",
+                                      "carnet-01/seance.py": "x = 1"})
+        self.assertEqual([f["nom"] for f in fichiers], ["carnet-01/seance.py"])
+
+    def test_le_carnet_jupyter_est_remis_a_l_atelier(self):
+        """Le carnet s'exécute dans le navigateur, cellule par cellule : il doit donc être remis comme
+        n'importe quel fichier de code, et pas seulement téléchargé en archive."""
+        carnet = '{"nbformat": 4, "cells": [{"cell_type": "code", "source": ["x = 1"]}]}'
+        fichiers = self._fichiers_de({"carnet-02/seance-02.ipynb": carnet})
+        self.assertEqual([f["nom"] for f in fichiers], ["carnet-02/seance-02.ipynb"])
+        self.assertEqual(fichiers[0]["contenu"], carnet)
+
+    def _fichiers_de(self, entrees):
+        """Remet les fichiers que l'atelier retiendrait d'une archive faite pour l'occasion."""
+        dossier = tempfile.TemporaryDirectory()
+        self.addCleanup(dossier.cleanup)
+        chemin = pathlib.Path(dossier.name) / "fabrique.zip"
+        with zipfile.ZipFile(chemin, "w") as zip_:
+            for nom, contenu in entrees.items():
+                zip_.writestr(nom, contenu)
+        with mock.patch.object(atelier_api.ressources_frappe, "chemin", return_value=chemin):
+            return atelier_api.ouvrir(self.lecon)["fichiers"]
+
 
 class TestPageAtelier(FrappeTestCase):
     def tearDown(self):
@@ -139,11 +165,22 @@ class TestPageAtelier(FrappeTestCase):
     def test_lecon_absente_donne_une_chaine_vide(self):
         self.assertEqual(self.contexte().lecon, "")
 
-    def test_version_suit_le_paquet_servi(self):
-        if not os.path.exists(atelier.PAQUET):
+    def test_version_suit_le_plus_recent_des_paquets_servis(self):
+        if not all(os.path.exists(paquet) for paquet in atelier.PAQUETS):
             self.assertEqual(atelier.version(), "0")  # paquet non construit : la page reste servie
             return
-        self.assertEqual(atelier.version(), str(int(os.path.getmtime(atelier.PAQUET))))
+        attendu = max(os.path.getmtime(paquet) for paquet in atelier.PAQUETS)
+        self.assertEqual(atelier.version(), str(int(attendu)))
+
+    def test_le_carnet_compte_dans_l_empreinte(self):
+        """Une correction du carnet seul doit sortir du cache du navigateur : elle change la version."""
+        atelier_js, carnet_js = atelier.PAQUETS
+
+        def plus_tard(chemin):
+            return 2000.0 if chemin == carnet_js else 1000.0
+
+        with mock.patch.object(os.path, "getmtime", side_effect=plus_tard):
+            self.assertEqual(atelier.version(), "2000")
 
     def test_version_vaut_zero_quand_le_paquet_manque(self):
         with mock.patch.object(os.path, "getmtime", side_effect=OSError):

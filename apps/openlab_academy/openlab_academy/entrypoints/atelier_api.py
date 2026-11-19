@@ -19,9 +19,12 @@ from openlab_academy.infrastructure import ressources_frappe
 
 # au-delà, un fichier n'est pas du code à éditer : l'atelier ne le propose pas
 TAILLE_MAX = 200_000
-# dossiers de l'archive : le corrigé de la veille n'est pas ouvert dans l'atelier, il se lit à part
-IGNORES = ("corrige/",)
-EXTENSIONS = (".py", ".md", ".txt", ".csv", ".cfg", ".toml", ".json")
+# dossiers de l'archive : le corrigé de la veille n'est pas ouvert dans l'atelier, il se lit à part.
+# Le nom est cherché segment par segment : une archive de carnet range tout sous un dossier de tête,
+# et un « corrige/ » ainsi décalé passerait à travers un simple début de chemin.
+IGNORES = ("corrige",)
+# .ipynb : le carnet de la séance s'ouvre et s'exécute cellule par cellule dans l'atelier
+EXTENSIONS = (".py", ".md", ".txt", ".csv", ".cfg", ".toml", ".json", ".ipynb")
 
 
 def _lecon_ouverte(lecon: str) -> str:
@@ -47,13 +50,18 @@ def _archive_de(lecon: str) -> str:
     return noms[0]
 
 
+def _ecarte(nom: str) -> bool:
+    """Vrai si le fichier est rangé dans un dossier écarté, à quelque profondeur que ce soit."""
+    return any(segment in IGNORES for segment in nom.split("/")[:-1])
+
+
 def _fichiers(archive: str) -> list[dict[str, str]]:
     """Fichiers texte du dépôt, hors corrigé, triés, prêts à être ouverts dans l'atelier."""
     sortie = []
     with zipfile.ZipFile(ressources_frappe.chemin(archive)) as zip_:
         for info in sorted(zip_.infolist(), key=lambda i: i.filename):
             nom = info.filename
-            if (info.is_dir() or nom.startswith(IGNORES) or info.file_size > TAILLE_MAX
+            if (info.is_dir() or _ecarte(nom) or info.file_size > TAILLE_MAX
                     or not nom.endswith(EXTENSIONS)):
                 continue
             sortie.append({"nom": nom, "contenu": zip_.read(nom).decode("utf-8")})

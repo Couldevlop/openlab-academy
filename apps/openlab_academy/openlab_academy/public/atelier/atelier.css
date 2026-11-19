@@ -100,6 +100,109 @@ button:disabled { opacity: 0.5; cursor: progress; }
   overflow: auto;
 }
 
+/* Carnet Jupyter : une colonne de cellules, invite a gauche, code et sortie a droite, sur fond
+ * sombre. La page entiere passe au sombre quand un carnet est ouvert (classe carnet-ouvert) et
+ * rend sa place a la console : la sortie d'une cellule se lit sous la cellule, comme dans Jupyter. */
+.carnet { flex: 1; overflow: auto; padding: 18px 24px 60px; }
+
+.cellule {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 0 10px;
+  margin: 0 0 14px;
+  padding: 2px 0;
+  border-left: 3px solid transparent;
+}
+
+.cellule:focus-within { border-left-color: var(--accent); }
+
+.invite {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  padding-top: 10px;
+}
+
+.invite-entree {
+  font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+  font-size: 13px;
+  color: #6c9ef8;
+  white-space: nowrap;
+}
+
+.lancer {
+  padding: 1px 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  border-radius: 4px;
+}
+
+.cellule-corps { min-width: 0; }
+
+.cellule-presentation .presentation { font-size: 15px; line-height: 1.65; padding-top: 6px; }
+.cellule-presentation h1 { font-size: 22px; margin: 0 0 10px; }
+.cellule-presentation h2 { font-size: 18px; margin: 18px 0 8px; }
+.cellule-presentation h3 { font-size: 16px; margin: 16px 0 8px; }
+.cellule-presentation p, .cellule-presentation ul, .cellule-presentation ol { margin: 0 0 10px; }
+.cellule-presentation code { background: var(--fond-doux); padding: 1px 4px; border-radius: 4px; font-size: 13px; }
+.cellule-presentation pre { background: var(--fond-doux); padding: 10px 12px; border-radius: 6px; overflow: auto; }
+
+.zone-code {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--trait);
+  border-radius: 4px;
+  background: var(--fond-doux);
+  color: inherit;
+  padding: 9px 12px;
+  resize: vertical;
+  outline-offset: 2px;
+  font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+  font-size: 14px;
+  line-height: 1.55;
+  tab-size: 4;
+  white-space: pre;
+  overflow: auto;
+}
+
+.cellule-sortie {
+  margin: 4px 0 0;
+  padding: 6px 12px;
+  background: transparent;
+  font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cellule-sortie.erreur { color: #ff8a80; }
+
+/* --- le carnet ouvert : tout l'atelier passe au sombre, comme un Jupyter ---------------------- */
+body.carnet-ouvert {
+  --encre: #d4d4d4;
+  --encre-douce: #9aa7b2;
+  --trait: #2f3640;
+  --fond: #0f1116;
+  --fond-doux: #171a21;
+  --accent: #6c9ef8;
+  background: var(--fond);
+  color: var(--encre);
+}
+
+body.carnet-ouvert .atelier { grid-template-columns: 260px minmax(0, 1fr); }
+body.carnet-ouvert .console { display: none; }
+body.carnet-ouvert .edition { border-right: 0; }
+body.carnet-ouvert .zone-code { background: #1b1f27; border-color: #2f3640; }
+body.carnet-ouvert .zone-code:focus { border-color: var(--accent); }
+body.carnet-ouvert .cellule-sortie { color: #c9d1d9; }
+body.carnet-ouvert .cellule-presentation code { background: #1b1f27; }
+body.carnet-ouvert .cellule-presentation pre { background: #1b1f27; }
+body.carnet-ouvert button { background: #1b1f27; color: var(--encre); border-color: #2f3640; }
+body.carnet-ouvert button:hover:enabled { border-color: var(--accent); color: var(--accent); }
+body.carnet-ouvert .fichiers button[aria-current="true"] { background: #1b1f27; color: var(--accent); }
+
 .console { display: flex; flex-direction: column; min-width: 0; background: var(--sombre); color: #e6edf3; }
 
 .console-titre {
@@ -138,5 +241,6 @@ button:disabled { opacity: 0.5; cursor: progress; }
   .fichiers { border-right: 0; border-bottom: 1px solid var(--trait); max-height: 160px; }
   .edition { border-right: 0; border-bottom: 1px solid var(--trait); }
   #code { min-height: 45vh; }
+  .carnet { min-height: 45vh; }
   #sortie { min-height: 30vh; }
 }
