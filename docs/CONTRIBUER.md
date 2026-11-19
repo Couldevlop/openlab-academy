@@ -41,9 +41,14 @@ bash docker/dev-test.sh openlab_academy.tests.test_schema
 # front
 cd apps/openlab_academy/frontend && npm run lint && npm run typecheck && npm test && npm run build
 
-# archives du fil rouge : le contrôle que la chaîne d'intégration applique
+# archives livrées : les cinq contrôles que la chaîne d'intégration applique. Toute archive se vérifie
+# avant d'être reconstruite, et aucune ne se modifie à la main : elle se rend depuis sa source.
+python docs/Ressources/construire_schemas.py --verifier
 python docs/Ressources/construire_notebooks.py --verifier
-# les reconstruire après modification de docs/Ressources/notebooks/cellules.py
+python docs/Ressources/construire_labs.py --verifier --eprouver
+python docs/Ressources/construire_archive_socle.py --verifier
+python docs/Ressources/construire_depots_python.py --verifier
+# les reconstruire : le même script sans --verifier
 python docs/Ressources/construire_notebooks.py
 
 # dépendances de production du front
