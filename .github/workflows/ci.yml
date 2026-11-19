@@ -129,6 +129,14 @@ jobs:
           pip install --quiet pytest
           python docs/Ressources/construire_labs.py --verifier --eprouver
 
+      # les deux dernières archives que personne ne vérifiait. Elles avaient dérivé en silence : le socle
+      # livrait encore l'ancienne progression, et quatre dépôts Python livraient les mots de passe en dur
+      # retirés de leur source. Rien ne l'a signalé pendant des semaines, parce que rien ne les relisait.
+      - name: Socle et dépôts Python à jour
+        run: |
+          python docs/Ressources/construire_archive_socle.py --verifier
+          python docs/Ressources/construire_depots_python.py --verifier
+
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:

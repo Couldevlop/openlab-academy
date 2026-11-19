@@ -118,6 +118,16 @@ def construire() -> dict[str, bytes]:
     return {f"depot-python-{journee.name}.zip": archive(contenu(journee)) for journee in journees()}
 
 
+def entrees(octets: bytes) -> dict[str, bytes]:
+    """Ce que l'archive sert, jamais ses octets compressés : zlib ne rend pas les mêmes octets d'une
+    version à l'autre, et la chaîne d'intégration ne doit pas échouer pour cette raison. L'empreinte
+    reste comparée à celle de l'archive livrée, qui est le fichier du dépôt, pas une reconstruction."""
+    if not octets:
+        return {}
+    with zipfile.ZipFile(io.BytesIO(octets)) as zip_:
+        return {info.filename: zip_.read(info) for info in zip_.infolist()}
+
+
 def eprouver(interpreteur: str = sys.executable, retenues: list[str] | None = None) -> list[str]:
     """Lance les tests d'une journée sur le squelette puis sur la solution.
 
@@ -172,7 +182,8 @@ def main() -> int:
         fichier = DESTINATION / nom
         empreintes[nom] = hashlib.sha256(octets).hexdigest()
         if arguments.verifier:
-            if not fichier.is_file() or fichier.read_bytes() != octets:
+            livree = fichier.read_bytes() if fichier.is_file() else b""
+            if entrees(livree) != entrees(octets):
                 ecarts.append(nom)
             continue
         fichier.write_bytes(octets)
@@ -180,8 +191,10 @@ def main() -> int:
 
     if arguments.verifier:
         attendues = json.loads(EMPREINTES.read_text(encoding="utf-8")) if EMPREINTES.is_file() else {}
-        ecarts += [f"{nom} (empreinte)" for nom, valeur in empreintes.items()
-                   if attendues.get(nom) != valeur]
+        # l'empreinte porte sur le fichier livré : c'est lui que l'application sert et que le test relit
+        ecarts += [f"{nom} (empreinte)" for nom in empreintes
+                   if not (DESTINATION / nom).is_file()
+                   or attendues.get(nom) != hashlib.sha256((DESTINATION / nom).read_bytes()).hexdigest()]
         for nom in sorted(set(ecarts)):
             print(f"  ECART     {nom}")
         print(f"{len(empreintes)} archives vérifiées, {len(set(ecarts))} écarts.")
