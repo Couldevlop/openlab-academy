@@ -128,6 +128,16 @@ class TestAtelierApi(FrappeTestCase):
         self.assertEqual([f["nom"] for f in fichiers], ["carnet-02/seance-02.ipynb"])
         self.assertEqual(fichiers[0]["contenu"], carnet)
 
+    def test_les_journaux_et_le_montage_d_un_lab_sont_remis_a_l_atelier(self):
+        """Un lab de cybersécurité livre des journaux à analyser et le montage de son lab local :
+        sans eux, la séance ne peut pas se faire dans le navigateur."""
+        entrees = {"lab-09/journaux/passerelle-ssh.log": "2026-03-14T02:19:36Z 185.203.44.19 kone.a succes",
+                   "lab-09/local/docker-compose.yml": 'version: "3.7"',
+                   "lab-09/journaux/pare-feu.bin": "nimporte quoi"}
+        fichiers = self._fichiers_de(entrees)
+        self.assertEqual([f["nom"] for f in fichiers],
+                         ["lab-09/journaux/passerelle-ssh.log", "lab-09/local/docker-compose.yml"])
+
     def _fichiers_de(self, entrees):
         """Remet les fichiers que l'atelier retiendrait d'une archive faite pour l'occasion."""
         dossier = tempfile.TemporaryDirectory()

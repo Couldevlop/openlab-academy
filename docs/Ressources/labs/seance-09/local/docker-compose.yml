@@ -1,0 +1,60 @@
+# Lab de la séance 09 — le même corpus, mais dans un vrai SIEM.
+#
+# Format compatible docker-compose v1 (pas de clé name ni profiles), comme le reste du dépôt.
+#
+# Deux réseaux, et c'est le cœur du montage : les cibles vivent sur `lab`, déclaré `internal`, donc
+# sans aucune route vers Internet. Seule la console est aussi posée sur `pont`, pour que votre
+# navigateur l'atteigne. Un lab de sécurité qui peut sortir sur Internet n'est pas un lab : c'est une
+# machine exposée, et c'est exactement ce que le cadre légal du parcours interdit.
+#
+#   docker-compose up -d        puis  http://localhost:5601
+#   docker-compose down -v      pour tout rendre, volume compris
+#
+# Compter 3 Go de mémoire libre. Si votre machine ne les a pas, faites la séance dans l'atelier du
+# navigateur : le corpus et les règles y sont les mêmes, seul le tableau de bord manque.
+version: "3.7"
+
+services:
+  journal:
+    # OpenSearch, mono-nœud : le moteur de recherche sous le SIEM. Sécurité désactivée parce que
+    # rien ici n'est joignable depuis l'extérieur ; en production, ce réglage serait une faute grave.
+    image: opensearchproject/opensearch:2.17.1
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      - bootstrap.memory_lock=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock: {soft: -1, hard: -1}
+      nofile: {soft: 65536, hard: 65536}
+    volumes: [donnees:/usr/share/opensearch/data]
+    networks: [lab]
+
+  console:
+    # Le tableau de bord de l'analyste : c'est lui que vous ouvrez, et le seul à voir les deux réseaux.
+    image: opensearchproject/opensearch-dashboards:2.17.1
+    environment:
+      - OPENSEARCH_HOSTS=["http://journal:9200"]
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+    ports: ["5601:5601"]
+    depends_on: [journal]
+    networks: [lab, pont]
+
+  chargeur:
+    # Le collecteur du pauvre : il normalise les journaux avec votre propre normaliser.py et les
+    # verse dans l'index. Remplacer ce conteneur par un vrai agent (Wazuh, Filebeat, Vector) est le
+    # travail de la séance 10 ; ici, ce qui compte est de voir ce qui arrive dans l'index.
+    image: python:3.12-slim
+    working_dir: /lab
+    volumes: ["..:/lab:ro"]
+    command: ["python", "local/charger.py"]
+    depends_on: [journal]
+    networks: [lab]
+
+volumes:
+  donnees:
+
+networks:
+  lab:
+    internal: true
+  pont:

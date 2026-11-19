@@ -27,6 +27,10 @@ import tempfile
 import zipfile
 
 ICI = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(ICI))  # `python -I` ne met pas le dossier du script sur le chemin
+
+import arbre  # noqa: E402  (l'import suit l'ajout du dossier au chemin)
+
 SOURCE = ICI / "openlab-academy-python-rh"
 DESTINATION = (ICI.parents[1] / "apps" / "openlab_academy" / "openlab_academy" / "data" / "ressources")
 EMPREINTES = DESTINATION.parent / "depots-python.json"  # livré avec l'application : le test y lit
@@ -82,7 +86,9 @@ def contenu(journee: pathlib.Path) -> dict[str, bytes]:
     }
     for racine, prefixe in ((journee / "depart", ""), (journee / "tests", "tests/")):
         for fichier in sorted(racine.rglob("*")):
-            if fichier.is_file():
+            # un pytest lancé dans l'arbre source y laisse des dossiers de travail : ils ne sont pas
+            # suivis par git, et partiraient dans l'archive construite en local, pas dans celle du serveur
+            if fichier.is_file() and arbre.retenu(fichier, racine):
                 entrees[prefixe + fichier.relative_to(racine).as_posix()] = octets(fichier)
     carnet = SOURCE / "carnets" / f"semaine-{SEMAINES.get(int(numero), 0)}.md"
     if carnet.is_file():
@@ -91,7 +97,7 @@ def contenu(journee: pathlib.Path) -> dict[str, bytes]:
     veille = SOURCE / f"j{int(numero) - 1:02d}" / "solution"
     if veille.is_dir():
         for fichier in sorted(veille.rglob("*")):
-            if fichier.is_file():
+            if fichier.is_file() and arbre.retenu(fichier, veille):
                 entrees["corrige/" + fichier.relative_to(veille).as_posix()] = octets(fichier)
     return entrees
 
