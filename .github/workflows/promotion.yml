@@ -77,17 +77,35 @@ jobs:
               | grep -oE '[0-9]+$')
           fi
           echo "PR #$numero"
+          # Pendant l'attente qui suit, develop peut recevoir un commit que la CI n'a pas encore validé :
+          # la tête de la PR ne serait plus celle qu'on a vérifiée. GitHub refuse la fusion si elle a bougé.
+          tete=$(git rev-parse HEAD)
+
           # Le gardien se déclenche sur cette PR, contrairement à ce qu'on attendait d'une PR ouverte avec
           # GITHUB_TOKEN. Fusionner dans la seconde le laisse sans rien à lire : son exécution échoue au
           # démarrage, sans aucun job, et la promotion porte une croix rouge qui ne dit rien de l'état du
-          # code. On lui laisse le temps de s'enregistrer puis de conclure, sans jamais retenir la
-          # promotion plus de deux minutes : le gardien ne vérifie ici qu'une règle déjà vraie par
-          # construction (la PR vient de develop), il ne doit pas pouvoir bloquer la livraison.
-          sleep 20
-          timeout 120 gh pr checks "$numero" --watch --interval 10 > /dev/null 2>&1 || true
-          # Pendant cette attente, develop peut recevoir un commit que la CI n'a pas encore validé : la
-          # tête de la PR ne serait plus celle qu'on a vérifiée. GitHub refuse la fusion si elle a bougé.
-          tete=$(git rev-parse HEAD)
+          # code.
+          #
+          # `gh pr checks --watch` ne suffisait pas, et l'exécution 44513310652 l'a montré : le gardien a
+          # été créé à 11:16:22 et la fusion est passée à 11:16:41, sur un gardien toujours sans job.
+          # La commande rend la main tout de suite quand le gardien n'est pas encore rattaché à la PR --
+          # elle ne voit alors que les contrôles déjà là -- et le `|| true` avalait sa sortie.
+          #
+          # On interroge donc son exécution directement, par le commit de tête, jusqu'à ce qu'elle
+          # conclue. Deux minutes au plus : le gardien ne vérifie ici qu'une règle déjà vraie par
+          # construction (la PR vient de develop), il ne doit jamais pouvoir retenir la livraison.
+          gardien() {
+            gh run list --workflow gardien.yml --event pull_request --commit "$tete" --limit 1 --json "$1" --jq ".[0].$1 // \"absent\""
+          }
+          limite=$(( $(date +%s) + 120 ))
+          while [ "$(gardien status)" != "completed" ] && [ "$(date +%s)" -lt "$limite" ]; do
+            sleep 10
+          done
+          if [ "$(gardien status)" = "completed" ]; then
+            echo "gardien : $(gardien conclusion)"
+          else
+            echo "::warning::gardien encore « $(gardien status) » après deux minutes ; la promotion ne l'attend pas davantage"
+          fi
           # la PR porte le commit que la CI vient de valider : fusion sans écraser l'historique
           gh pr merge "$numero" --merge --match-head-commit "$tete"
 
