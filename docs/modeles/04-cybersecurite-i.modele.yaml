@@ -44,12 +44,286 @@ tags: [Cybersécurité]
 card_gradient: Red
 
 blocs:
-  - title: ""                          # Bloc 1 — intitulé (S1–S4)
+  - title: Fondations                  # Bloc 1 (S1–S4)
     modules:
       - num: "01"
-        title: ""
-        contenu: ""                 # notions couvertes (~8 h, 40 % théorie / 60 % pratique)
-        livrable: ""                # livrable hebdomadaire
+        title: Principes de sécurité et cadre légal
+        contenu: >-
+          Les quatre propriétés qu'une mesure de sécurité défend : disponibilité, intégrité,
+          confidentialité, traçabilité. Inventaire des actifs et valeur métier. Menace, vulnérabilité,
+          risque : trois objets distincts, et le couple vraisemblance × gravité qui les classe.
+          Modélisation de la menace par les quatre questions, avec STRIDE comme liste de contrôle.
+          Cadre légal ivoirien : loi n° 2013-451 relative à la lutte contre la cybercriminalité, loi
+          n° 2013-450 relative à la protection des données à caractère personnel, rôle de l'ARTCI et du
+          CI-CERT, Convention de Malabo. Déontologie du métier et autorisation écrite de test.
+        cours:
+          - titre: Sécuriser, c'est protéger quelque chose de précis contre quelqu'un de précis
+            texte: >-
+              Une mesure de sécurité qui ne nomme pas ce qu'elle protège est une dépense, pas une
+              protection. Avant tout outil, la question est donc : qu'est-ce qui a de la valeur ici, et
+              pour qui ? Dans une agence de transfert d'argent d'Abidjan, la réponse tient en quatre
+              lignes : le solde des comptes clients, le fichier des clients, le service de dépôt-retrait
+              un jour de paie, et le journal des opérations. Chacune de ces quatre lignes se perd d'une
+              manière différente.
+
+              Ces manières de perdre portent des noms, et ce sont les quatre propriétés que tout le
+              métier défend. La disponibilité se perd quand le service n'est plus là au moment où on en
+              a besoin. L'intégrité se perd quand une donnée est modifiée sans qu'on l'ait voulu, et
+              c'est la plus coûteuse des quatre : un solde faux se propage dans tout ce qui le lit.
+              La confidentialité se perd quand une donnée est vue par qui ne devait pas la voir. La
+              traçabilité se perd quand plus personne ne peut dire qui a fait quoi, et quand : la perte
+              est invisible le jour même, et décisive le jour du litige.
+
+              Un actif n'a pas besoin des quatre au même degré. La liste publique des tarifs de l'agence
+              n'a aucun besoin de confidentialité, mais son intégrité compte : un tarif modifié sur le
+              site fait perdre de l'argent à chaque opération. Le fichier des clients, lui, demande les
+              quatre. Hiérarchiser ainsi actif par actif est le premier geste du métier, et c'est ce qui
+              permet, plus tard, de refuser une dépense : une mesure qui ne défend aucune propriété
+              d'aucun actif nommé ne se justifie pas.
+            tableaux:
+              - titre: Quatre propriétés, quatre pertes
+                entetes: [Propriété, Ce qu'on perd, À l'agence de transfert, Mesure typique]
+                lignes:
+                  - [Disponibilité, L'accès au service quand il faut, "Retraits impossibles le jour de la paie", "Redondance, sauvegardes restaurables, plan de reprise"]
+                  - [Intégrité, La justesse de la donnée, "Un solde client modifié hors opération", "Contrôles applicatifs, séparation des rôles, journaux signés"]
+                  - [Confidentialité, Le contrôle de qui voit quoi, "Le fichier clients copié sur une clé USB", "Droits au plus juste, chiffrement, cloisonnement"]
+                  - [Traçabilité, La capacité à dire qui a fait quoi, "Aucun journal pour un virement contesté", "Journalisation, horodatage, rétention définie"]
+          - titre: Menace, vulnérabilité, risque — trois mots, trois objets
+            texte: >-
+              Ces trois mots sont employés l'un pour l'autre dans la conversation courante, et cette
+              confusion coûte cher : elle empêche de classer, donc de choisir. Une menace est ce qui
+              peut arriver, portée par quelqu'un ou quelque chose : un employé qui revend des données,
+              un rançongiciel, une coupure de courant prolongée. Une vulnérabilité est la faiblesse qui
+              rend la menace réalisable : un serveur sans correctif depuis dix mois, un mot de passe
+              partagé entre trois caissiers, l'absence de sauvegarde testée. Le risque est la
+              combinaison des deux, pondérée par ce qu'on perdrait.
+
+              La formule usuelle, risque = vraisemblance × gravité, n'est pas une mesure. Personne ne
+              connaît la probabilité qu'une agence soit attaquée ce trimestre. C'est un outil de
+              classement : il sert à mettre deux scénarios côte à côte et à dire lequel passe d'abord.
+              Un rançongiciel qui chiffre le serveur de l'agence un vendredi soir est rare et grave ;
+              un caissier qui consulte le dossier de son voisin est fréquent et moins grave. Les deux
+              méritent une mesure, mais pas la même, et pas le même budget.
+
+              Trois pièges reviennent chez les débutants. Confondre un incident, qui a déjà eu lieu,
+              avec un risque, qui ne s'est pas encore produit. Écrire une vulnérabilité à la place d'un
+              risque — « le serveur n'est pas à jour » ne dit pas ce qu'on perd. Et noter la gravité
+              depuis la technique plutôt que depuis le métier : la direction ne décide pas sur « accès
+              root distant », elle décide sur « deux jours sans retrait possible dans douze agences ».
+            tableaux:
+              - titre: Trois mots qu'on confond, et comment les écrire
+                entetes: [Terme, Définition courte, Exemple, Erreur courante]
+                lignes:
+                  - [Menace, "Ce qui peut arriver, et qui le voudrait", "Un rançongiciel diffusé par pièce jointe", "La décrire sans acteur ni intention"]
+                  - [Vulnérabilité, La faiblesse qui rend la menace réalisable, "Poste de caisse sans correctif depuis dix mois", "L'écrire à la place du risque"]
+                  - [Risque, "Menace × vulnérabilité, pondéré par la perte", "Arrêt des retraits pendant deux jours dans douze agences", "Le noter en termes techniques, pas métier"]
+                  - [Incident, Le risque qui s'est réalisé, "Le 12 mars, chiffrement du serveur de caisse", "L'appeler risque après coup"]
+          - titre: Modéliser la menace — quatre questions, un tableau, deux heures
+            texte: >-
+              Modéliser la menace, c'est répondre à quatre questions dans l'ordre, popularisées sous
+              cette forme par Adam Shostack. Sur quoi travaillons-nous ? Qu'est-ce qui peut mal tourner ?
+              Qu'est-ce qu'on fait à ce sujet ? Avons-nous bien travaillé ? La première question demande
+              un schéma, pas un texte : les composants, les flux entre eux, et surtout les frontières
+              où la confiance change — entre le navigateur du client et le serveur, entre le serveur et
+              la base, entre l'agence et l'opérateur de mobile money.
+
+              La deuxième question se traite frontière par frontière, avec une liste de contrôle pour
+              ne rien oublier. STRIDE en est une : usurpation d'identité, altération de données,
+              répudiation, divulgation d'information, déni de service, élévation de privilège. Six
+              catégories, appliquées à chaque flux : pour chacune, la question est « ici, comment ? ».
+              Une liste de contrôle ne remplace pas la réflexion ; elle empêche l'oubli, qui est le
+              défaut le plus fréquent des premiers modèles.
+
+              La troisième question oblige à décider, et quatre décisions seulement sont possibles :
+              réduire le risque par une mesure, le transférer (assurance, prestataire), l'éviter en
+              renonçant à la fonction, ou l'accepter — par écrit, avec un nom et une date. « On verra
+              plus tard » n'est pas une décision : c'est une acceptation qui n'ose pas dire son nom, et
+              elle se retrouvera dans le rapport d'incident. La quatrième question se pose plus tard :
+              les mesures décidées sont-elles en place, et tiennent-elles à l'épreuve ? Sans ce
+              retour, un modèle de menace n'est qu'un document.
+            tableaux:
+              - titre: La forme du livrable attendu, une ligne par risque
+                entetes: [Actif, Propriété visée, Menace, Vulnérabilité, Vraisemblance, Gravité, Décision, Mesure]
+                lignes:
+                  - ["Fichier clients", Confidentialité, "Revente par un employé", "Export CSV ouvert à tous les caissiers", Moyenne, Forte, Réduire, "Export réservé à deux comptes, journalisé et revu chaque mois"]
+                  - ["Service de retrait", Disponibilité, "Rançongiciel", "Pas de sauvegarde testée", Faible, Critique, Réduire, "Sauvegarde hors ligne, restauration testée chaque trimestre"]
+          - titre: Le droit ivoirien fait partie du modèle de menace
+            texte: >-
+              Deux lois encadrent directement ce métier en Côte d'Ivoire. La loi n° 2013-451 relative à
+              la lutte contre la cybercriminalité réprime notamment l'accès et le maintien frauduleux
+              dans un système d'information, l'entrave à son fonctionnement et l'atteinte aux données.
+              Le point à retenir, et il surprend souvent : l'infraction existe sans qu'un dommage soit
+              nécessaire, et l'intention bienveillante ne vaut pas autorisation. Tester « pour aider »
+              un système dont on n'a pas la charge est une infraction, pas un service rendu.
+
+              La loi n° 2013-450 relative à la protection des données à caractère personnel impose de
+              son côté des obligations à qui traite des données de personnes : finalité déclarée,
+              information des personnes, limitation de la collecte, durée de conservation, sécurité du
+              traitement, et formalités auprès de l'autorité. Pour une agence de transfert d'argent, ces
+              obligations ne sont pas périphériques : le fichier clients est le cœur du sujet. La
+              Convention de Malabo, adoptée par l'Union africaine en 2014, donne le cadre régional dans
+              lequel ces textes s'inscrivent.
+
+              Côté institutions, l'ARTCI est l'autorité de régulation compétente, et le CI-CERT, qu'elle
+              héberge, est le point de contact pour la réponse aux incidents. Savoir qui prévenir, et
+              dans quel délai, fait partie du plan de réponse — c'est l'objet de la séance 11. Enfin,
+              une règle de méthode qui vaut pour tout ce parcours : les obligations exactes et les
+              peines se lisent dans le texte officiel, article par article, jamais dans un résumé, et
+              surtout jamais de mémoire. Un professionnel qui cite un article cite sa source.
+            tableaux:
+              - titre: Qui exige quoi, en Côte d'Ivoire
+                entetes: [Texte ou organisme, Ce qu'il couvre, Ce qu'il change pour vous]
+                lignes:
+                  - ["Loi n° 2013-451", Lutte contre la cybercriminalité, "Aucun test sans autorisation écrite du responsable du système"]
+                  - ["Loi n° 2013-450", Données à caractère personnel, "Finalité, information, durée, sécurité et formalités pour tout fichier de personnes"]
+                  - [ARTCI, Régulation des télécommunications et des TIC, "Autorité de référence, formalités et contrôles"]
+                  - [CI-CERT, Réponse aux incidents, "Point de contact à inscrire dans le plan de réponse"]
+                  - ["Convention de Malabo (UA, 2014)", Cadre régional cybersécurité et données, "Donne la cohérence régionale des deux lois"]
+          - titre: L'autorisation écrite — sans elle, le même geste change de nature
+            texte: >-
+              Un scan de ports lancé sur un serveur de ce parcours est un exercice. Le même scan lancé
+              sur le serveur d'une entreprise qui ne vous a rien demandé est une infraction. Le geste
+              technique est identique ; ce qui change est le papier qui le précède. C'est la règle
+              permanente des deux parcours de cybersécurité : toute pratique offensive se fait sur les
+              labs fournis, ou sur un système couvert par une autorisation écrite et signée par
+              quelqu'un qui a le pouvoir de la donner.
+
+              Une autorisation utile tient sur une page et nomme six choses : le périmètre exact
+              (adresses, domaines, comptes, et ce qui est explicitement hors périmètre), la fenêtre de
+              temps, les techniques interdites (déni de service, ingénierie sociale sur les employés,
+              test en production aux heures ouvrées), le traitement des données rencontrées, les
+              contacts d'urgence des deux côtés, et la signature du responsable du système avec sa
+              qualité. Une autorisation signée par quelqu'un qui n'a pas autorité sur le système ne
+              protège personne, à commencer par vous.
+
+              Reste la question qui se pose à tout le monde un jour : que faire d'une faille trouvée par
+              hasard, sans mandat ? On ne vérifie pas, on n'explore pas, on ne copie rien. On note ce
+              qu'on a constaté, on prévient le responsable par un canal traçable, et on s'en tient là.
+              Chercher à confirmer est déjà un accès, et c'est précisément ce que la loi réprime.
+            code:
+              - titre: modele-de-menace.md — le squelette du livrable
+                langage: text
+                source: |
+                  # Modèle de menace — <nom du système>
+
+                  ## 1. Sur quoi travaillons-nous
+                  - Périmètre inclus / exclu
+                  - Schéma des composants et des flux
+                  - Frontières de confiance (une ligne par frontière)
+                  - Actifs, et propriétés à défendre (D / I / C / traçabilité)
+
+                  ## 2. Ce qui peut mal tourner
+                  | Actif | Propriété | Menace (STRIDE) | Vulnérabilité | Vraisemblance | Gravité |
+                  |---|---|---|---|---|---|
+
+                  ## 3. Ce qu'on en fait
+                  | Risque | Décision (réduire / transférer / éviter / accepter) | Mesure | Responsable | Échéance |
+                  |---|---|---|---|---|
+
+                  ## 4. Obligations légales applicables
+                  | Texte | Article cité | Ce qu'il impose ici | Comment on s'y conforme |
+                  |---|---|---|---|
+
+                  ## 5. Comment on vérifiera
+                  - Contrôles prévus, et à quelle date
+              - titre: autorisation-de-test.md — ce qu'on exige avant de toucher quoi que ce soit
+                langage: text
+                source: |
+                  # Autorisation de test de sécurité
+
+                  Système concerné : <noms, adresses IP, domaines, comptes de test>
+                  Hors périmètre (explicitement) : <ce qu'on ne touchera pas>
+                  Fenêtre autorisée : du <date, heure> au <date, heure>
+                  Techniques interdites : déni de service, ingénierie sociale, modification de données
+                  Données rencontrées : aucune extraction ; preuves anonymisées ; destruction sous 30 jours
+                  Contacts d'urgence : <client : nom, téléphone> / <testeur : nom, téléphone>
+
+                  Signataire : <nom>, <fonction donnant autorité sur le système>
+                  Date et signature :
+        travaux_pratiques: >-
+          Déroulé de la séance, sur le lab « agence de transfert d'argent » fourni (schéma, inventaire et
+          extraits de journaux). Heure 1 : inventaire des actifs et choix des propriétés à défendre, actif
+          par actif. Heure 2 : schéma des flux et tracé des frontières de confiance. Heures 3 et 4 :
+          STRIDE appliqué frontière par frontière, une ligne de tableau par risque identifié, sans
+          chercher encore les mesures. Heure 5 : cotation vraisemblance et gravité, et classement — la
+          gravité s'écrit en termes métier, jamais en termes techniques. Heure 6 : décision pour les cinq
+          risques de tête, et mesure associée avec un responsable et une échéance. Heure 7 : relevé des
+          obligations légales applicables, en citant l'article du texte officiel pour chacune, jamais de
+          mémoire. Heure 8 : relecture croisée avec un binôme, qui cherche le risque oublié.
+
+          Défi : faites relire votre tableau par quelqu'un qui ne connaît pas l'informatique. S'il ne
+          peut pas dire, pour la ligne de tête, ce que l'agence perd et ce qu'on a décidé, la ligne est
+          à réécrire. Un modèle de menace qui ne se lit pas en dehors de la salle technique ne sert à
+          personne.
+        livrable: >-
+          Modèle de menace d'une agence de transfert d'argent, rendu en Markdown selon le squelette
+          fourni : périmètre et schéma des flux, frontières de confiance, inventaire des actifs avec les
+          propriétés à défendre, au moins dix risques cotés en vraisemblance et gravité, décision et
+          mesure pour les cinq premiers avec responsable et échéance, et le relevé des obligations
+          légales applicables avec, pour chacune, le texte et l'article cités.
+        mise_en_situation: >-
+          En réunion, le directeur d'une microfinance d'Abidjan vous demande de « jeter un œil » à
+          l'application de son concurrent : « elle a l'air mal faite, vérifie juste si c'est solide, ça
+          reste entre nous ». Il ajoute que vous ne toucherez à rien et que, si vous trouvez quelque
+          chose, vous préviendrez gentiment. Rédigez votre réponse, en une page : ce que vous acceptez,
+          ce que vous refusez et sur quel fondement, ce que vous exigeriez pour qu'un test devienne
+          possible, et ce que vous proposez à la place pour répondre au vrai besoin du directeur —
+          savoir si sa propre application tient.
+        quiz:
+          - question: Le poste de caisse d'une agence n'a reçu aucun correctif depuis dix mois. Comment nomme-t-on exactement ce fait ?
+            options:
+              - Une menace
+              - Une vulnérabilité
+              - Un risque
+              - Un incident
+            bonnes: [2]
+            explication: >-
+              C'est une faiblesse, donc une vulnérabilité. La menace serait le rançongiciel qui
+              l'exploite ; le risque, l'arrêt des retraits qui en découlerait ; l'incident, le jour où
+              cela se produit.
+          - question: Un jour de paie, l'application de retrait est inaccessible pendant quatre heures. Quelle propriété a été atteinte ?
+            options:
+              - La confidentialité
+              - L'intégrité
+              - La disponibilité
+              - La traçabilité
+            bonnes: [3]
+            explication: >-
+              Rien n'a été vu ni modifié : le service n'était pas là au moment où il fallait. C'est la
+              disponibilité, et sa gravité se mesure en clients non servis, pas en heures de panne.
+          - question: À quoi sert la quatrième question du modèle de menace, « avons-nous bien travaillé ? »
+            options:
+              - À noter la qualité du schéma produit
+              - À vérifier que les mesures décidées sont en place et qu'elles tiennent à l'épreuve
+              - À recommencer le modèle depuis le début chaque trimestre
+              - À faire valider le document par la direction
+            bonnes: [2]
+            explication: >-
+              Sans ce retour, un modèle de menace reste un document. La quatrième question est ce qui
+              le transforme en travail de sécurité : les mesures existent-elles vraiment, et résistent-elles ?
+          - question: Un ami vous demande de tester la solidité du portail de son employeur, à l'insu de celui-ci. Que faites-vous ?
+            options:
+              - Un test en lecture seule, sans rien modifier
+              - Un test hors heures ouvrées, pour ne gêner personne
+              - Vous refusez tant qu'il n'y a pas d'autorisation écrite du responsable du système
+              - Vous testez et signalez gratuitement ce que vous trouvez
+            bonnes: [3]
+            explication: >-
+              La loi n° 2013-451 réprime l'accès et le maintien frauduleux dans un système
+              d'information : aucun dommage n'est nécessaire, et l'intention bienveillante ne vaut pas
+              autorisation. Seul un mandat écrit, signé par qui a autorité sur le système, change la
+              nature du geste.
+          - question: Que doit contenir, au minimum, une autorisation écrite de test ?
+            options:
+              - Le périmètre exact, et ce qui en est explicitement exclu
+              - La fenêtre de temps autorisée
+              - La liste des outils que le testeur compte utiliser
+              - Les contacts d'urgence des deux côtés
+            bonnes: [1, 2, 4]
+            explication: >-
+              Périmètre, fenêtre et contacts d'urgence protègent les deux parties et se vérifient. La
+              liste des outils, elle, change en cours de test et n'engage personne : ce qui compte est
+              ce qui est permis, pas avec quoi on le fait.
       - num: "02"
         title: ""
         contenu: ""                 # notions couvertes (~8 h, 40 % théorie / 60 % pratique)
