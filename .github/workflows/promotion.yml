@@ -85,8 +85,11 @@ jobs:
           # construction (la PR vient de develop), il ne doit pas pouvoir bloquer la livraison.
           sleep 20
           timeout 120 gh pr checks "$numero" --watch --interval 10 > /dev/null 2>&1 || true
+          # Pendant cette attente, develop peut recevoir un commit que la CI n'a pas encore validé : la
+          # tête de la PR ne serait plus celle qu'on a vérifiée. GitHub refuse la fusion si elle a bougé.
+          tete=$(git rev-parse HEAD)
           # la PR porte le commit que la CI vient de valider : fusion sans écraser l'historique
-          gh pr merge "$numero" --merge
+          gh pr merge "$numero" --merge --match-head-commit "$tete"
 
   # la fusion ci-dessus est faite avec GITHUB_TOKEN : elle ne declenchera ni la CI de main, ni la release.
   # L'arbre fusionne est celui que la CI de develop vient de valider ; la livraison est donc appelee ici.
