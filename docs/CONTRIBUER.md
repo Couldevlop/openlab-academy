@@ -53,6 +53,12 @@ python docs/Ressources/construire_notebooks.py
 
 # dépendances de production du front
 python .github/scripts/audit_front.py apps/openlab_academy/frontend
+
+# répartiteur des lots de tests : ses propres tests, et la table des coûts mesurés
+python -m unittest discover -s .github/scripts -p "test_*.py"
+# fondre une exécution de plus dans la table des coûts : elle garde leur moyenne, un seul
+# relevé étant trop bruité (un module varie de moitié d'une exécution à l'autre)
+gh run view <id> --log | python .github/scripts/lots_de_tests.py apps/openlab_academy/openlab_academy/tests --mesurer - --execution <id>
 ```
 
 ## Pièges
