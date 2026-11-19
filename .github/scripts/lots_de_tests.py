@@ -51,11 +51,16 @@ def tests_du_module(chemin: pathlib.Path) -> int:
                if isinstance(noeud, ast.FunctionDef) and noeud.name.startswith("test_"))
 
 
-def mesures() -> dict[str, float]:
-    """Le temps mesure de chaque module, vide si la table manque."""
+def table() -> dict:
+    """La table des couts, vide si le fichier manque."""
     if not TABLE.is_file():
-        return {}
-    return json.loads(TABLE.read_text(encoding="utf-8")).get("secondes", {})
+        return {"mesure": {"executions": []}, "secondes": {}}
+    return json.loads(TABLE.read_text(encoding="utf-8"))
+
+
+def mesures() -> dict[str, float]:
+    """Le temps moyen mesure de chaque module, vide si la table manque."""
+    return table().get("secondes", {})
 
 
 def estimation(module: str, nombre: int) -> float:
@@ -104,11 +109,24 @@ def mesurer(journal: str) -> dict[str, float]:
     return releve
 
 
-def _ecrire_table(releve: dict[str, float], execution: str) -> None:
-    TABLE.write_text(json.dumps({"mesure": {"execution": execution,
-                                            "amorcage_par_module_s": AMORCAGE},
-                                 "secondes": dict(sorted(releve.items()))}, indent=2) + "\n",
-                     encoding="utf-8", newline="\n")
+def fondre(ancienne: dict, releve: dict[str, float], execution: str) -> dict:
+    """La table mise a jour : moyenne du releve avec ce qui etait deja mesure.
+
+    Un module que ce releve ne porte pas garde sa valeur : une execution incomplete ne doit pas
+    effacer ce qu'on savait. Un module nouveau entre avec son premier temps.
+    """
+    executions = [e for e in ancienne.get("mesure", {}).get("executions", []) if e != execution]
+    n = len(executions)
+    secondes = dict(ancienne.get("secondes", {}))
+    for module, temps in releve.items():
+        ancien = secondes.get(module)
+        secondes[module] = round(temps if ancien is None or n == 0 else (ancien * n + temps) / (n + 1), 1)
+    return {"mesure": {"executions": executions + [execution], "amorcage_par_module_s": AMORCAGE},
+            "secondes": dict(sorted(secondes.items()))}
+
+
+def _ecrire_table(donnees: dict) -> None:
+    TABLE.write_text(json.dumps(donnees, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
 def main() -> int:
@@ -142,8 +160,11 @@ def main() -> int:
         presents = {c.stem for c in args.dossier.glob("test_*.py")}
         for absent in sorted(presents - set(releve)):
             print(f"{absent} : absent du journal, il gardera son estimation", file=sys.stderr)
-        _ecrire_table(releve, args.execution or args.mesurer)
-        print(f"{TABLE.name} : {len(releve)} modules, {sum(releve.values()) / 60:.1f} min de tests")
+        donnees = fondre(table(), releve, args.execution or args.mesurer)
+        _ecrire_table(donnees)
+        secondes, executions = donnees["secondes"], donnees["mesure"]["executions"]
+        print(f"{TABLE.name} : {len(secondes)} modules, {sum(secondes.values()) / 60:.1f} min de tests, "
+              f"moyenne de {len(executions)} execution(s)")
         return 0
 
     if args.lot is None or args.sur is None:

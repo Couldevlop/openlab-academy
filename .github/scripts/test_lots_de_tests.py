@@ -104,10 +104,47 @@ class TestMesure(unittest.TestCase):
         self.assertEqual(presents - set(connus), set(),
                          "modules sans cout mesure : refaire la table avec --mesurer")
 
-    def test_la_table_est_du_json_trie(self):
+    def test_la_table_est_du_json_trie_et_dit_d_ou_elle_vient(self):
         donnees = json.loads(L.TABLE.read_text(encoding="utf-8"))
         self.assertEqual(list(donnees["secondes"]), sorted(donnees["secondes"]))
-        self.assertIn("execution", donnees["mesure"])
+        self.assertTrue(donnees["mesure"]["executions"],
+                        "sans les executions fondues, on ne sait plus de quand datent ces couts")
+
+    def test_la_table_moyenne_plusieurs_executions(self):
+        """Un seul releve est trop bruite : sur ces coureurs un module varie de moitie d'une
+        execution a l'autre, et un decoupage bati sur un seul releve a donne 18 et 33 min."""
+        self.assertGreaterEqual(len(json.loads(L.TABLE.read_text(encoding="utf-8"))["mesure"]["executions"]), 2)
+
+
+class TestFondre(unittest.TestCase):
+    """La table garde la moyenne des executions : c'est ce qui la rend utilisable."""
+
+    ANCIENNE = {"mesure": {"executions": ["r1"]}, "secondes": {"test_a": 100.0, "test_b": 50.0}}
+
+    def test_le_releve_est_moyenne_avec_ce_qui_etait_connu(self):
+        fondue = L.fondre(self.ANCIENNE, {"test_a": 300.0}, "r2")
+        self.assertEqual(fondue["secondes"]["test_a"], 200.0)
+        self.assertEqual(fondue["mesure"]["executions"], ["r1", "r2"])
+
+    def test_la_moyenne_tient_compte_du_nombre_d_executions(self):
+        """A la troisieme, un releve ne doit plus peser la moitie du resultat."""
+        deux = {"mesure": {"executions": ["r1", "r2"]}, "secondes": {"test_a": 100.0}}
+        self.assertEqual(L.fondre(deux, {"test_a": 400.0}, "r3")["secondes"]["test_a"], 200.0)
+
+    def test_un_module_absent_du_releve_garde_sa_valeur(self):
+        """Une execution incomplete -- un lot rouge, un job annule -- ne doit rien effacer."""
+        fondue = L.fondre(self.ANCIENNE, {"test_a": 100.0}, "r2")
+        self.assertEqual(fondue["secondes"]["test_b"], 50.0)
+
+    def test_un_module_nouveau_entre_avec_son_premier_temps(self):
+        fondue = L.fondre(self.ANCIENNE, {"test_c": 7.0}, "r2")
+        self.assertEqual(fondue["secondes"]["test_c"], 7.0)
+
+    def test_refondre_la_meme_execution_ne_la_compte_pas_deux_fois(self):
+        """Relancer la commande sur le meme journal doit etre sans effet, sinon la table derive."""
+        fondue = L.fondre(self.ANCIENNE, {"test_a": 300.0}, "r1")
+        self.assertEqual(fondue["secondes"]["test_a"], 300.0)
+        self.assertEqual(fondue["mesure"]["executions"], ["r1"])
 
 
 class TestLotsReels(unittest.TestCase):
@@ -120,7 +157,10 @@ class TestLotsReels(unittest.TestCase):
             with self.subTest(lot=i):
                 self.assertLess(charge / 60, 35, f"lot {i} : {charge / 60:.1f} min pour un delai de 50")
 
-    def test_les_lots_sont_equilibres(self):
+    def test_les_lots_sont_equilibres_au_cout_moyen(self):
+        """Ce test porte sur le cout moyen, pas sur la duree reelle du prochain job : le bruit de
+        coureur reste de l'ordre de dix minutes et aucun decoupage ne le supprimera. Ce qu'il
+        garantit, c'est qu'aucun lot ne part avec une charge prevue tres superieure a l'autre."""
         trouves = L.modules(TESTS)
         charges = [sum(trouves[m][1] for m in lot) for lot in L.repartir(trouves, 2)]
         ecart = (max(charges) - min(charges)) / max(charges)
