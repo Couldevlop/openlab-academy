@@ -8,13 +8,16 @@ import os
 import frappe
 
 no_cache = 1
-PAQUET = os.path.join(os.path.dirname(os.path.dirname(__file__)), "public", "atelier", "atelier.js")
+_ATELIER = os.path.join(os.path.dirname(os.path.dirname(__file__)), "public", "atelier")
+# les deux fichiers servis : l'atelier et la lecture du carnet. Le plus récent des deux donne
+# l'empreinte, sans quoi une correction du carnet seul resterait dans le cache du navigateur.
+PAQUETS = (os.path.join(_ATELIER, "atelier.js"), os.path.join(_ATELIER, "carnet.js"))
 
 
 def version() -> str:
-    """Empreinte du fichier servi, pour que le navigateur recharge l'atelier après une mise à jour."""
+    """Empreinte des fichiers servis, pour que le navigateur recharge l'atelier après une mise à jour."""
     try:
-        return str(int(os.path.getmtime(PAQUET)))
+        return str(int(max(os.path.getmtime(paquet) for paquet in PAQUETS)))
     except OSError:
         return "0"
 

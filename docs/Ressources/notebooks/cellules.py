@@ -48,8 +48,10 @@ try:
     for libelle, texte in [("francais", FRANCAIS), ("anglais", ANGLAIS)]:
         morceaux = [encodage.decode([j]) for j in encodage.encode(texte)]
         print(f"{libelle:9} reel : {len(morceaux)} jetons -> {morceaux}")
-except ImportError:
-    print("tiktoken absent : on reste sur l'approximation, suffisante pour raisonner")'''),
+except Exception as souci:
+    # tiktoken telecharge son vocabulaire au premier appel : absent ou hors ligne (c'est le cas
+    # dans l'atelier du navigateur), on reste sur l'approximation, suffisante pour raisonner
+    print(f"decoupage reel indisponible ({type(souci).__name__}) : on garde l'approximation")'''),
 
             ("## 2. Ce que coûte un identifiant technique\n\nLes identifiants du fil rouge sont "
              "le pire cas : ils ne ressemblent à aucun mot appris. C'est la raison pour laquelle "
