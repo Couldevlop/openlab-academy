@@ -1,8 +1,16 @@
-*.sh text eol=lf
-Dockerfile text eol=lf
-*.yml text eol=lf
-*.yaml text eol=lf
-*.py text eol=lf
-.githooks/* text eol=lf
+# Fins de ligne : LF dans le depot et dans la copie de travail.
+#
+# `core.autocrlf=true` sur un poste Windows convertit en CRLF a l'extraction tout fichier que ce
+# fichier ne regle pas. L'index, lui, est deja entierement en LF. L'ecart ne se voyait donc pas en
+# `git diff`, mais les outils qui lisent le disque le voyaient : `prettier --check` echouait en local
+# sur les 76 fichiers TypeScript et les 19 composants Vue, et passait sur le coureur Linux. Un
+# controle qui ne peut etre vert que sur la machine distante n'est plus un controle, c'est une loterie.
+#
+# La regle est donc posee une fois pour toutes, en tete, plutot qu'extension par extension : chaque
+# nouveau type de fichier etait sinon un piege a decouvrir. `text=auto` laisse git decider ce qui est
+# du texte, a la meme detection de contenu qui marque deja les 187 images et archives du depot comme
+# binaires ; elles ne sont pas touchees.
+* text=auto eol=lf
+
+# redondant avec la detection, mais explicite : une archive ne se diffe ni ne se fusionne
 *.zip binary
-*.svg text eol=lf
