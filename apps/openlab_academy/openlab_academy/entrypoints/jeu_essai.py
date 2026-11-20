@@ -7,9 +7,10 @@ réglages, ni au catalogue. Il ne crée que ce qu'une académie produit à l'usa
 propositions de note, des relectures entre pairs, une équipe de correction, des dossiers de paiement et
 leurs versements — pour qu'un écran vide ne puisse plus passer pour un écran qui marche.
 
-Relançable : il purge d'abord ce qu'il a lui-même créé. Les copies qu'il pose portent le préfixe `MARQUE`
-dans leur soumission, et c'est à ce préfixe seul qu'il les reconnaît : une copie déposée autrement lui
-survit.
+Relançable : il purge d'abord ce qu'il a lui-même créé, et **seulement** cela — chaque famille est
+reconnue à une marque qui lui est propre, décrite dans `cibles_purge`. Ce qu'un autre a déposé lui
+survit. Il refuse par ailleurs de s'exécuter sur un site qui n'est pas en `developer_mode` : il efface
+et réécrit, ce qui n'a de sens que sur un banc.
 
 Le plan des données est séparé de leur écriture. Les constantes ci-dessous se lisent sans Frappe et sans
 base, et `test_jeu_essai.py` les tient : un lot qui ne se formerait plus, un dossier de paiement pose sur
@@ -46,6 +47,7 @@ APPRENANTS = (
     ("fatou.traore@exemple.ci", "Fatou", "Traoré"),
     ("ibrahim.cisse@exemple.ci", "Ibrahim", "Cissé"),
 )
+COURRIELS_APPRENANTS = frozenset(courriel for courriel, _, _ in APPRENANTS)
 FORMATEUR = "formateur.essai@exemple.ci"  # correction, lots, intendance, finances, pilotage
 ROLES_FORMATEUR = ("System Manager", "Intendant OpenLab")
 
@@ -148,16 +150,53 @@ def _formateur(mot_de_passe: str) -> None:
     doc.save(ignore_permissions=True)
 
 
+def cibles_purge(copies, equipes, dossiers, paiements, relectures, propositions) -> dict:
+    """Ce que la purge a le droit d'effacer, et rien d'autre.
+
+    Décision pure, séparée de la suppression, pour qu'un test puisse la mettre en défaut sans base. Une
+    première version effaçait *toutes* les relectures, propositions, équipes, et tous les dossiers des
+    deux parcours : sur un banc qui porte autre chose que ce jeu, elle aurait détruit du travail. Chaque
+    famille est désormais reconnue à une marque qui lui est propre :
+
+    - les copies, à leur soumission préfixée par `MARQUE` ;
+    - les relectures et les propositions, à la copie qu'elles visent, qui doit être l'une de celles-là ;
+    - les équipes, à leur responsable, qui doit être le formateur d'essai ;
+    - les dossiers, à leur apprenant, qui doit être l'un des apprenants d'essai ;
+    - les versements, à leur référence préfixée par `MARQUE` *et* au dossier qu'ils visent.
+
+    Un versement réel sur un dossier d'essai n'est donc pas effacé — et il empêchera la suppression du
+    dossier. C'est voulu : mieux vaut un échec bruyant qu'une perte silencieuse.
+    """
+    miennes = {nom for nom, soumission in copies if (soumission or "").startswith(MARQUE)}
+    mes_dossiers = {nom for nom, apprenant in dossiers if apprenant in COURRIELS_APPRENANTS}
+    return {
+        "Copie OpenLab": miennes,
+        "Relecture Pair OpenLab": {nom for nom, copie in relectures if copie in miennes},
+        "Proposition OpenLab": {nom for nom, copie in propositions if copie in miennes},
+        "Equipe Correction OpenLab": {nom for nom, resp in equipes if resp == FORMATEUR},
+        "Dossier Paiement OpenLab": mes_dossiers,
+        "Paiement OpenLab": {nom for nom, dossier, ref in paiements
+                             if dossier in mes_dossiers and (ref or "").startswith(MARQUE)},
+    }
+
+
+# L'ordre compte : on retire d'abord ce qui pointe vers le reste.
+ORDRE_PURGE = ("Relecture Pair OpenLab", "Proposition OpenLab", "Copie OpenLab",
+               "Equipe Correction OpenLab", "Paiement OpenLab", "Dossier Paiement OpenLab")
+
+
 def _purger() -> None:
-    for doctype in ("Relecture Pair OpenLab", "Proposition OpenLab", "Equipe Correction OpenLab"):
-        for nom in frappe.get_all(doctype, pluck="name"):
+    cibles = cibles_purge(
+        copies=frappe.get_all("Copie OpenLab", fields=["name", "soumission"], as_list=True),
+        equipes=frappe.get_all("Equipe Correction OpenLab", fields=["name", "responsable"], as_list=True),
+        dossiers=frappe.get_all("Dossier Paiement OpenLab", fields=["name", "apprenant"], as_list=True),
+        paiements=frappe.get_all("Paiement OpenLab", fields=["name", "dossier", "reference"], as_list=True),
+        relectures=frappe.get_all("Relecture Pair OpenLab", fields=["name", "copie"], as_list=True),
+        propositions=frappe.get_all("Proposition OpenLab", fields=["name", "copie"], as_list=True),
+    )
+    for doctype in ORDRE_PURGE:
+        for nom in sorted(cibles[doctype]):
             frappe.delete_doc(doctype, nom, force=True, ignore_permissions=True)
-    for nom in frappe.get_all("Copie OpenLab", {"soumission": ["like", MARQUE + "%"]}, pluck="name"):
-        frappe.delete_doc("Copie OpenLab", nom, force=True, ignore_permissions=True)
-    # dossiers posés par un essai précédent sur le parcours gratuit : aucun paiement ne s'y joue
-    for cours in (COURS_MOOC, COURS_PAYANT):
-        for nom in frappe.get_all("Dossier Paiement OpenLab", {"cours": cours}, pluck="name"):
-            frappe.delete_doc("Dossier Paiement OpenLab", nom, force=True, ignore_permissions=True)
 
 
 def _decor() -> dict:
@@ -237,8 +276,20 @@ def _versement(plan: dict) -> None:
                     "auteur": FORMATEUR}).insert(ignore_permissions=True)
 
 
+def _refuser_hors_developpement() -> None:
+    """Ce module efface et réécrit : il n'a rien à faire ailleurs que sur un banc de développement.
+
+    `developer_mode` n'est jamais levé sur un site servi — c'est la garde la plus sûre que Frappe offre
+    sans inventer une liste de sites à tenir à jour."""
+    if not frappe.conf.get("developer_mode"):
+        raise frappe.ValidationError(
+            "jeu_essai efface et réécrit des données : il ne s'exécute que sur un site en "
+            "developer_mode. Site visé : " + (frappe.local.site or "inconnu"))
+
+
 def run(mot_de_passe: str | None = None) -> dict:
     """Pose le jeu d'essai et rend les identifiants des copies créées, par clé du plan."""
+    _refuser_hors_developpement()
     mdp = mot_de_passe or _mot_de_passe()
     for courriel, prenom, nom in APPRENANTS:
         _utilisateur(courriel, prenom, nom)

@@ -93,9 +93,13 @@ class TestAucunPaiementSurLeParcoursGratuit(unittest.TestCase):
     def test_les_dossiers_ne_visent_que_le_parcours_payant(self):
         self.assertNotIn("COURS_MOOC", SOURCE.read_text(encoding="utf-8").split("def _dossier")[1])
 
-    def test_la_purge_nettoie_aussi_le_parcours_gratuit(self):
-        purge = SOURCE.read_text(encoding="utf-8").split("def _purger")[1].split("def ")[0]
-        self.assertIn("COURS_MOOC", purge)
+    def test_un_dossier_pose_par_erreur_sur_le_parcours_gratuit_est_repris(self):
+        """La purge reconnaît un dossier à son apprenant, pas à son parcours : celui qu'une version
+        précédente avait posé sur le MOOC repart donc, sans qu'il faille nommer le parcours."""
+        cibles = jeu_essai.cibles_purge(
+            copies=[], equipes=[], paiements=[], relectures=[], propositions=[],
+            dossiers=[("sur-le-mooc", jeu_essai.VISITEUSE), ("d-vrai", "eleve.reel@openlab.ci")])
+        self.assertEqual(cibles["Dossier Paiement OpenLab"], {"sur-le-mooc"})
 
 
 class TestAucunSecretDansLeDepot(unittest.TestCase):
@@ -115,6 +119,70 @@ class TestAucunSecretDansLeDepot(unittest.TestCase):
 
     def test_deux_executions_ne_tirent_pas_le_meme_mot_de_passe(self):
         self.assertNotEqual(jeu_essai._mot_de_passe(), jeu_essai._mot_de_passe())
+
+
+class TestLaPurgeNeTouchePasAuTravailDesAutres(unittest.TestCase):
+    """Une premiere version effacait TOUTES les relectures, propositions, equipes, et tous les dossiers
+    des deux parcours. Sur un banc qui porte autre chose que ce jeu, elle aurait detruit du travail.
+    Chaque cas ci-dessous melange une ligne du jeu et une ligne etrangere, et exige que l'etrangere
+    survive."""
+
+    def cibles(self, **remplaces):
+        donnees = {
+            "copies": [("c-essai", jeu_essai.MARQUE + "abcd"), ("c-vraie", "DEPOT-2026-001")],
+            "equipes": [("e-essai", jeu_essai.FORMATEUR), ("e-vraie", "prof@openlab.ci")],
+            "dossiers": [("d-essai", jeu_essai.VISITEUSE), ("d-vrai", "eleve.reel@openlab.ci")],
+            "paiements": [("p-essai", "d-essai", jeu_essai.MARQUE + "A1B2C3"),
+                          ("p-vrai", "d-vrai", "CINETPAY-9931"),
+                          ("p-reel-sur-dossier-essai", "d-essai", "CINETPAY-7742")],
+            "relectures": [("r-essai", "c-essai"), ("r-vraie", "c-vraie")],
+            "propositions": [("n-essai", "c-essai"), ("n-vraie", "c-vraie")],
+        }
+        donnees.update(remplaces)
+        return jeu_essai.cibles_purge(**donnees)
+
+    def test_une_copie_deposee_autrement_survit(self):
+        self.assertEqual(self.cibles()["Copie OpenLab"], {"c-essai"})
+
+    def test_les_relectures_et_propositions_d_une_copie_etrangere_survivent(self):
+        cibles = self.cibles()
+        self.assertEqual(cibles["Relecture Pair OpenLab"], {"r-essai"})
+        self.assertEqual(cibles["Proposition OpenLab"], {"n-essai"})
+
+    def test_une_equipe_de_correction_reelle_survit(self):
+        self.assertEqual(self.cibles()["Equipe Correction OpenLab"], {"e-essai"})
+
+    def test_le_dossier_de_paiement_d_un_vrai_apprenant_survit(self):
+        self.assertEqual(self.cibles()["Dossier Paiement OpenLab"], {"d-essai"})
+
+    def test_un_versement_reel_n_est_jamais_efface_meme_sur_un_dossier_d_essai(self):
+        """Il empechera la suppression du dossier, et c'est voulu : un echec bruyant plutot qu'une
+        perte silencieuse."""
+        self.assertEqual(self.cibles()["Paiement OpenLab"], {"p-essai"})
+
+    def test_sur_un_banc_sans_rien_d_etranger_tout_le_jeu_part(self):
+        cibles = self.cibles(copies=[("c-essai", jeu_essai.MARQUE + "abcd")])
+        self.assertEqual(cibles["Copie OpenLab"], {"c-essai"})
+
+    def test_chaque_famille_a_son_rang_de_suppression(self):
+        """Ce qui pointe vers le reste se retire d'abord, sinon la suppression echoue sur un lien."""
+        self.assertEqual(set(jeu_essai.ORDRE_PURGE), set(self.cibles()))
+        rang = jeu_essai.ORDRE_PURGE.index
+        self.assertLess(rang("Relecture Pair OpenLab"), rang("Copie OpenLab"))
+        self.assertLess(rang("Proposition OpenLab"), rang("Copie OpenLab"))
+        self.assertLess(rang("Paiement OpenLab"), rang("Dossier Paiement OpenLab"))
+
+
+class TestRienNeSExecuteHorsDUnBanc(unittest.TestCase):
+    """`run` efface et reecrit. Sur un site servi, il n'a rien a faire."""
+
+    def test_run_refuse_un_site_qui_n_est_pas_en_developper_mode(self):
+        garde = SOURCE.read_text(encoding="utf-8").split("def run(")[0]
+        self.assertIn("developer_mode", garde)
+
+    def test_run_appelle_la_garde_avant_toute_ecriture(self):
+        corps = SOURCE.read_text(encoding="utf-8").split("def run(")[1]
+        self.assertLess(corps.index("_refuser_hors_developpement()"), corps.index("_purger()"))
 
 
 class TestLePlanResteCoherent(unittest.TestCase):
