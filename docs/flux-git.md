@@ -132,9 +132,25 @@ encore : aucun ruleset n'y est posé, parce que `release.yml` y pousse directeme
 
 - **Secret scanning** et **push protection** : activés le 19 novembre 2026, gratuits depuis le passage
   en public, et sans aucune alerte rétroactive sur les 342 commits de l'historique.
-- **Alertes de vulnérabilité** et **mises à jour de sécurité Dependabot** : activées le 20 novembre 2026
-  (`PUT /vulnerability-alerts` et `PUT /automated-security-fixes` ; le champ équivalent de
-  `security_and_analysis` ne suffit pas).
+- **Alertes de vulnérabilité** : activées le 20 novembre 2026 (`PUT /vulnerability-alerts` ; le champ
+  équivalent de `security_and_analysis` ne suffit pas).
+- **Mises à jour de sécurité Dependabot** (les PR automatiques) : **désactivées, et à laisser ainsi.**
+  Elles sont incompatibles avec ce flux de branches, et aucun réglage n'y change rien. Dependabot ouvre
+  ses PR sur la **branche par défaut**, `main`, où le gardien les refuse par construction ; et `ci.yml`
+  ne se déclenche pas sur une PR vers `main`, de sorte que ces PR ne peuvent même pas être validées.
+  Les quatre ouvertes le 20 novembre 2026 (#44 à #47) ont été fermées pour cette raison, non sur leur
+  fond. `target-branch: develop` dans un `.github/dependabot.yml` ne corrige rien : la documentation
+  GitHub est explicite, « security updates always use the default branch for the repository ». Seul un
+  changement de branche par défaut les redirigerait, au prix de faire lire `promotion.yml` depuis
+  `develop` — un `workflow_run` n'étant pris en compte que sur la branche par défaut.
+
+  Le signal reste donc entier, puisque les alertes sont actives ; c'est la PR automatique qui ne l'est
+  pas. Un correctif se porte à la main sur une branche partant de `develop`. Relevé du 20 novembre
+  2026 : dix alertes, **aucune livrée à un apprenant**. Les trois critiques (`vitest`, `tinypool` ×2)
+  sont de développement. Les deux étiquetées `runtime` par Dependabot ne le sont pas en pratique :
+  `echarts` n'entre que par `frappe-ui`, rien dans `src/` ne l'importe et il est absent du bundle
+  construit ; `postcss-selector-parser` vient de `@tailwindcss/typography`, un outil de construction
+  CSS. Leur correction passerait par `frappe-ui@1.2.0`, hors de la plage déclarée.
 - **Motifs non fournisseurs** et **vérification de validité** : **à activer à la main** dans
   `Settings → Code security`. L'API répond 200 à
   `PATCH /repos/… {"security_and_analysis":{"secret_scanning_non_provider_patterns":{"status":"enabled"}}}`
