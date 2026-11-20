@@ -25,8 +25,19 @@ const RESEAU_GLOBAL = ['window', 'globalThis', 'self'].flatMap((object) =>
 const CAS_USAGES = ['cas-usages', 'correction', 'relecture', 'retour', 'paiement', 'intendance'].map(
   (m) => `**/application/${m}`,
 )
+// Node n'existe pas dans un navigateur. Ses types sont ouverts a tout le projet parce que les tests en
+// ont besoin (voir tsconfig.json) ; la frontiere est donc tenue ici, et elle vaut aussi pour les .vue.
+const PLATEFORME = [
+  { name: 'process', message: "Code de navigateur : Node n'y existe pas." },
+  { name: '__dirname', message: "Code de navigateur : Node n'y existe pas." },
+  { name: '__filename', message: "Code de navigateur : Node n'y existe pas." },
+  { name: 'require', message: "Code de navigateur : Node n'y existe pas." },
+  { name: 'Buffer', message: "Code de navigateur : Node n'y existe pas." },
+]
+const MODULES_NODE = ['node:*', 'fs', 'path', 'os', 'crypto', 'child_process', 'url', 'util']
 const NAVIGATEUR = [
   ...RESEAU,
+  ...PLATEFORME,
   { name: 'window', message: 'Règle pure : aucun accès au navigateur.' },
   { name: 'document', message: 'Règle pure : aucun accès au navigateur.' },
   { name: 'localStorage', message: "Le stockage passe par un adaptateur de l'infrastructure." },
@@ -85,19 +96,26 @@ export default defineConfigWithVueTs(
     files: ['src/domaine/**/*.ts'],
     ignores: ['**/*.test.ts'],
     rules: {
-      ...interdire(['application', 'infrastructure', 'interface'], CADRES),
+      ...interdire(['application', 'infrastructure', 'interface'], [...CADRES, ...MODULES_NODE]),
       'no-restricted-globals': ['error', ...NAVIGATEUR],
     },
   },
   {
     files: ['src/application/**/*.ts'],
     ignores: ['**/*.test.ts'],
-    rules: { ...interdire(['infrastructure', 'interface'], CADRES), 'no-restricted-globals': ['error', ...NAVIGATEUR] },
+    rules: {
+      ...interdire(['infrastructure', 'interface'], [...CADRES, ...MODULES_NODE]),
+      'no-restricted-globals': ['error', ...NAVIGATEUR],
+    },
   },
   {
     files: ['src/infrastructure/**/*.ts'],
     ignores: ['**/*.test.ts'],
-    rules: { ...interdire(['interface']), 'no-restricted-properties': 'off' }, // l'adaptateur réseau
+    rules: {
+      ...interdire(['interface'], MODULES_NODE),
+      'no-restricted-properties': 'off', // l'adaptateur réseau
+      'no-restricted-globals': ['error', ...PLATEFORME],
+    },
   },
   {
     files: ['src/interface/**/*.{ts,vue}'],
@@ -105,10 +123,10 @@ export default defineConfigWithVueTs(
     rules: {
       ...interdire(
         ['infrastructure'],
-        ['frappe-ui', 'frappe-ui-requete', 'frappe-ui/*', 'zod', 'zod/mini'],
+        ['frappe-ui', 'frappe-ui-requete', 'frappe-ui/*', 'zod', 'zod/mini', ...MODULES_NODE],
         "Réservé aux adaptateurs de l'infrastructure.",
       ),
-      'no-restricted-globals': ['error', ...RESEAU],
+      'no-restricted-globals': ['error', ...RESEAU, ...PLATEFORME],
       '@typescript-eslint/no-restricted-imports': [
         'error',
         {
