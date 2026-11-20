@@ -35,7 +35,8 @@ docker-compose -p ol-academy -f docker/docker-compose.yml up -d
 ```bash
 # suite complète du backend, couverture ≥ 99 % (banc de développement requis)
 bash docker/dev-test.sh
-# un seul module, quand la mémoire est juste — un à la fois
+# un seul module, quand la mémoire est juste — un à la fois. Le seuil de couverture ne s'applique
+# pas à ce mode : un module seul n'exerce que quelques pour cent du code.
 bash docker/dev-test.sh openlab_academy.tests.test_schema
 
 # front
