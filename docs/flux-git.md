@@ -29,8 +29,11 @@ git switch -c feat/mon-sujet
      de nouveau dès qu'un correctif sort ou que la date de revue tombe. Le backend n'a aucune dépendance Python propre.
      Restent quatre avis **modérés** non bloquants, hérités de `frappe-ui` (XSS d'Apache ECharts) : aucun
      correctif n'existe sans sortir de la version de `frappe-ui` qu'impose le LMS ;
-1bis. **`gardien.yml`** — sur toute PR vers `main` : refuse une source autre que `develop`. Il vise la PR
-   humaine ; celle que la promotion ouvre vient de `develop` par construction.
+1bis. **`gardien.yml`** — sur toute PR **humaine** vers `main` : refuse une source autre que `develop`.
+   Sur la PR que la promotion ouvre avec GITHUB_TOKEN, il ne contrôle rien : GitHub crée une exécution
+   qu'il ne distribue jamais, qui conclut « failure » sans aucun job. La croix rouge qui en découle ne dit
+   rien de l'état du code. Pour cette PR-là, c'est `promotion.yml` qui relit la branche source avant de
+   fusionner.
 2. **`promotion.yml`** — déclenché par la **réussite de la CI sur `develop`**, pas par le push : il vérifie que
    `develop` n'a pas bougé depuis la validation, ouvre ou met à jour la PR « Promotion vers main », puis la
    fusionne. Le commit promu est exactement celui que la CI vient de valider ; aucun test n'est court-circuité.
@@ -72,9 +75,12 @@ livraison s'arrête à l'étiquette de version, qui désignera l'artefact à dé
 
 ## Garde-fous locaux
 
-GitHub **n'autorise pas** la protection de branche ni les rulesets sur un dépôt privé en plan gratuit
-(réponse `403 — Upgrade to GitHub Pro`). La règle « `main` ne reçoit que des PR » repose donc sur le job
-`gardien` et sur un hook local à installer une fois par clone :
+Le dépôt est **public** depuis le 19 novembre 2026 : la protection de branche et les rulesets y sont
+désormais disponibles, après avoir été refusés tant qu'il était privé en plan gratuit (`403 — Upgrade to
+GitHub Pro`). Aucun n'est encore configuré, et aucun ne pourra porter la règle entière : les conditions
+d'un ruleset portent sur la branche *cible*, jamais sur la branche source d'une PR. La règle « `main` ne
+reçoit que des PR venues de `develop` » reste donc portée par `gardien`, par `promotion.yml` et par un
+hook local à installer une fois par clone :
 
 ```
 git config core.hooksPath .githooks
