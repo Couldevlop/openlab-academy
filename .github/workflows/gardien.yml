@@ -1,11 +1,12 @@
 # Garde le flux de branches : main ne reçoit que des PR venues de develop.
 #
-# GitHub n'autorise aucune protection de branche sur un dépôt privé en plan gratuit (voir docs/flux-git.md) :
-# ce workflow est le seul contrôle automatique de la règle, côté serveur. Il vise la PR *humaine*, mais il se
-# déclenche aussi sur celle que la promotion ouvre avec GITHUB_TOKEN — parfois en attente d'approbation,
-# parfois exécutée. Cette PR-là vient de develop par construction : elle passe. La promotion attend que ce
-# contrôle conclue avant de fusionner, faute de quoi l'exécution se retrouve sans commit à lire et échoue au
-# démarrage (voir le commentaire correspondant dans promotion.yml).
+# Ce workflow contrôle la règle sur la PR *humaine*, et sur elle seule.
+#
+# Sur la PR que la promotion ouvre avec GITHUB_TOKEN, il ne peut rien contrôler : GitHub crée une exécution
+# qu'il ne distribue jamais, et elle conclut « failure » sans aucun job. La croix rouge qui en découle sur une
+# promotion ne dit donc rien de l'état du code, et il ne faut pas la lire comme un échec. Cette règle est
+# vérifiée là où elle peut l'être, dans promotion.yml, qui relit la branche source de sa propre PR avant de
+# fusionner. Une PR humaine, elle, n'est soumise à aucun garde-fou de ce genre : ce contrôle s'y exécute.
 name: Gardien
 
 on:
