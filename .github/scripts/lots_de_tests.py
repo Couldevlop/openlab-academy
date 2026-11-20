@@ -2,7 +2,8 @@
 """Repartit les modules de test de l'app en lots de cout comparable, pour les executer en parallele.
 
 La suite tient en trois quarts d'heure sur un seul coureur, pour un delai de job de cinquante minutes :
-le verdict devenait un tirage au sort. Deux lots ramenent chacun vers la demi-heure.
+le verdict devenait un tirage au sort. Trois lots ramenent chacun sous les vingt minutes. Le nombre de
+lots n'est pas ecrit ici : il vient de l'appelant, et la chaine d'integration le tient dans `LOTS`.
 
     usage : lots_de_tests.py <dossier des tests> --lot N --sur M [--compter]
             lots_de_tests.py <dossier des tests> --mesurer <journal de la CI>
@@ -28,7 +29,7 @@ Chaque nouveau releve s'y fond, et les executions fondues sont inscrites dedans 
     gh run view <id> --log | python .github/scripts/lots_de_tests.py <dossier> --mesurer - --execution <id>
 
 Il faut dire ce que cette ponderation ne peut pas faire, sous peine de lui preter un pouvoir qu'elle
-n'a pas. Les deux lots tournent sur deux coureurs distincts, dont la vitesse varie de pres de moitie.
+n'a pas. Les lots tournent sur des coureurs distincts, dont la vitesse varie de pres de moitie.
 A l'execution 44559182784, les treize modules du lot 2 ont **tous** mis au moins 1,10 fois leur temps
 moyen, 1,44 fois a la mediane, quand ceux du lot 1 etaient a 1,05 : la suite entiere est passee de 42
 a 55,9 min. Ce n'est pas du bruit par module, c'est une machine plus lente, et aucune ponderation ne
@@ -37,8 +38,11 @@ la rattrape -- les lots etaient prevus a 25,1 et 25,2 min, ils ont mis 27,1 et 3
 Ce que la table garantit est donc plus modeste, et c'etait le vrai defaut : aucun module ne pese deux
 cents fois moins que son cout reel, donc aucun lot ne peut recevoir dix minutes de travail invisible.
 L'equilibre en temps d'horloge se gagne ailleurs : en raccourcissant un lot, pas en affinant sa pesee.
-C'est aussi la vraie raison de passer a trois lots -- non pour equilibrer, mais pour qu'un coureur
-lent ne puisse plus approcher le delai de cinquante minutes.
+C'est la vraie raison du passage a trois lots -- non pour equilibrer, mais pour qu'un coureur lent ne
+puisse plus approcher le delai de cinquante minutes. L'execution 44693933320 l'a montre une seconde
+fois, dans l'autre sens : les dix-neuf modules d'un lot y ont *tous* tourne entre 0,49 et 0,82 fois
+leur temps moyen, aucun au-dessus, quand ceux de l'autre allaient jusqu'a 1,64. Le lot lent est tombe
+a 2 % de sa prevision. La pesee n'etait pas en cause, la machine l'etait.
 """
 import argparse
 import ast

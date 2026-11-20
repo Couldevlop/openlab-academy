@@ -10,6 +10,7 @@ poids, parce qu'une mesure mal lue ramene le desequilibre que la table est cense
 """
 import json
 import pathlib
+import re
 import sys
 import tempfile
 import unittest
@@ -19,6 +20,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import lots_de_tests as L  # noqa: E402  (l'import suit l'ajout du dossier au chemin)
 
 TESTS = pathlib.Path(__file__).resolve().parents[2] / "apps" / "openlab_academy" / "openlab_academy" / "tests"
+CI = pathlib.Path(__file__).resolve().parents[1] / "workflows" / "ci.yml"
 
 
 def _dossier(modules: dict[str, int]) -> pathlib.Path:
@@ -147,12 +149,48 @@ class TestFondre(unittest.TestCase):
         self.assertEqual(fondue["mesure"]["executions"], ["r1"])
 
 
+class TestAccordAvecLaChaine(unittest.TestCase):
+    """Le nombre de lots est ecrit a trois endroits de ci.yml, et aucun workflow ne peut les deriver
+    l'un de l'autre : une matrice ne se construit pas depuis `env`, et le job de couverture, qui tourne
+    sur un autre coureur, n'a pas acces a `strategy.job-total`. Un ecart entre les trois ne casserait
+    rien de visible -- il laisserait simplement un lot entier hors de la mesure, en vert."""
+
+    def ci(self) -> str:
+        return CI.read_text(encoding="utf-8")
+
+    def test_la_matrice_et_la_variable_annoncent_le_meme_nombre_de_lots(self):
+        texte = self.ci()
+        declare = int(re.search(r'^  LOTS: "(\d+)"', texte, re.M).group(1))
+        matrice = re.search(r"^        lot: \[([0-9, ]+)\]", texte, re.M).group(1)
+        self.assertEqual([int(n) for n in matrice.split(",")], list(range(1, declare + 1)),
+                         "la matrice des lots ne couvre pas 1..LOTS")
+
+    def test_le_repartiteur_et_la_barriere_lisent_cette_variable(self):
+        """Un `--sur` ou un seuil de couverture ecrit en dur est exactement l'ecart qu'on redoute."""
+        texte = self.ci()
+        self.assertEqual(texte.count('--sur "$LOTS"'), 2, "le repartiteur doit lire LOTS, deux fois")
+        self.assertIn('-ne "$LOTS"', texte,
+                      "la barriere de couverture doit compter les lots d'apres LOTS")
+        self.assertNotRegex(texte, r"--sur \d", "nombre de lots ecrit en dur devant --sur")
+
+    def test_chaque_lot_tient_dans_le_delai_du_job_meme_sur_un_coureur_lent(self):
+        """Le vrai motif du decoupage. A l'execution 44693933320, tous les modules d'un lot ont tourne
+        entre 0,49 et 0,82 fois leur temps moyen, et ceux de l'autre jusqu'a 1,64 : la pesee n'y change
+        rien, seul un lot plus court eloigne du delai. On prend 1,7 fois la prevision."""
+        declare = int(re.search(r'^  LOTS: "(\d+)"', self.ci(), re.M).group(1))
+        delai = int(re.search(r"^    timeout-minutes: (\d+)", self.ci(), re.M).group(1))
+        trouves = L.modules(TESTS)
+        pire = max(sum(trouves[m][1] for m in lot) for lot in L.repartir(trouves, declare)) / 60 * 1.7
+        self.assertLess(pire, delai * 0.8,
+                        f"{declare} lots : {pire:.1f} min au pire pour un delai de {delai}")
+
+
 class TestLotsReels(unittest.TestCase):
     """Sur les modules du depot : c'est la seule mesure qui compte pour le delai du job."""
 
-    def test_les_deux_lots_tiennent_dans_le_delai_avec_de_la_marge(self):
+    def test_les_lots_tiennent_dans_le_delai_avec_de_la_marge(self):
         trouves = L.modules(TESTS)
-        charges = [sum(trouves[m][1] for m in lot) for lot in L.repartir(trouves, 2)]
+        charges = [sum(trouves[m][1] for m in lot) for lot in L.repartir(trouves, 3)]
         for i, charge in enumerate(charges, 1):
             with self.subTest(lot=i):
                 self.assertLess(charge / 60, 35, f"lot {i} : {charge / 60:.1f} min pour un delai de 50")
@@ -162,7 +200,7 @@ class TestLotsReels(unittest.TestCase):
         coureur reste de l'ordre de dix minutes et aucun decoupage ne le supprimera. Ce qu'il
         garantit, c'est qu'aucun lot ne part avec une charge prevue tres superieure a l'autre."""
         trouves = L.modules(TESTS)
-        charges = [sum(trouves[m][1] for m in lot) for lot in L.repartir(trouves, 2)]
+        charges = [sum(trouves[m][1] for m in lot) for lot in L.repartir(trouves, 3)]
         ecart = (max(charges) - min(charges)) / max(charges)
         self.assertLess(ecart, 0.15, f"ecart de {ecart:.0%} entre les lots")
 

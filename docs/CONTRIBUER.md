@@ -76,10 +76,11 @@ gh run view <id> --log | python .github/scripts/lots_de_tests.py apps/openlab_ac
 ## Conventions
 
 - **Tests d'abord.** La chaîne refuse en dessous de 99 % de couverture sur le backend.
-  En CI, la suite tourne en **deux lots parallèles** (`.github/scripts/lots_de_tests.py`,
-  répartition lue sur le disque, donc un module ajouté entre dans un lot tout seul) ; la
-  barrière de couverture s'applique sur le cumul des deux, dans un job dédié. En local,
-  `dev-test.sh` lance tout d'un coup, sans découpage.
+  En CI, la suite tourne en **trois lots parallèles** (`.github/scripts/lots_de_tests.py` ;
+  le nombre de lots est tenu par `LOTS` dans `ci.yml`, et la répartition est lue sur le
+  disque, donc un module ajouté entre dans un lot tout seul) ; la barrière de couverture
+  s'applique sur leur cumul, dans un job dédié. En local, `dev-test.sh` lance tout d'un
+  coup, sans découpage.
 - **Sécurité et architecture au premier plan** : OWASP et architecture hexagonale sont
   des critères de revue, pas des ajouts. Le domaine ne connaît pas Frappe.
 - **Commits en français**, sujet court sans accent, à l'impératif ou au constat
