@@ -20,6 +20,11 @@ permissions:
 
 env:
   NODE_VERSION: "22"
+  # Nombre de lots de tests du backend. Doit valoir la longueur de « strategy.matrix.lot » ci-dessous :
+  # un workflow ne peut pas construire sa matrice depuis env, et le job de couverture, qui tourne
+  # ailleurs, n'a pas acces a « strategy.job-total ». L'accord des trois est verifie par
+  # test_lots_de_tests.py, pour qu'un ecart ne puisse pas laisser un lot entier hors de la mesure.
+  LOTS: "3"
   # versions épinglées, identiques à docker/Dockerfile
   FRAPPE_REF: v15.123.1
   PAYMENTS_REF: 9885a6e500104f1f160add47d55b370773e67a81
@@ -74,7 +79,7 @@ jobs:
   # Backend (app Frappe) — tests sur un site réel, couverture ≥ 99 %
   # ==========================================================================
   backend:
-    name: Backend — tests Frappe (lot ${{ matrix.lot }}/2)
+    name: Backend — tests Frappe (lot ${{ matrix.lot }}/${{ strategy.job-total }})
     runs-on: ubuntu-24.04
     # un lot tient en une trentaine de minutes ; au-dela, c'est une derive a regarder, pas a absorber
     timeout-minutes: 50
@@ -83,7 +88,7 @@ jobs:
       # un lot rouge ne doit pas annuler l'autre : on veut les deux verdicts du meme coup
       fail-fast: false
       matrix:
-        lot: [1, 2]
+        lot: [1, 2, 3]
 
     services:
       mariadb:
@@ -197,8 +202,8 @@ jobs:
           REPARTITEUR: ${{ github.workspace }}/.github/scripts/lots_de_tests.py
         run: |
           ../env/bin/pip install -q coverage
-          modules=$(python "$REPARTITEUR" "$TESTS" --lot ${{ matrix.lot }} --sur 2)
-          attendus=$(python "$REPARTITEUR" "$TESTS" --lot ${{ matrix.lot }} --sur 2 --compter)
+          modules=$(python "$REPARTITEUR" "$TESTS" --lot ${{ matrix.lot }} --sur "$LOTS")
+          attendus=$(python "$REPARTITEUR" "$TESTS" --lot ${{ matrix.lot }} --sur "$LOTS" --compter)
           echo "lot ${{ matrix.lot }} : $(echo "$modules" | wc -l) modules, $attendus tests attendus"
           status=0
           executes=0
@@ -240,8 +245,8 @@ jobs:
           fi
           exit $status
 
-      # la barrière de couverture porte sur les deux lots réunis : seule, la couverture d'un lot est
-      # forcément sous le seuil, puisqu'il n'exerce que la moitié du code
+      # la barrière de couverture porte sur les lots réunis : seule, la couverture d'un lot est
+      # forcément sous le seuil, puisqu'il n'exerce qu'une fraction du code
       # « always » : la mesure d'un lot rouge est valable, et le cumul doit pouvoir conclure. Sans cela,
       # GitHub saute cette etape des qu'un test echoue, et le job de couverture ne recoit qu'une mesure.
       - name: Garder la couverture du lot
@@ -255,7 +260,7 @@ jobs:
           if-no-files-found: error
 
   # ==========================================================================
-  # Couverture cumulée des deux lots — la barrière des 99 % s'applique ici
+  # Couverture cumulée des lots — la barrière des 99 % s'applique ici
   # ==========================================================================
   couverture:
     name: Backend — couverture cumulée ≥ 99 %
@@ -291,8 +296,8 @@ jobs:
             lots=$(( lots + 1 ))
             cp "$fichier" ".coverage.lot$lots"
           done
-          if [ "$lots" -ne 2 ]; then
-            echo "::error::$lots fichier(s) de couverture au lieu de 2 : un lot n'a rien rendu"
+          if [ "$lots" -ne "$LOTS" ]; then
+            echo "::error::$lots fichier(s) de couverture au lieu de $LOTS : un lot n'a rien rendu"
             exit 1
           fi
           coverage combine
