@@ -37,9 +37,10 @@ git switch -c feat/mon-sujet
 2. **`promotion.yml`** — déclenché par la **réussite de la CI sur `develop`**, pas par le push : il vérifie que
    `develop` n'a pas bougé depuis la validation, ouvre ou met à jour la PR « Promotion vers main », puis la
    fusionne. Le commit promu est exactement celui que la CI vient de valider ; aucun test n'est court-circuité.
-   L'auto-merge de GitHub n'est pas utilisable ici : il exige des contrôles requis, donc une protection de
-   branche, indisponible sur ce plan. Un workflow `workflow_run` n'étant pris en compte que dans sa version
-   présente sur `main`, la **première** promotion se lance à la main (`workflow_dispatch`).
+   L'auto-merge de GitHub n'est pas utilisable ici, et pas pour la raison longtemps avancée : il exige des
+   contrôles **requis** sur `main`, or aucune exécution de CI n'existe sur une PR `develop → main` (voir
+   ci-dessous). Un workflow `workflow_run` n'étant pris en compte que dans sa version présente sur `main`,
+   la **première** promotion se lance à la main (`workflow_dispatch`).
 3. **`release.yml`** — appelé par la promotion (`workflow_call`), et déclenché par un push sur `main`
    quand la fusion a été faite à la main : étiquette `v<version>` lue dans
    `openlab_academy/__init__.py` (`__version__`) et publie la release, puis **réaligne `develop` sur `main`**,
@@ -73,21 +74,48 @@ Deux artefacts rouges en découlaient, sans rapport avec le code livré :
 Le déploiement n'est pas dans la chaîne : aucune cible de production n'est encore câblée pour l'Academy. La
 livraison s'arrête à l'étiquette de version, qui désignera l'artefact à déployer.
 
-## Garde-fous locaux
+## Protection de `main`
 
 Le dépôt est **public** depuis le 19 novembre 2026 : la protection de branche et les rulesets y sont
 désormais disponibles, après avoir été refusés tant qu'il était privé en plan gratuit (`403 — Upgrade to
-GitHub Pro`). Aucun n'est encore configuré, et aucun ne pourra porter la règle entière : les conditions
-d'un ruleset portent sur la branche *cible*, jamais sur la branche source d'une PR. La règle « `main` ne
-reçoit que des PR venues de `develop` » reste donc portée par `gardien`, par `promotion.yml` et par un
-hook local à installer une fois par clone :
+GitHub Pro`). Un ruleset est en place sur `main` depuis le 20 novembre 2026 :
+
+| règle | effet |
+| --- | --- |
+| `pull_request` | `main` ne se modifie que par une PR fusionnée ; méthode `merge` seule, **0 approbation requise** |
+| `non_fast_forward` | aucune réécriture d'historique |
+| `deletion` | la branche ne peut pas être supprimée |
+
+Deux choix demandent une explication, parce que l'un et l'autre paraissent trop permissifs.
+
+**Zéro approbation requise.** La promotion ouvre sa PR et la fusionne avec `GITHUB_TOKEN`. Exiger une
+approbation la bloquerait à chaque livraison, et le robot ne peut pas s'approuver lui-même. La règle
+garde donc ce qu'elle peut : rien n'entre dans `main` hors d'une PR, et rien n'y réécrit l'histoire.
+
+**Aucun contrôle requis.** C'est le piège de ce dépôt, et il faut le nommer : `ci.yml` ne se déclenche
+que sur les PR vers `develop` et sur les push de `develop` et de `main`. Une PR `develop → main`
+**n'ouvre aucune exécution** — c'est voulu, elle porte l'arbre que la CI de `develop` vient de valider.
+Rendre ces contrôles requis sur `main` bloquerait donc chaque promotion pour toujours, en attente de
+contrôles qui ne viennent jamais. Les rendre requis demanderait de faire tourner la CI sur les PR vers
+`main`, soit une exécution complète de plus par livraison sur un arbre déjà validé.
+
+Aucun ruleset ne peut non plus porter la règle de flux : ses conditions portent sur la branche *cible*,
+jamais sur la branche source d'une PR. La règle « `main` ne reçoit que des PR venues de `develop` »
+reste donc portée par `gardien` pour la PR humaine et par `promotion.yml` pour la sienne.
+
+## Garde-fous locaux
+
+Un hook local complète le ruleset, à installer une fois par clone :
 
 ```
 git config core.hooksPath .githooks
 ```
 
-`.githooks/pre-push` refuse tout push direct sur `main` et `develop`. Un contournement reste possible et
-assumé (`PUSH_DIRECT=1 git push …`) : sans plan payant, la règle est dissuasive, pas infranchissable.
+`.githooks/pre-push` refuse tout push direct sur `main` et `develop`. Le contournement
+(`PUSH_DIRECT=1 git push …`) reste possible et assumé : le hook est dissuasif. Sur `main`, il ne l'est
+plus seul — le ruleset refuse le push côté serveur, contournement compris. Sur `develop`, il l'est
+encore : aucun ruleset n'y est posé, parce que `release.yml` y pousse directement le réalignement de
+`main` (`git push origin HEAD:refs/heads/develop`), ce qu'une exigence de PR interdirait.
 
 ## Réglages du dépôt exigés par la chaîne
 
@@ -95,4 +123,20 @@ assumé (`PUSH_DIRECT=1 git push …`) : sans plan payant, la règle est dissuas
   ouvrir la PR.
 - **Allow auto-merge** : refusé par GitHub sur ce dépôt (`allow_auto_merge` reste à `false` après appel de
   l'API) ; la promotion ne s'y appuie donc pas.
-- **Automatically delete head branches** : activé, confort seulement.
+- **Automatically delete head branches** : **désactivé**, et à laisser ainsi. La promotion relit la
+  branche source de sa propre PR (`gh pr view --json headRefName`) et refuserait de fusionner si
+  GitHub l'avait supprimée entre-temps ; une branche effacée emporte aussi la seule trace permettant
+  de rejouer un lot de tests à l'identique. Relevé le 20 novembre 2026 : `delete_branch_on_merge: false`.
+
+### Analyse de sécurité
+
+- **Secret scanning** et **push protection** : activés le 19 novembre 2026, gratuits depuis le passage
+  en public, et sans aucune alerte rétroactive sur les 342 commits de l'historique.
+- **Alertes de vulnérabilité** et **mises à jour de sécurité Dependabot** : activées le 20 novembre 2026
+  (`PUT /vulnerability-alerts` et `PUT /automated-security-fixes` ; le champ équivalent de
+  `security_and_analysis` ne suffit pas).
+- **Motifs non fournisseurs** et **vérification de validité** : **à activer à la main** dans
+  `Settings → Code security`. L'API répond 200 à
+  `PATCH /repos/… {"security_and_analysis":{"secret_scanning_non_provider_patterns":{"status":"enabled"}}}`
+  puis les relit `disabled`, en appel groupé comme un par un. Les motifs non fournisseurs lèveront des
+  faux positifs sur les identifiants inventés pour les tests, déjà exceptés dans `.gitleaks.toml`.
