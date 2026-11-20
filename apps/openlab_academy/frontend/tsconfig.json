@@ -6,7 +6,13 @@
     "noImplicitAny": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
-    "types": []
+    // Les tests ont un besoin reel de Node : `process.env.TZ` pour eprouver l'independance au fuseau du
+    // navigateur, et `readFileSync` pour lire le vrai `paiement.js` servi par Frappe plutot qu'une copie.
+    // Jusqu'a vitest 3 ces types arrivaient par une reference interne du paquet, et `"types": []` etait
+    // donc trompeur : il annoncait une fermeture qu'il n'obtenait pas. vitest 5 ne porte plus cette
+    // reference. La dependance est donc declaree ici, et la frontiere -- le code de navigateur, domaine
+    // compris, ne connait pas la plateforme -- est tenue par eslint.config.js, qui couvre aussi les .vue.
+    "types": ["node"]
   },
   "include": ["src/**/*.ts", "src/**/*.vue"]
 }
