@@ -8,6 +8,7 @@ import frappe
 
 from openlab_academy.domain.domaine import (DOMAINES_PAR_DEFAUT, Domaine, DomaineInconnu,
                                             TeinteIllisible, normaliser, valider)
+from openlab_academy.infrastructure.champs_frappe import champ_personnalise
 
 DOCTYPE = "Domaine OpenLab"
 PARCOURS = "LMS Course"
@@ -66,9 +67,7 @@ def preparer_champ() -> None:
     Un lien suit le renommage tout seul, et une famille encore utilisée ne peut pas être supprimée
     par mégarde — Frappe refuse.
     """
-    from openlab_academy.entrypoints.install import _champ_personnalise
-
-    _champ_personnalise(PARCOURS, CHAMP, {
+    champ_personnalise(PARCOURS, CHAMP, {
         "fieldtype": "Link", "options": DOCTYPE, "label": "Domaine", "insert_after": "category",
         "description": "Famille du parcours. Elle donne sa teinte à la carte du catalogue public."})
 
