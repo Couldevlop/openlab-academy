@@ -123,10 +123,14 @@ class TestLeVerrouALApplication(_Socle):
         self.assertEqual(frappe.db.get_value("Role", AUTRE_ROLE, "two_factor_auth"), 0)
         self.assertEqual(frappe.db.get_value("Role", ROLE, "two_factor_auth"), 1)
 
-    def test_eteindre_fonctionne_meme_sans_aucun_porteur(self):
+    def test_eteindre_ce_qu_on_a_pose_fonctionne_meme_sans_aucun_porteur(self):
         """On doit toujours pouvoir rouvrir, sans avoir à toucher la base à la main."""
+        self.inscrire(self.compte)
+        second.appliquer(Reglage(actif=True, methode="OTP App", roles=(ROLE,)))
+        second.oublier(self.compte)
         second.appliquer(Reglage(actif=False, methode="OTP App", roles=()))
         self.assertEqual(frappe.db.get_single_value(second.SYSTEME, "enable_two_factor_auth"), 0)
+        self.assertEqual(frappe.db.get_value("Role", ROLE, "two_factor_auth"), 0)
 
 
 class TestLaLectureDuReglage(_Socle):
@@ -144,12 +148,66 @@ class TestLaLectureDuReglage(_Socle):
         with self.assertRaises(SecondFacteurInvalide):
             second.reglage()
 
-    def test_preparer_laisse_eteint_plutot_que_de_fermer_la_porte(self):
-        """Une migration ne doit jamais verrouiller le site, même sur un réglage intenable."""
+    def test_preparer_n_active_pas_sur_un_reglage_intenable(self):
+        """Une migration ne verrouille pas le site faute de porteur — et ne désarme rien non plus."""
+        frappe.db.set_value(second.SYSTEME, second.SYSTEME, "enable_two_factor_auth", 0)
         frappe.db.set_single_value(second.REGLAGES, "deuxieme_facteur", 1)
         frappe.db.set_single_value(second.REGLAGES, "roles_deuxieme_facteur", ROLE)
         for compte in second.porteurs((ROLE,)):
             second.oublier(compte)
         second.preparer()
         self.assertEqual(frappe.db.get_single_value(second.SYSTEME, "enable_two_factor_auth"), 0)
-        self.assertEqual(frappe.db.get_single_value(second.REGLAGES, "deuxieme_facteur"), 0)
+
+
+class TestCeQuiNeNousAppartientPas(_Socle):
+    """La plateforme ne retire jamais un second facteur qu'elle n'a pas posé.
+
+    Le sens « ne pas fermer la porte » vaut pour l'activation. Pris à l'envers, il autoriserait une
+    migration à éteindre une protection mise par quelqu'un d'autre, ou une faute de frappe dans un
+    nom de rôle à désarmer un site entier. C'est la direction dangereuse : on ne descend jamais le
+    niveau d'authentification sans un ordre explicite.
+    """
+
+    def test_une_migration_n_eteint_pas_un_second_facteur_pose_ailleurs(self):
+        frappe.db.set_value(second.SYSTEME, second.SYSTEME, "enable_two_factor_auth", 1)
+        frappe.db.set_single_value(second.REGLAGES, "deuxieme_facteur", 0)
+        frappe.db.set_single_value(second.REGLAGES, "roles_deuxieme_facteur_poses", "")
+        second.preparer()
+        self.assertEqual(frappe.db.get_single_value(second.SYSTEME, "enable_two_factor_auth"), 1)
+
+    def test_une_migration_ne_desarme_pas_un_role_pose_ailleurs(self):
+        frappe.db.set_value("Role", AUTRE_ROLE, "two_factor_auth", 1)
+        frappe.db.set_single_value(second.REGLAGES, "roles_deuxieme_facteur_poses", "")
+        frappe.db.set_single_value(second.REGLAGES, "roles_deuxieme_facteur", ROLE)
+        frappe.db.set_single_value(second.REGLAGES, "deuxieme_facteur", 1)
+        self.inscrire(self.compte)
+        second.preparer()
+        self.assertEqual(frappe.db.get_value("Role", AUTRE_ROLE, "two_factor_auth"), 1)
+
+    def test_un_reglage_illisible_ne_desarme_rien(self):
+        """Une faute de frappe dans un nom de rôle ne doit pas valoir extinction du site."""
+        frappe.db.set_value(second.SYSTEME, second.SYSTEME, "enable_two_factor_auth", 1)
+        frappe.db.set_single_value(second.REGLAGES, "deuxieme_facteur", 1)
+        frappe.db.set_single_value(second.REGLAGES, "roles_deuxieme_facteur", "System Manger")
+        second.preparer()
+        self.assertEqual(frappe.db.get_single_value(second.SYSTEME, "enable_two_factor_auth"), 1)
+
+    def test_sans_porteur_la_migration_n_active_pas_mais_n_eteint_pas_non_plus(self):
+        frappe.db.set_value(second.SYSTEME, second.SYSTEME, "enable_two_factor_auth", 1)
+        frappe.db.set_single_value(second.REGLAGES, "deuxieme_facteur", 1)
+        frappe.db.set_single_value(second.REGLAGES, "roles_deuxieme_facteur", ROLE)
+        for compte in second.porteurs((ROLE,)):
+            second.oublier(compte)
+        second.preparer()
+        self.assertEqual(frappe.db.get_single_value(second.SYSTEME, "enable_two_factor_auth"), 1)
+
+    def test_ce_que_la_plateforme_a_pose_est_trace_et_repris(self):
+        """Décocher dans l'administration doit encore retirer ce que la plateforme avait posé."""
+        self.inscrire(self.compte)
+        second.appliquer(Reglage(actif=True, methode="OTP App", roles=(ROLE,)))
+        self.assertEqual(frappe.db.get_single_value(second.REGLAGES,
+                                                    "roles_deuxieme_facteur_poses"), ROLE)
+        frappe.db.set_single_value(second.REGLAGES, "deuxieme_facteur", 0)
+        second.preparer()
+        self.assertEqual(frappe.db.get_value("Role", ROLE, "two_factor_auth"), 0)
+        self.assertEqual(frappe.db.get_single_value(second.SYSTEME, "enable_two_factor_auth"), 0)

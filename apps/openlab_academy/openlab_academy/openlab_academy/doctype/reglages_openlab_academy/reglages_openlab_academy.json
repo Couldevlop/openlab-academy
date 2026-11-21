@@ -48,7 +48,8 @@
   "deuxieme_facteur",
   "methode_deuxieme_facteur",
   "col_securite",
-  "roles_deuxieme_facteur"
+  "roles_deuxieme_facteur",
+  "roles_deuxieme_facteur_poses"
  ],
  "fields": [
   {
@@ -314,6 +315,14 @@
    "fieldname": "roles_deuxieme_facteur",
    "fieldtype": "Small Text",
    "label": "Rôles concernés"
+  },
+  {
+   "description": "Trace de ce que la plateforme a posé elle-même, pour ne jamais retirer un second facteur qu'elle n'a pas mis.",
+   "fieldname": "roles_deuxieme_facteur_poses",
+   "fieldtype": "Small Text",
+   "hidden": 1,
+   "label": "Rôles soumis par la plateforme",
+   "read_only": 1
   }
  ],
  "issingle": 1,

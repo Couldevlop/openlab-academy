@@ -17,6 +17,8 @@ from openlab_academy.domain.deuxieme_facteur import (METHODE_PAR_DEFAUT, ROLES_P
 
 REGLAGES = "Reglages OpenLab Academy"
 SYSTEME = "System Settings"
+# Trace de ce que la plateforme a posé : voir `appliquer`.
+CHAMP_POSES = "roles_deuxieme_facteur_poses"
 # Marque posée par Frappe une fois qu'un compte a vérifié un premier code. Elle se lit par les
 # accesseurs de Frappe et par eux seuls : c'est un défaut *global* rangé sous le parent « __2fa »,
 # de clé « <compte>_otplogin », et non un défaut d'utilisateur. Lue autrement, elle répond vrai
@@ -89,37 +91,67 @@ def oublier(utilisateur: str) -> None:
     clear_default(_marque(utilisateur))
 
 
+def poses() -> tuple[str, ...]:
+    """Les rôles que la plateforme a elle-même soumis au second facteur, la dernière fois."""
+    brut = frappe.db.get_single_value(REGLAGES, CHAMP_POSES) or ""
+    return tuple(r.strip() for r in brut.splitlines() if r.strip())
+
+
+def _tracer(roles: tuple[str, ...]) -> None:
+    frappe.db.set_single_value(REGLAGES, CHAMP_POSES, "\n".join(roles))
+
+
 def appliquer(demande: Reglage) -> None:
-    """Traduit le réglage en configuration du site, après le garde-fou d'accès."""
+    """Traduit le réglage en configuration du site, après le garde-fou d'accès.
+
+    Le sens de lecture est asymétrique, et c'est voulu. Poser une protection est sans danger :
+    on écrit. La retirer en est un : on ne retire que ce qu'on a soi-même posé, et jamais ce qui
+    vient d'ailleurs — un second facteur activé à la main dans les réglages du site, un rôle
+    soumis par une autre application. Sans cette trace, une migration de routine désarmerait une
+    protection qu'elle n'a pas mise, ce qui est la direction dangereuse de l'erreur.
+    """
     exiger_un_porteur(demande, porteurs(demande.roles))
-    systeme = frappe.get_single(SYSTEME)
-    systeme.enable_two_factor_auth = int(demande.actif)
-    systeme.two_factor_method = demande.methode
-    systeme.save(ignore_permissions=True)
-    # Le drapeau est repris a zero a chaque passage : un role retire du reglage doit cesser d'etre
-    # soumis, sinon la case decochee dans l'administration ne changerait rien pour lui.
-    for role in frappe.get_all("Role", {"two_factor_auth": 1}, pluck="name", ignore_permissions=True):
-        if role not in demande.roles:
-            frappe.db.set_value("Role", role, "two_factor_auth", 0)
-    for role in demande.roles:
-        frappe.db.set_value("Role", role, "two_factor_auth", 1)
+    anciens = poses()
+    if demande.actif:
+        systeme = frappe.get_single(SYSTEME)
+        systeme.enable_two_factor_auth = 1
+        systeme.two_factor_method = demande.methode
+        systeme.save(ignore_permissions=True)
+        for role in anciens:
+            if role not in demande.roles:
+                frappe.db.set_value("Role", role, "two_factor_auth", 0)
+        for role in demande.roles:
+            frappe.db.set_value("Role", role, "two_factor_auth", 1)
+        _tracer(demande.roles)
+        return
+    if not anciens:
+        # Rien de nous n'est posé : il n'y a rien à retirer, et ce qui est là ne nous regarde pas.
+        return
+    for role in anciens:
+        frappe.db.set_value("Role", role, "two_factor_auth", 0)
+    frappe.db.set_value(SYSTEME, SYSTEME, "enable_two_factor_auth", 0)
+    _tracer(())
 
 
 def preparer() -> None:
     """Installation et migration : pose les valeurs par défaut, puis applique ce qui est demandé.
 
-    Une migration ne doit jamais fermer la porte : si le réglage demandé n'est pas tenable — plus
-    aucun porteur, par exemple — on le laisse éteint et on le dit, plutôt que d'échouer la
-    migration ou, pire, de verrouiller le site.
+    Une migration ne décide jamais d'abaisser le niveau d'authentification. Elle peut échouer à
+    activer — faute de porteur, réglage illisible — et dans ce cas elle le dit et ne touche à
+    rien. Écrire « éteint » sur un échec de lecture ferait d'une faute de frappe dans un nom de
+    rôle le moyen de désarmer un site entier.
     """
     doc = frappe.get_single(REGLAGES)
-    if doc.get("roles_deuxieme_facteur") is None or not str(doc.get("roles_deuxieme_facteur")).strip():
+    if not str(doc.get("roles_deuxieme_facteur") or "").strip():
         doc.db_set("roles_deuxieme_facteur", "\n".join(ROLES_PAR_DEFAUT), update_modified=False)
     if not doc.get("methode_deuxieme_facteur"):
         doc.db_set("methode_deuxieme_facteur", METHODE_PAR_DEFAUT, update_modified=False)
     try:
-        appliquer(reglage())
+        demande = reglage()
     except SecondFacteurInvalide as e:
-        frappe.db.set_value(SYSTEME, SYSTEME, "enable_two_factor_auth", 0)
-        frappe.db.set_single_value(REGLAGES, "deuxieme_facteur", 0)
-        print(f"Second facteur laissé éteint : {e}")
+        print(f"Réglage du second facteur illisible, rien n'est touché : {e}")
+        return
+    try:
+        appliquer(demande)
+    except SecondFacteurInvalide as e:
+        print(f"Second facteur non activé, et rien n'est retiré : {e}")
