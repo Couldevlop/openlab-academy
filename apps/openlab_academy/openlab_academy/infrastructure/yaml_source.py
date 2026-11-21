@@ -6,7 +6,8 @@ import yaml
 
 from openlab_academy.domain.grille import Grille, GrilleInvalide
 from openlab_academy.domain.parcours import (Annonce, Bloc, Evaluations, Extrait, Figure, Module, Niveau,
-                                             Parcours, ParcoursInvalide, Projet, Question, Section, Tableau)
+                                             Parcours, ParcoursInvalide, Projet, Question, Section, Tableau,
+                                             valider_video)
 from openlab_academy.domain.reglages import Reglages, ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import Chaine
 
@@ -147,6 +148,18 @@ class _Lecteur:
             raise FormatInvalide(f"{self.source}: {chemin} doit être un nom de fichier .zip sans chemin")
         return nom
 
+    def video(self, brut, chemin: str) -> str:
+        """Clé facultative `video:` : vidéo de la séance, affichée en tête de la leçon.
+
+        La forme est tenue par le domaine (`valider_video`) : un chemin de l'atelier à la règle de
+        nommage, ou une adresse https. Le fichier lui-même est contrôlé à la publication, pas ici."""
+        if brut is None:
+            return ""
+        try:
+            return valider_video(str(brut))
+        except ParcoursInvalide as e:
+            raise FormatInvalide(f"{self.source}: {chemin} : {e}") from None
+
     def atelier(self, brut, archive: str, chemin: str) -> bool:
         """Clé facultative `atelier:` : la séance s'exerce dans l'atelier de code du navigateur.
 
@@ -232,6 +245,7 @@ class _Lecteur:
             raise FormatInvalide(f"{self.source}: {chemin}quiz doit être une liste de questions")
         evaluations = self.evaluations(m, chemin)
         archive = self.archive(m.get("archive"), f"{chemin}archive")
+        video = self.video(m.get("video"), f"{chemin}video")
         # le livrable n'est exigé que des séances qui en portent un ; le domaine refuse celui qui traîne ailleurs
         livrable = self.exiger(m, "livrable", chemin) if evaluations.veut_livrable else m.get("livrable")
         return Module(*(str(self.exiger(m, c, chemin)) for c in ("num", "title", "contenu")), str(livrable or ""),
@@ -240,6 +254,7 @@ class _Lecteur:
                       evaluations=evaluations,
                       travaux_pratiques=str(m.get("travaux_pratiques") or ""),
                       archive=archive,
+                      video=video,
                       atelier=self.atelier(m.get("atelier"), archive, f"{chemin}atelier"),
                       cours=self.sections(m.get("cours"), f"{chemin}cours"),
                       figures=self.figures(m.get("figures"), f"{chemin}figures"),
