@@ -14,7 +14,7 @@ from openlab_academy.domain.reglages import Reglages, ReglagesExercices
 from openlab_academy.domain.reglages_evaluation import Chaine, ReglagesEvaluation, TypeExercice
 from openlab_academy.infrastructure import domaines_frappe
 from openlab_academy.infrastructure import (depot_copies_frappe, editorjs, parties_frappe, ressources_frappe,
-                                            retouches_frappe)
+                                            retouches_frappe, videos_frappe)
 from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
 from openlab_academy.infrastructure.depot_ouvertures_frappe import CHAMP_DELAI
 from openlab_academy.infrastructure.visibilite_frappe import CHAMP_LIMITE, CHAMP_VIDEO
@@ -59,6 +59,7 @@ class DepotFrappe:
             self._remplacer(cours_id, parcours)
 
     def _remplacer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
+        self._refuser_videos_absentes(parcours)  # avant la purge : on ne detruit pas pour echouer ensuite
         videos = self._videos(cours_id)
         retouchees = retouches_frappe.relever(cours_id)
         parties_retouchees = parties_frappe.relever(cours_id)
@@ -132,6 +133,20 @@ class DepotFrappe:
         if p.mise_en_avant:
             drapeaux["featured"] = 1
         return drapeaux
+
+    @staticmethod
+    def _refuser_videos_absentes(parcours: Parcours | Annonce) -> None:
+        """Une vidéo référencée mais absente du serveur fait échouer la publication.
+
+        Sans ce contrôle, une faute de frappe dans un fichier de parcours publie un lecteur vide, et
+        personne ne s'en aperçoit avant qu'un apprenant n'y tombe — trop tard. Elles sont toutes nommées
+        d'un coup : s'arrêter à la première obligerait à republier autant de fois qu'il en manque."""
+        if not isinstance(parcours, Parcours):
+            return
+        absentes = videos_frappe.manquantes(parcours.videos())
+        if absentes:
+            raise videos_frappe.VideoAbsente(
+                "vidéo(s) référencée(s) mais absente(s) du serveur : " + ", ".join(absentes))
 
     @staticmethod
     def _videos(cours_id: str) -> dict[str, str]:
@@ -271,6 +286,14 @@ class DepotFrappe:
             "title": titre, "content": contenu, "assessments": evaluations, CHAMP_VIDEO: video,
         }).insert(ignore_permissions=True)
 
+    @staticmethod
+    def _video_de(m: Module, retenue: str) -> str:
+        """Le fichier de parcours a le dernier mot ; sans clé `video:`, celle posée à la main reste.
+
+        Même règle que les retouches : l'application garde ce qu'on y a mis tant que le fichier ne le
+        reprend pas."""
+        return videos_frappe.adresse(m.video) if m.video else retenue
+
     def _lecon_projet(self, cours_id: str, chapitre: str, ch: Chapitre, videos: dict[str, str]) -> str:
         type_exercice = self._type_projet(ch.projet)
         devoir = self._devoir(cours_id, ch.titre, editorjs.consigne_projet(ch.projet), type_exercice, ch.projet,
@@ -303,7 +326,7 @@ class DepotFrappe:
             m, figures=(), cours=tuple(dataclasses.replace(s, figures=()) for s in m.cours))
         lecon = self._nouvelle_lecon(cours_id, chapitre, titre,
                                      editorjs.lecon_module(sans_media, devoir, heures),
-                                     evaluations, videos.get(titre, ""))
+                                     evaluations, self._video_de(m, videos.get(titre, "")))
         url = ressources_frappe.joindre(lecon.name, m.archive) if m.archive else None
         figures = {f.nom: ressources_frappe.joindre(lecon.name, f.nom) for f in m.toutes_les_figures}
         quiz = self._quiz(cours_id, lecon.name, m, parcours.exercices) if m.veut_quiz and m.quiz else None

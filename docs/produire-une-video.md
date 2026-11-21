@@ -166,6 +166,48 @@ La chaîne est en quatre temps, chacun conduit par un script :
    nommage, puis un contrôle relit tous les YAML de parcours et refuse de passer si une
    vidéo référencée est absente — pour qu'aucun apprenant ne tombe sur un lecteur vide.
 
+## Rattacher la vidéo à sa séance
+
+Une séance porte sa vidéo par la clé `video:` de son module, dans le YAML du parcours :
+
+```yaml
+      - num: "01"
+        title: Écosystème & méthode
+        video: 00-fondamentaux-data-science/s01-intro.mp4
+```
+
+C'est **exactement** le chemin de la règle de nommage ci-dessus. Sur le serveur, il se lit
+sous les fichiers publics du site :
+
+```
+sites/<site>/public/files/videos/00-fondamentaux-data-science/s01-intro.mp4
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ce qu'écrit le YAML
+```
+
+Publiques, à la différence des archives et des figures : une vidéo se lit en flux, par
+intervalles, et le contrôle des médias sert un fichier d'un bloc — une vidéo privée se
+téléchargerait donc entièrement avant la première image. Ce n'est pas une fuite : la vidéo ne
+montre rien que la leçon ne dise déjà.
+
+Une vidéo hébergée ailleurs s'écrit en adresse complète, **en `https:` seulement** :
+
+```yaml
+        video: https://video.openlab.ci/s01-intro.mp4
+```
+
+Deux formes, et deux seulement. Tout le reste est refusé à la lecture du fichier : un chemin
+absolu, une remontée de dossier, un `.mkv` (le brut de captation, que le navigateur ne lit pas),
+une adresse en clair, un `javascript:`.
+
+**Le contrôle.** À la republication, une vidéo référencée mais absente du serveur fait
+**échouer ce parcours**, avant toute écriture — le contenu existant n'est pas détruit, et les
+autres parcours se publient normalement. Les vidéos manquantes sont toutes nommées dans le même
+message : inutile de republier une fois par fichier oublié.
+
+**Qui a le dernier mot.** Sans clé `video:`, une vidéo posée à la main dans l'application reste
+en place d'une publication à l'autre — même règle que les retouches. Dès que la clé est écrite,
+le fichier de parcours reprend la main.
+
 Les scripts vivent dans `studio-academy\montage\scripts\` ; chacun s'exécute seul et
 affiche ce qu'il va faire avant de le faire.
 

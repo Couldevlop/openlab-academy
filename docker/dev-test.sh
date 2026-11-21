@@ -23,7 +23,7 @@ MSYS_NO_PATHCONV=1 docker exec -u frappe -w /home/frappe/frappe-bench/sites open
   set -o pipefail
   ../env/bin/python -c 'import coverage' 2>/dev/null || ../env/bin/pip install -q coverage
   ../env/bin/coverage run --branch --source=../apps/openlab_academy/openlab_academy \
-    --omit='*/tests/*,*/hooks.py' -m frappe.utils.bench_helper frappe --site lms.localhost \
+    --omit='*/tests/*,*/hooks.py,*/entrypoints/jeu_essai.py' -m frappe.utils.bench_helper frappe --site lms.localhost \
     run-tests --skip-before-tests $ARGS > /tmp/tests.log 2>&1
   status=\$?
   grep -E '^(Ran|OK|FAILED)|^(FAIL|ERROR):|Error: |line [0-9]+, in test' /tmp/tests.log | head -30
