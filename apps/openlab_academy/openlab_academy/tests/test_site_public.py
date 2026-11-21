@@ -19,6 +19,7 @@ from openlab_academy.entrypoints import site_api
 from openlab_academy.infrastructure.inscriptions_frappe import (PLACES_PAR_DEFAUT,
                                                                 CohortesPubliquesFrappe,
                                                                 TarifsPublicsFrappe)
+from openlab_academy.infrastructure import domaines_frappe
 from openlab_academy.www import catalogue_public
 
 DOCTYPE_REGLAGES = "Reglages OpenLab Academy"
@@ -255,6 +256,7 @@ class TestLesPagesPubliquesSeRendent(FrappeTestCase):
         self.payant = frappe.get_doc(
             {"doctype": "LMS Course", "title": "Pages — parcours payant", "short_introduction": "a",
              "description": "d", "published": 1, "category": self.categorie,
+             domaines_frappe.CHAMP: "ia",
              "instructors": [{"instructor": "Administrator"}]}).insert(ignore_permissions=True).name
         self.gratuit = frappe.get_doc(
             {"doctype": "LMS Course", "title": "Pages — parcours gratuit", "short_introduction": "a",
@@ -291,8 +293,30 @@ class TestLesPagesPubliquesSeRendent(FrappeTestCase):
         noms = [p["name"] for p in context.parcours]
         self.assertIn(self.payant, noms)
         self.assertIn(self.gratuit, noms)
-        self.assertIn(self.categorie, context.categories)
         self.assertTrue(all("prix" in p for p in context.parcours))
+        self.assertTrue(all("etat_libelle" in p for p in context.parcours))
+
+    def test_le_catalogue_ne_propose_que_des_familles_qui_filtrent_vraiment(self):
+        """Un filtre qui ne filtre rien est un bouton qui déçoit : seules les familles présentes
+        au catalogue sont proposées, et leur compte doit correspondre aux cartes affichées."""
+        from openlab_academy.www import parcours
+        context = frappe._dict()
+        parcours.get_context(context)
+        affichees = [p["domaine_libelle"] for p in context.parcours if p["domaine_libelle"]]
+        for famille in context.familles:
+            with self.subTest(famille["libelle"]):
+                self.assertIn(famille["libelle"], affichees)
+                self.assertEqual(famille["compte"], affichees.count(famille["libelle"]))
+                self.assertTrue(famille["teinte"].startswith("#"))
+
+    def test_une_famille_sans_parcours_n_apparait_pas_dans_les_filtres(self):
+        from openlab_academy.www import parcours
+        context = frappe._dict()
+        parcours.get_context(context)
+        proposees = {f["libelle"] for f in context.familles}
+        self.assertIn("Intelligence artificielle", proposees)
+        toutes = {d.libelle for d in domaines_frappe.tous()}
+        self.assertTrue(proposees <= toutes)
 
     def test_la_fiche_porte_son_offre_et_son_lien_de_connexion(self):
         from openlab_academy.www import parcours_public
@@ -407,3 +431,121 @@ class TestLesPetitsOutilsDuCatalogue(FrappeTestCase):
     def test_un_catalogue_vide_compte_zero_plutot_que_de_casser(self):
         self.assertEqual(catalogue_public.chiffres([]),
                          {"parcours": 0, "seances": 0, "gratuits": 0})
+
+
+class TestLesQuatreEtatsHonnetes(FrappeTestCase):
+    """Ce qu'une carte a le droit d'annoncer. « Fermé » n'en fait plus partie.
+
+    Pour un parcours dont la conception n'est pas terminée, « fermé » se lit comme un refus alors
+    qu'il s'agit d'une préparation : le visiteur s'en va au lieu de revenir.
+    """
+
+    def test_un_parcours_annonce_est_en_preparation(self):
+        self.assertEqual(catalogue_public.etat_de({"upcoming": 1, "offre": {"ouverte": True}}),
+                         catalogue_public.PREPARATION)
+
+    def test_la_preparation_prime_sur_l_offre(self):
+        """Un parcours annoncé n'a pas de contenu : quoi que dise l'offre, on ne vend pas du vide."""
+        for offre in ({"ouverte": True, "gratuit": True}, {"ouverte": False}, {}):
+            with self.subTest(offre):
+                self.assertEqual(catalogue_public.etat_de({"upcoming": 1, "offre": offre}),
+                                 catalogue_public.PREPARATION)
+
+    def test_une_offre_fermee_est_bientot_ouverte(self):
+        self.assertEqual(catalogue_public.etat_de({"upcoming": 0, "offre": {"ouverte": False}}),
+                         catalogue_public.BIENTOT)
+
+    def test_une_offre_ouverte_et_payante_annonce_ses_inscriptions(self):
+        self.assertEqual(
+            catalogue_public.etat_de({"upcoming": 0, "offre": {"ouverte": True, "gratuit": False}}),
+            catalogue_public.OUVERTE)
+
+    def test_l_acces_libre_exige_une_offre_reellement_ouverte(self):
+        """Pendant une suspension, même un parcours gratuit n'accueille personne. L'annoncer libre
+        serait un mensonge que le visiteur découvrirait au clic suivant."""
+        self.assertEqual(
+            catalogue_public.etat_de({"upcoming": 0, "offre": {"ouverte": False, "gratuit": True}}),
+            catalogue_public.BIENTOT)
+        self.assertEqual(
+            catalogue_public.etat_de({"upcoming": 0, "offre": {"ouverte": True, "gratuit": True}}),
+            catalogue_public.LIBRE)
+
+    def test_une_offre_absente_ne_fait_pas_tomber_la_page(self):
+        self.assertEqual(catalogue_public.etat_de({}), catalogue_public.BIENTOT)
+
+    def test_chaque_etat_porte_un_libelle_et_aucun_ne_dit_ferme(self):
+        for etat in (catalogue_public.PREPARATION, catalogue_public.BIENTOT,
+                     catalogue_public.OUVERTE, catalogue_public.LIBRE):
+            with self.subTest(etat):
+                libelle = catalogue_public.libelle_etat(etat)
+                self.assertTrue(libelle)
+                self.assertNotIn("ferm", libelle.lower())
+
+    def test_un_etat_inconnu_ne_rend_rien(self):
+        self.assertEqual(catalogue_public.libelle_etat("n-importe-quoi"), "")
+
+    def test_aucune_date_n_est_annoncee_dans_un_libelle(self):
+        """Nous ne tenons aucune date d'ouverture : une date manquée coûte plus cher que son absence."""
+        for etat in (catalogue_public.PREPARATION, catalogue_public.BIENTOT):
+            with self.subTest(etat):
+                libelle = catalogue_public.libelle_etat(etat)
+                self.assertNotRegex(libelle, r"\d")
+
+
+class TestCeQuUneCartePorte(FrappeTestCase):
+    def setUp(self):
+        self.categorie_doctype = "LMS Category"
+        self.cours = frappe.get_doc({
+            "doctype": "LMS Course", "title": "Parcours pour cartes", "short_introduction": "s",
+            "description": "d", "published": 1,
+            domaines_frappe.CHAMP: "ia"}).insert(ignore_permissions=True).name
+        chapitre = frappe.get_doc({"doctype": "Course Chapter", "title": "Bloc",
+                                   "course": self.cours}).insert(ignore_permissions=True)
+        frappe.get_doc({"doctype": "Chapter Reference", "parent": self.cours,
+                        "parenttype": "LMS Course", "parentfield": "chapters",
+                        "chapter": chapitre.name, "idx": 1}).insert(ignore_permissions=True)
+        for i in range(3):
+            frappe.get_doc({"doctype": "Course Lesson", "title": f"Séance {i}", "chapter": chapitre.name,
+                            "course": self.cours, "content": ""}).insert(ignore_permissions=True)
+
+    def tearDown(self):
+        frappe.db.rollback()
+
+    def test_la_carte_porte_la_famille_et_sa_teinte(self):
+        carte = catalogue_public.pour_les_cartes(catalogue_public.avec_offre(
+            [c for c in catalogue_public.parcours_visibles() if c.name == self.cours]))[0]
+        self.assertEqual(carte["domaine_libelle"], "Intelligence artificielle")
+        self.assertTrue(carte["domaine_teinte"].startswith("#"))
+
+    def test_un_parcours_sans_famille_ne_fait_pas_tomber_la_carte(self):
+        """Il prendra la teinte neutre de la charte ; il ne casse pas la page."""
+        frappe.db.set_value("LMS Course", self.cours, domaines_frappe.CHAMP, None)
+        carte = catalogue_public.pour_les_cartes(catalogue_public.avec_offre(
+            [c for c in catalogue_public.parcours_visibles() if c.name == self.cours]))[0]
+        self.assertEqual((carte["domaine_libelle"], carte["domaine_teinte"]), ("", ""))
+
+    def test_la_carte_compte_ses_seances(self):
+        """Compté, jamais estimé : une carte qui ment sur la taille fait perdre son temps."""
+        self.assertEqual(catalogue_public.seances_par_parcours([self.cours])[self.cours], 3)
+
+    def test_un_parcours_sans_chapitre_compte_zero_seance(self):
+        vide = frappe.get_doc({"doctype": "LMS Course", "title": "Parcours vide",
+                               "short_introduction": "s", "description": "d"}
+                              ).insert(ignore_permissions=True).name
+        self.assertEqual(catalogue_public.seances_par_parcours([vide]), {vide: 0})
+
+    def test_sans_parcours_rien_n_est_compte(self):
+        self.assertEqual(catalogue_public.seances_par_parcours([]), {})
+
+    def test_le_comptage_ne_melange_pas_deux_parcours(self):
+        """Deux requêtes pour tout le catalogue : l'erreur guettée est d'attribuer à l'un les
+        séances de l'autre."""
+        autre = frappe.get_doc({"doctype": "LMS Course", "title": "Autre parcours",
+                                "short_introduction": "s", "description": "d"}
+                               ).insert(ignore_permissions=True).name
+        chapitre = frappe.get_doc({"doctype": "Course Chapter", "title": "Bloc autre",
+                                   "course": autre}).insert(ignore_permissions=True)
+        frappe.get_doc({"doctype": "Course Lesson", "title": "Unique", "chapter": chapitre.name,
+                        "course": autre, "content": ""}).insert(ignore_permissions=True)
+        compte = catalogue_public.seances_par_parcours([self.cours, autre])
+        self.assertEqual((compte[self.cours], compte[autre]), (3, 1))

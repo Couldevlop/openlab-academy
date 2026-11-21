@@ -1,237 +1,519 @@
 /* Le site public de l'académie : accueil, catalogue, fiche d'un parcours.
  *
- * La charte vient de openlab.css, qui est chargé avant (web_include_css) : on n'y redéfinit aucune
- * couleur, on s'en sert. Une seconde définition dériverait de la première sans que rien ne le dise.
+ * La charte vient de openlab.css, chargé avant : on n'y redéfinit aucune couleur, on s'en sert. Une
+ * seconde définition dériverait de la première sans que rien ne le dise.
  *
- * Contraste : aucun texte orange courant sur fond clair (#C25A12 = 4,4:1), et du blanc seulement sur
- * #B35210 ou plus foncé — la règle est posée en tête d'openlab.css, on s'y tient.
+ * Contraste : aucun texte orange courant sur fond clair (#C25A12 = 4,4:1), et du blanc seulement
+ * sur #B35210 ou plus foncé — la règle est posée en tête d'openlab.css, on s'y tient. Les teintes
+ * de famille viennent de la base et sont validées à la saisie : au moins 4,5:1 face au blanc.
  */
 
-.ol-site {
-  max-width: 76rem;
-  margin: 0 auto;
-  padding: 2rem 1.25rem 5rem;
-  font-family: var(--ol-font-body);
-  color: var(--ol-graphite);
+:root {
+  --ol-largeur: 74rem;
+  --ol-teinte-neutre: var(--ol-navy-soft); /* famille absente : la carte reste lisible */
+  --ol-rayon: 0.85rem;
+  --ol-ombre-carte: 0 1px 2px rgba(0, 30, 72, 0.06), 0 8px 24px -12px rgba(0, 30, 72, 0.25);
+  --ol-ombre-levee: 0 2px 4px rgba(0, 30, 72, 0.08), 0 18px 36px -14px rgba(0, 30, 72, 0.35);
 }
 
-.ol-site h1,
-.ol-site h2,
-.ol-site h3 {
+.ol-corps {
+  margin: 0;
+  background: var(--ol-ivory);
+  color: var(--ol-graphite);
+  font-family: var(--ol-font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.ol-corps h1,
+.ol-corps h2,
+.ol-corps h3 {
   font-family: var(--ol-font-display);
   color: var(--ol-navy);
   line-height: 1.15;
+  letter-spacing: -0.015em;
 }
 
+/* `hidden` doit gagner contre toute règle d'affichage. Sans cela, le bloc « prochaine session »
+   réapparaît vide sur une offre fermée — des dates absentes et « 0 place restante » lus comme une
+   promesse manquée, alors que la décision était de ne rien annoncer du tout. */
+[hidden] { display: none !important; }
+
+.ol-saut { position: absolute; left: -9999px; }
+.ol-saut:focus {
+  left: 1rem;
+  top: 1rem;
+  z-index: 50;
+  background: var(--ol-navy);
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+}
+
+/* --- coquille ------------------------------------------------------------ */
+
+.ol-entete {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+}
+
+.ol-entete-barre {
+  max-width: var(--ol-largeur);
+  margin: 0 auto;
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.ol-entete-filet { height: 3px; background: var(--ol-filet); }
+
+.ol-marque { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; }
+.ol-marque-nom {
+  font-family: var(--ol-font-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--ol-navy);
+  letter-spacing: -0.01em;
+}
+.ol-marque-nom strong { font-weight: 800; }
+
+.ol-nav { display: flex; align-items: center; gap: 1.5rem; }
+.ol-nav a {
+  color: var(--ol-navy);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.ol-nav a:hover { color: var(--ol-orange-dark); }
+.ol-nav-action { border: 1.5px solid var(--ol-navy); border-radius: 999px; padding: 0.4rem 1.1rem; }
+.ol-nav-action:hover { background: var(--ol-navy); color: #fff; }
+
+@media (max-width: 40rem) {
+  .ol-nav a:not(.ol-nav-action) { display: none; }
+}
+
+.ol-pied {
+  margin-top: 5rem;
+  background: var(--ol-navy);
+  color: rgba(255, 255, 255, 0.78);
+  border-top: 3px solid transparent;
+  border-image: var(--ol-filet) 1;
+}
+.ol-pied-corps {
+  max-width: var(--ol-largeur);
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 3rem;
+  justify-content: space-between;
+  align-items: center;
+}
+.ol-pied-identite { display: flex; align-items: center; gap: 0.75rem; max-width: 30rem; }
+.ol-pied-identite p { margin: 0; font-size: 0.95rem; }
+.ol-pied-liens { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+.ol-pied-liens a { color: #fff; text-decoration: none; font-weight: 600; font-size: 0.95rem; }
+.ol-pied-liens a:hover { color: var(--ol-sun); }
+
+/* --- blocs communs ------------------------------------------------------- */
+
+.ol-site { max-width: var(--ol-largeur); margin: 0 auto; padding: 3.5rem 1.25rem 0; }
+
 .ol-filet {
-  height: 0.4rem;
-  width: 10rem;
+  height: 0.35rem;
+  width: 7rem;
   border-radius: 999px;
   background: var(--ol-filet);
   margin-bottom: 1.25rem;
 }
 
-.ol-accroche {
-  font-size: 1.15rem;
-  line-height: 1.6;
-  color: var(--ol-slate);
-  max-width: 46rem;
-}
-
-.ol-categorie {
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ol-orange-dark);
-  margin: 0 0 0.35rem;
-}
+.ol-accroche { font-size: 1.1rem; line-height: 1.65; color: var(--ol-slate); max-width: 46rem; }
 
 .ol-bouton {
   display: inline-block;
-  padding: 0.75rem 1.5rem;
+  padding: 0.8rem 1.6rem;
   border: 0;
   border-radius: 0.6rem;
   background: var(--ol-orange-deep);
   color: #fff;
   font-weight: 700;
   font-family: var(--ol-font-display);
+  font-size: 1rem;
   text-decoration: none;
   cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.ol-bouton:hover { background: var(--ol-orange-deeper); color: #fff; transform: translateY(-1px); }
+.ol-bouton:focus-visible { outline: 3px solid var(--ol-focus); outline-offset: 2px; }
+.ol-bouton[disabled] { background: var(--ol-slate); cursor: not-allowed; transform: none; }
+
+/* Action secondaire : la fiche d'un parcours fermé ne crie pas plus fort qu'une page ouverte. */
+.ol-bouton--sobre { background: transparent; color: var(--ol-navy); border: 1.5px solid var(--ol-navy); }
+.ol-bouton--sobre:hover { background: var(--ol-navy); color: #fff; }
+
+.ol-lien-fort {
+  color: var(--ol-navy);
+  font-weight: 700;
+  font-family: var(--ol-font-display);
+  text-decoration: none;
+  border-bottom: 2px solid var(--ol-orange);
+  padding-bottom: 1px;
+}
+.ol-lien-fort:hover { color: var(--ol-orange-dark); }
+
+.ol-vide { color: var(--ol-slate); grid-column: 1 / -1; }
+.ol-note { color: var(--ol-slate); font-size: 0.88rem; line-height: 1.55; margin: 0.9rem 0 0; }
+
+/* --- accueil : le héros -------------------------------------------------- */
+
+.ol-heros { background: var(--ol-navy); color: #fff; position: relative; overflow: hidden; }
+
+/* Une lueur, pas une image : de la profondeur sans rien peser ni rien promettre. */
+.ol-heros::after {
+  content: "";
+  position: absolute;
+  right: -12rem;
+  top: -14rem;
+  width: 38rem;
+  height: 38rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(236, 118, 35, 0.32) 0%, rgba(236, 118, 35, 0) 68%);
+  pointer-events: none;
 }
 
-.ol-bouton:hover { background: var(--ol-orange-deeper); color: #fff; }
-.ol-bouton:focus-visible { outline: 3px solid var(--ol-focus); outline-offset: 2px; }
-.ol-bouton[disabled] { background: var(--ol-slate); cursor: not-allowed; }
-
-/* --- accueil ------------------------------------------------------------ */
-
-.ol-hero { padding: 3rem 0 2.5rem; }
-.ol-hero h1 { font-size: clamp(2rem, 5vw, 3.4rem); margin: 0 0 1rem; max-width: 22ch; }
-.ol-hero-actions { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 1.75rem; }
-.ol-hero-note { color: var(--ol-slate); font-size: 0.95rem; }
+.ol-heros-corps {
+  position: relative;
+  z-index: 1;
+  max-width: var(--ol-largeur);
+  margin: 0 auto;
+  padding: 4.5rem 1.25rem 3rem;
+}
+.ol-heros h1 {
+  color: #fff;
+  font-size: clamp(2.2rem, 5.5vw, 3.6rem);
+  font-weight: 800;
+  margin: 0 0 1rem;
+  max-width: 20ch;
+}
+.ol-heros-dit {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 44ch;
+  margin: 0;
+}
+.ol-heros-actions { display: flex; align-items: center; gap: 1.75rem; flex-wrap: wrap; margin: 2rem 0 0; }
+.ol-heros .ol-lien-fort { color: #fff; border-bottom-color: var(--ol-sun); }
+.ol-heros .ol-lien-fort:hover { color: var(--ol-sun); }
 
 .ol-chiffres {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  gap: 1rem;
-  padding: 1.75rem;
-  border-radius: 1rem;
-  background: var(--ol-navy);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3rem;
+  margin: 3rem 0 0;
+  padding: 1.75rem 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+.ol-chiffres div { display: flex; flex-direction: column-reverse; }
+.ol-chiffres dd {
+  margin: 0;
+  font-family: var(--ol-font-display);
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
   color: #fff;
 }
+.ol-chiffres dt {
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ol-orange-light);
+  margin-top: 0.4rem;
+}
 
-.ol-chiffres div { text-align: center; }
-.ol-chiffres strong { display: block; font-family: var(--ol-font-display); font-size: 2.4rem; }
-.ol-chiffres span { color: var(--ol-orange-light); font-size: 0.95rem; }
+/* --- accueil : méthode et vedette ---------------------------------------- */
 
-.ol-methode { padding: 3.5rem 0 1rem; }
+.ol-methode h2,
+.ol-vedette h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin: 0 0 2rem; }
+
 .ol-etapes {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: 1.5rem;
+  gap: 2rem;
   list-style: none;
   padding: 0;
+  margin: 0;
   counter-reset: etape;
 }
-
-.ol-etapes li { counter-increment: etape; }
+.ol-etapes li { counter-increment: etape; padding-top: 1.25rem; border-top: 3px solid var(--ol-mist); }
 .ol-etapes li::before {
   content: counter(etape, decimal-leading-zero);
+  display: block;
   font-family: var(--ol-font-display);
-  font-size: 1.6rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
   color: var(--ol-orange-dark);
 }
-.ol-etapes h3 { margin: 0.35rem 0 0.5rem; font-size: 1.1rem; }
-.ol-etapes p { color: var(--ol-slate); line-height: 1.6; margin: 0; }
+.ol-etapes h3 { margin: 0.5rem 0 0.6rem; font-size: 1.15rem; }
+.ol-etapes p { color: var(--ol-slate); line-height: 1.65; margin: 0; }
 
-.ol-vedette { padding-top: 3.5rem; }
-.ol-vedette-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.ol-vedette-tete {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.ol-vedette-tete h2 { margin: 0; }
 
-/* --- cartes de parcours -------------------------------------------------- */
+/* --- cartes de parcours --------------------------------------------------- */
 
 .ol-cartes {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
   gap: 1.5rem;
   list-style: none;
   padding: 0;
-  margin: 1.5rem 0 0;
+  margin: 2rem 0 0;
 }
 
 .ol-carte {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--ol-mist);
-  border-radius: 0.9rem;
-  overflow: hidden;
   background: #fff;
+  border-radius: var(--ol-rayon);
+  box-shadow: var(--ol-ombre-carte);
+  overflow: hidden;
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+.ol-carte:hover { box-shadow: var(--ol-ombre-levee); transform: translateY(-3px); }
+.ol-carte-lien { display: flex; flex-direction: column; height: 100%; text-decoration: none; color: inherit; }
+.ol-carte-lien:focus-visible { outline: 3px solid var(--ol-focus); outline-offset: -3px; }
+
+/* La bande : la famille se reconnaît avant d'être lue. Teinte validée à la saisie (4,5:1 au moins). */
+.ol-carte-bande {
+  --teinte: var(--ol-teinte-neutre);
+  background: var(--teinte);
+  color: #fff;
+  padding: 1rem 1.25rem;
+  min-height: 5.5rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  box-sizing: border-box;
+}
+.ol-carte-famille {
+  font-family: var(--ol-font-display);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-.ol-carte:hover { border-color: var(--ol-orange-light); }
-.ol-carte-lien { display: block; text-decoration: none; color: inherit; flex: 1; }
-.ol-carte-image { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
-.ol-carte-image--vide { background: var(--ol-filet); opacity: 0.35; }
-.ol-carte-corps { padding: 1.1rem 1.25rem 0.5rem; }
-.ol-carte-corps h2, .ol-carte-corps h3 { font-size: 1.1rem; margin: 0 0 0.5rem; }
-.ol-carte-dit { color: var(--ol-slate); font-size: 0.95rem; line-height: 1.55; margin: 0; }
+/* Le nombre de séances en chiffres : il dit la taille du parcours plus vite qu'une phrase. */
+.ol-carte-taille {
+  font-family: var(--ol-font-display);
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 0.9;
+  text-align: right;
+  white-space: nowrap;
+}
+.ol-carte-taille small {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-top: 0.25rem;
+}
+
+.ol-carte-corps { padding: 1.2rem 1.25rem 0.75rem; flex: 1; }
+.ol-carte-titre { font-size: 1.15rem; margin: 0 0 0.55rem; }
+.ol-carte-dit {
+  color: var(--ol-slate);
+  font-size: 0.93rem;
+  line-height: 1.55;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 
 .ol-carte-pied {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.9rem 1.25rem 1.1rem;
+  padding: 0.9rem 1.25rem 1.2rem;
+  border-top: 1px solid var(--ol-mist);
+  margin-top: 1rem;
+}
+.ol-carte-prix {
+  font-family: var(--ol-font-display);
+  font-weight: 800;
+  color: var(--ol-navy);
+  font-size: 0.98rem;
 }
 
-.ol-carte-prix { font-family: var(--ol-font-display); font-weight: 700; color: var(--ol-navy); }
-
+/* Les quatre états. Aucun ne dit « fermé » : un refus chasse, une préparation fait revenir. */
 .ol-pastille {
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  padding: 0.25rem 0.6rem;
+  font-family: var(--ol-font-display);
+  letter-spacing: 0.02em;
+  padding: 0.3rem 0.7rem;
   border-radius: 999px;
+  white-space: nowrap;
 }
+.ol-pastille--ouverte { background: #e3f3e9; color: #14663a; }
+.ol-pastille--libre { background: #e5f0f8; color: #0f5680; }
+.ol-pastille--bientot { background: #fdf0e4; color: #9a4410; }
+.ol-pastille--preparation { background: var(--ol-mist); color: #475070; }
 
-.ol-pastille--ouverte { background: #e7f4ec; color: #14663a; }
-.ol-pastille--fermee { background: var(--ol-mist); color: var(--ol-slate); }
+/* --- catalogue ------------------------------------------------------------ */
 
-/* --- catalogue ----------------------------------------------------------- */
+.ol-catalogue-tete { padding-bottom: 0.5rem; }
+.ol-catalogue-tete h1 { font-size: clamp(2rem, 4.5vw, 2.9rem); margin: 0 0 0.75rem; }
 
-.ol-catalogue-tete { padding: 2rem 0 1rem; }
-.ol-filtres { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.5rem; }
+.ol-filtres { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.75rem; }
 
 .ol-filtre {
-  padding: 0.45rem 1rem;
-  border: 1px solid var(--ol-mist);
+  --teinte: var(--ol-navy);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.95rem;
+  border: 1.5px solid var(--ol-mist);
   border-radius: 999px;
   background: #fff;
-  color: var(--ol-slate);
+  color: var(--ol-navy);
   font-family: var(--ol-font-body);
+  font-weight: 600;
+  font-size: 0.9rem;
   cursor: pointer;
 }
-
-.ol-filtre--actif { background: var(--ol-navy); border-color: var(--ol-navy); color: #fff; }
+.ol-filtre:hover { border-color: var(--teinte); }
+.ol-filtre--actif { background: var(--teinte); border-color: var(--teinte); color: #fff; }
 .ol-filtre:focus-visible { outline: 3px solid var(--ol-focus); outline-offset: 2px; }
-
-.ol-vide { color: var(--ol-slate); grid-column: 1 / -1; }
+.ol-filtre-compte { font-size: 0.75rem; font-weight: 700; opacity: 0.7; }
 
 /* --- fiche d'un parcours -------------------------------------------------- */
 
-.ol-fil { font-size: 0.9rem; color: var(--ol-slate); padding: 0.5rem 0 1.5rem; }
-.ol-fil a { color: var(--ol-slate); }
+.ol-fiche-banniere {
+  --teinte: var(--ol-teinte-neutre);
+  background: var(--teinte);
+  color: #fff;
+}
+.ol-fiche-banniere-corps {
+  max-width: var(--ol-largeur);
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 2.75rem;
+}
+.ol-fiche-banniere h1 {
+  color: #fff;
+  font-size: clamp(1.9rem, 4.5vw, 3rem);
+  margin: 0.35rem 0 0.75rem;
+  max-width: 24ch;
+}
+.ol-fiche-famille {
+  font-family: var(--ol-font-display);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0;
+  opacity: 0.85;
+}
+.ol-fiche-dit {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.86);
+  max-width: 54ch;
+  margin: 0;
+}
+.ol-fiche-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.ol-fil { font-size: 0.88rem; margin: 0 0 0.75rem; color: rgba(255, 255, 255, 0.72); }
+.ol-fil a { color: rgba(255, 255, 255, 0.86); text-decoration: none; }
+.ol-fil a:hover { color: #fff; text-decoration: underline; }
 .ol-fil span { margin: 0 0.4rem; }
 
-.ol-fiche-tete {
+.ol-fiche-grille {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 1fr);
-  gap: 2.5rem;
+  grid-template-columns: minmax(0, 1fr) 21rem;
+  gap: 3rem;
   align-items: start;
 }
 
-@media (max-width: 52rem) {
-  .ol-fiche-tete { grid-template-columns: 1fr; }
+@media (max-width: 58rem) {
+  .ol-fiche-grille { grid-template-columns: 1fr; gap: 2rem; }
+  .ol-fiche-grille .ol-offre { order: -1; position: static; }
 }
-
-.ol-fiche-tete h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); margin: 0 0 1rem; }
 
 .ol-offre {
   border: 1px solid var(--ol-mist);
-  border-radius: 1rem;
+  border-radius: var(--ol-rayon);
   padding: 1.5rem;
   background: #fff;
+  box-shadow: var(--ol-ombre-carte);
   position: sticky;
-  top: 1.5rem;
+  top: 5rem;
 }
+.ol-offre .ol-filet { margin-bottom: 1rem; width: 4.5rem; }
 
 .ol-prix {
   font-family: var(--ol-font-display);
   font-size: 1.9rem;
   font-weight: 800;
   color: var(--ol-navy);
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.35rem;
 }
+.ol-prix:empty { display: none; }
 
 .ol-etat { font-size: 0.95rem; line-height: 1.5; margin: 0 0 1.25rem; }
-.ol-etat--ouverte { color: #14663a; }
-.ol-etat--fermee { color: var(--ol-slate); }
+.ol-etat--ouverte,
+.ol-etat--libre { color: #14663a; }
+.ol-etat--bientot,
+.ol-etat--preparation { color: var(--ol-slate); }
 
 .ol-session { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 1rem; margin: 0 0 1.25rem; }
 .ol-session dt { color: var(--ol-slate); font-size: 0.85rem; }
 .ol-session dd { margin: 0; font-size: 0.9rem; font-weight: 600; }
 
-.ol-offre .ol-bouton { width: 100%; text-align: center; }
+.ol-attente { color: var(--ol-slate); font-size: 0.93rem; line-height: 1.6; margin: 0 0 1.1rem; }
+.ol-offre .ol-bouton { width: 100%; text-align: center; box-sizing: border-box; }
 .ol-refus { color: #9f1f1f; font-size: 0.9rem; margin: 0.9rem 0 0; }
-.ol-note { color: var(--ol-slate); font-size: 0.85rem; margin: 0.9rem 0 0; line-height: 1.5; }
 
-.ol-programme { padding: 3.5rem 0 1rem; }
-.ol-blocs { list-style: none; padding: 0; counter-reset: bloc; display: grid; gap: 1.25rem; }
-.ol-blocs > li {
-  counter-increment: bloc;
-  border-left: 3px solid var(--ol-mist);
-  padding: 0.25rem 0 0.25rem 1.25rem;
-}
+.ol-fiche { padding-top: 2.5rem; }
+.ol-programme h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); margin: 0 0 1.25rem; }
+.ol-blocs { list-style: none; padding: 0; margin: 1.5rem 0 0; display: grid; gap: 1.5rem; }
+.ol-blocs > li { border-left: 3px solid var(--ol-mist); padding: 0.1rem 0 0.1rem 1.35rem; }
 .ol-blocs > li:hover { border-left-color: var(--ol-orange); }
-.ol-blocs h3 { font-size: 1.05rem; margin: 0 0 0.5rem; }
-.ol-blocs ul { margin: 0; padding-left: 1.1rem; color: var(--ol-slate); line-height: 1.7; }
+.ol-blocs h3 { font-size: 1.05rem; margin: 0 0 0.6rem; }
+.ol-blocs ul { margin: 0; padding-left: 1.1rem; color: var(--ol-slate); line-height: 1.75; }
 
-.ol-retour { padding-top: 2.5rem; }
+.ol-retour { padding: 3rem 0 0; }
+
+/* --- page « parcours fermé » ---------------------------------------------- */
+
+.ol-parcours-ferme { max-width: 40rem; margin: 4rem auto; padding: 0 1.25rem; }

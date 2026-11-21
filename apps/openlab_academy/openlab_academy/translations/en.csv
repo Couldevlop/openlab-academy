@@ -1,7 +1,11 @@
 Accueil,Home
+Accès libre,Open access
 Accès limité aux dates de la cohorte,Access limited to the cohort dates
 Adresse électronique,Email address
+Aller au contenu,Skip to content
 Aucune session n’est ouverte en ce moment. Les prochaines arrivent.,No session is open right now. The next ones are on their way.
+Bientôt ouvert,Opening soon
+Ce parcours est en cours de conception : le programme annoncé ici peut encore évoluer.,This course is still being designed: the programme announced here may still change.
 Ce parcours est fermé,This course is closed
 Ce parcours n'est pas disponible pour le moment.,This course is not available at the moment.
 Ce parcours n'est pas offert à cette personne : offrez-le d'abord.,This course has not been gifted to this person: gift it first.
@@ -21,8 +25,10 @@ Créer un compte apprenant,Create a learner account
 Date d'ouverture du parcours de lancement,Launch course opening date
 "Des parcours encadrés, des projets corrigés un par un, et un certificat qui atteste de ce que vous savez faire.","Mentored courses, projects marked one by one, and a certificate that attests to what you can do."
 Du,From
+En préparation,In preparation
 Fermé,Closed
 Fil d’Ariane,Breadcrumb
+Filtrer par famille,Filter by field
 Gratuit,Free
 Inscriptions fermées,Enrollment closed
 Inscriptions ouvertes,Enrollment open
@@ -34,22 +40,30 @@ Lancement initialisé,Launch initialised
 Langue non prise en charge.,Language not supported.
 Le catalogue est en préparation.,The catalogue is being prepared.
 Le programme,The syllabus
+Le programme annoncé figure sur cette page.,The announced programme is on this page.
+Le programme complet figure sur cette page.,The full programme is on this page.
 "Le règlement se fait après l’inscription, en une fois ou en plusieurs tranches.","Payment is made after enrollment, in one go or in instalments."
+Les inscriptions ouvriront bientôt. Le programme de chaque parcours est consultable dès maintenant.,Enrolments will open soon. Every course programme can already be read.
 Les inscriptions à ce parcours sont fermées.,Enrollment for this course is closed.
 Les parcours,The courses
 Les parcours — Openlab Academy,Courses — Openlab Academy
 "Les séances ont lieu à heure fixe, en ligne. Les parcours en accès libre se suivent à votre rythme.",Sessions take place online at fixed times. Open-access courses are followed at your own pace.
 Leçon introuvable,Lesson not found
 "Lien YouTube, Vimeo ou fichier vidéo ; affichée en tête de la leçon.","YouTube or Vimeo link, or video file; shown at the top of the lesson."
+Liens de bas de page,Footer links
 "L’académie d’Openlab : parcours en data science, intelligence artificielle, développement et cybersécurité. Sessions encadrées, projets évalués, certificat à la clé.","The Openlab academy: courses in data science, artificial intelligence, software development and cybersecurity. Mentored sessions, marked projects, a certificate at the end."
 L’académie en chiffres,The academy in figures
 Me connecter pour m’inscrire,Log in to enroll
 Mot de passe,Password
 M’inscrire,Enroll
+Navigation principale,Main navigation
 Nom,Last name
 Notez ce mot de passe maintenant : il ne sera plus affiché.,Write this password down now: it will not be shown again.
+Notre méthode,How we teach
 Offert,Gifted
 Openlab Academy,Openlab Academy
+"Openlab Academy — se former à l'IA et à la data, depuis Abidjan","Openlab Academy — learn AI and data, from Abidjan"
+"Openlab Academy — se former à l'IA et à la data, depuis Abidjan.","Openlab Academy — learn AI and data, from Abidjan."
 "Openlab Academy — se former à l’IA et à la data, à Abidjan","Openlab Academy — learn AI and data, in Abidjan"
 Parcours,Course
 Parcours Lancement OpenLab,OpenLab launch course
@@ -68,6 +82,7 @@ Prénom,First name
 Reprendre le parcours,Resume the course
 Réservé à l'administrateur et à l'intendant.,Restricted to the administrator and the OpenLab steward.
 Sans dossier,No payment file
+Se connecter,Log in
 "Se former à l’IA et à la data, depuis Abidjan.","Learn AI and data, from Abidjan."
 Tous,All
 Tous les parcours,All courses
@@ -75,6 +90,7 @@ Un compte demande une adresse électronique et un nom.,An account needs an email
 Un mot de passe de moins de {0} caracteres est refuse.,A password shorter than {0} characters is refused.
 Vidéo de la leçon,Lesson video
 Voir le catalogue,View the catalogue
+Voir les autres parcours,See the other courses
 Voir les parcours,View the courses
 Voir tous les parcours,View all courses
 Vos travaux sont corrigés,Your work is marked
@@ -84,7 +100,9 @@ en accès libre,open access
 parcours,courses
 séances,sessions
 "{0} a déjà un compte : il est repris tel quel, son mot de passe n'a pas été touché.","{0} already has an account: it is reused as is, and the password was left untouched."
+{0} blocs,{0} blocks
 {0} parcours accueillent des inscriptions en ce moment.,{0} courses are accepting enrollments right now.
 {0} session(s) ouverte(s) en ce moment,{0} session(s) open right now
+{0} séances,{0} sessions
 « {0} » ouvrira le {1}.,“{0}” opens on {1}.
 « {0} » était ouvert du {1} au {2}. Votre progression et votre certificat restent dans votre profil.,“{0}” was open from {1} to {2}. Your progress and your certificate stay in your profile.
