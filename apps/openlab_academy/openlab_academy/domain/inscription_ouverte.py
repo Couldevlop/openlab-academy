@@ -26,7 +26,13 @@ class Etat(enum.Enum):
 
     Chaque état porte sa phrase, parce qu'un refus muet envoie le visiteur ailleurs. Elles sont ici, et
     non dans le gabarit, pour que le test puisse exiger qu'aucun état n'en manque.
+
+    `SUSPENDUE` est le seul qui ne décrive pas une cohorte : c'est l'académie qui est suspendue, pas
+    une session. Il vient donc en premier, parce qu'il prime sur tous les autres, et il n'apparaît ni
+    dans `etat_de` ni dans `etat_du_parcours` — ces deux fonctions ne lisent que des cohortes. Le seul
+    endroit qui le rend est le cas d'usage public, qui lit le réglage.
     """
+    SUSPENDUE = "Les inscriptions ouvriront bientôt."
     OUVERTE = "Les inscriptions sont ouvertes."
     FERMEE_COMPLETE = "Cette session est complète. Inscrivez-vous à la prochaine, dès son ouverture."
     FERMEE_TARDIVE = "Les inscriptions à cette session sont closes. La prochaine ouvrira bientôt."
@@ -42,6 +48,7 @@ class Etat(enum.Enum):
         return self is Etat.OUVERTE
 
 
+SUSPENDUE = Etat.SUSPENDUE
 OUVERTE = Etat.OUVERTE
 FERMEE_COMPLETE = Etat.FERMEE_COMPLETE
 FERMEE_TARDIVE = Etat.FERMEE_TARDIVE

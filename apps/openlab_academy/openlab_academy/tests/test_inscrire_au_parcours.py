@@ -16,7 +16,7 @@ import unittest
 from openlab_academy.application.inscrire_au_parcours import (InscriptionImpossible, InscrireAuParcours,
                                                               Offre)
 from openlab_academy.domain.inscription_ouverte import (FERMEE_COMPLETE, FERMEE_RETIREE, OUVERTE,
-                                                        Candidate)
+                                                        SUSPENDUE, Candidate)
 
 AUJOURD_HUI = datetime.date(2026, 11, 21)
 COURS = "fondamentaux-de-la-data-science"
@@ -72,21 +72,25 @@ class TarifsFeints:
 
 
 class ReglagesFeints:
-    def __init__(self, mois=2):
+    def __init__(self, mois=2, suspendues=False):
         self.mois = mois
+        self.suspendues = suspendues
 
     def inscription_tardive_mois(self):
         return self.mois
 
+    def inscriptions_suspendues(self):
+        return self.suspendues
 
-def cas(cohortes=None, gratuits=(), tarifs=None, deja=(), mois=2):
+
+def cas(cohortes=None, gratuits=(), tarifs=None, deja=(), mois=2, suspendues=False):
     inscripteur = InscripteurFeint(deja)
     usage = InscrireAuParcours(
         cohortes=CohortesFeintes({COURS: [candidate()]} if cohortes is None else cohortes),
         inscripteur=inscripteur,
         gratuits=GratuitsFeints(gratuits),
         tarifs=TarifsFeints({COURS: 250000} if tarifs is None else tarifs),
-        reglages=ReglagesFeints(mois),
+        reglages=ReglagesFeints(mois, suspendues),
         aujourd_hui=lambda: AUJOURD_HUI)
     return usage, inscripteur
 
@@ -266,6 +270,53 @@ class TestLOffreEstSereinementSerialisable(unittest.TestCase):
         for cle, valeur in usage.offre(COURS, APPRENANT).en_dict().items():
             with self.subTest(cle):
                 self.assertIsInstance(valeur, (str, int, bool, type(None)))
+
+
+class TestLaSuspensionDesInscriptions(unittest.TestCase):
+    """Le site est une vitrine tant que la conception des parcours n'est pas terminée.
+
+    Le refus vit ici, dans le calcul unique que partagent `offre` et `executer` : un bouton caché
+    dans le gabarit n'est pas une règle, et l'API est la porte la plus exposée.
+    """
+
+    def test_l_offre_annonce_la_suspension_plutot_qu_une_ouverture(self):
+        usage, _ = cas(suspendues=True)
+        offre = usage.offre(COURS, APPRENANT)
+        self.assertEqual(offre.etat, SUSPENDUE)
+        self.assertFalse(offre.en_dict()["ouverte"])
+
+    def test_la_suspension_refuse_l_inscription(self):
+        usage, inscripteur = cas(suspendues=True)
+        with self.assertRaises(InscriptionImpossible) as refus:
+            usage.executer(COURS, APPRENANT)
+        self.assertEqual(str(refus.exception), SUSPENDUE.message)
+        self.assertEqual((inscripteur.cohortes_faites, inscripteur.parcours_faits), ([], []))
+
+    def test_la_suspension_passe_avant_la_gratuite(self):
+        """Un parcours gratuit s'ouvre sans cohorte ni tarif : sans cette priorité, il resterait
+        la seule porte ouverte de la façade."""
+        usage, inscripteur = cas(cohortes={COURS: []}, gratuits=(COURS,), suspendues=True)
+        self.assertEqual(usage.offre(COURS, APPRENANT).etat, SUSPENDUE)
+        with self.assertRaises(InscriptionImpossible):
+            usage.executer(COURS, APPRENANT)
+        self.assertEqual(inscripteur.parcours_faits, [])
+
+    def test_la_suspension_passe_avant_l_absence_de_tarif(self):
+        """Elle vaut pour tout le catalogue : un parcours payant sans prix ne doit pas répondre
+        « pas encore ouvert » quand la vraie raison est ailleurs."""
+        usage, _ = cas(tarifs={})
+        self.assertEqual(usage.offre(COURS, APPRENANT).etat, FERMEE_RETIREE)
+        usage, _ = cas(tarifs={}, suspendues=True)
+        self.assertEqual(usage.offre(COURS, APPRENANT).etat, SUSPENDUE)
+
+    def test_un_deja_inscrit_garde_son_acces(self):
+        """La suspension ferme la porte d'entrée ; elle ne met personne dehors."""
+        usage, _ = cas(deja=((APPRENANT, COURS),), suspendues=True)
+        self.assertIn(COURS, usage.executer(COURS, APPRENANT))
+
+    def test_sans_suspension_rien_ne_change(self):
+        usage, _ = cas()
+        self.assertEqual(usage.offre(COURS, APPRENANT).etat, OUVERTE)
 
 
 if __name__ == "__main__":

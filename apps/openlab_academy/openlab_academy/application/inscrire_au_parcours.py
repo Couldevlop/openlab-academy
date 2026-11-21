@@ -51,6 +51,9 @@ class Tarifs(Protocol):
 class Reglages(Protocol):
     def inscription_tardive_mois(self) -> int: ...
 
+    def inscriptions_suspendues(self) -> bool:
+        """Vrai tant que la façade publique ne prend aucune inscription."""
+
 
 @dataclass(frozen=True)
 class Offre:
@@ -97,10 +100,17 @@ class InscrireAuParcours:
     def _examiner(self, cours: str) -> tuple[Etat, Candidate | None, bool, int | None]:
         """Le calcul unique : état, cohorte d'accueil, gratuité, montant.
 
+        La suspension passe avant tout le reste, et notamment avant la gratuité : un parcours gratuit
+        s'ouvre sans cohorte ni tarif, il serait donc la seule porte restée ouverte sur une façade qui
+        n'en veut aucune. Elle passe aussi avant l'absence de tarif, pour que le visiteur lise la vraie
+        raison et non « pas encore ouvert ».
+
         Un parcours gratuit s'ouvre sans cohorte ni prix — un MOOC n'a pas de promotion. Un parcours
         payant sans tarif n'est pas proposé : `OuvrirDossier.verifier` le refuserait plus loin
         (`TarifAbsent`), autant ne pas l'annoncer ouvert.
         """
+        if self._reglages.inscriptions_suspendues():
+            return Etat.SUSPENDUE, None, False, None
         if self._gratuits.gratuit(cours):
             return Etat.OUVERTE, None, True, None
         montant = self._tarifs.montant(cours)

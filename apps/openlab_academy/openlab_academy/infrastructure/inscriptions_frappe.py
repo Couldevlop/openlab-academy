@@ -12,6 +12,7 @@ import frappe
 
 from openlab_academy.domain.cohorte import PLACES_FENETRE
 from openlab_academy.domain.inscription_ouverte import Candidate
+from openlab_academy.infrastructure import reglages_source_frappe
 from openlab_academy.infrastructure.depot_dossiers_frappe import TarifsFrappe
 
 PLACES_PAR_DEFAUT = 30  # une cohorte sans `seat_count` n'est pas illimitée : elle est mal renseignée
@@ -87,8 +88,18 @@ class TarifsPublicsFrappe:
 
 
 class ReglagesInscriptionFrappe:
+    """Les deux réglages dont le cas d'usage public a besoin, pris là où chacun vit.
+
+    Le délai de retard est un réglage de paiement ; la suspension de la façade est un réglage de
+    l'académie, aux côtés de la phase de lancement. Les réunir ici, derrière un seul port, évite au
+    cas d'usage de connaître deux écrans — et évite de recopier l'un dans l'autre.
+    """
+
     def __init__(self, reglages):
         self._reglages = reglages
 
     def inscription_tardive_mois(self) -> int:
         return self._reglages.charger().inscription_tardive_mois
+
+    def inscriptions_suspendues(self) -> bool:
+        return reglages_source_frappe.inscriptions_suspendues()

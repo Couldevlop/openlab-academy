@@ -12,8 +12,9 @@ import unittest
 
 from openlab_academy.domain.echeancier import inscription_permise
 from openlab_academy.domain.inscription_ouverte import (FERMEE_COMPLETE, FERMEE_PASSEE, FERMEE_RETIREE,
-                                                        FERMEE_TARDIVE, OUVERTE, Candidate, Etat,
-                                                        cohorte_d_accueil, etat_de, etat_du_parcours)
+                                                        FERMEE_TARDIVE, OUVERTE, SUSPENDUE, Candidate,
+                                                        Etat, cohorte_d_accueil, etat_de,
+                                                        etat_du_parcours)
 
 AUJOURD_HUI = datetime.date(2026, 11, 21)
 
@@ -166,6 +167,32 @@ class TestCeQuOnDitAuVisiteur(unittest.TestCase):
     def test_une_cohorte_complete_ne_renvoie_pas_le_visiteur_les_mains_vides(self):
         """« Complet » sans suite fait fermer l'onglet. On annonce la suite."""
         self.assertIn("prochaine", FERMEE_COMPLETE.message.lower())
+
+    def test_la_suspension_n_est_pas_une_ouverture_et_annonce_une_suite(self):
+        self.assertFalse(SUSPENDUE.ouverte)
+        self.assertIn("bientôt", SUSPENDUE.message.lower())
+
+
+class TestLaSuspensionNEstPasUnEtatDeCohorte(unittest.TestCase):
+    """La suspension est une décision de l'académie, pas l'état d'une cohorte.
+
+    Si elle se glissait dans `etat_de`, elle dépendrait des dates et du remplissage — alors qu'elle
+    doit valoir pour tous les parcours à la fois, y compris les gratuits, qui n'ont pas de cohorte.
+    """
+
+    def setUp(self):
+        self.cohortes = [candidate(), candidate(publiee=False), candidate(places=5, inscrits=5),
+                         candidate(fin=AUJOURD_HUI - datetime.timedelta(1)),
+                         candidate(libre=True, debut=AUJOURD_HUI - datetime.timedelta(60))]
+
+    def test_aucune_cohorte_ne_rend_jamais_l_etat_suspendu(self):
+        for cohorte in self.cohortes:
+            with self.subTest(cohorte.identifiant):
+                self.assertIsNot(etat_de(cohorte, AUJOURD_HUI), SUSPENDUE)
+
+    def test_l_annonce_d_un_parcours_ne_rend_jamais_l_etat_suspendu(self):
+        self.assertIsNot(etat_du_parcours(self.cohortes, AUJOURD_HUI), SUSPENDUE)
+        self.assertIsNot(etat_du_parcours((), AUJOURD_HUI), SUSPENDUE)
 
 
 class TestCeQuAnnonceLaPageDuParcours(unittest.TestCase):
