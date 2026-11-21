@@ -232,8 +232,16 @@ class TestChargementDossier(unittest.TestCase):
             # le parcours de lancement et le parcours quotidien ne passent pas par le portfolio hebdomadaire
             attendus = 0 if p.projets_attendus == 0 else 10
             self.assertEqual(len(p.portfolio), attendus, p.title)
-        self.assertEqual(sorted(p.title for p in lot if isinstance(p, Annonce)),
-                         ["Ingénieur Cybersécurité I", "Ingénieur Cybersécurité II"])
+        annonces = {p.title: p for p in lot if isinstance(p, Annonce)}
+        self.assertEqual(sorted(annonces), ["Ingénieur Cybersécurité I", "Ingénieur Cybersécurité II",
+                                            "Rust pour l'infrastructure de l'IA"])
+        # Le plan annoncé est facultatif, mais quand il existe il doit être entier : une fiche qui
+        # montre trois blocs sur cinq laisse croire à un parcours trois fois plus court qu'il n'est,
+        # et c'est le gros chiffre de la carte du catalogue qui porte le mensonge.
+        rust = annonces["Rust pour l'infrastructure de l'IA"]
+        self.assertEqual(len(rust.programme), 5)
+        self.assertEqual(rust.seances, 20)
+        self.assertTrue(all(b.seances for b in rust.programme))
 
 
 def critere_brut(code="clarte", poids=100, **autres):

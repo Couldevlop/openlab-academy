@@ -130,6 +130,17 @@ def seances_par_parcours(noms: list) -> dict:
     return compte
 
 
+# Ce qu'on peut faire aujourd'hui passe devant ce qu'on pourra faire un jour. Le catalogue n'a pas
+# a classer par merite ni par date : il a a mettre en premier les parcours qu'un visiteur peut
+# rejoindre, et a ne pas faire ouvrir la page par celui qui n'accueille personne.
+RANG_DES_ETATS = {OUVERTE: 0, LIBRE: 1, BIENTOT: 2, PREPARATION: 3}
+
+
+def par_etat(cartes: list) -> list:
+    """Les cartes rangees par ce qu'on peut en faire, l'ordre d'origine tenant lieu de depart."""
+    return sorted(cartes, key=lambda c: RANG_DES_ETATS.get(c["etat"], len(RANG_DES_ETATS)))
+
+
 def pour_les_cartes(parcours: list) -> list:
     """Les parcours prêts à être posés sur des cartes : famille, teinte, état lisible, taille, prix.
 

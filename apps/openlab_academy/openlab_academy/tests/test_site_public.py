@@ -296,6 +296,24 @@ class TestLesPagesPubliquesSeRendent(FrappeTestCase):
         self.assertTrue(all("prix" in p for p in context.parcours))
         self.assertTrue(all("etat_libelle" in p for p in context.parcours))
 
+    def test_le_catalogue_met_en_tete_ce_qu_on_peut_rejoindre(self):
+        """Un parcours qui n'accueille personne ne doit pas ouvrir la page : le visiteur juge
+        l'academie sur la premiere carte, et « en preparation » n'invite a rien."""
+        from openlab_academy.www import parcours
+        context = frappe._dict()
+        parcours.get_context(context)
+        rangs = [catalogue_public.RANG_DES_ETATS[p["etat"]] for p in context.parcours]
+        self.assertEqual(rangs, sorted(rangs))
+
+    def test_le_tri_par_etat_ne_perd_ni_n_invente_aucune_carte(self):
+        cartes = [{"name": "a", "etat": catalogue_public.PREPARATION},
+                  {"name": "b", "etat": catalogue_public.OUVERTE},
+                  {"name": "c", "etat": catalogue_public.LIBRE},
+                  {"name": "d", "etat": catalogue_public.BIENTOT}]
+        range_ = catalogue_public.par_etat(cartes)
+        self.assertEqual([c["name"] for c in range_], ["b", "c", "d", "a"])
+        self.assertEqual(len(range_), len(cartes))
+
     def test_le_catalogue_ne_propose_que_des_familles_qui_filtrent_vraiment(self):
         """Un filtre qui ne filtre rien est un bouton qui déçoit : seules les familles présentes
         au catalogue sont proposées, et leur compte doit correspondre aux cartes affichées."""

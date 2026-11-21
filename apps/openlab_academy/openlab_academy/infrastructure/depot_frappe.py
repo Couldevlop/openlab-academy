@@ -8,7 +8,8 @@ import frappe
 
 from openlab_academy.domain.grille import Grille
 from openlab_academy.domain.grilles_derivees import grille_par_defaut
-from openlab_academy.domain.parcours import Annonce, Chapitre, Module, Parcours, Question
+from openlab_academy.domain.parcours import (Annonce, BlocAnnonce, Chapitre, Module, Parcours,
+                                             Question)
 from openlab_academy.domain.reglages import Reglages, ReglagesExercices
 from openlab_academy.domain.reglages_evaluation import Chaine, ReglagesEvaluation, TypeExercice
 from openlab_academy.infrastructure import domaines_frappe
@@ -46,6 +47,8 @@ class DepotFrappe:
         self._couverture(cours.name, parcours)
         if isinstance(parcours, Parcours):
             self._ecrire_chapitres(cours.name, parcours)
+        else:
+            self._ecrire_programme_annonce(cours.name, parcours)
         return cours.name
 
     def remplacer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
@@ -73,6 +76,10 @@ class DepotFrappe:
             retouches_frappe.reconduire(cours_id, retouchees, anciens)
             parties_frappe.reconduire(cours_id, parties_retouchees,
                                       retouches_frappe.remplacements(cours_id, anciens))
+        else:
+            # Pas de reconduction des retouches : il n'y a rien a retoucher sur un plan annonce, et
+            # le fichier en est la seule source. La purge a deja vide les chapitres.
+            self._ecrire_programme_annonce(cours_id, parcours)
 
     @staticmethod
     def _couverture(cours_id: str, parcours: Parcours | Annonce) -> None:
@@ -151,6 +158,30 @@ class DepotFrappe:
                 supprimer("LMS Question", question)
         for devoir in frappe.get_all("LMS Assignment", {"course": cours_id}, pluck="name"):
             supprimer("LMS Assignment", devoir)
+
+    def _ecrire_programme_annonce(self, cours_id: str, annonce: Annonce) -> None:
+        """Le plan annoncé devient des chapitres et des séances vides.
+
+        Vides littéralement : ni contenu, ni devoir, ni quiz. Une séance annoncée n'est pas une
+        séance au rabais qu'on remplirait plus tard d'un texte d'attente — c'est une ligne du plan,
+        et le LMS n'a besoin que de son titre pour l'afficher. Ce qui ouvre un parcours reste
+        `upcoming`, que ce chemin ne touche pas : remplir la fiche ne doit jamais ouvrir la porte.
+        """
+        if not annonce.programme:
+            return
+        noms = [self._bloc_annonce(cours_id, bloc) for bloc in annonce.programme]
+        cours = frappe.get_doc("LMS Course", cours_id)
+        cours.set("chapters", [{"chapter": n} for n in noms])
+        cours.save(ignore_permissions=True)
+
+    def _bloc_annonce(self, cours_id: str, bloc: BlocAnnonce) -> str:
+        doc = frappe.get_doc({"doctype": "Course Chapter", "course": cours_id,
+                              "title": bloc.titre}).insert(ignore_permissions=True)
+        noms = [self._nouvelle_lecon(cours_id, doc.name, titre, "", []).name for titre in bloc.seances]
+        doc.reload()
+        doc.set("lessons", [{"lesson": n} for n in noms])
+        doc.save(ignore_permissions=True)
+        return doc.name
 
     def _ecrire_chapitres(self, cours_id: str, parcours: Parcours, videos: dict[str, str] | None = None) -> None:
         videos = videos or {}

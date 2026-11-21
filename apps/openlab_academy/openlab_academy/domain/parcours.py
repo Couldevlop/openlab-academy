@@ -274,8 +274,38 @@ def _verifier_textes(objet, champs=("title", "short_introduction", "description"
 
 
 @dataclass(frozen=True)
+class BlocAnnonce:
+    """Un bloc d'un programme annoncé : son titre et les intitulés de ses séances.
+
+    Rien d'autre qu'une liste d'intitulés : un parcours en conception n'a pas encore de contenu, et
+    en inventer pour remplir la page ferait une promesse que la publication ne tiendrait pas. Un
+    intitulé, lui, engage seulement sur le sujet traité — c'est ce que vient lire quelqu'un qui
+    hésite, et c'est ce qu'on peut tenir.
+    """
+
+    titre: str
+    seances: tuple[str, ...]
+
+    def __post_init__(self):
+        if not self.titre.strip():
+            raise ParcoursInvalide("bloc annoncé : titre manquant")
+        _titre_court(self.titre)
+        if not self.seances:
+            raise ParcoursInvalide(f"bloc annoncé « {self.titre} » : aucune séance")
+        for seance in self.seances:
+            if not seance.strip():
+                raise ParcoursInvalide(f"bloc annoncé « {self.titre} » : séance sans intitulé")
+            _titre_court(seance)
+
+
+@dataclass(frozen=True)
 class Annonce:
-    """Parcours annoncé (« à venir ») : visible au catalogue, sans contenu pédagogique publié."""
+    """Parcours annoncé (« à venir ») : visible au catalogue, sans contenu pédagogique publié.
+
+    Le programme est facultatif. Sans lui, la fiche annonce le parcours et rien de plus ; avec lui,
+    elle montre le plan sans rien ouvrir. C'est la seule chose qu'un parcours en conception puisse
+    honnêtement donner à lire, et c'est ce que demande quelqu'un qui veut savoir si cela le concerne.
+    """
 
     title: str
     short_introduction: str
@@ -284,9 +314,14 @@ class Annonce:
     card_gradient: str
     couverture: str = ""  # nom de fichier de l'image de couverture, jointe au parcours et publique
     domaine: str = ""  # famille du parcours, qui donne sa teinte à la carte du catalogue
+    programme: tuple[BlocAnnonce, ...] = ()  # plan annoncé, sans contenu : facultatif
 
     def __post_init__(self):
         _verifier_textes(self)
+
+    @property
+    def seances(self) -> int:
+        return sum(len(bloc.seances) for bloc in self.programme)
 
 
 @dataclass(frozen=True)

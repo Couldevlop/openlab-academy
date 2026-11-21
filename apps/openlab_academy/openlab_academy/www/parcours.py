@@ -14,7 +14,8 @@ no_cache = 1
 def get_context(context) -> None:
     context.no_cache = 1
     cours = catalogue_public.parcours_visibles()
-    context.parcours = catalogue_public.pour_les_cartes(catalogue_public.avec_offre(cours))
+    context.parcours = catalogue_public.par_etat(
+        catalogue_public.pour_les_cartes(catalogue_public.avec_offre(cours)))
     context.ouverts = sum(1 for p in context.parcours if p["offre"]["ouverte"])
     context.familles = catalogue_public.familles_du_catalogue(context.parcours)
     context.metatags = {

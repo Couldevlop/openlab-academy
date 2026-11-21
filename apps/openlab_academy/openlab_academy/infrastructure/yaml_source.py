@@ -5,7 +5,7 @@ import re
 import yaml
 
 from openlab_academy.domain.grille import Grille, GrilleInvalide
-from openlab_academy.domain.parcours import (Annonce, Bloc, Evaluations, Extrait, Figure, Module, Niveau,
+from openlab_academy.domain.parcours import (Annonce, BlocAnnonce, Bloc, Evaluations, Extrait, Figure, Module, Niveau,
                                              Parcours, ParcoursInvalide, Projet, Question, Section, Tableau)
 from openlab_academy.domain.reglages import Reglages, ReglagesInvalides
 from openlab_academy.domain.reglages_evaluation import Chaine
@@ -278,6 +278,21 @@ class _Lecteur:
             correction=self.correction(p.get("correction"), f"{chemin}correction"), **listes,
         )
 
+    def bloc_annonce(self, b, chemin: str) -> BlocAnnonce:
+        if not isinstance(b, dict):
+            raise FormatInvalide(f"{self.source}: {chemin} doit être un bloc (dictionnaire)")
+        return BlocAnnonce(titre=str(self.exiger(b, "titre", f"{chemin}.")),
+                           seances=self.textes(self.exiger(b, "seances", f"{chemin}."),
+                                               f"{chemin}.seances"))
+
+    def programme_annonce(self, valeurs) -> tuple[BlocAnnonce, ...]:
+        """Le plan d'un parcours annoncé. Facultatif : son absence n'est pas une erreur."""
+        if not valeurs:
+            return ()
+        if not isinstance(valeurs, list):
+            raise FormatInvalide(f"{self.source}: programme doit être une liste de blocs")
+        return tuple(self.bloc_annonce(b, f"programme[{i}]") for i, b in enumerate(valeurs))
+
     def annonce(self, d: dict) -> Annonce:
         return Annonce(
             title=str(self.exiger(d, "title", "")),
@@ -286,6 +301,7 @@ class _Lecteur:
             tags=self.textes(d.get("tags") or (), "tags"), card_gradient=str(d.get("card_gradient", "Blue")),
             domaine=str(d.get("domaine", "")).strip(),
             couverture=self.couverture(d.get("couverture")),
+            programme=self.programme_annonce(d.get("programme")),
         )
 
     def element(self, d) -> "Parcours | Annonce":
