@@ -53,6 +53,8 @@
     "test_inscription_directe_frappe": 25.1,
     "test_inscription_lancement_frappe": 69.5,
     "test_inscriptions": 0.0,
+    "test_inscriptions_ouvertes": 0.1,
+    "test_inscrire_au_parcours": 0.1,
     "test_installation": 315.3,
     "test_instantane_depot": 0.0,
     "test_instantaner": 0.0,
