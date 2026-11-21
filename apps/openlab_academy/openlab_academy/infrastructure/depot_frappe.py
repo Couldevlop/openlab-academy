@@ -11,6 +11,7 @@ from openlab_academy.domain.grilles_derivees import grille_par_defaut
 from openlab_academy.domain.parcours import Annonce, Chapitre, Module, Parcours, Question
 from openlab_academy.domain.reglages import Reglages, ReglagesExercices
 from openlab_academy.domain.reglages_evaluation import Chaine, ReglagesEvaluation, TypeExercice
+from openlab_academy.infrastructure import domaines_frappe
 from openlab_academy.infrastructure import (depot_copies_frappe, editorjs, parties_frappe, ressources_frappe,
                                             retouches_frappe)
 from openlab_academy.infrastructure.depot_dossiers_frappe import CHAMP_GRATUIT
@@ -105,6 +106,10 @@ class DepotFrappe:
         champs = {"title": p.title, "short_introduction": p.short_introduction, "description": p.description,
                   "tags": ",".join(p.tags), "card_gradient": p.card_gradient,
                   "published": 1, "enable_certification": 1, "upcoming": int(isinstance(p, Annonce))}
+        # Domaine seulement s'il est demandé : absent du fichier, le choix fait dans l'administration
+        # n'est pas effacé — même règle que pour la gratuité et la mise en avant.
+        if p.domaine:
+            champs[domaines_frappe.CHAMP] = domaines_frappe.exiger(p.domaine)
         if isinstance(p, Parcours):
             champs.update(DepotFrappe._drapeaux(p))
         return champs
@@ -182,12 +187,17 @@ class DepotFrappe:
 
     def completer(self, cours_id: str, parcours: Parcours | Annonce) -> None:
         """Cours conservé tel quel (inscrits) : applique les drapeaux de lancement, rafraîchit la couverture et
-        crée seulement les grilles manquantes de ses devoirs, par titre.
+        le domaine, et crée seulement les grilles manquantes de ses devoirs, par titre.
 
         La couverture est une vitrine, pas du contenu : la poser ne change rien pour les inscrits, et sans cela
         un parcours en cours garderait à jamais l'image de sa première publication. La fiche retouchée dans
-        l'application reste intouchée, comme pour une republication complète."""
+        l'application reste intouchée, comme pour une republication complète.
+
+        Le domaine suit la même règle, et pour la même raison. C'est la famille du parcours, donc la teinte de
+        sa carte : de la présentation, jamais du contenu. Sans cela, les parcours les plus avancés — ceux qui
+        ont des inscrits — seraient précisément ceux qui resteraient gris au catalogue."""
         self._couverture_si_non_retouchee(cours_id, parcours)
+        self._domaine(cours_id, parcours)
         if isinstance(parcours, Annonce):
             return
         frappe.db.set_value("LMS Course", cours_id, self._drapeaux(parcours))
@@ -195,6 +205,14 @@ class DepotFrappe:
             nom = frappe.db.get_value("LMS Assignment", {"course": cours_id, "title": titre})
             if nom and not depot_copies_frappe.a_une_grille(nom):
                 self._figer(nom, type_exercice, projet, grille, chaine)
+
+    @staticmethod
+    def _domaine(cours_id: str, parcours: Parcours | Annonce) -> None:
+        """La famille du parcours, posée sans toucher au reste. Absente du fichier, le choix fait dans
+        l'administration n'est pas effacé."""
+        if parcours.domaine:
+            frappe.db.set_value("LMS Course", cours_id, domaines_frappe.CHAMP,
+                                domaines_frappe.exiger(parcours.domaine))
 
     @staticmethod
     def _type_projet(projet) -> TypeExercice:

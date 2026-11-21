@@ -283,6 +283,7 @@ class Annonce:
     tags: tuple[str, ...]
     card_gradient: str
     couverture: str = ""  # nom de fichier de l'image de couverture, jointe au parcours et publique
+    domaine: str = ""  # famille du parcours, qui donne sa teinte à la carte du catalogue
 
     def __post_init__(self):
         _verifier_textes(self)
@@ -299,6 +300,7 @@ class Parcours:
     portfolio: tuple[Projet, ...]
     capstone: Projet
     couverture: str = ""  # nom de fichier de l'image de couverture, jointe au parcours et publique
+    domaine: str = ""  # famille du parcours, qui donne sa teinte à la carte du catalogue
     projets_attendus: int = 10
     heures_par_module: int = 8
     questions_par_quiz: int = 0  # 0 = exercices de fin de leçon non exigés

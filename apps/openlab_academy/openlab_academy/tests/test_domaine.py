@@ -1,105 +1,132 @@
-import dataclasses
+"""Les règles des domaines : ce qu'une teinte doit valoir, ce qu'une clé a le droit d'être.
+
+La liste, elle, n'est pas ici : elle vit en base et s'édite depuis l'administration. Ce fichier
+éprouve les règles et la semence livrée, pas un catalogue figé.
+"""
 import unittest
 
-from openlab_academy.domain.parcours import Bloc, Module, Niveau, ParcoursInvalide
-from openlab_academy.tests.fabriques import parcours, projet
+from openlab_academy.domain.domaine import (DOMAINES_PAR_DEFAUT, ECART_MINIMAL, SEUIL_CONTRASTE, Domaine,
+                                            DomaineInconnu, TeinteIllisible, contraste, ecart_percu,
+                                            normaliser, valider, verifier_teinte)
+
+CLES_SEMEES = tuple(d.cle for d in DOMAINES_PAR_DEFAUT)
 
 
-class TestInvariantsParcours(unittest.TestCase):
-    def test_parcours_valide(self):
-        self.assertEqual(parcours().title, "T")
+class TestLaCleEstValideeContreLaTable(unittest.TestCase):
+    def test_une_cle_presente_dans_la_table_passe(self):
+        for cle in CLES_SEMEES:
+            with self.subTest(cle):
+                self.assertEqual(valider(cle, CLES_SEMEES), cle)
 
-    def test_drapeaux_par_defaut_faux(self):
-        p = parcours()
-        self.assertEqual((p.gratuit, p.acces_limite_a_la_cohorte, p.mise_en_avant), (False, False, False))
+    def test_une_cle_absente_est_refusee_et_dit_ce_qu_elle_attendait(self):
+        """Le message doit nommer les clés admises : c'est une faute de frappe dans un fichier, et
+        celui qui la lit n'a pas la table sous les yeux."""
+        with self.assertRaises(DomaineInconnu) as leve:
+            valider("intelligence-artificielle", CLES_SEMEES)
+        message = str(leve.exception)
+        self.assertIn("intelligence-artificielle", message)
+        for cle in CLES_SEMEES:
+            self.assertIn(cle, message)
 
-    def test_portfolio_doit_compter_10_projets(self):
-        with self.assertRaisesRegex(ParcoursInvalide, r"portfolio: 10 projets attendus, 9 trouvés"):
-            parcours(portfolio=tuple(projet() for _ in range(9)))
+    def test_une_variante_de_casse_ou_d_accent_ne_passe_pas(self):
+        """« IA » et « ia » donneraient deux couleurs pour une même famille : la reconnaissance d'un
+        coup d'œil, seule raison d'être de la bande, s'effondre. On refuse plutôt que de deviner."""
+        for variante in ("IA", "Ia", "cybersécurité", "Données", " ia"):
+            with self.subTest(variante):
+                with self.assertRaises(DomaineInconnu):
+                    valider(variante, CLES_SEMEES)
 
-    def test_apres_module_doit_exister(self):
-        portfolio = tuple(projet(apres_module="99" if i == 4 else "01") for i in range(10))
-        with self.assertRaisesRegex(ParcoursInvalide, r"portfolio\[4\]\.apres_module: module '99' inexistant"):
-            parcours(portfolio=portfolio)
+    def test_une_table_vide_le_dit_plutot_que_de_montrer_une_liste_vide(self):
+        with self.assertRaises(DomaineInconnu) as leve:
+            valider("ia", ())
+        self.assertIn("aucun domaine", str(leve.exception))
 
-    def test_projet_portfolio_sans_module_refuse(self):
-        portfolio = tuple(projet(apres_module=None if i == 2 else "01") for i in range(10))
-        with self.assertRaisesRegex(ParcoursInvalide, r"portfolio\[2\]\.apres_module manquant"):
-            parcours(portfolio=portfolio)
-
-    def test_capstone_ne_se_rattache_pas_a_un_module(self):
-        with self.assertRaisesRegex(ParcoursInvalide, r"capstone\.apres_module doit être vide"):
-            parcours(capstone=projet(apres_module="01"))
-
-    def test_remuneration_en_keuros_interdite(self):
-        for champ in ("title", "short_introduction", "description"):
-            with self.subTest(champ=champ), self.assertRaisesRegex(
-                    ParcoursInvalide, rf"{champ}: rémunération en k€ interdite"):
-                parcours(**{champ: "Rémunération visée : 35–55 k€"})
-
-    def test_numeros_de_module_uniques(self):
-        blocs = (Bloc("B1", (Module("01", "M", "c", "l"),)), Bloc("B2", (Module("01", "N", "c", "l"),)))
-        with self.assertRaisesRegex(ParcoursInvalide, r"module '01' en double"):
-            parcours(blocs=blocs)
-
-    def test_duree_positive(self):
-        with self.assertRaisesRegex(ParcoursInvalide, r"duree_h doit être positive"):
-            projet(duree_h=0)
-
-    def test_titres_limites_a_120_caracteres(self):
-        long = "x" * 121
-        for fabrique in (lambda: projet(titre=long),
-                         lambda: parcours(blocs=(Bloc(long, (Module("01", "M", "c", "l"),)),)),
-                         lambda: parcours(blocs=(Bloc("B", (Module("01", long, "c", "l"),)),))):
-            with self.subTest(), self.assertRaisesRegex(ParcoursInvalide, r"titre trop long \(121 > 120\)"):
-                fabrique()
-        self.assertEqual(projet(titre="x" * 120).titre, "x" * 120)
-
-    def test_travaux_pratiques_facultatifs(self):
-        self.assertEqual(Module("01", "Un", "c", "l").travaux_pratiques, "")
-        self.assertEqual(Module("01", "Un", "c", "l", travaux_pratiques="TP").travaux_pratiques, "TP")
-
-    def test_archive_facultative(self):
-        self.assertEqual(Module("01", "Un", "c", "l").archive, "")
-        self.assertEqual(Module("01", "Un", "c", "l", archive="socle.zip").archive, "socle.zip")
-
-    def test_entites_immuables(self):
-        with self.assertRaises(dataclasses.FrozenInstanceError):
-            parcours().title = "autre"
+    def test_l_absence_de_domaine_reste_permise(self):
+        """Sans cette tolérance, la notion aurait invalidé d'un coup tous les parcours déjà écrits."""
+        self.assertEqual(valider("", CLES_SEMEES), "")
+        self.assertEqual(valider("", ()), "")
 
 
-class TestPlanDesChapitres(unittest.TestCase):
-    def test_projets_intercales_apres_leur_module_puis_capstone(self):
-        blocs = (Bloc("B1", (Module("01", "Un", "c", "l"),)), Bloc("B2", (Module("02", "Deux", "c", "l"),)))
-        portfolio = tuple(projet(titre=f"P{i}", apres_module="02" if i == 10 else "01") for i in range(1, 11))
-        chapitres = parcours(blocs=blocs, portfolio=portfolio).chapitres()
-        titres = [c.titre for c in chapitres]
-        self.assertEqual(titres[0], "B1")
-        self.assertEqual(titres[1:10], [f"Projet {i} — P{i}" for i in range(1, 10)])
-        self.assertEqual(titres[10:], ["B2", "Projet 10 — P10", "Capstone — Cap"])
-        self.assertEqual(chapitres[0].modules[0].title, "Un")
-        self.assertIsNone(chapitres[0].projet)
-        self.assertEqual(chapitres[-1].projet.titre, "Cap")
-        self.assertEqual(chapitres[-1].modules, ())
+class TestUneTeinteDoitPorterSonTitre(unittest.TestCase):
+    """La seule limite posée au choix de l'administration, et elle tient à l'accessibilité."""
 
-    def test_libelle_niveau(self):
-        self.assertEqual([n.libelle for n in Niveau], ["Guidé", "Semi-guidé", "Autonome"])
+    def test_une_teinte_sombre_est_acceptee_et_normalisee(self):
+        self.assertEqual(verifier_teinte("#B35210"), "#b35210")
+        self.assertEqual(verifier_teinte("b35210"), "#b35210")
+        self.assertEqual(verifier_teinte("  #B35210  "), "#b35210")
+
+    def test_une_teinte_trop_claire_est_refusee_et_explique_pourquoi(self):
+        """Le message doit donner la mesure et le seuil : sinon l'administration tâtonne."""
+        for claire in ("#ffffff", "#fcd80f", "#f39a5b", "#eef1f6"):
+            with self.subTest(claire):
+                with self.assertRaises(TeinteIllisible) as leve:
+                    verifier_teinte(claire)
+                message = str(leve.exception)
+                self.assertIn(":1", message)
+                self.assertIn(str(SEUIL_CONTRASTE), message)
+
+    def test_ce_qui_n_est_pas_une_couleur_est_refuse(self):
+        for mauvais in ("", "bleu", "#12345", "#1234567", "#gggggg", None):
+            with self.subTest(repr(mauvais)):
+                with self.assertRaises(TeinteIllisible):
+                    normaliser(mauvais)  # type: ignore[arg-type]
+
+    def test_le_seuil_est_bien_celui_du_texte_normal(self):
+        """4,5:1 et non 3:1 : le titre d'une carte n'est pas un grand texte au sens de la norme."""
+        self.assertEqual(SEUIL_CONTRASTE, 4.5)
 
 
-class TestExercicesDuParcours(unittest.TestCase):
-    """Chaque parcours règle le délai, les tentatives et le score de ses exercices."""
+class TestLaSemenceLivreeTientSesPropresRegles(unittest.TestCase):
+    """Livrer une semence qui ne passerait pas sa propre validation serait une faute."""
 
-    def test_valeurs_par_defaut(self):
-        e = parcours().exercices
-        self.assertEqual((e.delai_minutes, e.tentatives_max, e.score_min), (60, 3, 100))
+    def test_chaque_teinte_semee_porte_du_texte_blanc(self):
+        for domaine in DOMAINES_PAR_DEFAUT:
+            with self.subTest(domaine.cle):
+                self.assertEqual(verifier_teinte(domaine.teinte), domaine.teinte)
 
-    def test_valeurs_propres_au_parcours(self):
-        e = parcours(delai_exercices_minutes=15, tentatives_max=5, score_min=70).exercices
-        self.assertEqual((e.delai_minutes, e.tentatives_max, e.score_min), (15, 5, 70))
+    def test_chaque_cle_semee_est_unique(self):
+        self.assertEqual(len(set(CLES_SEMEES)), len(CLES_SEMEES))
 
-    def test_reglage_incoherent_refuse(self):
-        for champ, valeur, message in (("delai_exercices_minutes", -1, "négatif"),
-                                       ("tentatives_max", 0, "tentatives_max doit être positif"),
-                                       ("score_min", 101, "score_min entre 1 et 100")):
-            with self.subTest(champ), self.assertRaisesRegex(ParcoursInvalide, message):
-                parcours(**{champ: valeur})
+    def test_les_teintes_semees_se_distinguent_entre_elles(self):
+        """Voisines au point de se confondre, elles ne valent pas mieux qu'une seule couleur."""
+        for i, premier in enumerate(DOMAINES_PAR_DEFAUT):
+            for second in DOMAINES_PAR_DEFAUT[i + 1:]:
+                with self.subTest(f"{premier.cle}/{second.cle}"):
+                    self.assertGreater(ecart_percu(premier.teinte, second.teinte), ECART_MINIMAL)
+
+    def test_chaque_cle_semee_s_ecrit_sans_accent_ni_majuscule(self):
+        for cle in CLES_SEMEES:
+            with self.subTest(cle):
+                self.assertTrue(cle.isascii() and cle.islower() and " " not in cle)
+
+
+class TestLesMesuresSontJustes(unittest.TestCase):
+    """Sans ces garde-fous, un calcul faux validerait six nuances du même bleu."""
+
+    def test_le_contraste_est_juste(self):
+        self.assertAlmostEqual(contraste("#000000", "#ffffff"), 21.0, places=2)
+        self.assertAlmostEqual(contraste("#ffffff", "#ffffff"), 1.0, places=2)
+        self.assertAlmostEqual(contraste("#b35210", "#ffffff"), 5.08, places=2)
+
+    def test_l_ecart_percu_est_juste(self):
+        self.assertAlmostEqual(ecart_percu("#ffffff", "#ffffff"), 0.0, places=3)
+        self.assertAlmostEqual(ecart_percu("#000000", "#ffffff"), 100.0, places=1)
+        self.assertGreater(ecart_percu("#ff0000", "#00ff00"), 100)
+
+    def test_le_contraste_ne_sait_pas_distinguer_deux_teintes(self):
+        """La raison d'être du ΔE : ces deux couleurs sont évidemment différentes, et pourtant le
+        rapport de contraste les tient pour presque identiques. Mesurer la clarté ne mesure pas la
+        couleur."""
+        marine, violet = "#244498", "#5b2a86"
+        self.assertLess(contraste(marine, violet), 1.15)
+        self.assertGreater(ecart_percu(marine, violet), ECART_MINIMAL)
+
+
+class TestLeDomaineEstUneDonneeFigee(unittest.TestCase):
+    def test_un_domaine_ne_se_modifie_pas(self):
+        with self.assertRaises(Exception):
+            DOMAINES_PAR_DEFAUT[0].teinte = "#000000"  # type: ignore[misc]
+
+    def test_la_structure_porte_les_trois_informations(self):
+        d = Domaine("essai", "Essai", "#000000")
+        self.assertEqual((d.cle, d.libelle, d.teinte), ("essai", "Essai", "#000000"))

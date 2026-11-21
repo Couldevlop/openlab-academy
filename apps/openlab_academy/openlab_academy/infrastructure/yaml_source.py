@@ -284,6 +284,7 @@ class _Lecteur:
             short_introduction=str(self.exiger(d, "short_introduction", "")),
             description=str(self.exiger(d, "description", "")),
             tags=self.textes(d.get("tags") or (), "tags"), card_gradient=str(d.get("card_gradient", "Blue")),
+            domaine=str(d.get("domaine", "")).strip(),
             couverture=self.couverture(d.get("couverture")),
         )
 
@@ -311,6 +312,7 @@ class _Lecteur:
             short_introduction=str(self.exiger(d, "short_introduction", "")),
             description=str(self.exiger(d, "description", "")),
             tags=self.textes(d.get("tags") or (), "tags"), card_gradient=str(d.get("card_gradient", "Blue")),
+            domaine=str(d.get("domaine", "")).strip(),
             couverture=self.couverture(d.get("couverture")),
             blocs=blocs, portfolio=portfolio,
             capstone=self.projet(self.exiger(d, "capstone", ""), "capstone.", False),

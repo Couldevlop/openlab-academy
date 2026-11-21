@@ -26,6 +26,8 @@ Fil d’Ariane,Breadcrumb
 Gratuit,Free
 Inscriptions fermées,Enrollment closed
 Inscriptions ouvertes,Enrollment open
+"La cle doit s'ecrire sans accent ni espace : lettres, chiffres, tiret ou tiret bas.","The key must be written without accents or spaces: letters, digits, hyphen or underscore."
+La cle s'ecrit en minuscules.,The key is written in lower case.
 Laissez vide pour qu'un mot de passe soit tiré et affiché une seule fois.,Leave empty to have a password drawn and shown once only.
 Lancement,Launch
 Lancement initialisé,Launch initialised

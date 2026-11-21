@@ -1,0 +1,37 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:cle",
+ "creation": "2026-11-21 17:10:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": ["cle", "libelle", "teinte", "rang"],
+ "fields": [
+  {"fieldname": "cle", "fieldtype": "Data", "label": "Cl\u00e9", "reqd": 1, "unique": 1, "in_list_view": 1,
+   "description": "Identifiant court sans accent ni espace, \u00e9crit tel quel dans les fichiers de parcours (ex. : ia)."},
+  {"fieldname": "libelle", "fieldtype": "Data", "label": "Libell\u00e9", "reqd": 1, "in_list_view": 1,
+   "description": "Nom affich\u00e9 sur le site."},
+  {"fieldname": "teinte", "fieldtype": "Color", "label": "Teinte", "reqd": 1, "in_list_view": 1,
+   "description": "Fond de la bande de la carte. Le titre s'y \u00e9crit en blanc : une couleur trop claire est refus\u00e9e."},
+  {"fieldname": "rang", "fieldtype": "Int", "label": "Rang", "default": "0", "in_list_view": 1,
+   "description": "Ordre d'affichage des familles dans le catalogue."}
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-21 17:10:00.000000",
+ "modified_by": "Administrator",
+ "module": "OpenLab Academy",
+ "name": "Domaine OpenLab",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager",
+   "share": 1, "write": 1},
+  {"read": 1, "role": "Intendant OpenLab"}
+ ],
+ "sort_field": "rang",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
+}
