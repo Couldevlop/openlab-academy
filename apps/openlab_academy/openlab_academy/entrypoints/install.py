@@ -4,6 +4,7 @@ import frappe
 
 from openlab_academy.domain.reglages import TITRE_LANCEMENT
 from openlab_academy.entrypoints import cohorte, lancement, seed
+from openlab_academy.infrastructure import deuxieme_facteur_frappe
 from openlab_academy.infrastructure import (domaines_frappe, parties_frappe, reglages_evaluation_frappe,
                                             reglages_frappe, reglages_source_frappe)
 from openlab_academy.infrastructure.retouches_frappe import CHAMP as CHAMP_RETOUCHE
@@ -130,6 +131,7 @@ def after_install(commit: bool = True) -> None:
     reglages_source_frappe.initialiser()
     reglages_evaluation_frappe.preparer()
     preparer_roles()
+    deuxieme_facteur_frappe.preparer()
     preparer_parcours_gratuits()
     domaines_frappe.preparer()
     domaines_frappe.preparer_champ()
@@ -150,6 +152,7 @@ def after_migrate(commit: bool = True) -> None:
     reglages_source_frappe.initialiser()
     reglages_evaluation_frappe.preparer()
     preparer_roles()
+    deuxieme_facteur_frappe.preparer()
     preparer_parcours_gratuits()
     domaines_frappe.preparer()
     domaines_frappe.preparer_champ()

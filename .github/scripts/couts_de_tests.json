@@ -1,13 +1,13 @@
 {
   "mesure": {
+    "amorcage_par_module_s": 6.0,
     "executions": [
       "44538489171",
       "44550302576",
       "44559182784",
       "44693933320",
       "44917260930"
-    ],
-    "amorcage_par_module_s": 6.0
+    ]
   },
   "secondes": {
     "test_acces_parcours": 0.0,
@@ -32,6 +32,8 @@
     "test_delegation": 0.0,
     "test_depot_copies_frappe": 51.7,
     "test_depot_frappe": 153.0,
+    "test_deuxieme_facteur": 1,
+    "test_deuxieme_facteur_frappe": 6,
     "test_domaine": 0.0,
     "test_domaines_frappe": 2.1,
     "test_dossier_paiement": 0.0,
