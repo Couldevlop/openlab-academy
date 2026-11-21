@@ -97,3 +97,37 @@ class TestLeLienDuParcours(_Socle):
         cours = frappe.get_doc({"doctype": "LMS Course", "title": "Parcours sans domaine",
                                 "short_introduction": "s", "description": "d"}).insert(ignore_permissions=True)
         self.assertIsNone(domaines_frappe.du_parcours(cours.name))
+
+
+class TestCeQuiPartDansUnePagePublique(_Socle):
+    """La teinte finit dans un attribut `style` et le libellé dans du texte, sur une page ouverte à
+    tous. L'application n'a pas l'autoéchappement de Jinja : ce qui sort d'ici doit être sain."""
+
+    def test_une_teinte_ecrite_hors_formulaire_ne_sort_pas_telle_quelle(self):
+        """`validate` ne s'exécute pas sur une écriture directe — un correctif, un import, un test.
+        La carte retombe alors sur la couleur neutre plutôt que de porter n'importe quoi."""
+        for injection in ('red; background: url(javascript:alert(1))', '"><script>alert(1)</script>',
+                          'inherit', ''):
+            with self.subTest(injection):
+                frappe.db.set_value(DOCTYPE, "ia", "teinte", injection)
+                teinte = domaines_frappe.par_cle()["ia"].teinte
+                self.assertEqual(teinte, "")
+
+    def test_une_teinte_valide_traverse_intacte(self):
+        frappe.db.set_value(DOCTYPE, "ia", "teinte", "#5B2A86")
+        self.assertEqual(domaines_frappe.par_cle()["ia"].teinte, "#5b2a86")
+
+    def test_un_libelle_est_rendu_echappe_sur_le_catalogue(self):
+        """Le libellé est saisi dans l'administration : il n'est pas digne de confiance pour autant,
+        et la page qui le porte est publique."""
+        from openlab_academy.www import catalogue_public
+        frappe.db.set_value(DOCTYPE, "ia", "libelle", '<script>alert(1)</script>')
+        cours = frappe.get_doc({"doctype": "LMS Course", "title": "Parcours pour échappement",
+                                "short_introduction": "s", "description": "d", "published": 1,
+                                domaines_frappe.CHAMP: "ia"}).insert(ignore_permissions=True).name
+        cartes = catalogue_public.pour_les_cartes(catalogue_public.avec_offre(
+            [c for c in catalogue_public.parcours_visibles() if c.name == cours]))
+        rendu = frappe.render_template("templates/carte_parcours.html", {"carte": cartes[0],
+                                                                         "_": lambda s: s})
+        self.assertNotIn("<script>", rendu)
+        self.assertIn("&lt;script&gt;", rendu)

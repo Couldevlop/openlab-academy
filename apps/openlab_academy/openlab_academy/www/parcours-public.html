@@ -8,7 +8,7 @@
     photographie au-dessus d'un titre ne dit rien que le titre ne dise déjà, et pousse l'offre sous
     la ligne de flottaison. -#}
 <section class="ol-fiche-banniere"
-         {% if domaine_teinte %}style="--teinte: {{ domaine_teinte }}"{% endif %}>
+         {% if domaine_teinte %}style="--teinte: {{ domaine_teinte | e }}"{% endif %}>
   <div class="ol-fiche-banniere-corps">
     <nav class="ol-fil" aria-label="{{ _('Fil d’Ariane') }}">
       <a href="/accueil">{{ _("Accueil") }}</a>

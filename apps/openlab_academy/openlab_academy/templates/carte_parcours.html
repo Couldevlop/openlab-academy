@@ -11,8 +11,8 @@
 <li class="ol-carte" data-domaine="{{ carte.domaine_libelle | e }}" data-etat="{{ carte.etat }}">
   <a class="ol-carte-lien" href="{{ carte.lien }}">
     <div class="ol-carte-bande"
-         {% if carte.domaine_teinte %}style="--teinte: {{ carte.domaine_teinte }}"{% endif %}>
-      <span class="ol-carte-famille">{{ carte.domaine_libelle or _("Parcours") }}</span>
+         {% if carte.domaine_teinte %}style="--teinte: {{ carte.domaine_teinte | e }}"{% endif %}>
+      <span class="ol-carte-famille">{{ (carte.domaine_libelle or _("Parcours")) | e }}</span>
       {% if carte.seances %}
       <span class="ol-carte-taille">{{ carte.seances }}<small>{{ _("séances") }}</small></span>
       {% endif %}

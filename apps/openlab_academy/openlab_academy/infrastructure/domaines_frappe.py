@@ -6,18 +6,35 @@ l'administration, sans livraison.
 """
 import frappe
 
-from openlab_academy.domain.domaine import DOMAINES_PAR_DEFAUT, Domaine, DomaineInconnu, valider
+from openlab_academy.domain.domaine import (DOMAINES_PAR_DEFAUT, Domaine, DomaineInconnu,
+                                            TeinteIllisible, normaliser, valider)
 
 DOCTYPE = "Domaine OpenLab"
 PARCOURS = "LMS Course"
 CHAMP = "ol_domaine"  # champ personnalisé du parcours : lien vers la famille
 
 
+def _teinte_sure(teinte: str) -> str:
+    """La teinte si elle est bien une couleur, rien sinon.
+
+    Le formulaire la valide, mais une ecriture directe en base — un correctif, un import, un test —
+    ne passe pas par `validate`. Or cette valeur part dans un attribut `style` d'une page publique.
+    Une teinte invalide fait donc retomber la carte sur la couleur neutre de la charte plutot que de
+    porter n'importe quoi jusqu'au navigateur. Les gabarits l'echappent en plus : l'app n'a pas
+    l'autoechappement de Jinja.
+    """
+    try:
+        return normaliser(teinte)
+    except TeinteIllisible:
+        return ""
+
+
 def tous() -> tuple[Domaine, ...]:
     """Les domaines configurés, dans l'ordre choisi par l'administration."""
     lignes = frappe.get_all(DOCTYPE, fields=["cle", "libelle", "teinte"], order_by="rang asc, cle asc",
                             ignore_permissions=True)
-    return tuple(Domaine(ligne["cle"], ligne["libelle"], ligne["teinte"]) for ligne in lignes)
+    return tuple(Domaine(ligne["cle"], ligne["libelle"], _teinte_sure(ligne["teinte"]))
+                 for ligne in lignes)
 
 
 def cles() -> tuple[str, ...]:
