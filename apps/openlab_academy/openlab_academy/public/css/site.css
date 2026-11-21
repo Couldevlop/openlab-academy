@@ -1,0 +1,237 @@
+/* Le site public de l'académie : accueil, catalogue, fiche d'un parcours.
+ *
+ * La charte vient de openlab.css, qui est chargé avant (web_include_css) : on n'y redéfinit aucune
+ * couleur, on s'en sert. Une seconde définition dériverait de la première sans que rien ne le dise.
+ *
+ * Contraste : aucun texte orange courant sur fond clair (#C25A12 = 4,4:1), et du blanc seulement sur
+ * #B35210 ou plus foncé — la règle est posée en tête d'openlab.css, on s'y tient.
+ */
+
+.ol-site {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 5rem;
+  font-family: var(--ol-font-body);
+  color: var(--ol-graphite);
+}
+
+.ol-site h1,
+.ol-site h2,
+.ol-site h3 {
+  font-family: var(--ol-font-display);
+  color: var(--ol-navy);
+  line-height: 1.15;
+}
+
+.ol-filet {
+  height: 0.4rem;
+  width: 10rem;
+  border-radius: 999px;
+  background: var(--ol-filet);
+  margin-bottom: 1.25rem;
+}
+
+.ol-accroche {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: var(--ol-slate);
+  max-width: 46rem;
+}
+
+.ol-categorie {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ol-orange-dark);
+  margin: 0 0 0.35rem;
+}
+
+.ol-bouton {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  border: 0;
+  border-radius: 0.6rem;
+  background: var(--ol-orange-deep);
+  color: #fff;
+  font-weight: 700;
+  font-family: var(--ol-font-display);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ol-bouton:hover { background: var(--ol-orange-deeper); color: #fff; }
+.ol-bouton:focus-visible { outline: 3px solid var(--ol-focus); outline-offset: 2px; }
+.ol-bouton[disabled] { background: var(--ol-slate); cursor: not-allowed; }
+
+/* --- accueil ------------------------------------------------------------ */
+
+.ol-hero { padding: 3rem 0 2.5rem; }
+.ol-hero h1 { font-size: clamp(2rem, 5vw, 3.4rem); margin: 0 0 1rem; max-width: 22ch; }
+.ol-hero-actions { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 1.75rem; }
+.ol-hero-note { color: var(--ol-slate); font-size: 0.95rem; }
+
+.ol-chiffres {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1rem;
+  padding: 1.75rem;
+  border-radius: 1rem;
+  background: var(--ol-navy);
+  color: #fff;
+}
+
+.ol-chiffres div { text-align: center; }
+.ol-chiffres strong { display: block; font-family: var(--ol-font-display); font-size: 2.4rem; }
+.ol-chiffres span { color: var(--ol-orange-light); font-size: 0.95rem; }
+
+.ol-methode { padding: 3.5rem 0 1rem; }
+.ol-etapes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1.5rem;
+  list-style: none;
+  padding: 0;
+  counter-reset: etape;
+}
+
+.ol-etapes li { counter-increment: etape; }
+.ol-etapes li::before {
+  content: counter(etape, decimal-leading-zero);
+  font-family: var(--ol-font-display);
+  font-size: 1.6rem;
+  color: var(--ol-orange-dark);
+}
+.ol-etapes h3 { margin: 0.35rem 0 0.5rem; font-size: 1.1rem; }
+.ol-etapes p { color: var(--ol-slate); line-height: 1.6; margin: 0; }
+
+.ol-vedette { padding-top: 3.5rem; }
+.ol-vedette-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+
+/* --- cartes de parcours -------------------------------------------------- */
+
+.ol-cartes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: 1.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 0;
+}
+
+.ol-carte {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ol-mist);
+  border-radius: 0.9rem;
+  overflow: hidden;
+  background: #fff;
+}
+
+.ol-carte:hover { border-color: var(--ol-orange-light); }
+.ol-carte-lien { display: block; text-decoration: none; color: inherit; flex: 1; }
+.ol-carte-image { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+.ol-carte-image--vide { background: var(--ol-filet); opacity: 0.35; }
+.ol-carte-corps { padding: 1.1rem 1.25rem 0.5rem; }
+.ol-carte-corps h2, .ol-carte-corps h3 { font-size: 1.1rem; margin: 0 0 0.5rem; }
+.ol-carte-dit { color: var(--ol-slate); font-size: 0.95rem; line-height: 1.55; margin: 0; }
+
+.ol-carte-pied {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1.25rem 1.1rem;
+}
+
+.ol-carte-prix { font-family: var(--ol-font-display); font-weight: 700; color: var(--ol-navy); }
+
+.ol-pastille {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+}
+
+.ol-pastille--ouverte { background: #e7f4ec; color: #14663a; }
+.ol-pastille--fermee { background: var(--ol-mist); color: var(--ol-slate); }
+
+/* --- catalogue ----------------------------------------------------------- */
+
+.ol-catalogue-tete { padding: 2rem 0 1rem; }
+.ol-filtres { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.5rem; }
+
+.ol-filtre {
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--ol-mist);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ol-slate);
+  font-family: var(--ol-font-body);
+  cursor: pointer;
+}
+
+.ol-filtre--actif { background: var(--ol-navy); border-color: var(--ol-navy); color: #fff; }
+.ol-filtre:focus-visible { outline: 3px solid var(--ol-focus); outline-offset: 2px; }
+
+.ol-vide { color: var(--ol-slate); grid-column: 1 / -1; }
+
+/* --- fiche d'un parcours -------------------------------------------------- */
+
+.ol-fil { font-size: 0.9rem; color: var(--ol-slate); padding: 0.5rem 0 1.5rem; }
+.ol-fil a { color: var(--ol-slate); }
+.ol-fil span { margin: 0 0.4rem; }
+
+.ol-fiche-tete {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 1fr);
+  gap: 2.5rem;
+  align-items: start;
+}
+
+@media (max-width: 52rem) {
+  .ol-fiche-tete { grid-template-columns: 1fr; }
+}
+
+.ol-fiche-tete h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); margin: 0 0 1rem; }
+
+.ol-offre {
+  border: 1px solid var(--ol-mist);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background: #fff;
+  position: sticky;
+  top: 1.5rem;
+}
+
+.ol-prix {
+  font-family: var(--ol-font-display);
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--ol-navy);
+  margin: 0 0 0.5rem;
+}
+
+.ol-etat { font-size: 0.95rem; line-height: 1.5; margin: 0 0 1.25rem; }
+.ol-etat--ouverte { color: #14663a; }
+.ol-etat--fermee { color: var(--ol-slate); }
+
+.ol-session { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 1rem; margin: 0 0 1.25rem; }
+.ol-session dt { color: var(--ol-slate); font-size: 0.85rem; }
+.ol-session dd { margin: 0; font-size: 0.9rem; font-weight: 600; }
+
+.ol-offre .ol-bouton { width: 100%; text-align: center; }
+.ol-refus { color: #9f1f1f; font-size: 0.9rem; margin: 0.9rem 0 0; }
+.ol-note { color: var(--ol-slate); font-size: 0.85rem; margin: 0.9rem 0 0; line-height: 1.5; }
+
+.ol-programme { padding: 3.5rem 0 1rem; }
+.ol-blocs { list-style: none; padding: 0; counter-reset: bloc; display: grid; gap: 1.25rem; }
+.ol-blocs > li {
+  counter-increment: bloc;
+  border-left: 3px solid var(--ol-mist);
+  padding: 0.25rem 0 0.25rem 1.25rem;
+}
+.ol-blocs > li:hover { border-left-color: var(--ol-orange); }
+.ol-blocs h3 { font-size: 1.05rem; margin: 0 0 0.5rem; }
+.ol-blocs ul { margin: 0; padding-left: 1.1rem; color: var(--ol-slate); line-height: 1.7; }
+
+.ol-retour { padding-top: 2.5rem; }

@@ -52,6 +52,21 @@ def phase_lancement() -> PhaseLancement:
                           frozenset(l.cours for l in doc.get("parcours_lancement") or [] if l.cours))
 
 
+def inscriptions_suspendues() -> bool:
+    """Vrai tant que la façade publique ne prend aucune inscription.
+
+    **Le réglage est posé à l'endroit, pas à l'envers** : la case s'appelle « Inscriptions ouvertes
+    au public » et naît décochée. Un réglage jamais renseigné, ou une case vide, ferme donc la
+    porte sans qu'aucun code ait à reconstituer l'intention — ce qui serait d'ailleurs impossible :
+    Frappe convertit l'absence de valeur d'une case à cocher en 0, et l'oubli ne se distingue pas
+    d'une décision. En nommant le réglage par l'ouverture, les deux se confondent dans le bon sens.
+
+    Lu sur le document single en cache, invalidé à l'enregistrement : rouvrir les inscriptions
+    s'applique dès la requête suivante, sans redémarrage.
+    """
+    return not bool(int(frappe.get_cached_doc(DOCTYPE).get("inscriptions_ouvertes") or 0))
+
+
 def plateforme() -> dict:
     doc = frappe.get_single(DOCTYPE)
     return {cle: doc.get(cle) or defaut for cle, defaut in PLATEFORME_DEFAUT.items()}

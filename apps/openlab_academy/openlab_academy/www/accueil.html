@@ -1,0 +1,84 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("Openlab Academy") }}{% endblock %}
+
+{% block page_content %}
+<main class="ol-site ol-accueil">
+
+  <section class="ol-hero">
+    <div class="ol-filet"></div>
+    <h1>{{ _("Se former à l’IA et à la data, depuis Abidjan.") }}</h1>
+    <p class="ol-accroche">
+      {{ _("Des parcours encadrés, des projets corrigés un par un, et un certificat qui atteste de ce que vous savez faire.") }}
+    </p>
+    <p class="ol-hero-actions">
+      <a class="ol-bouton" href="{{ lien_parcours }}">{{ _("Voir les parcours") }}</a>
+      {% if ouverts %}
+      <span class="ol-hero-note">
+        {{ _("{0} session(s) ouverte(s) en ce moment").format(ouverts) }}
+      </span>
+      {% endif %}
+    </p>
+  </section>
+
+  {# Comptés, jamais écrits à la main : un chiffre faux sur une page d'accueil se voit. #}
+  <section class="ol-chiffres" aria-label="{{ _('L’académie en chiffres') }}">
+    <div><strong>{{ chiffres.parcours }}</strong><span>{{ _("parcours") }}</span></div>
+    <div><strong>{{ chiffres.seances }}</strong><span>{{ _("séances") }}</span></div>
+    <div><strong>{{ chiffres.gratuits }}</strong><span>{{ _("en accès libre") }}</span></div>
+  </section>
+
+  <section class="ol-methode">
+    <h2>{{ _("Comment cela se passe") }}</h2>
+    <ol class="ol-etapes">
+      <li>
+        <h3>{{ _("Vous choisissez un parcours") }}</h3>
+        <p>{{ _("Chaque fiche annonce son programme, son prix et la prochaine session. Rien n’est caché derrière un formulaire.") }}</p>
+      </li>
+      <li>
+        <h3>{{ _("Vous rejoignez une promotion") }}</h3>
+        <p>{{ _("Les séances ont lieu à heure fixe, en ligne. Les parcours en accès libre se suivent à votre rythme.") }}</p>
+      </li>
+      <li>
+        <h3>{{ _("Vos travaux sont corrigés") }}</h3>
+        <p>{{ _("Chaque rendu est relu, annoté et noté sur une grille que vous connaissez d’avance.") }}</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="ol-vedette">
+    <div class="ol-vedette-tete">
+      <h2>{{ _("Les parcours") }}</h2>
+      <a href="{{ lien_parcours }}">{{ _("Tous les parcours") }}</a>
+    </div>
+    <ul class="ol-cartes">
+      {% for p in vedette %}
+      <li class="ol-carte">
+        <a class="ol-carte-lien" href="{{ p.lien }}">
+          {% if p.image %}
+            <img class="ol-carte-image" src="{{ p.image | e }}" alt="" loading="lazy" width="480" height="270">
+          {% else %}
+            <div class="ol-carte-image ol-carte-image--vide" aria-hidden="true"></div>
+          {% endif %}
+          <div class="ol-carte-corps">
+            {% if p.category %}<p class="ol-categorie">{{ p.category | e }}</p>{% endif %}
+            <h3>{{ p.title | e }}</h3>
+            {% if p.short_introduction %}<p class="ol-carte-dit">{{ p.short_introduction | e }}</p>{% endif %}
+          </div>
+        </a>
+        <footer class="ol-carte-pied">
+          <span class="ol-pastille ol-pastille--{{ 'ouverte' if p.offre.ouverte else 'fermee' }}">
+            {% if p.offre.ouverte %}{{ _("Inscriptions ouvertes") }}{% else %}{{ _("Fermé") }}{% endif %}
+          </span>
+          <span class="ol-carte-prix">
+            {% if p.offre.gratuit %}{{ _("Gratuit") }}{% elif p.prix %}{{ p.prix }}{% endif %}
+          </span>
+        </footer>
+      </li>
+      {% else %}
+      <li class="ol-vide">{{ _("Le catalogue est en préparation.") }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+</main>
+{% endblock %}
