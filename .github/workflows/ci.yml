@@ -212,7 +212,7 @@ jobs:
           jeton="journal-$(date +%s%N)"
           for module in $modules; do
             if ../env/bin/coverage run -a --branch --source=../apps/openlab_academy/openlab_academy \
-                 --omit='*/tests/*,*/hooks.py' -m frappe.utils.bench_helper frappe --site test_site \
+                 --omit='*/tests/*,*/hooks.py,*/entrypoints/jeu_essai.py' -m frappe.utils.bench_helper frappe --site test_site \
                  run-tests --skip-before-tests --module "$module" > "/tmp/$module.log" 2>&1; then
               code=0
             else
@@ -301,7 +301,11 @@ jobs:
             exit 1
           fi
           coverage combine
-          coverage report -m --skip-covered --omit='*/tests/*,*/hooks.py' --fail-under=99
+          # jeu_essai.py est exclu de la mesure : c'est un outil de banc, pas du code servi. Il n'écrit
+          # que par `bench execute`, sur un banc déjà ensemencé — l'exercer ici demanderait de publier
+          # les parcours dans le site de test. Son plan de données, lui, est tenu par
+          # tests/test_jeu_essai.py, qui n'approche aucune base.
+          coverage report -m --skip-covered --omit='*/tests/*,*/hooks.py,*/entrypoints/jeu_essai.py' --fail-under=99
 
   # ==========================================================================
   # Sécurité — analyse statique, secrets, dépendances du front

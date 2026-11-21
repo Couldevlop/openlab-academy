@@ -16,6 +16,16 @@ _SALAIRE = re.compile(r"\d+\s*k\s*€", re.IGNORECASE)
 # Schémas construits (SVG) et photographies d'illustration : une seule extension, en fin de nom,
 # pour qu'aucun « photo.jpg.exe » ni aucun chemin ne passe.
 _NOM_FIGURE = re.compile(r"[a-z0-9][a-z0-9-]{0,79}\.(?:svg|jpg|png|webp)")
+# Vidéo d'une séance. Deux formes, et deux seulement.
+#   - un chemin dans l'atelier, à la règle de nommage de docs/produire-une-video.md :
+#     « <numero>-<parcours>/s<seance>-intro.mp4 » ou « …-demo-<n>.mp4 ». Cette règle décide de toute la
+#     chaîne de montage ; un chemin qui s'en écarte publierait un lecteur que la vérification ne saurait
+#     pas contrôler. Aucun segment libre, donc aucune remontée (« .. »), aucun chemin absolu, aucun
+#     schéma (« javascript: ») : OWASP A01, la valeur vient d'un fichier de parcours.
+#   - une adresse complète, en https seulement : une vidéo de cours servie en clair se laisse remplacer
+#     en chemin.
+_CHEMIN_VIDEO = re.compile(r"\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*/s\d{2}-(?:intro|demo-\d{1,2})\.mp4")
+_ADRESSE_VIDEO = re.compile(r"https://[A-Za-z0-9.-]+(?::\d+)?/[A-Za-z0-9._~\-/]*")
 # langages colorés par le bloc codeBox du LMS ; au-delà, le bloc s'affiche sans coloration et sans alerte
 LANGAGES = frozenset({"python", "json", "yaml", "bash", "sql", "text"})
 
@@ -96,6 +106,23 @@ class Question:
     @property
     def choix_multiple(self) -> bool:
         return len(self.bonnes) > 1
+
+
+def valider_video(valeur: str) -> str:
+    """Vidéo d'une séance : un chemin de l'atelier à la règle de nommage, ou une adresse https.
+
+    Rien d'autre ne passe, et c'est voulu : le chemin désigne un fichier que la vérification de
+    publication ira chercher, et la règle de nommage est ce qui permet de le trouver."""
+    chemin = (valeur or "").strip()
+    if not chemin:
+        return ""
+    if chemin != valeur:  # un blanc en bord cache une valeur qui ne dit pas ce qu'elle semble dire
+        raise ParcoursInvalide(f"vidéo invalide : {valeur!r} (espace ou passage à la ligne en bordure)")
+    if _CHEMIN_VIDEO.fullmatch(chemin) or _ADRESSE_VIDEO.fullmatch(chemin):
+        return chemin
+    raise ParcoursInvalide(
+        f"vidéo invalide : {valeur!r} (attendu « 06-ia-agentique/s01-intro.mp4 », "
+        "« …/s03-demo-2.mp4 », ou une adresse https complète)")
 
 
 @dataclass(frozen=True)
@@ -201,6 +228,7 @@ class Module(AvecCours):
     evaluations: Evaluations = Evaluations.COMPLETES  # ce que la séance évalue (voir Evaluations)
     travaux_pratiques: str = ""  # support de la séance : déroulé et défi, affiché dans la leçon
     archive: str = ""  # nom de fichier de l'archive de départ, jointe à la leçon et citée par elle
+    video: str = ""  # vidéo de la séance : chemin de l'atelier (voir valider_video) ou adresse https
     # l'atelier exécute le code dans le navigateur de l'apprenant : vrai pour les séances de Python seul,
     # faux dès qu'une séance demande un serveur (API, écran, framework web), qui ne peut pas y tourner
     atelier: bool = False
@@ -390,6 +418,17 @@ class Parcours:
         if heures_par_semaine <= 0:
             raise ValueError("heures_par_semaine doit être positif")
         return math.ceil(self.charge_horaire() / heures_par_semaine)
+
+    def videos(self) -> tuple[str, ...]:
+        """Les vidéos que ce parcours référence, dans l'ordre des séances, sans doublon.
+
+        Ce que la publication doit retrouver sur le serveur avant d'écrire quoi que ce soit."""
+        vues: dict[str, None] = {}
+        for bloc in self.blocs:
+            for module in bloc.modules:
+                if module.video:
+                    vues.setdefault(module.video)
+        return tuple(vues)
 
     def chapitres(self) -> list[Chapitre]:
         """Ordre de publication : chaque bloc, suivi des projets qui consolident ses modules ; capstone en dernier."""

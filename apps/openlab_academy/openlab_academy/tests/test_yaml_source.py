@@ -275,6 +275,43 @@ class TestGrilleEtCorrection(unittest.TestCase):
             with self.subTest(nom), self.assertRaisesRegex(FormatInvalide, r"archive"):
                 depuis_dict(brut, "t.yaml")
 
+    def test_video_facultative_du_module(self):
+        self.assertEqual(depuis_dict(parcours_brut(), "t.yaml").blocs[0].modules[0].video, "")
+        brut = parcours_brut()
+        brut["blocs"][0]["modules"][0]["video"] = "06-ia-agentique/s01-intro.mp4"
+        self.assertEqual(depuis_dict(brut, "t.yaml").blocs[0].modules[0].video,
+                         "06-ia-agentique/s01-intro.mp4")
+
+    def test_video_en_adresse_complete_acceptee(self):
+        """Une vidéo peut être hébergée ailleurs : l'adresse passe telle quelle, en https seulement."""
+        brut = parcours_brut()
+        brut["blocs"][0]["modules"][0]["video"] = "https://video.openlab.ci/s01-intro.mp4"
+        self.assertEqual(depuis_dict(brut, "t.yaml").blocs[0].modules[0].video,
+                         "https://video.openlab.ci/s01-intro.mp4")
+
+    def test_video_hors_regle_de_nommage_refusee(self):
+        """OWASP A01 : le chemin vient du fichier de parcours ; il ne doit pouvoir désigner que l'atelier.
+
+        Et la règle de nommage de `docs/produire-une-video.md` décide de toute la chaîne de montage :
+        un chemin qui s'en écarte publierait un lecteur que le script de vérification ne saurait pas
+        contrôler."""
+        for chemin in ("../../etc/passwd", "/06-ia-agentique/s01-intro.mp4", "06-ia-agentique/../s01.mp4",
+                       "06-ia-agentique/s01-intro.mkv", "intro.mp4", "s01-intro.mp4",
+                       "06-ia-agentique/s01-causerie.mp4", "06 ia/s01-intro.mp4",
+                       "06-IA-agentique/s01-intro.mp4", "http://video.openlab.ci/s01-intro.mp4",
+                       "javascript:alert(1)", "06-ia-agentique/s01-intro.mp4" + chr(10)):
+            brut = parcours_brut()
+            brut["blocs"][0]["modules"][0]["video"] = chemin
+            with self.subTest(chemin), self.assertRaisesRegex(FormatInvalide, r"video"):
+                depuis_dict(brut, "t.yaml")
+
+    def test_video_de_demo_numerotee_acceptee(self):
+        for chemin in ("01-developpeur-python/s03-demo-1.mp4", "01-developpeur-python/s12-demo-10.mp4"):
+            brut = parcours_brut()
+            brut["blocs"][0]["modules"][0]["video"] = chemin
+            with self.subTest(chemin):
+                self.assertEqual(depuis_dict(brut, "t.yaml").blocs[0].modules[0].video, chemin)
+
     def test_grille_et_correction_d_un_module(self):
         brut = parcours_brut()
         m = brut["blocs"][0]["modules"][0]

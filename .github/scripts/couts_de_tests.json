@@ -56,6 +56,7 @@
     "test_installation": 315.3,
     "test_instantane_depot": 0.0,
     "test_instantaner": 0.0,
+    "test_jeu_essai": 0.1,
     "test_langue_frappe": 2.3,
     "test_langues": 0.0,
     "test_paiement_api_frappe": 91.7,
@@ -89,6 +90,7 @@
     "test_verrou": 0.0,
     "test_verrou_frappe": 17.8,
     "test_video_lecon_frappe": 5.6,
+    "test_video_publication": 0.1,
     "test_visibilite": 0.0,
     "test_visibilite_frappe": 149.2,
     "test_yaml_source": 3.4
