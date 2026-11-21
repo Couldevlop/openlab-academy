@@ -1,0 +1,62 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("Les parcours") }}{% endblock %}
+
+{% block page_content %}
+<main class="ol-site ol-catalogue">
+
+  <header class="ol-catalogue-tete">
+    <div class="ol-filet"></div>
+    <h1>{{ _("Les parcours") }}</h1>
+    <p class="ol-accroche">
+      {% if ouverts %}
+        {{ _("{0} parcours accueillent des inscriptions en ce moment.").format(ouverts) }}
+      {% else %}
+        {{ _("Aucune session n’est ouverte en ce moment. Les prochaines arrivent.") }}
+      {% endif %}
+    </p>
+
+    {% if categories %}
+    <div class="ol-filtres" data-role="filtres">
+      <button type="button" class="ol-filtre ol-filtre--actif" data-categorie="">{{ _("Tous") }}</button>
+      {% for categorie in categories %}
+      <button type="button" class="ol-filtre" data-categorie="{{ categorie | e }}">{{ categorie | e }}</button>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </header>
+
+  <ul class="ol-cartes" data-role="cartes">
+    {% for p in parcours %}
+    <li class="ol-carte" data-categorie="{{ p.category | e }}">
+      <a class="ol-carte-lien" href="{{ p.lien }}">
+        {% if p.image %}
+          <img class="ol-carte-image" src="{{ p.image | e }}" alt="" loading="lazy" width="480" height="270">
+        {% else %}
+          <div class="ol-carte-image ol-carte-image--vide" aria-hidden="true"></div>
+        {% endif %}
+        <div class="ol-carte-corps">
+          {% if p.category %}<p class="ol-categorie">{{ p.category | e }}</p>{% endif %}
+          <h2>{{ p.title | e }}</h2>
+          {% if p.short_introduction %}<p class="ol-carte-dit">{{ p.short_introduction | e }}</p>{% endif %}
+        </div>
+      </a>
+      <footer class="ol-carte-pied">
+        <span class="ol-pastille ol-pastille--{{ 'ouverte' if p.offre.ouverte else 'fermee' }}">
+          {% if p.offre.ouverte %}{{ _("Inscriptions ouvertes") }}{% else %}{{ _("Fermé") }}{% endif %}
+        </span>
+        <span class="ol-carte-prix">
+          {% if p.offre.gratuit %}{{ _("Gratuit") }}{% elif p.prix %}{{ p.prix }}{% endif %}
+        </span>
+      </footer>
+    </li>
+    {% else %}
+    <li class="ol-vide">{{ _("Le catalogue est en préparation.") }}</li>
+    {% endfor %}
+  </ul>
+</main>
+{% endblock %}
+
+{% block script %}
+<script src="/assets/openlab_academy/site/filtre.js" defer></script>
+{% endblock %}
