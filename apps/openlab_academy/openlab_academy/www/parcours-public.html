@@ -4,10 +4,10 @@
 
 {% block contenu %}
 
-{#- Le bandeau porte la famille du parcours et son titre. Il remplace l'image de couverture : une
-    photographie au-dessus d'un titre ne dit rien que le titre ne dise déjà, et pousse l'offre sous
-    la ligne de flottaison. -#}
-<section class="ol-fiche-banniere"
+{#- Le bandeau porte la famille, le titre et la couverture du parcours. La couverture est posée a
+    cote du titre plutot que derriere : elle porte deja son propre texte, et superposer deux textes
+    rendrait les deux illisibles. Elle reste assez haute pour que l'offre tienne dans l'ecran. -#}
+<section class="ol-fiche-banniere{% if image %} ol-fiche-banniere--image{% endif %}"
          {% if domaine_teinte %}style="--teinte: {{ domaine_teinte | e }}"{% endif %}>
   <div class="ol-fiche-banniere-corps">
     <nav class="ol-fil" aria-label="{{ _('Fil d’Ariane') }}">
@@ -24,6 +24,11 @@
       {% if blocs %}<li>{{ _("{0} blocs").format(blocs) }}</li>{% endif %}
     </ul>
   </div>
+  {% if image %}
+  <div class="ol-fiche-couverture" aria-hidden="true">
+    <img src="{{ image | e }}" alt="" decoding="async">
+  </div>
+  {% endif %}
 </section>
 
 <div class="ol-site ol-fiche">

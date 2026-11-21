@@ -91,7 +91,12 @@
   font-size: 0.95rem;
 }
 .ol-nav a:hover { color: var(--ol-orange-dark); }
-.ol-nav-action { border: 1.5px solid var(--ol-navy); border-radius: 999px; padding: 0.4rem 1.1rem; }
+.ol-nav-action {
+  border: 1.5px solid var(--ol-navy);
+  border-radius: 999px;
+  padding: 0.4rem 1.1rem;
+  white-space: nowrap;
+}
 .ol-nav-action:hover { background: var(--ol-navy); color: #fff; }
 
 @media (max-width: 40rem) {
@@ -295,19 +300,55 @@
 .ol-carte-lien { display: flex; flex-direction: column; height: 100%; text-decoration: none; color: inherit; }
 .ol-carte-lien:focus-visible { outline: 3px solid var(--ol-focus); outline-offset: -3px; }
 
-/* La bande : la famille se reconnaît avant d'être lue. Teinte validée à la saisie (4,5:1 au moins). */
+/* Le haut de la carte. Avec couverture, elle occupe toute la surface et les deux étiquettes se
+   posent dessus sur un voile. Sans couverture, la teinte de la famille prend le relais : un
+   parcours neuf est visible le jour même, sans attendre qu'une image soit dessinée. */
 .ol-carte-bande {
   --teinte: var(--ol-teinte-neutre);
   background: var(--teinte);
   color: #fff;
   padding: 1rem 1.25rem;
-  min-height: 5.5rem;
+  aspect-ratio: 16 / 9;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 1rem;
   box-sizing: border-box;
 }
+.ol-carte-bande--image {
+  position: relative;
+  padding: 0;
+  min-height: 0;
+  aspect-ratio: 16 / 9;
+  background: var(--ol-navy);
+}
+.ol-carte-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* La couverture porte déjà du texte : sans voile, les deux étiquettes tomberaient dessus et les
+   deux deviendraient illisibles. Le dégradé n'assombrit que le bas, là où elles se posent. */
+.ol-carte-bande--image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 24, 58, 0.78) 0%, rgba(0, 24, 58, 0.25) 38%,
+                                      rgba(0, 24, 58, 0) 62%);
+}
+.ol-carte-bande--image > .ol-carte-famille,
+.ol-carte-bande--image > .ol-carte-taille {
+  position: absolute;
+  bottom: 0.85rem;
+  z-index: 1;
+  text-shadow: 0 1px 3px rgba(0, 24, 58, 0.6);
+}
+.ol-carte-bande--image > .ol-carte-famille { left: 1.1rem; }
+.ol-carte-bande--image > .ol-carte-taille { right: 1.1rem; font-size: 1.35rem; }
+
 .ol-carte-famille {
   font-family: var(--ol-font-display);
   font-size: 0.74rem;
@@ -417,6 +458,31 @@
   max-width: var(--ol-largeur);
   margin: 0 auto;
   padding: 1.5rem 1.25rem 2.75rem;
+}
+
+/* Couverture posée à côté du titre, jamais derrière : elle porte son propre texte, et superposer
+   deux textes rendrait les deux illisibles. */
+.ol-fiche-banniere--image {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+  align-items: center;
+  max-width: calc(var(--ol-largeur) + 2.5rem);
+  margin: 0 auto;
+  gap: 2rem;
+}
+.ol-fiche-banniere--image .ol-fiche-banniere-corps { margin: 0; padding-right: 0; }
+.ol-fiche-couverture { padding: 1.5rem 1.25rem; }
+.ol-fiche-couverture img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--ol-rayon);
+  box-shadow: 0 18px 40px -18px rgba(0, 20, 48, 0.65);
+}
+
+@media (max-width: 58rem) {
+  .ol-fiche-banniere--image { grid-template-columns: 1fr; gap: 0; }
+  .ol-fiche-couverture { padding-top: 0; }
 }
 .ol-fiche-banniere h1 {
   color: #fff;

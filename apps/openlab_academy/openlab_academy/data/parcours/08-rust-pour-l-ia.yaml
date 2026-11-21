@@ -17,6 +17,7 @@ description: >-
   capstone : un service d'inférence que l'on mesure, profile et optimise jusqu'à une cible chiffrée.</p>
   <p><b>Ce que le parcours n'est pas :</b> une formation à l'entraînement de modèles. On ne descend
   pas de gradient ici — on sert, on mesure et on tient la charge.</p>
+couverture: couverture-rust-pour-l-ia.svg
 tags: [Rust, Systèmes, Infrastructure IA]
 card_gradient: Orange
 programme:

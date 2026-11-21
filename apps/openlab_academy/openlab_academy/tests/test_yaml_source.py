@@ -227,7 +227,7 @@ class TestChargementDossier(unittest.TestCase):
         lot = charger_dossier(PARCOURS_DIR)
         self.assertTrue(lot)
         complets = [p for p in lot if isinstance(p, Parcours)]
-        self.assertEqual(len(complets), 6)
+        self.assertEqual(len(complets), 7)
         for p in complets:
             # le parcours de lancement et le parcours quotidien ne passent pas par le portfolio hebdomadaire
             attendus = 0 if p.projets_attendus == 0 else 10
