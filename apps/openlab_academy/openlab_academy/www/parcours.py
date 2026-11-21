@@ -21,7 +21,7 @@ def get_context(context) -> None:
     context.categories = sorted({p["category"] for p in context.parcours if p.get("category")})
     context.metatags = {
         "title": frappe._("Les parcours — Openlab Academy"),
-        "description": frappe._(
-            "Parcours de l'académie Openlab : data science, intelligence artificielle, développement, "
-            "cybersécurité. Formations en ligne, à Abidjan."),
+        # Un seul littéral : voir la note de www/accueil.py — deux littéraux accolés donnent une clé
+        # de traduction tronquée, que l'extracteur voit mais que le programme n'emploie jamais.
+        "description": frappe._("Parcours de l'académie Openlab : data science, intelligence artificielle, développement, cybersécurité. Formations en ligne, à Abidjan."),  # noqa: E501
     }
