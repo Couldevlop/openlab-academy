@@ -110,7 +110,11 @@ class InscrireAuParcours:
         (`TarifAbsent`), autant ne pas l'annoncer ouvert.
         """
         if self._reglages.inscriptions_suspendues():
-            return Etat.SUSPENDUE, None, False, None
+            # Le prix et la gratuité restent lus : une vitrine dont les cartes n'affichent ni
+            # « Gratuit » ni montant ne vend rien. Seules la session et ses places se taisent, et
+            # elles se taisent d'elles-mêmes, faute de cohorte d'accueil.
+            gratuit = self._gratuits.gratuit(cours)
+            return Etat.SUSPENDUE, None, gratuit, None if gratuit else self._tarifs.montant(cours)
         if self._gratuits.gratuit(cours):
             return Etat.OUVERTE, None, True, None
         montant = self._tarifs.montant(cours)

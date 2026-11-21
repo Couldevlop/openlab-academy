@@ -319,5 +319,57 @@ class TestLaSuspensionDesInscriptions(unittest.TestCase):
         self.assertEqual(usage.offre(COURS, APPRENANT).etat, OUVERTE)
 
 
+class TestUneOffreFermeeNePromettRien(unittest.TestCase):
+    """Un état fermé ne doit livrer ni session, ni dates, ni places restantes.
+
+    L'API `offre` est ouverte aux visiteurs sans compte : c'est elle qui doit taire ces champs, pas
+    le gabarit. Et les taire n'est pas qu'une précaution — un parcours dont le contenu n'est pas
+    écrit n'a pas de session à annoncer, et des « places restantes » sur une cohorte qui n'accueille
+    personne sont une promesse fausse.
+    """
+
+    def test_une_offre_suspendue_ne_dit_ni_session_ni_places(self):
+        usage, _ = cas(suspendues=True)
+        rendu = usage.offre(COURS, APPRENANT).en_dict()
+        self.assertEqual(rendu["session"], "")
+        self.assertEqual((rendu["debut"], rendu["fin"]), ("", ""))
+        self.assertEqual(rendu["places_restantes"], 0)
+
+    def test_une_cohorte_complete_ne_dit_pas_ses_places(self):
+        """« Complet » suffit : le reste est le remplissage d'une session qui n'accueille plus."""
+        usage, _ = cas(cohortes={COURS: [candidate(places=5, inscrits=5)]})
+        rendu = usage.offre(COURS, APPRENANT).en_dict()
+        self.assertEqual(rendu["etat"], "FERMEE_COMPLETE")
+        self.assertEqual(rendu["session"], "")
+        self.assertEqual(rendu["places_restantes"], 0)
+
+    def test_une_offre_ouverte_dit_tout(self):
+        usage, _ = cas()
+        rendu = usage.offre(COURS, APPRENANT).en_dict()
+        self.assertEqual(rendu["session"], "Promo 1")
+        self.assertEqual(rendu["places_restantes"], 26)
+        self.assertTrue(rendu["debut"] and rendu["fin"])
+
+    def test_le_prix_reste_annonce_meme_ferme(self):
+        """Le prix n'est pas une promesse de session : qui hésite doit savoir si c'est dans ses
+        moyens, même avant l'ouverture. Une vitrine sans prix ne vend rien."""
+        usage, _ = cas(cohortes={COURS: [candidate(places=5, inscrits=5)]})
+        self.assertEqual(usage.offre(COURS, APPRENANT).en_dict()["montant"], 250000)
+
+    def test_la_suspension_laisse_voir_le_prix(self):
+        usage, _ = cas(suspendues=True)
+        offre = usage.offre(COURS, APPRENANT)
+        self.assertEqual(offre.etat, SUSPENDUE)
+        self.assertEqual(offre.montant, 250000)
+
+    def test_la_suspension_laisse_voir_la_gratuite(self):
+        """Sinon un parcours gratuit en vitrine n'affiche ni « Gratuit » ni prix : une carte muette."""
+        usage, _ = cas(cohortes={COURS: []}, gratuits=(COURS,), suspendues=True)
+        offre = usage.offre(COURS, APPRENANT)
+        self.assertEqual(offre.etat, SUSPENDUE)
+        self.assertTrue(offre.gratuit)
+        self.assertIsNone(offre.montant)
+
+
 if __name__ == "__main__":
     unittest.main()

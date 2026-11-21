@@ -4,14 +4,18 @@ Un seul module pour l'accueil, le catalogue et la page d'un parcours, parce que 
 question et doivent y répondre pareil. Une page qui annoncerait « ouvert » là où une autre dit « complet »
 est pire qu'une page absente.
 
-Les parcours cachés ou fermés sont écartés par `lms.cours_refuses_courants()`, la même règle que le
-catalogue du LMS applique. On ne refait pas le filtre : on s'y range. Les pages publiques sont vues par
-des visiteurs sans compte, pour qui le refus doit être total — un parcours caché ne doit laisser deviner
-ni son nom, ni son prix, ni ses dates.
+**Le masquage de la phase de lancement ne s'applique plus ici**, à dessein : le site est une vitrine,
+et l'existence comme le programme des parcours à venir sont l'argument de vente. Un catalogue de neuf
+entrées dont huit sont cachées se lit comme un catalogue d'une entrée. Le masquage, lui, continue de
+s'appliquer dans le LMS pour l'apprenant connecté — c'est la façade publique, et elle seule, qui s'en
+affranchit. Le raisonnement complet est dans `site_api.parcours_du_catalogue`.
+
+`published` reste l'interrupteur : c'est le seul moyen de retirer une page du site, et
+`lancement.retirer_parcours_echus` s'en sert chaque nuit.
 """
 import frappe
 
-from openlab_academy.entrypoints import lms, site_api
+from openlab_academy.entrypoints import site_api
 
 CHAMP_GRATUIT = "parcours_gratuit"
 
@@ -21,14 +25,12 @@ def _usage():
 
 
 def parcours_visibles(limite: int | None = None) -> list:
-    """Les parcours publiés que ce visiteur a le droit de voir, les plus récents d'abord."""
-    refuses = lms.cours_refuses_courants()
+    """Tout le catalogue public : les parcours publiés, les plus récents d'abord."""
     cours = frappe.get_all(
         "LMS Course", {"published": 1},
         ["name", "title", "short_introduction", "image", "category", CHAMP_GRATUIT],
         order_by="creation desc", ignore_permissions=True)
-    retenus = [c for c in cours if c.name not in refuses]
-    return retenus[:limite] if limite else retenus
+    return cours[:limite] if limite else cours
 
 
 def avec_offre(cours: list) -> list:

@@ -41,7 +41,7 @@ def get_context(context) -> None:
     context.catalogue = CATALOGUE
     context.lien_parcours = "/parcours"
     nom = frappe.form_dict.get("parcours")
-    cours = site_api.parcours_publie(nom if isinstance(nom, str) else "")
+    cours = site_api.parcours_du_catalogue(nom)
     if not cours:
         raise frappe.DoesNotExistError
 
