@@ -129,7 +129,7 @@ def appliquer(demande: Reglage) -> None:
         return
     for role in anciens:
         frappe.db.set_value("Role", role, "two_factor_auth", 0)
-    frappe.db.set_value(SYSTEME, SYSTEME, "enable_two_factor_auth", 0)
+    frappe.db.set_single_value(SYSTEME, "enable_two_factor_auth", 0)
     _tracer(())
 
 

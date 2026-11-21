@@ -150,7 +150,7 @@ class TestLaLectureDuReglage(_Socle):
 
     def test_preparer_n_active_pas_sur_un_reglage_intenable(self):
         """Une migration ne verrouille pas le site faute de porteur — et ne désarme rien non plus."""
-        frappe.db.set_value(second.SYSTEME, second.SYSTEME, "enable_two_factor_auth", 0)
+        frappe.db.set_single_value(second.SYSTEME, "enable_two_factor_auth", 0)
         frappe.db.set_single_value(second.REGLAGES, "deuxieme_facteur", 1)
         frappe.db.set_single_value(second.REGLAGES, "roles_deuxieme_facteur", ROLE)
         for compte in second.porteurs((ROLE,)):
@@ -169,8 +169,9 @@ class TestCeQuiNeNousAppartientPas(_Socle):
     """
 
     def test_une_migration_n_eteint_pas_un_second_facteur_pose_ailleurs(self):
-        frappe.db.set_value(second.SYSTEME, second.SYSTEME, "enable_two_factor_auth", 1)
+        frappe.db.set_single_value(second.SYSTEME, "enable_two_factor_auth", 1)
         frappe.db.set_single_value(second.REGLAGES, "deuxieme_facteur", 0)
+        frappe.db.set_single_value(second.REGLAGES, "roles_deuxieme_facteur", ROLE)
         frappe.db.set_single_value(second.REGLAGES, "roles_deuxieme_facteur_poses", "")
         second.preparer()
         self.assertEqual(frappe.db.get_single_value(second.SYSTEME, "enable_two_factor_auth"), 1)
@@ -186,14 +187,14 @@ class TestCeQuiNeNousAppartientPas(_Socle):
 
     def test_un_reglage_illisible_ne_desarme_rien(self):
         """Une faute de frappe dans un nom de rôle ne doit pas valoir extinction du site."""
-        frappe.db.set_value(second.SYSTEME, second.SYSTEME, "enable_two_factor_auth", 1)
+        frappe.db.set_single_value(second.SYSTEME, "enable_two_factor_auth", 1)
         frappe.db.set_single_value(second.REGLAGES, "deuxieme_facteur", 1)
         frappe.db.set_single_value(second.REGLAGES, "roles_deuxieme_facteur", "System Manger")
         second.preparer()
         self.assertEqual(frappe.db.get_single_value(second.SYSTEME, "enable_two_factor_auth"), 1)
 
     def test_sans_porteur_la_migration_n_active_pas_mais_n_eteint_pas_non_plus(self):
-        frappe.db.set_value(second.SYSTEME, second.SYSTEME, "enable_two_factor_auth", 1)
+        frappe.db.set_single_value(second.SYSTEME, "enable_two_factor_auth", 1)
         frappe.db.set_single_value(second.REGLAGES, "deuxieme_facteur", 1)
         frappe.db.set_single_value(second.REGLAGES, "roles_deuxieme_facteur", ROLE)
         for compte in second.porteurs((ROLE,)):
@@ -204,6 +205,7 @@ class TestCeQuiNeNousAppartientPas(_Socle):
     def test_ce_que_la_plateforme_a_pose_est_trace_et_repris(self):
         """Décocher dans l'administration doit encore retirer ce que la plateforme avait posé."""
         self.inscrire(self.compte)
+        frappe.db.set_single_value(second.REGLAGES, "roles_deuxieme_facteur", ROLE)
         second.appliquer(Reglage(actif=True, methode="OTP App", roles=(ROLE,)))
         self.assertEqual(frappe.db.get_single_value(second.REGLAGES,
                                                     "roles_deuxieme_facteur_poses"), ROLE)

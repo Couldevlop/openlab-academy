@@ -83,7 +83,7 @@ def activer_le_second_facteur(roles: str | None = None, methode: str | None = No
 def eteindre_le_second_facteur() -> None:
     """Rouvre la porte. Fonctionne en toute circonstance, y compris si plus personne n'entre."""
     frappe.db.set_single_value(REGLAGES, "deuxieme_facteur", 0)
-    frappe.db.set_value(second.SYSTEME, second.SYSTEME, "enable_two_factor_auth", 0)
+    frappe.db.set_single_value(second.SYSTEME, "enable_two_factor_auth", 0)
     for role in frappe.get_all("Role", {"two_factor_auth": 1}, pluck="name", ignore_permissions=True):
         frappe.db.set_value("Role", role, "two_factor_auth", 0)
     frappe.db.commit()
