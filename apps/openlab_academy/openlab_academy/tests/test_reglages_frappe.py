@@ -8,6 +8,8 @@ from frappe.tests.utils import FrappeTestCase
 from openlab_academy.domain.lancement import PhaseLancement
 from openlab_academy.domain.reglages import Reglages
 from openlab_academy.infrastructure import reglages_source_frappe as source
+from openlab_academy.infrastructure.depot_dossiers_frappe import ReglagesPaiementFrappe
+from openlab_academy.infrastructure.inscriptions_frappe import ReglagesInscriptionFrappe
 from openlab_academy.patches import completer_places_cohortes, completer_reglages_exercices, initialiser_reglages
 
 DOCTYPE = "Reglages OpenLab Academy"
@@ -161,6 +163,52 @@ class TestLancementFrappe(FrappeTestCase):
                               "reglages_openlab_academy", "reglages_openlab_academy.json")
         with open(chemin, encoding="utf-8") as f:
             self.assertEqual({p["role"] for p in json.load(f)["permissions"]}, {"System Manager"})
+
+
+class TestSuspensionDesInscriptions(FrappeTestCase):
+    """Le réglage qui ferme la façade publique, et ce qu'il vaut quand personne ne l'a touché."""
+
+    def tearDown(self):
+        frappe.set_user("Administrator")
+        frappe.db.rollback()
+
+    def test_absent_le_reglage_vaut_suspendu(self):
+        """Un réglage jamais renseigné ne doit pas ouvrir les inscriptions : l'oubli ferme, il
+        n'ouvre pas. C'est le réglage nommé par l'ouverture qui le garantit."""
+        frappe.db.delete("Singles", {"doctype": DOCTYPE, "field": "inscriptions_ouvertes"})
+        frappe.clear_document_cache(DOCTYPE, DOCTYPE)
+        self.assertTrue(source.inscriptions_suspendues())
+
+    def test_coche_il_rouvre_les_inscriptions(self):
+        doc = frappe.get_single(DOCTYPE)
+        doc.inscriptions_ouvertes = 1
+        doc.save(ignore_permissions=True)
+        self.assertFalse(source.inscriptions_suspendues())
+
+    def test_decoche_il_les_suspend(self):
+        doc = frappe.get_single(DOCTYPE)
+        doc.inscriptions_ouvertes = 0
+        doc.save(ignore_permissions=True)
+        self.assertTrue(source.inscriptions_suspendues())
+
+    def test_case_changee_vue_par_la_requete_suivante(self):
+        """Rouvrir les inscriptions ne doit pas attendre un redémarrage : le single est lu en cache,
+        et l'enregistrement doit l'invalider."""
+        doc = frappe.get_single(DOCTYPE)
+        doc.inscriptions_ouvertes = 0
+        doc.save(ignore_permissions=True)
+        self.assertTrue(source.inscriptions_suspendues())
+        doc.inscriptions_ouvertes = 1
+        doc.save(ignore_permissions=True)
+        self.assertFalse(source.inscriptions_suspendues())
+
+    def test_l_adaptateur_du_cas_d_usage_lit_le_meme_reglage(self):
+        """`ReglagesInscriptionFrappe` sert le cas d'usage public : s'il lisait ailleurs, la page et
+        le serveur divergeraient."""
+        doc = frappe.get_single(DOCTYPE)
+        doc.inscriptions_ouvertes = 0
+        doc.save(ignore_permissions=True)
+        self.assertTrue(ReglagesInscriptionFrappe(ReglagesPaiementFrappe()).inscriptions_suspendues())
 
 
 class TestPatchExercices(FrappeTestCase):

@@ -1,0 +1,88 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ titre | e }}{% endblock %}
+
+{% block page_content %}
+<main class="ol-site ol-fiche">
+
+  <nav class="ol-fil" aria-label="{{ _('Fil d’Ariane') }}">
+    <a href="/">{{ _("Accueil") }}</a>
+    <span aria-hidden="true">›</span>
+    <a href="{{ lien_parcours }}">{{ _("Parcours") }}</a>
+  </nav>
+
+  <header class="ol-fiche-tete">
+    <div class="ol-fiche-dit">
+      {% if categorie %}<p class="ol-categorie">{{ categorie | e }}</p>{% endif %}
+      <h1>{{ titre | e }}</h1>
+      {% if accroche %}<p class="ol-accroche">{{ accroche | e }}</p>{% endif %}
+    </div>
+
+    {# L'offre est rendue par le serveur : juste pour un robot d'indexation comme pour un navigateur
+       sans JavaScript. Le script ne fait que l'actualiser et poster l'inscription. #}
+    <aside class="ol-offre" id="ol-offre"
+           data-parcours="{{ parcours | e }}"
+           data-connecte="{{ 1 if connecte else 0 }}"
+           data-connexion="{{ lien_connexion | e }}">
+      <div class="ol-filet"></div>
+
+      <p class="ol-prix" data-role="prix">
+        {% if offre.gratuit %}{{ _("Gratuit") }}{% elif prix %}{{ prix }}{% endif %}
+      </p>
+
+      <p class="ol-etat ol-etat--{{ 'ouverte' if offre.ouverte else 'fermee' }}" data-role="message">
+        {{ offre.message | e }}
+      </p>
+
+      <dl class="ol-session" data-role="session" {% if not offre.session %}hidden{% endif %}>
+        <dt>{{ _("Prochaine session") }}</dt>
+        <dd data-role="session-titre">{{ offre.session | e }}</dd>
+        <dt>{{ _("Du") }}</dt>
+        <dd data-role="session-dates">{{ offre.debut | e }} — {{ offre.fin | e }}</dd>
+        <dt>{{ _("Places restantes") }}</dt>
+        <dd data-role="session-places">{{ offre.places_restantes }}</dd>
+      </dl>
+
+      {% if offre.deja_inscrit %}
+        <a class="ol-bouton" href="/lms/courses/{{ parcours | e }}">{{ _("Reprendre le parcours") }}</a>
+      {% elif not offre.ouverte %}
+        <button class="ol-bouton" type="button" disabled>{{ _("Inscriptions fermées") }}</button>
+      {% elif connecte %}
+        <button class="ol-bouton" type="button" data-role="inscrire">{{ _("M’inscrire") }}</button>
+      {% else %}
+        <a class="ol-bouton" href="{{ lien_connexion | e }}">{{ _("Me connecter pour m’inscrire") }}</a>
+      {% endif %}
+
+      <p class="ol-refus" data-role="refus" role="alert" hidden></p>
+
+      {% if not offre.gratuit %}
+        <p class="ol-note">{{ _("Le règlement se fait après l’inscription, en une fois ou en plusieurs tranches.") }}</p>
+      {% endif %}
+    </aside>
+  </header>
+
+  {% if programme %}
+  <section class="ol-programme">
+    <h2>{{ _("Le programme") }}</h2>
+    <ol class="ol-blocs">
+      {% for bloc in programme %}
+      <li>
+        <h3>{{ bloc.titre | e }}</h3>
+        {% if bloc.seances %}
+        <ul>
+          {% for seance in bloc.seances %}<li>{{ seance | e }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
+  <p class="ol-retour"><a href="{{ lien_parcours }}">{{ _("Voir tous les parcours") }}</a></p>
+</main>
+{% endblock %}
+
+{% block script %}
+<script src="/assets/openlab_academy/site/inscription.js" defer></script>
+{% endblock %}

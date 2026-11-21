@@ -43,6 +43,7 @@
   "devise",
   "section_lancement",
   "phase_lancement",
+  "inscriptions_ouvertes",
   "parcours_lancement",
   "ouverture_lancement",
   "lancement_initialise"
@@ -257,6 +258,13 @@
    "description": "Cochée : seuls les parcours ci-dessous sont visibles des apprenants et des visiteurs."
   },
   {
+   "fieldname": "inscriptions_ouvertes",
+   "fieldtype": "Check",
+   "label": "Inscriptions ouvertes au public",
+   "default": "0",
+   "description": "Décochée : le site public ne prend aucune inscription et annonce l'ouverture à venir. Le LMS et l'administration ne sont pas concernés. Décochée par défaut : l'oubli ferme la porte, il ne l'ouvre pas."
+  },
+  {
    "fieldname": "parcours_lancement",
    "fieldtype": "Table MultiSelect",
    "label": "Parcours visibles pendant le lancement",
@@ -287,7 +295,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-16 00:00:00",
- "modified": "2026-10-23 21:30:00.000000",
+ "modified": "2026-11-21 14:53:45.678156",
  "sort_field": "modified",
  "sort_order": "DESC"
 }

@@ -15,10 +15,18 @@ app_include_css = ["/assets/openlab_academy/css/openlab.css"]
 app_include_js = ["/assets/openlab_academy/js/simulateur_impact.js"]
 # fiche d'un parcours : bouton « Inscrits et gratuités » (offrir le parcours à un apprenant, ou le rendre payant)
 doctype_js = {"LMS Course": "public/js/gratuites_parcours.js"}
-web_include_css = ["/assets/openlab_academy/css/openlab.css"]
+web_include_css = ["/assets/openlab_academy/css/openlab.css",
+                   # site public (accueil, catalogue, fiche) ; chargé après la charte, qu'il réutilise
+                   "/assets/openlab_academy/css/site.css"]
+
+# l'accueil du site est la façade publique de l'académie, et non la page du LMS : c'est elle qu'on trouve
+# avant de savoir ce qu'on cherche. Les apprenants connectés gardent /lms.
+home_page = "accueil"
 
 # écrans d'évaluation (relecture, correcteur, retour) : une page, routée côté navigateur
 website_route_rules = [{"from_route": "/espace/<path:app_path>", "to_route": "espace"},
+                       # fiche publique d'un parcours : un seul segment, le nom ne sort pas du préfixe
+                       {"from_route": "/parcours/<parcours>", "to_route": "parcours-public"},
                        # parcours fermé : destination d'un refus de la fenêtre d'accès (page publique)
                        {"from_route": "/parcours-ferme/<cours>", "to_route": "parcours-ferme"}]
 

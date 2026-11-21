@@ -21,18 +21,39 @@ def lire(fichier):
         return list(csv.reader(f))
 
 
-def chaines_source(racine=RACINE):
-    """Littéraux de `_("…")` du code Python (hors tests) et des gabarits .html/.txt."""
-    trouvees = set()
+def fichiers_source(racine=RACINE):
+    """Code Python de l'app (hors tests) et gabarits : les fichiers où vivent les chaînes à traduire."""
     fichiers = [p for p in racine.rglob("*.py") if "tests" not in p.relative_to(racine).parts]
     fichiers += [p for p in (racine / "templates").rglob("*") if p.suffix in (".html", ".txt")] \
         if (racine / "templates").is_dir() else []
     fichiers += [p for p in (racine / "www").rglob("*.html")] if (racine / "www").is_dir() else []
-    for chemin in fichiers:
+    return fichiers
+
+
+def chaines_source(racine=RACINE):
+    """Littéraux de `_("…")` du code Python (hors tests) et des gabarits .html/.txt."""
+    trouvees = set()
+    for chemin in fichiers_source(racine):
         texte = chemin.read_text(encoding="utf-8")
         for double, simple in MOTIF.findall(texte):
             trouvees.add(double or simple)
     return trouvees
+
+
+# Un `_(` suivi d'un littéral, puis — après des espaces ou un retour à la ligne — d'un second
+# littéral : Python les concatène avant l'appel, si bien que la clé réelle est la phrase entière
+# alors que l'extracteur n'en voit que le premier morceau. La chaîne paraît traduite et ne l'est pas.
+ACCOLES = re.compile(r"""\b_\(\s*(?:"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')\s*["']""")
+
+
+def litteraux_accoles(racine=RACINE):
+    """Fichiers et lignes où un `_()` reçoit plusieurs littéraux accolés."""
+    trouves = []
+    for chemin in sorted(fichiers_source(racine)):
+        texte = chemin.read_text(encoding="utf-8")
+        for trouve in ACCOLES.finditer(texte):
+            trouves.append(f"{chemin.relative_to(racine)}:{texte[:trouve.start()].count(chr(10)) + 1}")
+    return trouves
 
 
 def manquantes(chaines):
@@ -44,6 +65,19 @@ def manquantes(chaines):
 class TestTraductions(unittest.TestCase):
     def test_toute_chaine_traduisible_a_son_anglais(self):
         self.assertEqual(manquantes(chaines_source()), [], "chaînes sans traduction dans translations/en.csv")
+
+    def test_aucune_chaine_traduisible_n_est_coupee_en_deux_litteraux(self):
+        """Python concatène deux littéraux accolés avant l'appel : la clé réelle est la phrase
+        entière, l'extracteur n'en voit que le début. La chaîne paraît traduite et ne l'est pas."""
+        self.assertEqual(litteraux_accoles(), [], "littéraux accolés dans un appel à _()")
+
+    def test_les_litteraux_accoles_sont_bien_detectes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            racine = Path(tmp)
+            (racine / "coupee.py").write_text('x = _(\n    "Un debut "\n    "et une fin")\n',
+                                              encoding="utf-8")
+            (racine / "entiere.py").write_text('y = _("Un debut et une fin")\n', encoding="utf-8")
+            self.assertEqual(litteraux_accoles(racine), ["coupee.py:1"])
 
     def test_une_chaine_sans_anglais_est_signalee(self):
         self.assertEqual(manquantes({"Chaîne jamais traduite"}), ["Chaîne jamais traduite"])
