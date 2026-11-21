@@ -147,6 +147,12 @@ jobs:
       - name: Répartiteur des lots de tests
         run: python -m unittest discover -s .github/scripts -p "test_*.py"
 
+      # Les scripts de montage vidéo vivent hors de l'application : ils ne passent donc pas par les lots
+      # Frappe. Tout ce qui décide y est pur et s'exerce sans captation, sans ffmpeg et sans whisper —
+      # un outil qu'on ne peut éprouver qu'avec un fichier de 800 Mo sous la main n'est jamais éprouvé.
+      - name: Scripts de montage vidéo
+        run: python -m unittest discover -s outils/video/tests -p "test_*.py"
+
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:

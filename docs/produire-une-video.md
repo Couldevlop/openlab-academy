@@ -166,6 +166,21 @@ La chaîne est en quatre temps, chacun conduit par un script :
    nommage, puis un contrôle relit tous les YAML de parcours et refuse de passer si une
    vidéo référencée est absente — pour qu'aucun apprenant ne tombe sur un lecteur vide.
 
+## Les scripts
+
+Les trois maillons du montage vivent dans [`outils/video/`](../outils/video/LISEZ-MOI.md), avec leur mode
+d'emploi :
+
+| | |
+| --- | --- |
+| `decouper.py` | silences retirés, reprises coupées, son à −16 LUFS, rendu `.mp4` |
+| `sous_titrer.py` | transcription whisper.cpp, `.srt` à corriger, liste de relecture guidée |
+| `habiller.py` | carton, bandeau, sous-titres, plaque de fin, par Remotion |
+
+Chacun s'exécute seul et affiche ce qu'il va faire avant de le faire. Aucun ne décide à votre place :
+`decouper` écrit sa liste de coupes pour que vous la relisiez, `sous_titrer` rend une proposition et la
+liste de ce qu'il faut vérifier, `habiller` montre ses propriétés avant de rendre.
+
 ## Rattacher la vidéo à sa séance
 
 Une séance porte sa vidéo par la clé `video:` de son module, dans le YAML du parcours :
