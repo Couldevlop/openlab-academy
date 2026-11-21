@@ -1,5 +1,6 @@
 Accueil,Home
 Accès limité aux dates de la cohorte,Access limited to the cohort dates
+Adresse électronique,Email address
 Aucune session n’est ouverte en ce moment. Les prochaines arrivent.,No session is open right now. The next ones are on their way.
 Ce parcours est fermé,This course is closed
 Ce parcours n'est pas disponible pour le moment.,This course is not available at the moment.
@@ -10,7 +11,13 @@ Cette leçon n'a pas de dépôt du jour.,This lesson has no daily repository.
 "Chaque rendu est relu, annoté et noté sur une grille que vous connaissez d’avance.","Every submission is reviewed, annotated and marked against a rubric you know in advance."
 Cochée : seuls les parcours ci-dessous sont visibles des apprenants et des visiteurs.,Ticked: only the courses below are visible to learners and visitors.
 Comment cela se passe,How it works
+Compte créé,Account created
+Compte créé pour {0},Account created for {0}
+Compte d'essai,Test account
+Compte déjà existant,Account already exists
 Connectez-vous pour ouvrir l'atelier.,Log in to open the workshop.
+Créer,Create
+Créer un compte apprenant,Create a learner account
 Date d'ouverture du parcours de lancement,Launch course opening date
 "Des parcours encadrés, des projets corrigés un par un, et un certificat qui atteste de ce que vous savez faire.","Mentored courses, projects marked one by one, and a certificate that attests to what you can do."
 Du,From
@@ -19,6 +26,7 @@ Fil d’Ariane,Breadcrumb
 Gratuit,Free
 Inscriptions fermées,Enrollment closed
 Inscriptions ouvertes,Enrollment open
+Laissez vide pour qu'un mot de passe soit tiré et affiché une seule fois.,Leave empty to have a password drawn and shown once only.
 Lancement,Launch
 Lancement initialisé,Launch initialised
 Langue non prise en charge.,Language not supported.
@@ -34,7 +42,10 @@ Leçon introuvable,Lesson not found
 "L’académie d’Openlab : parcours en data science, intelligence artificielle, développement et cybersécurité. Sessions encadrées, projets évalués, certificat à la clé.","The Openlab academy: courses in data science, artificial intelligence, software development and cybersecurity. Mentored sessions, marked projects, a certificate at the end."
 L’académie en chiffres,The academy in figures
 Me connecter pour m’inscrire,Log in to enroll
+Mot de passe,Password
 M’inscrire,Enroll
+Nom,Last name
+Notez ce mot de passe maintenant : il ne sera plus affiché.,Write this password down now: it will not be shown again.
 Offert,Gifted
 Openlab Academy,Openlab Academy
 "Openlab Academy — se former à l’IA et à la data, à Abidjan","Openlab Academy — learn AI and data, in Abidjan"
@@ -49,13 +60,16 @@ Parcours visibles pendant le lancement,Courses visible during the launch
 Partie Lecon OpenLab,Lesson Part
 Phase de lancement,Launch phase
 Places restantes,Places left
+"Pour un test utilisateur : le compte naît actif, sans courriel de bienvenue.","For user testing: the account is active right away, with no welcome email."
 Prochaine session,Next session
+Prénom,First name
 Reprendre le parcours,Resume the course
 Réservé à l'administrateur et à l'intendant.,Restricted to the administrator and the OpenLab steward.
 Sans dossier,No payment file
 "Se former à l’IA et à la data, depuis Abidjan.","Learn AI and data, from Abidjan."
 Tous,All
 Tous les parcours,All courses
+Un compte demande une adresse électronique et un nom.,An account needs an email address and a name.
 Vidéo de la leçon,Lesson video
 Voir le catalogue,View the catalogue
 Voir les parcours,View the courses
@@ -66,6 +80,7 @@ Vous rejoignez une promotion,You join a cohort
 en accès libre,open access
 parcours,courses
 séances,sessions
+"{0} a déjà un compte : il est repris tel quel, son mot de passe n'a pas été touché.","{0} already has an account: it is reused as is, and the password was left untouched."
 {0} parcours accueillent des inscriptions en ce moment.,{0} courses are accepting enrollments right now.
 {0} session(s) ouverte(s) en ce moment,{0} session(s) open right now
 « {0} » ouvrira le {1}.,“{0}” opens on {1}.

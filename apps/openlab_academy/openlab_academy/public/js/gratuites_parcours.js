@@ -22,6 +22,13 @@ function ouvrir(cours) {
 			},
 			{ fieldname: "motif", fieldtype: "Data", label: __("Motif"), placeholder: __("Bourse, partenariat…") },
 			{ fieldname: "offrir", fieldtype: "Button", label: __("Offrir") },
+			{ fieldtype: "Section Break", label: __("Compte d'essai") },
+			{
+				fieldname: "creer",
+				fieldtype: "Button",
+				label: __("Créer un compte apprenant"),
+				description: __("Pour un test utilisateur : le compte naît actif, sans courriel de bienvenue."),
+			},
 			{ fieldname: "liste", fieldtype: "HTML" },
 		],
 	});
@@ -29,6 +36,7 @@ function ouvrir(cours) {
 		const apprenant = dialogue.get_value("apprenant");
 		if (apprenant) basculer(dialogue, cours, apprenant, 1, dialogue.get_value("motif") || "");
 	});
+	dialogue.fields_dict.creer.$input.on("click", () => creer(dialogue, cours));
 	dialogue.show();
 	charger(dialogue, cours);
 }
@@ -67,6 +75,65 @@ function inscrire(dialogue, cours, apprenant) {
 			afficher(dialogue, cours, r.message);
 			frappe.show_alert({ message: __("{0} est inscrit, sans paiement", [apprenant]), indicator: "green" });
 		},
+	});
+}
+
+function creer(parent, cours) {
+	// Un compte d'essai naît actif, sans courriel de bienvenue : les comptes d'envoi de production ne sont
+	// pas en service, et un compte qui attendrait son courriel serait inutilisable.
+	const formulaire = new frappe.ui.Dialog({
+		title: __("Créer un compte apprenant"),
+		fields: [
+			{ fieldname: "courriel", fieldtype: "Data", options: "Email", label: __("Adresse électronique"), reqd: 1 },
+			{ fieldname: "nom", fieldtype: "Data", label: __("Nom"), reqd: 1 },
+			{ fieldname: "prenom", fieldtype: "Data", label: __("Prénom") },
+			{
+				fieldname: "mot_de_passe",
+				fieldtype: "Password",
+				label: __("Mot de passe"),
+				description: __("Laissez vide pour qu'un mot de passe soit tiré et affiché une seule fois."),
+			},
+		],
+		primary_action_label: __("Créer"),
+		primary_action: (valeurs) => {
+			frappe.call({
+				method: "openlab_academy.entrypoints.gratuites.creer_apprenant",
+				args: valeurs,
+				freeze: true,
+				callback: (r) => {
+					if (!r.message) return;
+					formulaire.hide();
+					annoncer(r.message);
+					// le compte peut maintenant recevoir le parcours : on prépare le geste suivant
+					parent.set_value("apprenant", r.message.apprenant);
+					charger(parent, cours);
+				},
+			});
+		},
+	});
+	formulaire.show();
+}
+
+function annoncer(reponse) {
+	const qui = frappe.utils.escape_html(reponse.apprenant);
+	if (!reponse.cree) {
+		frappe.msgprint({
+			title: __("Compte déjà existant"),
+			message: __("{0} a déjà un compte : il est repris tel quel, son mot de passe n'a pas été touché.", [qui]),
+			indicator: "orange",
+		});
+		return;
+	}
+	if (!reponse.mot_de_passe) {
+		frappe.show_alert({ message: __("Compte créé pour {0}", [qui]), indicator: "green" });
+		return;
+	}
+	// affiché une seule fois : le serveur ne le rendra plus, et rien ne le conserve en clair
+	frappe.msgprint({
+		title: __("Compte créé"),
+		message: `<p>${__("Notez ce mot de passe maintenant : il ne sera plus affiché.")}</p>
+			<p><b>${qui}</b><br><code>${frappe.utils.escape_html(reponse.mot_de_passe)}</code></p>`,
+		indicator: "green",
 	});
 }
 

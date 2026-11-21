@@ -6,6 +6,7 @@ dans l'écran : un appel direct à l'API passe par les mêmes contrôles.
 """
 import frappe
 from frappe import _
+from frappe.utils.password import update_password
 
 from openlab_academy.application.gratuites import AccorderGratuite, GratuiteReservee, RetirerGratuite
 from openlab_academy.application.tableaux_paiement import LIBELLES_STATUT
@@ -17,6 +18,7 @@ from openlab_academy.infrastructure.journal_paiement_frappe import journaliser
 
 ADMINISTRATEUR = "System Manager"
 INTENDANT = "Intendant OpenLab"
+ROLE_APPRENANT = "LMS Student"
 
 
 def _habilite(utilisateur: str | None = None) -> bool:
@@ -71,6 +73,48 @@ def inscrire(cours: str, apprenant: str) -> dict:
         frappe.get_doc({"doctype": "LMS Enrollment", "course": cours, "member": apprenant}).insert(
             ignore_permissions=True)
     return inscrits(cours)
+
+
+@frappe.whitelist()
+def creer_apprenant(courriel: str, nom: str, prenom: str = "", mot_de_passe: str = "") -> dict:
+    """Crée un compte apprenant utilisable tout de suite. Pour les tests utilisateurs.
+
+    Frappe sait déjà créer un utilisateur dans son interface, mais le compte né ainsi attend un
+    courriel de bienvenue pour choisir son mot de passe — et les comptes d'envoi de production ne
+    sont pas en service. Un compte d'essai doit donc naître actif, avec un mot de passe connu.
+
+    **Rejouable, et sans jamais réinitialiser.** Sur un compte qui existe déjà, il est renvoyé tel
+    quel : une réinitialisation silencieuse ferait perdre son accès à quelqu'un, et ce point
+    d'entrée n'est pas un outil de dépannage de mot de passe.
+
+    Le mot de passe n'est rendu que lorsqu'il a été tiré ici, et une seule fois : celui que
+    l'administrateur a choisi, il le connaît déjà, et le renvoyer ne ferait que l'exposer une fois
+    de plus — réponse d'API, journaux du navigateur, historique. Il n'est jamais journalisé.
+
+    **La suspension des inscriptions publiques ne s'applique pas à ce chemin**, et c'est voulu :
+    elle vit dans le cas d'usage du site (`inscrire_au_parcours`), que l'administration n'emprunte
+    pas. Sans cela, aucun test utilisateur ne serait possible pendant la suspension.
+    """
+    _exiger_le_droit()
+    adresse = (courriel or "").strip() if isinstance(courriel, str) else ""
+    nom_de_famille = (nom or "").strip() if isinstance(nom, str) else ""
+    if not adresse or not nom_de_famille:
+        frappe.throw(_("Un compte demande une adresse électronique et un nom."),
+                     frappe.ValidationError)
+    if frappe.db.exists("User", adresse):
+        return {"apprenant": adresse, "cree": False, "mot_de_passe": ""}
+
+    tire = not (isinstance(mot_de_passe, str) and mot_de_passe.strip())
+    secret = frappe.generate_hash(length=16) if tire else mot_de_passe.strip()
+    compte = frappe.get_doc({
+        "doctype": "User", "email": adresse, "first_name": (prenom or "").strip() or nom_de_famille,
+        "last_name": nom_de_famille if (prenom or "").strip() else "",
+        "enabled": 1, "user_type": "Website User", "send_welcome_email": 0,
+        "roles": [{"role": ROLE_APPRENANT}]})
+    compte.flags.no_welcome_mail = True
+    compte.insert(ignore_permissions=True)
+    update_password(adresse, secret)
+    return {"apprenant": adresse, "cree": True, "mot_de_passe": secret if tire else ""}
 
 
 @frappe.whitelist()
