@@ -257,3 +257,59 @@ class TestCreationDUnCompteApprenant(_Socle):
         ecran.inscrire(self.cours, self.COURRIEL)
         self.assertTrue(frappe.db.exists("LMS Enrollment",
                                          {"course": self.cours, "member": self.COURRIEL}))
+
+
+class TestLaSurfaceDAttaqueDeLEcran(_Socle):
+    """Ce que l'écran expose au réseau, indépendamment de ce qu'il affiche.
+
+    Les quatre points d'entrée sont ouverts aux agents ; trois changent l'état et l'un d'eux porte un
+    mot de passe. Un `@frappe.whitelist()` sans verbe déclaré répond aussi à GET, et un GET met ses
+    arguments dans l'URL : le mot de passe finirait dans les journaux du serveur, dans l'historique
+    du navigateur et dans le référent envoyé aux tiers. Déclarer POST ferme aussi la porte aux
+    requêtes forgées depuis un autre site, qui ne savent pas poster avec le jeton de session.
+    """
+
+    def verbes(self, fonction):
+        return frappe.allowed_http_methods_for_whitelisted_func.get(fonction)
+
+    def test_les_points_d_entree_qui_changent_l_etat_n_acceptent_que_post(self):
+        for fonction in (ecran.creer_apprenant, ecran.basculer, ecran.inscrire):
+            with self.subTest(fonction.__name__):
+                self.assertEqual(self.verbes(fonction), ["POST"])
+
+    def test_la_lecture_des_inscrits_reste_ouverte_a_la_lecture(self):
+        """Lire ne change rien : rien à restreindre. Épinglé pour montrer ce que vaut le défaut de
+        Frappe — un `@frappe.whitelist()` nu répond à GET, POST, PUT et DELETE. C'est précisément
+        pourquoi les trois autres doivent déclarer leur verbe."""
+        self.assertIn("GET", self.verbes(ecran.inscrits))
+
+
+class TestLaForceDuMotDePasse(_Socle):
+    """Un compte d'essai reste un compte : il ouvre une session sur le même site que les autres."""
+
+    COURRIEL = "faible.apprenant@example.ci"
+
+    def test_un_mot_de_passe_trivial_est_refuse(self):
+        """Une écriture directe du mot de passe ne vérifie rien ; le passer par le document déclenche
+        la politique du site. Mais cette politique est désactivée par défaut sur une installation
+        Frappe (`minimum_password_score` à zéro), et « 123 » passerait quand même : le plancher est
+        donc tenu dans le point d'entrée. Sans lui, l'écran serait le seul chemin du site par lequel
+        un mot de passe trivial ouvre une session."""
+        for faible in ("123", "azerty", "court1!"):
+            with self.subTest(faible):
+                with self.assertRaises(frappe.ValidationError):
+                    ecran.creer_apprenant(courriel=self.COURRIEL, nom="Essai", mot_de_passe=faible)
+                self.assertFalse(frappe.db.exists("User", self.COURRIEL))
+
+    def test_le_mot_de_passe_tire_passe_la_politique_du_site(self):
+        """Celui que nous tirons doit franchir la même barrière, sinon la création casserait le jour
+        où la politique se durcit."""
+        reponse = ecran.creer_apprenant(courriel=self.COURRIEL, nom="Essai")
+        self.assertTrue(reponse["cree"])
+        self.assertGreaterEqual(len(reponse["mot_de_passe"]), 16)
+
+    def test_le_compte_porte_le_nom_de_son_createur(self):
+        """La trace de qui a créé le compte : Frappe l'inscrit dans `owner`, il n'y a pas de journal
+        à tenir en plus. C'est épinglé ici parce que c'est la seule piste d'audit de ce chemin."""
+        ecran.creer_apprenant(courriel=self.COURRIEL, nom="Essai")
+        self.assertEqual(frappe.db.get_value("User", self.COURRIEL, "owner"), frappe.session.user)

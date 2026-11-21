@@ -70,6 +70,7 @@ Sans dossier,No payment file
 Tous,All
 Tous les parcours,All courses
 Un compte demande une adresse électronique et un nom.,An account needs an email address and a name.
+Un mot de passe de moins de {0} caracteres est refuse.,A password shorter than {0} characters is refused.
 Vidéo de la leçon,Lesson video
 Voir le catalogue,View the catalogue
 Voir les parcours,View the courses
