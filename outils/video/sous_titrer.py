@@ -29,6 +29,13 @@ import subprocess
 import sys
 import unicodedata
 
+# La console de ce poste encode en cp1252 : le signe moins de « -16 LUFS », une fleche, ou simplement le
+# titre accentue d'une seance y tuent le script sur un UnicodeEncodeError avant qu'il ait rien fait. On
+# fixe la sortie en UTF-8 plutot que d'appauvrir des messages qui doivent rester lisibles.
+for _flux in (sys.stdout, sys.stderr):
+    if hasattr(_flux, "reconfigure"):
+        _flux.reconfigure(encoding="utf-8", errors="replace")
+
 CARACTERES_MAX = 84       # deux lignes de 42 : au-delà, on lit le sous-titre au lieu de regarder l'écran
 SECONDES_MAX = 6.0        # un sous-titre qui reste plus longtemps donne l'impression d'un écran figé
 SECONDES_MIN = 1.0        # en deçà, l'œil n'a pas le temps : on étire sur le silence qui suit
@@ -329,6 +336,8 @@ def main(argv=None) -> int:
     a.add_argument("--langue", default="fr")
     a.add_argument("--depuis-json", type=pathlib.Path,
                    help="relire un JSON déjà transcrit, sans relancer le modèle")
+    a.add_argument("--ecraser", action="store_true",
+                   help="réécrire le .srt même s'il a été corrigé depuis")
     args = a.parse_args(argv)
 
     if args.depuis_json:
@@ -344,7 +353,15 @@ def main(argv=None) -> int:
     signalements = a_relire(repliques)
     srt = args.source.with_suffix(".srt")
     liste = args.source.with_suffix(".relire.md")
-    srt.write_text(en_srt(repliques), encoding="utf-8")
+    propose = en_srt(repliques)
+    # Le mode d'emploi demande de corriger le .srt, puis offre `--depuis-json` pour rejouer l'analyse : les
+    # deux ensemble effaçaient la relecture sans un mot. Un .srt qui ne dit plus ce que le modèle a
+    # transcrit porte un travail humain, et on ne l'écrase pas sans le demander.
+    if srt.is_file() and srt.read_text(encoding="utf-8") != propose and not args.ecraser:
+        raise SystemExit(
+            f"{srt} a été corrigé depuis la transcription : il porte une relecture.\n"
+            "Relancez avec --ecraser pour la remplacer, ou mettez le fichier de côté d'abord.")
+    srt.write_text(propose, encoding="utf-8")
     liste.write_text(en_relecture(signalements, len(repliques)), encoding="utf-8")
     print(f"{len(repliques)} sous-titres écrits dans {srt}")
     print(f"{len(signalements)} passages à relire : {liste}")

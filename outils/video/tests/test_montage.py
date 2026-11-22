@@ -4,8 +4,12 @@ Aucun test ici n'ouvre une vidéo. C'est voulu : un outil qu'on ne peut éprouve
 800 Mo sous la main n'est jamais éprouvé. Les appels à `ffmpeg`, `whisper.cpp` et `remotion` sont rangés en
 bout de chaîne, et ce sont les seules lignes que ces tests ne couvrent pas.
 """
+import json
+import os
 import pathlib
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -621,3 +625,109 @@ class TestLeSrtReluALaMain(unittest.TestCase):
     def test_les_millisecondes_courtes_sont_completees_et_non_tronquees(self):
         """« ,5 » vaut cinq cents millisecondes, pas cinq."""
         self.assertEqual(sous_titrer.lire_srt("1\n00:00:00,5 --> 00:00:01,25\nx\n")[0].debut, 0.5)
+
+
+class ConsoleEtroite(unittest.TestCase):
+    """L'aide des trois scripts doit sortir sur une console Windows ordinaire.
+
+    La console de ce poste encode en cp1252. Un script qui ecrit « -16 LUFS » avec le signe moins
+    mathematique, ou une fleche, meurt sur un UnicodeEncodeError avant d'avoir rien fait : l'outil est
+    alors inutilisable la ou il doit servir. Le remede n'est pas d'appauvrir la typographie des messages,
+    qui portent des titres de seances accentues, mais de fixer la sortie en UTF-8 au demarrage.
+    """
+
+    SCRIPTS = ("decouper.py", "sous_titrer.py", "habiller.py")
+
+    def test_aide_sort_sur_une_console_cp1252(self):
+        racine = RACINE
+        for nom in self.SCRIPTS:
+            with self.subTest(script=nom):
+                issue = subprocess.run(
+                    [sys.executable, str(racine / nom), "--help"],
+                    capture_output=True,
+                    env={**os.environ, "PYTHONIOENCODING": "cp1252"},
+                )
+                self.assertEqual(
+                    issue.returncode,
+                    0,
+                    f"{nom} --help a echoue : {issue.stderr.decode('utf-8', 'replace')[-400:]}",
+                )
+
+
+class RelectureProtegee(unittest.TestCase):
+    """Une relecture corrigée à la main ne se perd pas sur une relance.
+
+    Le mode d'emploi dit « corrigez le `.srt` », puis propose `--depuis-json` pour rejouer l'analyse après
+    avoir enrichi le lexique. Les deux ensemble effaçaient la relecture sans un mot : le script réécrivait
+    le `.srt` par-dessus la transcription brute. Une heure de relecture perdue, et rien à l'écran pour le
+    dire.
+    """
+
+    BRUT = {"transcription": [
+        {"offsets": {"from": 0, "to": 2000}, "text": " De scikit-learn a la Ing-Graph."}]}
+
+    def _dossier(self, srt_existant=None):
+        coin = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, coin, ignore_errors=True)
+        (coin / "s01-intro.json").write_text(json.dumps(self.BRUT), encoding="utf-8")
+        if srt_existant is not None:
+            (coin / "s01-intro.srt").write_text(srt_existant, encoding="utf-8")
+        return coin
+
+    def test_refuse_d_ecraser_un_srt_deja_corrige(self):
+        coin = self._dossier(srt_existant="1\r\n00:00:00,000 --> 00:00:02,000\r\nDe scikit-learn à LangGraph.\r\n")
+        with self.assertRaises(SystemExit) as refus:
+            sous_titrer.main([str(coin / "s01-intro.mp4"), "--modele", "sans-objet",
+                              "--depuis-json", str(coin / "s01-intro.json")])
+        self.assertIn("--ecraser", str(refus.exception))
+        self.assertIn("LangGraph", (coin / "s01-intro.srt").read_text(encoding="utf-8"))
+
+    def test_ecrase_quand_on_le_demande(self):
+        coin = self._dossier(srt_existant="1\r\n00:00:00,000 --> 00:00:02,000\r\nDe scikit-learn à LangGraph.\r\n")
+        sous_titrer.main([str(coin / "s01-intro.mp4"), "--modele", "sans-objet",
+                          "--depuis-json", str(coin / "s01-intro.json"), "--ecraser"])
+        self.assertIn("Ing-Graph", (coin / "s01-intro.srt").read_text(encoding="utf-8"))
+
+    def test_ecrit_sans_rien_demander_quand_il_n_y_a_rien_a_perdre(self):
+        coin = self._dossier()
+        sous_titrer.main([str(coin / "s01-intro.mp4"), "--modele", "sans-objet",
+                          "--depuis-json", str(coin / "s01-intro.json")])
+        self.assertTrue((coin / "s01-intro.srt").is_file())
+
+    def test_un_srt_identique_ne_bloque_pas(self):
+        coin = self._dossier()
+        sous_titrer.main([str(coin / "s01-intro.mp4"), "--modele", "sans-objet",
+                          "--depuis-json", str(coin / "s01-intro.json")])
+        dabord = (coin / "s01-intro.srt").read_text(encoding="utf-8")
+        sous_titrer.main([str(coin / "s01-intro.mp4"), "--modele", "sans-objet",
+                          "--depuis-json", str(coin / "s01-intro.json")])
+        self.assertEqual(dabord, (coin / "s01-intro.srt").read_text(encoding="utf-8"))
+
+
+class RenduRelisibleParLHabillage(unittest.TestCase):
+    """Ce que `decouper` rend, `habiller` doit savoir le parcourir image par image.
+
+    Le rendu sortait en `-preset medium`. Remotion ouvre ensuite la seance avec son compositeur, qui
+    cherche une image a une position donnee : sur un fichier produit ainsi, il echoue avec « No frame
+    found at position », a une position qui change d'une execution a l'autre. Mesure sur ce poste, sur
+    la meme seance : quatre echecs en `medium`, trois reussites en `veryfast`. Ni le `crf`, ni la
+    b-pyramide, ni le nombre d'images de reference n'y changent quoi que ce soit — seul le preset.
+
+    Le defaut ne se voit pas sur une captation ordinaire, dont l'image bouge assez pour que le
+    compositeur retombe sur ses pieds. Il se voit sur une seance filmee en partage d'ecran, ou l'image
+    reste fixe pendant des minutes : exactement le cas de l'academie.
+    """
+
+    def test_le_preset_est_celui_que_le_compositeur_sait_parcourir(self):
+        commande = decouper.commande_de_rendu(
+            pathlib.Path("brut.mkv"), pathlib.Path("sortie.mp4"),
+            (Intervalle(0.0, 5.0),))
+        self.assertIn("-preset", commande)
+        self.assertEqual("veryfast", commande[commande.index("-preset") + 1])
+        self.assertNotIn("medium", commande)
+
+    def test_la_commande_garde_le_son_a_48_khz(self):
+        commande = decouper.commande_de_rendu(
+            pathlib.Path("brut.mkv"), pathlib.Path("sortie.mp4"),
+            (Intervalle(0.0, 5.0),))
+        self.assertEqual("48000", commande[commande.index("-ar") + 1])

@@ -24,6 +24,13 @@ import shutil
 import subprocess
 import sys
 
+# La console de ce poste encode en cp1252 : le signe moins de « -16 LUFS », une fleche, ou simplement le
+# titre accentue d'une seance y tuent le script sur un UnicodeEncodeError avant qu'il ait rien fait. On
+# fixe la sortie en UTF-8 plutot que d'appauvrir des messages qui doivent rester lisibles.
+for _flux in (sys.stdout, sys.stderr):
+    if hasattr(_flux, "reconfigure"):
+        _flux.reconfigure(encoding="utf-8", errors="replace")
+
 # `silencedetect` écrit sur la sortie d'erreur, une ligne par bord de silence
 _SILENCE_DEBUT = re.compile(r"silence_start:\s*(-?[\d.]+)")
 _SILENCE_FIN = re.compile(r"silence_end:\s*(-?[\d.]+)")
@@ -156,17 +163,32 @@ def detecter(source: pathlib.Path, seuil: float, minimum: float) -> str:
     return sortie.stderr
 
 
+def commande_de_rendu(source: pathlib.Path, vers: pathlib.Path, segments) -> list[str]:
+    """La commande de rendu, à part pour qu'un test la lise sans lancer ffmpeg.
+
+    Le preset n'est pas un réglage de confort. `habiller.py` ouvre ensuite la séance avec le compositeur
+    de Remotion, qui réclame une image à une position donnée : sur un fichier sorti en `-preset medium`,
+    il abandonne sur « No frame found at position », à une position qui change d'une exécution à l'autre.
+    Éprouvé sur ce poste, sur la même séance : quatre échecs en `medium`, trois réussites en `veryfast`.
+    Le `crf`, la b-pyramide et le nombre d'images de référence n'y changent rien — le paramètre exact que
+    `medium` ajoute et qui gêne le compositeur n'a pas été isolé, seul l'effet du preset est mesuré.
+
+    Le défaut est invisible sur une captation ordinaire, dont l'image bouge assez. Il se montre sur une
+    séance filmée en partage d'écran, où l'image reste fixe pendant des minutes : le cas de l'académie.
+    Le fichier pèse un peu plus lourd à qualité égale ; une séance qu'on ne peut pas habiller ne vaut rien.
+    """
+    return [_ffmpeg(), "-hide_banner", "-y", "-i", str(source),
+            "-filter_complex", filtre_de_montage(segments), "-map", "[v]", "-map", "[a]",
+            "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
+            # 48 kHz explicite : `loudnorm` travaille en interne à 192 kHz et sort à cette fréquence si on
+            # ne la fixe pas. C'est du poids pour rien dans une vidéo de cours, et certains lecteurs
+            # mobiles rééchantillonnent mal.
+            "-c:a", "aac", "-ar", "48000", "-b:a", "160k", str(vers)]
+
+
 def rendre(source: pathlib.Path, vers: pathlib.Path, segments) -> None:
     vers.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(
-        [_ffmpeg(), "-hide_banner", "-y", "-i", str(source),
-         "-filter_complex", filtre_de_montage(segments), "-map", "[v]", "-map", "[a]",
-         "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
-         # 48 kHz explicite : `loudnorm` travaille en interne à 192 kHz et sort à cette fréquence si on
-         # ne la fixe pas. C'est du poids pour rien dans une vidéo de cours, et certains lecteurs
-         # mobiles rééchantillonnent mal.
-         "-c:a", "aac", "-ar", "48000", "-b:a", "160k", str(vers)],
-        check=True)
+    subprocess.run(commande_de_rendu(source, vers, segments), check=True)
 
 
 def charger_reprises(chemin: pathlib.Path | None) -> tuple[float, ...]:

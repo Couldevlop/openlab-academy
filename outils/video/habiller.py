@@ -29,6 +29,13 @@ import tempfile
 import decouper
 import sous_titrer
 
+# La console de ce poste encode en cp1252 : le signe moins de « -16 LUFS », une fleche, ou simplement le
+# titre accentue d'une seance y tuent le script sur un UnicodeEncodeError avant qu'il ait rien fait. On
+# fixe la sortie en UTF-8 plutot que d'appauvrir des messages qui doivent rester lisibles.
+for _flux in (sys.stdout, sys.stderr):
+    if hasattr(_flux, "reconfigure"):
+        _flux.reconfigure(encoding="utf-8", errors="replace")
+
 # La règle de nommage, écrite une seconde fois ici parce que cet outil ne peut pas importer l'application
 # Frappe. `tests/test_habiller.py` confronte les deux : si l'une change sans l'autre, le test tombe.
 NOM = re.compile(r"(?P<parcours>\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*)/"
