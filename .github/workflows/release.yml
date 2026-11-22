@@ -50,11 +50,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
+          # L'étiquette va sur le commit d'où la version vient d'être lue, et non sur $GITHUB_SHA.
+          # Appelé par la promotion (`workflow_call` depuis un `workflow_run`), le contexte github est
+          # celui de l'appelant : $GITHUB_SHA y vaut la tête de main *avant* la fusion, tandis que le
+          # `checkout ref: main` ci-dessus rapporte la tête d'après. Les étiquettes v0.1.1 et v0.2.0
+          # désignent ainsi un arbre qui porte le numéro précédent.
+          cible=$(git rev-parse HEAD)
           if gh release view "v$VERSION" >/dev/null 2>&1; then
             echo "::notice::v$VERSION existe déjà : rien à publier. Incrémentez __version__ pour une livraison."
             exit 0
           fi
-          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --generate-notes
+          gh release create "v$VERSION" --target "$cible" --title "v$VERSION" --generate-notes
 
   realigner:
     name: Ramener main dans develop
@@ -87,4 +93,4 @@ jobs:
             exit 0
           fi
           git push origin "HEAD:refs/heads/develop"
-          echo "develop réalignée sur main ($GITHUB_SHA)."
+          echo "develop réalignée sur main ($(git rev-parse HEAD))."
