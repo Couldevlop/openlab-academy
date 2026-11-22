@@ -17,9 +17,7 @@ PARCOURS_EN_VEDETTE = 6
 def get_context(context) -> None:
     context.no_cache = 1
     cours = catalogue_public.parcours_visibles()
-    enrichis = catalogue_public.avec_offre(cours)
-    for p in enrichis:
-        p["prix"] = catalogue_public.montant_lisible(p["offre"].get("montant"))
+    enrichis = catalogue_public.pour_les_cartes(catalogue_public.avec_offre(cours))
 
     # Les parcours ouverts d'abord : c'est ce sur quoi on peut agir aujourd'hui.
     ouverts = [p for p in enrichis if p["offre"]["ouverte"]]

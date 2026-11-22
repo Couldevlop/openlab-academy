@@ -1,5 +1,5 @@
 /**
- * Le filtre par catégorie du catalogue.
+ * Le filtre par famille du catalogue.
  *
  * Il ne demande rien au serveur : les cartes sont déjà toutes là, rendues par lui. Filtrer par un appel
  * d'API ferait attendre le visiteur pour masquer des éléments qu'il a sous les yeux, et rendrait la page
@@ -21,7 +21,7 @@
       b.setAttribute('aria-pressed', String(actif))
     })
     Array.from(cartes.children).forEach((carte) => {
-      carte.hidden = Boolean(categorie) && carte.dataset.categorie !== categorie
+      carte.hidden = Boolean(categorie) && carte.dataset.domaine !== categorie
     })
   }
 

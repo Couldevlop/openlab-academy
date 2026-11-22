@@ -1,38 +1,77 @@
-{% extends "templates/web.html" %}
+{% extends "templates/site_public.html" %}
 
-{% block title %}{{ titre | e }}{% endblock %}
+{% block titre %}{{ titre | e }} — Openlab Academy{% endblock %}
 
-{% block page_content %}
-<main class="ol-site ol-fiche">
+{% block contenu %}
 
-  <nav class="ol-fil" aria-label="{{ _('Fil d’Ariane') }}">
-    <a href="/">{{ _("Accueil") }}</a>
-    <span aria-hidden="true">›</span>
-    <a href="{{ lien_parcours }}">{{ _("Parcours") }}</a>
-  </nav>
+{#- Le bandeau porte la famille, le titre et la couverture du parcours. La couverture est posée a
+    cote du titre plutot que derriere : elle porte deja son propre texte, et superposer deux textes
+    rendrait les deux illisibles. Elle reste assez haute pour que l'offre tienne dans l'ecran. -#}
+<section class="ol-fiche-banniere{% if image %} ol-fiche-banniere--image{% endif %}"
+         {% if domaine_teinte %}style="--teinte: {{ domaine_teinte | e }}"{% endif %}>
+  <div class="ol-fiche-banniere-corps">
+    <nav class="ol-fil" aria-label="{{ _('Fil d’Ariane') }}">
+      <a href="/accueil">{{ _("Accueil") }}</a>
+      <span aria-hidden="true">›</span>
+      <a href="{{ lien_parcours }}">{{ _("Les parcours") }}</a>
+    </nav>
+    {% if domaine_libelle %}<p class="ol-fiche-famille">{{ domaine_libelle | e }}</p>{% endif %}
+    <h1>{{ titre | e }}</h1>
+    {% if accroche %}<p class="ol-fiche-dit">{{ accroche | e }}</p>{% endif %}
+    <ul class="ol-fiche-meta">
+      <li class="ol-pastille ol-pastille--{{ etat }}">{{ etat_libelle }}</li>
+      {% if seances %}<li>{{ _("{0} séances").format(seances) }}</li>{% endif %}
+      {% if blocs %}<li>{{ _("{0} blocs").format(blocs) }}</li>{% endif %}
+    </ul>
+  </div>
+  {% if image %}
+  <div class="ol-fiche-couverture" aria-hidden="true">
+    <img src="{{ image | e }}" alt="" decoding="async">
+  </div>
+  {% endif %}
+</section>
 
-  <header class="ol-fiche-tete">
-    <div class="ol-fiche-dit">
-      {% if categorie %}<p class="ol-categorie">{{ categorie | e }}</p>{% endif %}
-      <h1>{{ titre | e }}</h1>
-      {% if accroche %}<p class="ol-accroche">{{ accroche | e }}</p>{% endif %}
+<div class="ol-site ol-fiche">
+  <div class="ol-fiche-grille">
+
+    <div class="ol-fiche-contenu">
+      {% if programme %}
+      <section class="ol-programme">
+        <h2>{{ _("Le programme") }}</h2>
+        {% if etat == "preparation" %}
+        <p class="ol-note">{{ _("Ce parcours est en cours de conception : le programme annoncé ici peut encore évoluer.") }}</p>
+        {% endif %}
+        <ol class="ol-blocs">
+          {% for bloc in programme %}
+          <li>
+            <h3>{{ bloc.titre | e }}</h3>
+            {% if bloc.seances %}
+            <ul>
+              {% for seance in bloc.seances %}<li>{{ seance | e }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+      {% endif %}
+
+      <p class="ol-retour"><a class="ol-lien-fort" href="{{ lien_parcours }}">&larr; {{ _("Voir tous les parcours") }}</a></p>
     </div>
 
-    {# L'offre est rendue par le serveur : juste pour un robot d'indexation comme pour un navigateur
-       sans JavaScript. Le script ne fait que l'actualiser et poster l'inscription. #}
+    {#- L'offre est rendue par le serveur : juste pour un robot d'indexation comme pour un navigateur
+        sans JavaScript. Le script ne fait que l'actualiser et poster l'inscription. -#}
     <aside class="ol-offre" id="ol-offre"
            data-parcours="{{ parcours | e }}"
            data-connecte="{{ 1 if connecte else 0 }}"
            data-connexion="{{ lien_connexion | e }}">
-      <div class="ol-filet"></div>
+      <div class="ol-filet" aria-hidden="true"></div>
 
       <p class="ol-prix" data-role="prix">
-        {% if offre.gratuit %}{{ _("Gratuit") }}{% elif prix %}{{ prix }}{% endif %}
+        {%- if offre.gratuit %}{{ _("Gratuit") }}{% elif prix %}{{ prix }}{% endif -%}
       </p>
 
-      <p class="ol-etat ol-etat--{{ 'ouverte' if offre.ouverte else 'fermee' }}" data-role="message">
-        {{ offre.message | e }}
-      </p>
+      <p class="ol-etat ol-etat--{{ etat }}" data-role="message">{{ offre.message | e }}</p>
 
       <dl class="ol-session" data-role="session" {% if not offre.session %}hidden{% endif %}>
         <dt>{{ _("Prochaine session") }}</dt>
@@ -43,10 +82,19 @@
         <dd data-role="session-places">{{ offre.places_restantes }}</dd>
       </dl>
 
+      {#- Une seule action principale. Quand l'inscription n'est pas possible, la place n'est pas
+          laissée à un bouton éteint qui dirait « non » : elle sert à dire quoi faire en attendant. -#}
       {% if offre.deja_inscrit %}
         <a class="ol-bouton" href="/lms/courses/{{ parcours | e }}">{{ _("Reprendre le parcours") }}</a>
       {% elif not offre.ouverte %}
-        <button class="ol-bouton" type="button" disabled>{{ _("Inscriptions fermées") }}</button>
+        <p class="ol-attente">
+          {% if etat == "preparation" %}
+            {{ _("Le programme annoncé figure sur cette page.") }}
+          {% else %}
+            {{ _("Le programme complet figure sur cette page.") }}
+          {% endif %}
+        </p>
+        <a class="ol-bouton ol-bouton--sobre" href="{{ lien_parcours }}">{{ _("Voir les autres parcours") }}</a>
       {% elif connecte %}
         <button class="ol-bouton" type="button" data-role="inscrire">{{ _("M’inscrire") }}</button>
       {% else %}
@@ -55,32 +103,13 @@
 
       <p class="ol-refus" data-role="refus" role="alert" hidden></p>
 
-      {% if not offre.gratuit %}
+      {% if offre.ouverte and not offre.gratuit %}
         <p class="ol-note">{{ _("Le règlement se fait après l’inscription, en une fois ou en plusieurs tranches.") }}</p>
       {% endif %}
     </aside>
-  </header>
 
-  {% if programme %}
-  <section class="ol-programme">
-    <h2>{{ _("Le programme") }}</h2>
-    <ol class="ol-blocs">
-      {% for bloc in programme %}
-      <li>
-        <h3>{{ bloc.titre | e }}</h3>
-        {% if bloc.seances %}
-        <ul>
-          {% for seance in bloc.seances %}<li>{{ seance | e }}</li>{% endfor %}
-        </ul>
-        {% endif %}
-      </li>
-      {% endfor %}
-    </ol>
-  </section>
-  {% endif %}
-
-  <p class="ol-retour"><a href="{{ lien_parcours }}">{{ _("Voir tous les parcours") }}</a></p>
-</main>
+  </div>
+</div>
 {% endblock %}
 
 {% block script %}

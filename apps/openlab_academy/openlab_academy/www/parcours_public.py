@@ -14,6 +14,7 @@ from frappe import _
 
 from openlab_academy.application.visibilite import CATALOGUE
 from openlab_academy.entrypoints import site_api
+from openlab_academy.infrastructure import domaines_frappe
 from openlab_academy.www import catalogue_public
 
 no_cache = 1
@@ -58,6 +59,18 @@ def get_context(context) -> None:
     context.programme = _programme(cours)
     context.offre = offre
     context.prix = catalogue_public.montant_lisible(offre.get("montant"))
+
+    famille = domaines_frappe.du_parcours(cours)
+    context.domaine_libelle = famille.libelle if famille else ""
+    context.domaine_teinte = famille.teinte if famille else ""
+    # L'état vient du même calcul que les cartes : une fiche qui dirait « bientôt » là où la carte
+    # dit « en préparation » userait la confiance plus sûrement qu'une page absente.
+    etat = catalogue_public.etat_de({"upcoming": frappe.db.get_value("LMS Course", cours, "upcoming"),
+                                     "offre": offre})
+    context.etat = etat
+    context.etat_libelle = catalogue_public.libelle_etat(etat)
+    context.blocs = len(context.programme)
+    context.seances = sum(len(bloc["seances"]) for bloc in context.programme)
     context.connecte = bool(site_api._apprenant())
     context.lien_connexion = "/login?redirect-to=" + frappe.utils.quoted(catalogue_public.lien_de(cours))
     context.metatags = {

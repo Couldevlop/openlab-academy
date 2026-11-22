@@ -1,0 +1,2202 @@
+domaine: socle
+title: "Initiation à l'IA : comprendre le vocabulaire et savoir juger"
+short_introduction: >-
+  Seize séances et un dossier final pour que les mots de l'IA cessent d'être intimidants. Aucun prérequis, aucune
+  mathématique, aucun code : on part de zéro et on finit capable de juger ce qu'on vous raconte.
+description: >-
+  <p><b>Pour qui.</b> Pour toute personne qui ne connaît rien au monde de l'IA et qui en entend
+  parler tous les jours. Aucun âge, aucun métier, aucun diplôme n'est attendu. Si vous savez vous
+  servir d'un navigateur et lire un texte, vous avez tout ce qu'il faut.</p>
+  <p><b>Ce que vous saurez faire à la fin.</b> Lire un article sur l'IA sans buter sur un mot.
+  Comprendre ce qu'un vendeur vous propose, et repérer ce qu'il ne dit pas. Reconnaître une
+  affirmation invérifiable. Savoir ce qu'une machine peut faire à votre place, ce qu'elle fera mal,
+  et ce qu'elle ne fera jamais. Décider, en connaissance de cause, de ce que vous lui confiez.</p>
+  <p><b>Comment c'est construit.</b> Autour d'une carte : l'IA se tient au croisement de trois
+  savoirs : l'informatique, les mathématiques et la connaissance d'un métier. Chaque séance éclaire
+  une zone de cette carte et le vocabulaire qui va avec. À la fin vous savez où chaque mot se range,
+  et c'est cela qui rend le reste facile.</p>
+  <p><b>Ce que ce parcours n'est pas.</b> Une formation pour devenir ingénieur en IA. On ne
+  programme pas, on n'entraîne aucun modèle, on ne fait pas de mathématiques. Ce parcours vous rend
+  lucide, pas technicien, et la lucidité manque plus souvent que la technique.</p>
+  <p><b>Format :</b> seize séances d'environ deux heures, chacune avec un travail guidé, une mise en
+  situation tirée de la vie courante et un quiz, puis un dossier final, soit dix-sept pièces en tout.
+  Aucun portfolio, aucun jury.</p>
+  <p><b>Évaluation :</b> quiz et travaux de séance, puis un dossier personnel : votre propre lexique
+  et le jugement que vous portez sur trois usages réels.</p>
+couverture: couverture-initiation-a-l-ia.svg
+tags: [Initiation, IA, Vulgarisation, Grand public, Vocabulaire, Esprit critique]
+card_gradient: Blue
+parametres:
+  projets_par_portfolio: 0
+  heures_par_module: 2
+
+blocs:
+  - title: "Bloc 1 — Ce que l'IA est, et ce qu'elle n'est pas (séances 1 à 4)"
+    modules:
+      - num: "01"
+        title: "L'IA n'est pas un cerveau : ce que fait une machine qui « apprend »"
+        contenu: >-
+          Avant tout vocabulaire, une mise au point. Le mot « intelligence » fait croire à une pensée,
+          et le mot « apprendre » fait croire à une compréhension. Cette séance remplace ces deux
+          images par ce qui se passe réellement : une machine qui repère des régularités dans des
+          exemples, puis s'en sert pour produire une réponse plausible. Rien de magique, rien de
+          conscient, et pourtant quelque chose de très puissant.
+        cours:
+          - titre: Deux mots mal choisis qui faussent tout le reste
+            texte: >-
+              Le terme « intelligence artificielle » a été choisi en 1956, lors d'une conférence d'été
+              à Dartmouth, par des chercheurs qui cherchaient surtout un nom attrayant pour obtenir un
+              financement. Le mot a réussi au-delà de leurs espérances, et il nous encombre depuis. Il
+              suggère une pensée là où il n'y a qu'un calcul, et il laisse croire que la machine veut
+              quelque chose. Elle ne veut rien.
+
+              Le mot « apprendre » pose le même problème. Quand on dit qu'un enfant apprend à
+              reconnaître un chat, on imagine qu'il saisit ce qu'est un chat. Quand une machine
+              apprend à reconnaître un chat, il se passe autre chose : on lui montre des centaines de
+              milliers d'images étiquetées « chat » ou « pas chat », et elle ajuste des milliers de
+              petits réglages internes jusqu'à ce que ses réponses tombent juste le plus souvent
+              possible. À aucun moment elle ne se forme l'idée d'un chat. Elle devient très bonne à
+              dire « chat » devant les images qui ressemblent à celles qu'on lui a montrées.
+
+              Cette distinction n'est pas une subtilité de philosophe. Elle explique directement les
+              deux comportements qui vous surprendront le plus : la machine est excellente là où elle
+              a vu beaucoup d'exemples semblables, et elle se trompe avec une parfaite assurance dès
+              qu'elle sort de ce terrain. Si vous ne retenez qu'une chose de cette séance, retenez
+              celle-là.
+          - titre: "Ce qui se passe vraiment : des exemples, des réglages, une réponse"
+            texte: >-
+              Imaginez une machine à trier le courrier munie de dix mille petits boutons. Au départ
+              tous les boutons sont au hasard et le tri est catastrophique. On lui passe une lettre
+              dont on connaît la bonne destination, on compare sa réponse à la bonne réponse, et on
+              tourne très légèrement les boutons qui ont contribué à l'erreur. Puis la lettre suivante.
+              Puis un million de lettres. Au bout du compte les boutons se sont installés dans une
+              position qui trie correctement la plupart des lettres.
+
+              C'est, à quelques mots près, tout ce que fait l'apprentissage automatique. Les boutons
+              s'appellent des paramètres. Le fait de les tourner un peu dans le bon sens s'appelle
+              l'entraînement. Les lettres dont on connaît la bonne destination s'appellent les données
+              d'entraînement. La machine réglée au bout du compte s'appelle un modèle. Vous venez
+              d'acquérir quatre mots du vocabulaire, et vous savez désormais ce qu'ils désignent.
+
+              Un modèle de langage comme ceux dont tout le monde parle suit exactement le même
+              principe, en beaucoup plus grand : au lieu de dix mille boutons, plusieurs centaines de
+              milliards ; au lieu de lettres à trier, des textes dont on cache le mot suivant pour
+              qu'il apprenne à le deviner. La différence est d'échelle, pas de nature.
+          - titre: Pourquoi cela marche si bien, et pourquoi cela échoue si mal
+            texte: >-
+              Une machine réglée sur des millions d'exemples devient remarquable à une tâche précise :
+              repérer une anomalie sur une radiographie, traduire une phrase, suggérer la fin d'un
+              courriel. Sur ce terrain elle dépasse souvent l'humain, parce qu'elle ne fatigue pas, ne
+              se distrait pas, et a vu plus de cas qu'aucun spécialiste n'en verra dans sa vie.
+
+              Mais elle n'a aucun moyen de savoir qu'elle sort de son terrain. Un humain qui ne sait
+              pas hésite, dit qu'il ne sait pas, demande. Une machine réglée pour toujours produire
+              une réponse en produira une, avec la même assurance que lorsqu'elle a raison. C'est la
+              source de presque tous les accidents que vous lirez dans la presse : non pas une machine
+              devenue folle, mais une machine employée hors de ce pour quoi elle a été réglée.
+
+              Gardez cette image pour tout le parcours : un excellent spécialiste d'un seul sujet,
+              incapable de reconnaître qu'on vient de changer de sujet.
+        travaux_pratiques: >-
+          Travail guidé, environ une heure. Ouvrez un assistant conversationnel gratuit et posez-lui
+          trois questions dont vous connaissez parfaitement la réponse : une sur votre métier, une sur
+          votre ville, une sur votre famille ou votre quartier. Notez pour chacune si la réponse est
+          juste, approximative ou inventée. Posez ensuite la même question trois fois en changeant
+          légèrement les mots, et notez si la réponse change. Écrivez trois lignes sur ce que cette
+          expérience vous apprend de la différence entre savoir et produire une réponse plausible.
+          Conservez ces notes : vous les relirez à la séance 10.
+        mise_en_situation: >-
+          Un proche vous dit : « il paraît que l'IA est maintenant plus intelligente que nous, elle
+          comprend tout ». Répondez-lui en trois phrases, sans aucun jargon, en vous appuyant sur ce
+          que vous venez d'apprendre : ce que la machine fait réellement, ce qu'elle fait mieux que
+          nous, et ce qu'elle ne fait pas du tout.
+        livrable: >-
+          Un fichier texte d'une page contenant vos trois questions, les réponses obtenues, votre
+          verdict pour chacune, et les trois phrases de la mise en situation.
+        quiz:
+          - question: Que désigne exactement le mot « modèle » en intelligence artificielle ?
+            options:
+              - Une machine dont les réglages internes ont été ajustés sur des exemples
+              - Un ordinateur particulièrement puissant
+              - Un programme écrit règle par règle par un informaticien
+              - Le plan d'architecture d'un logiciel
+            bonnes: [1]
+            explication: >-
+              Un modèle est le résultat de l'entraînement : l'ensemble des réglages internes installés
+              par l'exposition à des exemples. Ce n'est ni le matériel, ni un programme écrit à la main.
+          - question: Pourquoi une IA se trompe-t-elle souvent avec assurance ?
+            options:
+              - Parce qu'elle n'a aucun moyen de savoir qu'elle sort de son terrain d'entraînement
+              - Parce qu'elle cherche délibérément à tromper son utilisateur
+              - Parce que son matériel est défectueux
+              - Parce qu'elle manque de puissance de calcul
+            bonnes: [1]
+            explication: >-
+              La machine est réglée pour produire une réponse, pas pour évaluer si la question
+              ressemble à ce qu'elle a déjà vu. L'assurance est constante, la justesse non.
+          - question: "Qu'appelle-t-on l'entraînement d'un modèle ?"
+            options:
+              - L'ajustement progressif de ses réglages internes à partir d'exemples
+              - La période pendant laquelle les utilisateurs apprennent à s'en servir
+              - La vérification du modèle avant sa mise en service
+              - L'écriture du programme par les ingénieurs
+            bonnes: [1]
+            explication: >-
+              L'entraînement installe les réglages. Ce qui vient après, pour vérifier, s'appelle le
+              test : deux étapes distinctes, que la séance 6 sépare soigneusement.
+
+          - question: Un modèle a-t-il conscience de ce qu'il produit ?
+            options:
+              - Non, il ajuste des réglages pour produire une réponse plausible
+              - Oui, depuis les modèles récents
+              - Uniquement lorsqu'il annonce une incertitude
+              - Oui, mais seulement sur les sujets qu'il connaît bien
+            bonnes: [1]
+            explication: >-
+              Rien dans l'entraînement ne produit de conscience ni d'intention. Le mot intelligence a
+              été choisi en 1956 pour sa force d'évocation, pas pour sa justesse.
+          - question: À quoi correspondent les paramètres d'un modèle ?
+            options:
+              - Aux réglages internes ajustés pendant l'entraînement
+              - Aux options que l'utilisateur peut régler dans l'interface
+              - Aux caractéristiques techniques du serveur
+              - Aux règles écrites par les ingénieurs
+            bonnes: [1]
+            explication: >-
+              Ce sont les boutons de l'image de la séance : des milliers, des milliards parfois, dont
+              la position finale constitue le modèle.
+      - num: "02"
+        title: "La carte de l'IA : trois savoirs qui se recoupent"
+        contenu: >-
+          La séance centrale du parcours. L'IA ne tombe pas du ciel : elle se tient au croisement de
+          trois savoirs qui existaient déjà séparément : l'informatique, les mathématiques et la
+          connaissance d'un métier. Chaque paire de savoirs porte un nom que vous entendez sans cesse,
+          et le centre, là où les trois se rencontrent, c'est l'IA telle qu'elle fonctionne vraiment.
+          Une fois cette carte en tête, chaque mot nouveau trouve sa place tout seul.
+        cours:
+          - titre: Trois cercles, et pourquoi aucun ne suffit
+            texte: >-
+              Dessinez trois cercles qui se chevauchent. Le premier, l'informatique et la technologie :
+              savoir faire tourner des programmes, stocker des données, tenir un service en ligne. Le
+              deuxième, les mathématiques et les statistiques : savoir ce qu'est une moyenne, une
+              probabilité, une marge d'erreur. Le troisième, la connaissance d'un métier : savoir ce
+              qu'est un dossier médical, un bulletin de paie, une récolte, un contentieux.
+
+              Aucun de ces cercles ne suffit seul, et c'est la chose la plus utile à comprendre. Un
+              informaticien seul construit un outil rapide qui répond à côté. Un statisticien seul
+              produit un chiffre juste que personne ne sait utiliser. Un professionnel seul sait
+              exactement ce qu'il faudrait, et ne peut pas le faire faire. Les échecs de projets d'IA
+              que vous verrez de près viennent presque toujours d'un cercle manquant autour de la
+              table, jamais d'un défaut d'algorithme.
+
+              Retenez donc dès maintenant que l'IA est un travail d'équipe entre trois savoirs, et que
+              votre propre savoir métier est l'un des trois. Ce n'est pas une politesse : sans lui, les
+              deux autres tournent à vide.
+          - titre: Les trois intersections, et les mots qui les désignent
+            texte: >-
+              Là où l'informatique rencontre les mathématiques, on trouve l'apprentissage automatique,
+              en anglais machine learning. C'est la zone des algorithmes qui apprennent à partir de
+              données. Quand un journal parle d'« algorithme », il parle presque toujours de cette
+              zone-là.
+
+              Là où l'informatique rencontre le métier, on trouve le développement logiciel ordinaire :
+              les applications, les sites, les logiciels de gestion. Pas d'apprentissage ici, mais des
+              règles écrites par des humains. Votre logiciel de comptabilité vit dans cette zone, et il
+              n'a rien d'une IA. C'est une distinction qu'on vous fera souvent oublier.
+
+              Là où les mathématiques rencontrent le métier, on trouve la recherche classique et les
+              statistiques appliquées : les études, les sondages, les essais cliniques. Cette zone a
+              deux siècles et fonctionne très bien. Beaucoup de problèmes qu'on vous proposera de
+              résoudre « avec de l'IA » se résolvent mieux là, plus vite et pour moins cher.
+
+              Et au centre, là où les trois se rencontrent, se tient l'IA telle qu'elle est utile : un
+              apprentissage automatique nourri de données d'un métier et servi par un logiciel
+              utilisable. Les trois à la fois, ou rien.
+            tableaux:
+              - titre: Où se range chaque mot de la carte
+                entetes: [Zone, Nom courant, Exemple concret]
+                lignes:
+                  - [Informatique seule, Développement, Un site de réservation]
+                  - [Mathématiques seules, Statistiques, Une moyenne de salaires]
+                  - [Métier seul, Expertise, Un médecin qui lit une radio]
+                  - [Informatique et mathématiques, Apprentissage automatique, Un filtre anti-spam]
+                  - [Informatique et métier, Logiciel métier, Un logiciel de paie]
+                  - [Mathématiques et métier, Recherche classique, Un essai clinique]
+                  - [Les trois ensemble, Intelligence artificielle appliquée, Une aide au diagnostic en service]
+          - titre: Les deux compétences que la carte ne contient pas
+            texte: >-
+              Le schéma dont ce parcours s'inspire ajoute deux choses à côté des trois cercles, et ce
+              détail compte plus que tout le reste : la résolution de problèmes et la communication.
+
+              Résoudre un problème, c'est savoir reformuler une demande floue en question précise,
+              repérer ce qui manque, choisir ce qu'on abandonne. Aucune machine ne fait cela à votre
+              place, parce que cela suppose de connaître le contexte, les contraintes et les personnes.
+              Communiquer, c'est savoir expliquer un résultat à quelqu'un qui doit décider, dire
+              honnêtement ce qui est incertain, et se faire comprendre sans jargon.
+
+              Ce sont exactement les deux compétences que l'arrivée de l'IA rend plus précieuses, et
+              non moins. Quand la partie technique devient rapide et bon marché, ce qui fait la
+              différence est la qualité de la question posée et la clarté de ce qu'on en dit. Vous
+              possédez peut-être déjà ces deux compétences : ce parcours vous donne le vocabulaire qui
+              vous manquait pour les exercer dans ce nouveau terrain.
+        travaux_pratiques: >-
+          Travail guidé, environ une heure. Dessinez les trois cercles sur une feuille, à la main.
+          Écrivez votre métier, ou celui qui vous intéresse, dans le cercle du savoir métier. Puis
+          listez cinq tâches de ce métier et placez chacune dans la zone qui lui convient : pure
+          affaire de métier, affaire de logiciel, affaire de statistiques, ou vraiment au centre.
+          Pour chacune des cinq, écrivez une ligne : qu'est-ce qui manquerait à la machine pour la
+          faire seule ? Conservez cette feuille, elle est la base de votre dossier final.
+        mise_en_situation: >-
+          Un vendeur vous propose « une solution d'IA » pour un problème de votre service. En vous
+          appuyant uniquement sur la carte des trois cercles, formulez les trois questions à lui
+          poser avant toute discussion de prix : une sur les données, une sur la connaissance métier
+          mobilisée, une sur ce qui se passera quand la machine se trompera.
+        livrable: >-
+          La photographie ou le scan de votre feuille, accompagnée des cinq tâches classées et des
+          cinq lignes expliquant ce qui manquerait à la machine.
+        quiz:
+          - question: Que trouve-t-on à l'intersection de l'informatique et des mathématiques ?
+            options:
+              - L'apprentissage automatique
+              - Le développement logiciel
+              - La recherche clinique
+              - La comptabilité
+            bonnes: [1]
+            explication: >-
+              C'est la zone des algorithmes qui apprennent à partir de données, appelée machine
+              learning en anglais. Le développement logiciel est à l'intersection informatique et métier.
+          - question: Pourquoi un projet d'IA échoue-t-il le plus souvent ?
+            options:
+              - Parce qu'un des trois savoirs manque autour de la table
+              - Parce que l'algorithme choisi est mauvais
+              - Parce que les ordinateurs ne sont pas assez puissants
+              - Parce que les utilisateurs résistent au changement
+            bonnes: [1]
+            explication: >-
+              L'immense majorité des échecs vient d'un cercle absent, le plus souvent le savoir métier,
+              et non d'un défaut technique.
+          - question: Quelles compétences le schéma place-t-il à côté des trois cercles ?
+            options:
+              - La résolution de problèmes et la communication
+              - La programmation et les mathématiques
+              - La gestion de projet et la comptabilité
+              - La rapidité et la mémoire
+            bonnes: [1]
+            explication: >-
+              Ce sont les deux compétences qu'aucune machine ne reprend, et que l'arrivée de l'IA rend
+              plus précieuses plutôt que moins.
+
+          - question: Pourquoi un statisticien seul ne suffit-il pas à mener un projet d'IA ?
+            options:
+              - Il produit un chiffre juste que personne ne sait employer
+              - Il ne maîtrise pas les outils informatiques
+              - Il travaille trop lentement
+              - Il refuse les données non structurées
+            bonnes: [1]
+            explication: >-
+              Chacun des trois cercles seul produit un résultat incomplet. Il faut les trois, et le
+              savoir métier est celui qui manque le plus souvent.
+          - question: Dans quelle zone se trouve un logiciel de paie ordinaire ?
+            options:
+              - À l'intersection de l'informatique et du métier
+              - Au centre, avec l'IA appliquée
+              - À l'intersection des mathématiques et du métier
+              - Dans le cercle des mathématiques seules
+            bonnes: [1]
+            explication: >-
+              Il applique des règles écrites par des humains : c'est du développement logiciel, pas de
+              l'apprentissage, et l'appeler IA entretient la confusion de la séance 3.
+      - num: "03"
+        title: "Les mots qu'on confond : IA, apprentissage automatique, apprentissage profond, IA générative"
+        contenu: >-
+          Quatre termes que la presse emploie comme des synonymes, et qui désignent quatre choses
+          emboîtées les unes dans les autres comme des poupées russes. Savoir les ranger dans le bon
+          ordre suffit à comprendre la moitié de ce qui s'écrit sur le sujet, et à repérer celui qui
+          parle sans savoir.
+        cours:
+          - titre: Quatre poupées russes, de la plus grande à la plus petite
+            texte: >-
+              La plus grande poupée est l'intelligence artificielle. Le terme couvre toute tentative de
+              faire exécuter à une machine une tâche qui demandait jusque-là un humain. Il inclut des
+              choses très anciennes et sans aucun apprentissage : un programme d'échecs des années
+              1990, un système de règles qui refuse un prêt, un correcteur orthographique.
+
+              Dans cette poupée s'en trouve une plus petite, l'apprentissage automatique. Ici la
+              machine n'est plus programmée règle par règle : elle règle ses paramètres sur des
+              exemples, comme à la séance 1. Un filtre anti-spam qui s'améliore avec vos signalements
+              en fait partie.
+
+              Dans celle-ci s'en trouve une autre, l'apprentissage profond. C'est une famille de
+              techniques d'apprentissage automatique qui empile de très nombreuses couches de calcul,
+              d'où le mot profond. C'est elle qui a permis, à partir de 2012, la reconnaissance
+              d'images fiable, puis la traduction, puis tout le reste.
+
+              Et dans celle-là encore, la plus récente : l'IA générative, qui ne se contente pas de
+              classer ou de prédire mais produit du contenu neuf : du texte, une image, une voix. Tout
+              ce dont on parle depuis 2022 vit dans cette dernière poupée.
+            tableaux:
+              - titre: Les quatre termes, du plus large au plus étroit
+                entetes: [Terme, Ce qu'il recouvre, Depuis quand, Exemple]
+                lignes:
+                  - [Intelligence artificielle, Toute tâche humaine confiée à une machine, 1956, Un programme d'échecs]
+                  - [Apprentissage automatique, La machine se règle sur des exemples, Années 1980, Un filtre anti-spam]
+                  - [Apprentissage profond, Beaucoup de couches de calcul empilées, 2012, La reconnaissance d'images]
+                  - [IA générative, La machine produit du contenu neuf, 2022, Un assistant qui rédige]
+          - titre: Pourquoi la confusion est entretenue, et ce qu'elle coûte
+            texte: >-
+              Appeler « IA » un logiciel qui ne fait qu'appliquer des règles écrites à la main est
+              devenu un argument de vente. Le terme est flatteur, personne ne vérifie, et la loi n'y
+              oblige pas encore. Vous croiserez des produits présentés comme de l'IA qui sont de
+              simples tableaux de calcul, et des produits qui n'en revendiquent pas et en contiennent.
+
+              Cette confusion a un coût très concret pour vous. On ne pose pas les mêmes questions à un
+              système de règles et à un système entraîné. Au premier on demande qui a écrit les règles
+              et où elles sont consignées. Au second on demande sur quelles données il a été entraîné,
+              ce qui se passe quand il rencontre un cas inhabituel, et comment on sait qu'il se trompe.
+              Poser les questions du premier à un système du second, c'est obtenir des réponses
+              rassurantes et vides.
+
+              L'habitude à prendre tient en une phrase : demandez toujours si le comportement a été
+              écrit par quelqu'un ou appris sur des exemples. Les deux réponses sont respectables, elles
+              n'engagent simplement pas les mêmes vérifications.
+        travaux_pratiques: >-
+          Travail guidé, environ une heure. Trouvez trois articles de presse récents employant le mot
+          intelligence artificielle. Pour chacun, déterminez laquelle des quatre poupées est réellement
+          en cause, ou notez que l'article ne permet pas de le savoir, ce qui est en soi un résultat.
+          Rédigez ensuite, pour un seul des trois, le paragraphe que l'article aurait dû contenir pour
+          que son lecteur sache de quoi on parle.
+        mise_en_situation: >-
+          Un collègue affirme : « notre nouveau logiciel de planning utilise l'intelligence
+          artificielle ». Posez-lui les deux questions qui permettent de savoir dans quelle poupée se
+          trouve réellement ce logiciel, et dites ce que chaque réponse impliquerait pour la confiance
+          qu'on peut lui accorder.
+        livrable: >-
+          Une page portant le classement des trois articles avec sa justification, et le paragraphe
+          réécrit.
+        quiz:
+          - question: Quelle relation existe entre apprentissage profond et apprentissage automatique ?
+            options:
+              - L'apprentissage profond est une famille de l'apprentissage automatique
+              - Ce sont deux domaines sans rapport
+              - L'apprentissage automatique est une famille de l'apprentissage profond
+              - Ce sont deux noms pour la même chose
+            bonnes: [1]
+            explication: >-
+              Les quatre termes sont emboîtés : IA contient l'apprentissage automatique, qui contient
+              l'apprentissage profond, qui contient l'IA générative.
+          - question: Un logiciel appliquant des règles écrites par des humains peut-il être appelé IA ?
+            options:
+              - Oui, au sens large et historique du terme
+              - Non, jamais, le mot est réservé à l'apprentissage
+              - Seulement s'il est écrit dans un langage récent
+              - Seulement s'il tourne sur un serveur distant
+            bonnes: [1]
+            explication: >-
+              Le terme IA au sens de 1956 couvre aussi les systèmes de règles. C'est précisément cette
+              largeur qui rend l'appellation commercialement commode et peu informative.
+          - question: Quelle question distingue le mieux un système de règles d'un système entraîné ?
+            options:
+              - Le comportement a-t-il été écrit par quelqu'un, ou appris sur des exemples ?
+              - Le logiciel est-il récent ?
+              - Le logiciel coûte-t-il cher ?
+              - Le logiciel tourne-t-il en ligne ?
+            bonnes: [1]
+            explication: >-
+              C'est la question qui détermine toutes les suivantes : on ne vérifie pas de la même
+              manière des règles écrites et des réglages appris.
+
+          - question: Laquelle de ces quatre poupées est la plus récente ?
+            options:
+              - L'IA générative
+              - L'apprentissage profond
+              - L'apprentissage automatique
+              - L'intelligence artificielle
+            bonnes: [1]
+            explication: >-
+              Elle produit du contenu neuf plutôt que de classer ou prédire, et c'est elle dont on
+              parle depuis 2022.
+          - question: Pourquoi le mot IA est-il commercialement commode ?
+            options:
+              - Parce qu'il est flatteur, très large, et que personne ne vérifie
+              - Parce qu'il est protégé par un label officiel
+              - Parce qu'il désigne une technique précise
+              - Parce qu'il impose des obligations au vendeur
+            bonnes: [1]
+            explication: >-
+              Sa largeur même le rend peu informatif : il couvre aussi bien un système de règles des
+              années 1980 qu'un modèle de langage d'aujourd'hui.
+      - num: "04"
+        title: "Une brève histoire, pour reconnaître les promesses déjà faites"
+        contenu: >-
+          L'IA a connu deux périodes d'enthousiasme suivies de deux effondrements, appelés hivers. Les
+          promesses d'alors ressemblent étrangement à celles d'aujourd'hui. Cette séance n'est pas une
+          leçon d'histoire : c'est un entraînement à reconnaître une promesse déjà démentie quand on
+          vous la refait avec des mots neufs.
+        cours:
+          - titre: Deux printemps, deux hivers
+            texte: >-
+              Premier printemps, de 1956 au début des années 1970. Les chercheurs annoncent qu'une
+              machine jouera aux échecs au niveau d'un champion et traduira les langues en une
+              décennie. L'argent public afflue. En 1966 un rapport officiel américain constate que la
+              traduction automatique ne fonctionne pas, et les crédits s'arrêtent net. Premier hiver.
+
+              Deuxième printemps, dans les années 1980, avec les systèmes experts : des centaines de
+              règles écrites avec des spécialistes. Des entreprises entières s'en équipent. Puis les
+              bases de règles deviennent impossibles à maintenir, chaque règle nouvelle en contredit
+              trois autres, et le coût de mise à jour dépasse le bénéfice. Deuxième hiver, à la fin des
+              années 1980.
+
+              Troisième printemps, le nôtre, qui commence en 2012 avec la reconnaissance d'images et
+              s'accélère brutalement en 2022 avec les assistants qui rédigent. Il se distingue des deux
+              précédents par un fait important : cette fois, des centaines de millions de personnes
+              utilisent réellement ces outils tous les jours. Ce n'est pas une garantie contre un
+              troisième hiver, mais ce n'est pas rien.
+          - titre: Les quatre promesses qui reviennent à chaque cycle
+            texte: >-
+              La première est l'imminence. À chaque printemps, la machine qui pense est annoncée pour
+              dans dix ans. Elle l'était en 1960, en 1985, elle l'est aujourd'hui. Une annonce d'une
+              échéance à dix ans, sans jalon vérifiable d'ici là, mérite la même méfiance qu'en 1960.
+
+              La deuxième est la généralité. On montre un résultat impressionnant sur un problème
+              précis et on affirme que le reste suivra mécaniquement. SHRDLU, en 1970, manipulait
+              parfaitement des cubes dans un monde simulé, et n'a jamais survécu au passage au monde
+              réel. Une démonstration impeccable dans un périmètre choisi ne prouve rien sur le
+              périmètre d'à côté.
+
+              La troisième est le remplacement. À chaque cycle on annonce la disparition d'un métier.
+              Les métiers annoncés disparus en 1985 existent toujours, souvent transformés. Transformé
+              et supprimé ne sont pas synonymes, et la différence est exactement ce dont il faut parler.
+
+              La quatrième est l'opacité acceptée. On vous demande de faire confiance sans pouvoir
+              vérifier, au motif que c'est trop technique. C'était l'argument des systèmes experts, et
+              c'est une des raisons pour lesquelles ils sont tombés : le jour où ils se sont trompés,
+              personne n'a su dire pourquoi.
+            tableaux:
+              - titre: La même promesse, à trois époques
+                entetes: [Promesse, Années 1960, Années 1980, Aujourd'hui]
+                lignes:
+                  - [Machine qui pense, Annoncée pour 1980, Annoncée pour 2000, Annoncée pour bientôt]
+                  - [Traduction parfaite, Annoncée, Annoncée, Très bonne mais imparfaite]
+                  - [Fin d'un métier, Les traducteurs, Les experts-comptables, Les rédacteurs]
+                  - [Confiance sans vérification, Demandée, Demandée, Demandée]
+          - titre: Ce qui a réellement changé, et qu'il serait injuste de nier
+            texte: >-
+              Il serait malhonnête de conclure que rien n'a changé. Trois choses sont nouvelles, et
+              elles expliquent pourquoi ce printemps-ci dure.
+
+              D'abord la quantité de données disponibles : les textes, les images et les sons
+              accumulés depuis trente ans dépassent de plusieurs ordres de grandeur ce dont disposaient
+              les chercheurs des cycles précédents. Ensuite la puissance de calcul, devenue des
+              milliers de fois moins chère. Enfin une découverte technique de 2017, le transformeur,
+              qui permet d'entraîner un seul modèle très général plutôt qu'un modèle par tâche.
+
+              Ces trois changements sont réels et mesurables. Ils justifient de s'intéresser au sujet
+              sérieusement, ce que vous faites en suivant ce parcours. Ils ne justifient aucune des
+              quatre promesses de la section précédente, qui restent à vérifier une par une.
+        travaux_pratiques: >-
+          Travail guidé, environ une heure. Cherchez une annonce publique faite entre 2015 et 2020 sur
+          ce que l'IA accomplirait avant 2025 (la voiture entièrement autonome est un bon terrain).
+          Confrontez l'annonce à la situation réelle aujourd'hui. Classez ensuite l'écart dans l'une
+          des quatre promesses de la séance, et écrivez en trois lignes le jalon vérifiable qu'il
+          aurait fallu exiger à l'époque.
+        mise_en_situation: >-
+          Lors d'une réunion, quelqu'un affirme que votre métier aura disparu dans cinq ans à cause de
+          l'IA. Répondez en trois points : ce qui est effectivement nouveau et qu'il ne faut pas nier,
+          ce qui relève d'une promesse déjà faite deux fois, et le jalon vérifiable que vous proposez
+          pour en reparler dans un an.
+        livrable: >-
+          Une page contenant l'annonce retrouvée avec sa source, la situation réelle, la promesse à
+          laquelle elle se rattache, et le jalon qu'il aurait fallu exiger.
+        quiz:
+          - question: "Qu'appelle-t-on un hiver de l'IA ?"
+            options:
+              - Une période d'effondrement des financements après des promesses non tenues
+              - Une saison où les ordinateurs fonctionnent mal
+              - Un arrêt volontaire de la recherche pour raisons éthiques
+              - Une panne mondiale des services d'IA
+            bonnes: [1]
+            explication: >-
+              Deux hivers ont suivi deux printemps, au début des années 1970 puis à la fin des années
+              1980, chaque fois après des annonces qui ne se sont pas réalisées.
+          - question: Qu'est-ce qui distingue réellement le cycle actuel des précédents ?
+            options:
+              - La quantité de données, le coût du calcul et une découverte technique de 2017
+              - Le fait que les machines pensent désormais vraiment
+              - Le fait que les chercheurs soient plus nombreux
+              - Le fait que les promesses soient enfin raisonnables
+            bonnes: [1]
+            explication: >-
+              Ces trois changements sont mesurables et expliquent la durée du cycle. Ils ne valident
+              pour autant aucune des promesses habituelles.
+          - question: Face à une annonce de rupture à dix ans, que faut-il exiger ?
+            options:
+              - Un jalon vérifiable d'ici là
+              - Le nom du laboratoire d'origine
+              - Le montant investi
+              - Le nombre de chercheurs mobilisés
+            bonnes: [1]
+            explication: >-
+              Une échéance lointaine sans étape vérifiable entre-temps est invérifiable par
+              construction : c'est le signe qui revient à chaque cycle.
+
+          - question: Qu'est-ce qui a provoqué le second hiver de l'IA ?
+            options:
+              - Les bases de règles sont devenues impossibles à maintenir
+              - Une interdiction réglementaire
+              - La disparition des ordinateurs centraux
+              - Le départ des chercheurs vers le secteur privé
+            bonnes: [1]
+            explication: >-
+              Chaque règle nouvelle en contredisait d'autres et le coût de mise à jour a dépassé le
+              bénéfice. Le mécanisme menace aussi les consignes qui enflent.
+          - question: Que signifie « une démonstration impeccable ne prouve rien sur le périmètre d'à côté » ?
+            options:
+              - Un résultat obtenu dans un cadre choisi ne se transpose pas automatiquement
+              - Les démonstrations publiques sont généralement truquées
+              - Il faut toujours exiger une démonstration en conditions réelles
+              - Les périmètres voisins sont toujours plus difficiles
+            bonnes: [1]
+            explication: >-
+              SHRDLU manipulait parfaitement des cubes dans un monde simulé et n'a pas survécu au
+              monde réel. C'est la promesse de généralité, qui revient à chaque cycle.
+  - title: "Bloc 2 — Les données, matière première (séances 5 à 7)"
+    modules:
+      - num: "05"
+        title: "Qu'est-ce qu'une donnée, et pourquoi tout commence là"
+        contenu: >-
+          Une IA ne sait rien du monde : elle ne connaît que ce qu'on lui a montré. Cette séance
+          regarde ce qu'est réellement une donnée, d'où elle vient, ce qu'elle coûte, et pourquoi la
+          phrase la plus utile de tout le parcours est celle-ci : montrez-moi les données.
+        cours:
+          - titre: Une donnée est une trace, pas une vérité
+            texte: >-
+              Une donnée est la trace écrite d'un fait, enregistrée par quelqu'un, à un moment, dans
+              un but. Chacun de ces quatre éléments compte. La température relevée par une station
+              météo est une donnée ; elle a été mesurée par un appareil d'une certaine précision,
+              placé à un endroit, à une heure, pour un usage donné.
+
+              La conséquence est qu'une donnée n'est jamais neutre. Un registre d'embauches ne dit pas
+              qui était le meilleur candidat : il dit qui a été recruté, ce qui n'est pas la même
+              chose. Un historique de prêts bancaires ne dit pas qui était solvable : il dit à qui la
+              banque a prêté. Une machine entraînée sur ces traces reproduira les décisions passées,
+              y compris leurs erreurs, parce que c'est tout ce qu'elle a vu.
+
+              C'est pourquoi la question « sur quoi ce système a-t-il été entraîné » n'est pas une
+              question technique réservée aux ingénieurs. C'est la question de fond, et vous êtes
+              souvent la personne la mieux placée pour juger si les données décrivent ce qu'on croit
+              qu'elles décrivent.
+          - titre: Les formes que prend une donnée
+            texte: >-
+              Les données les plus commodes sont dites structurées : un tableau avec des colonnes
+              nommées et une ligne par cas. Un fichier de paie, un relevé bancaire, un registre de
+              stocks. Chaque colonne a un sens connu, chaque case un type. C'est la forme sur laquelle
+              les statistiques travaillent depuis deux siècles.
+
+              Viennent ensuite les données non structurées : des textes libres, des photographies, des
+              enregistrements sonores, des vidéos. Un dossier médical rédigé à la main, un appel au
+              service client, une image satellite. Elles contiennent souvent l'essentiel de
+              l'information, et jusqu'aux années 2010 on ne savait pas vraiment les exploiter. C'est
+              précisément ce que l'apprentissage profond a débloqué, et c'est pour cela qu'il a
+              changé les choses.
+
+              Entre les deux se trouvent les données semi-structurées, qui ont une organisation sans
+              être un tableau : une page web, un formulaire, un message électronique avec ses champs.
+
+              Retenez surtout que le travail de mise en forme (rassembler, nettoyer, corriger,
+              rapprocher) représente la plus grande part du temps d'un projet. Les praticiens citent
+              couramment la proportion de quatre cinquièmes. Ce n'est pas une anecdote : c'est
+              l'essentiel du coût, et c'est la partie dont on ne vous parlera pas en réunion de vente.
+            tableaux:
+              - titre: Trois formes de données, trois difficultés
+                entetes: [Forme, Exemple, Ce qui est facile, Ce qui est difficile]
+                lignes:
+                  - [Structurée, Un fichier de paie, Calculer et comparer, Capturer la nuance]
+                  - [Semi-structurée, Un courriel, Retrouver un champ, Interpréter le corps du texte]
+                  - [Non structurée, Un compte rendu manuscrit, Tout contenir, Tout en extraire]
+          - titre: "La phrase à retenir : montrez-moi les données"
+            texte: >-
+              Devant n'importe quelle affirmation sur une IA, une seule demande fait le tri entre un
+              projet sérieux et une promesse creuse : sur quelles données, combien, de quand, et qui
+              les a produites.
+
+              Un interlocuteur sérieux répond précisément, et sa réponse comporte toujours des limites :
+              telle période seulement, telle région, tel type de cas sous-représenté. Un interlocuteur
+              qui n'a pas de réponse, ou dont la réponse est que le fournisseur ne communique pas cette
+              information, vous a répondu quand même : il vous dit qu'il ne pourra pas expliquer les
+              erreurs à venir.
+
+              Vous n'avez besoin d'aucune compétence technique pour poser cette question, ni pour juger
+              la qualité de la réponse. Vous avez besoin de connaître votre métier, ce qui est le cas,
+              et de savoir que la question est légitime, ce qui est désormais le cas aussi.
+        travaux_pratiques: >-
+          Travail guidé, environ une heure. Choisissez une décision prise régulièrement dans votre
+          activité ou votre vie quotidienne : accorder un délai, choisir un fournisseur, orienter un
+          dossier. Listez les données qui seraient nécessaires pour qu'une machine prenne cette
+          décision. Pour chacune, écrivez où elle existerait, qui l'aurait produite, et ce qu'elle ne
+          dirait pas. Terminez par la liste de ce qu'un humain sait et qui n'est écrit nulle part.
+        mise_en_situation: >-
+          On vous présente un outil qui prédit quels clients vont résilier. Posez les quatre questions
+          sur les données et dites, pour chaque réponse possible, ce qu'elle changerait à la confiance
+          que vous accorderiez à l'outil.
+        livrable: >-
+          Une page portant la décision choisie, la liste des données nécessaires avec leur origine et
+          leurs limites, et la liste de ce qui n'est écrit nulle part.
+        quiz:
+          - question: Pourquoi dit-on qu'une donnée n'est jamais neutre ?
+            options:
+              - Parce qu'elle a été enregistrée par quelqu'un, à un moment, dans un but
+              - Parce que les ordinateurs commettent des erreurs de mesure
+              - Parce qu'elle est toujours incomplète
+              - Parce qu'elle vieillit
+            bonnes: [1]
+            explication: >-
+              Une donnée est une trace de décision ou de mesure, pas la vérité du phénomène. Un
+              historique de prêts dit à qui on a prêté, non qui était solvable.
+          - question: Qu'est-ce qui a changé avec l'apprentissage profond concernant les données ?
+            options:
+              - Les données non structurées sont devenues exploitables
+              - Les données structurées sont devenues inutiles
+              - Les données coûtent désormais moins cher à produire
+              - La mise en forme est devenue inutile
+            bonnes: [1]
+            explication: >-
+              Textes libres, images et sons contenaient l'essentiel de l'information sans être
+              exploitables ; c'est le déblocage qui explique le cycle actuel.
+          - question: Quelle part du travail d'un projet la mise en forme des données représente-t-elle ?
+            options:
+              - La plus grande, couramment citée autour de quatre cinquièmes
+              - Une part négligeable depuis l'automatisation
+              - Environ un dixième
+              - Exactement la moitié, par convention
+            bonnes: [1]
+            explication: >-
+              Rassembler, nettoyer, corriger et rapprocher constitue l'essentiel du coût réel, et c'est
+              la partie la moins visible en réunion de vente.
+
+          - question: Que dit réellement un historique de prêts bancaires ?
+            options:
+              - À qui la banque a prêté
+              - Qui était solvable
+              - Qui avait besoin d'un prêt
+              - Qui a remboursé
+            bonnes: [1]
+            explication: >-
+              Une donnée est la trace d'une décision, non la vérité du phénomène. Un modèle entraîné
+              dessus reproduit les décisions passées, erreurs comprises.
+          - question: Quelle question fait le tri entre un projet sérieux et une promesse creuse ?
+            options:
+              - Sur quelles données, combien, de quand, et produites par qui
+              - Quel algorithme a été choisi
+              - Quelle est la puissance de calcul mobilisée
+              - Combien de personnes travaillent sur le projet
+            bonnes: [1]
+            explication: >-
+              Elle n'exige aucune compétence technique, et l'embarras devant elle est déjà une
+              réponse : les erreurs à venir seront inexplicables.
+      - num: "06"
+        title: "Entraîner, tester, se tromper : le vocabulaire de l'apprentissage"
+        contenu: >-
+          Comment sait-on qu'une IA fonctionne ? Pas en la regardant répondre, mais en la mettant à
+          l'épreuve sur des cas qu'elle n'a jamais vus. Cette séance donne les quelques mots qui
+          permettent de lire un résultat annoncé sans se faire impressionner par un pourcentage.
+        cours:
+          - titre: "La règle d'or : on ne juge pas sur les exercices corrigés"
+            texte: >-
+              Imaginez un élève à qui l'on donne cent exercices avec leurs corrigés, puis que l'on
+              évalue sur ces mêmes cent exercices. Il aura vingt sur vingt, et vous n'aurez rien appris
+              sur ce qu'il sait faire. Pour savoir, il faut des exercices nouveaux.
+
+              C'est exactement la règle en apprentissage automatique, et elle a un nom : on sépare les
+              données en un jeu d'entraînement, sur lequel la machine règle ses paramètres, et un jeu
+              de test, qu'elle n'a jamais vu et sur lequel on la juge. Un troisième jeu, dit de
+              validation, sert aux réglages intermédiaires.
+
+              Quand une machine est excellente sur ce qu'elle a vu et médiocre sur le reste, on dit
+              qu'elle a surappris, ou qu'elle fait du surapprentissage. Elle a retenu les exercices au
+              lieu d'apprendre la matière. C'est l'erreur la plus fréquente, et la plus facile à
+              dissimuler : il suffit d'annoncer le score obtenu sur les données d'entraînement.
+
+              D'où la question à poser devant tout chiffre de performance : ce score a-t-il été mesuré
+              sur des données que le système n'avait jamais vues ? Si la réponse est vague, le chiffre
+              ne vaut rien.
+          - titre: "Pourquoi un taux de réussite de 99 % peut être catastrophique"
+            texte: >-
+              Prenons un dépistage pour une maladie qui touche une personne sur mille. Une machine qui
+              répondrait systématiquement « pas malade » aurait 99,9 % de bonnes réponses, et serait
+              parfaitement inutile : elle manquerait tous les malades.
+
+              Un taux global de bonnes réponses, qu'on appelle l'exactitude, ne dit donc presque rien
+              quand les cas sont déséquilibrés. On a besoin de distinguer deux types d'erreurs. Le
+              faux positif : la machine annonce une maladie chez quelqu'un qui n'a rien, ce qui déclenche
+              des examens inutiles et de l'angoisse. Le faux négatif : elle ne voit pas une maladie
+              réelle, ce qui peut coûter une vie.
+
+              Ces deux erreurs n'ont pas le même prix, et le prix dépend du métier, donc de vous, pas
+              de l'ingénieur. Pour un dépistage, on accepte beaucoup de fausses alertes pour ne rater
+              personne. Pour un filtre anti-spam, c'est l'inverse : mieux vaut laisser passer un
+              courrier indésirable que supprimer une lettre importante.
+
+              Il n'existe aucun réglage qui réduise les deux à la fois : on déplace le curseur de l'une
+              vers l'autre. Choisir où le placer est une décision métier, et c'est une des places les
+              plus utiles que vous puissiez occuper dans un projet.
+            tableaux:
+              - titre: Les deux erreurs, et qui doit en décider
+                entetes: [Situation, Faux positif, Faux négatif, Erreur à éviter en priorité]
+                lignes:
+                  - [Dépistage médical, Examens inutiles, Maladie non vue, Le faux négatif]
+                  - [Filtre anti-spam, Lettre importante supprimée, Spam reçu, Le faux positif]
+                  - [Détection de fraude, Client bloqué à tort, Fraude non vue, Cela dépend du montant]
+                  - [Tri de candidatures, Entretien inutile, Bon profil écarté, Le faux négatif]
+          - titre: Les mots que vous lirez dans les annonces de performance
+            texte: >-
+              L'exactitude est la part de bonnes réponses sur l'ensemble. Elle est la plus citée et la
+              moins informative dès que les cas sont déséquilibrés.
+
+              La précision répond à : parmi les cas que la machine a signalés, combien l'étaient
+              vraiment. Le rappel répond à : parmi les cas qui existaient réellement, combien la
+              machine a-t-elle trouvés. Un dépistage veut un rappel élevé ; une alerte qui dérange
+              beaucoup de monde veut une précision élevée.
+
+              Vous entendrez aussi parler de référentiel d'évaluation, ou benchmark : une série
+              d'épreuves standard sur laquelle on compare les modèles entre eux. C'est utile et
+              trompeur à la fois, parce qu'un modèle peut être excellent sur ces épreuves et décevant
+              sur vos cas à vous, qui n'y figurent pas. La seule évaluation qui vous concerne est celle
+              faite sur vos propres données, et il est légitime de l'exiger avant d'acheter.
+        travaux_pratiques: >-
+          Travail guidé, environ une heure. Reprenez la décision choisie à la séance 5. Décrivez ce
+          que serait un faux positif et un faux négatif dans ce contexte, en termes concrets, avec les
+          conséquences pour les personnes. Dites laquelle des deux erreurs vous accepteriez davantage,
+          et pourquoi. Puis rédigez la phrase exacte que vous demanderiez à un fournisseur de garantir.
+        mise_en_situation: >-
+          Un fournisseur annonce 97 % de réussite. Posez les trois questions qui permettent de savoir
+          si ce chiffre veut dire quelque chose : sur quelles données il a été mesuré, comment se
+          répartissent les deux types d'erreurs, et ce que donnerait une machine qui répondrait
+          toujours la même chose.
+        livrable: >-
+          Une page décrivant les deux erreurs dans votre contexte, l'arbitrage retenu avec sa raison,
+          et la garantie à exiger du fournisseur.
+        quiz:
+          - question: Pourquoi faut-il un jeu de test distinct du jeu d'entraînement ?
+            options:
+              - Pour juger la machine sur des cas qu'elle n'a jamais vus
+              - Pour accélérer l'entraînement
+              - Pour réduire le coût des données
+              - Pour respecter la réglementation
+            bonnes: [1]
+            explication: >-
+              Juger sur les données d'entraînement revient à interroger un élève sur les exercices dont
+              il a eu le corrigé : le score ne renseigne sur rien.
+          - question: "Que signifie le mot surapprentissage ?"
+            options:
+              - La machine a retenu les exemples au lieu d'apprendre la règle
+              - La machine a été entraînée trop longtemps sur du matériel puissant
+              - La machine a appris plus que ce qu'on lui demandait
+              - La machine a consommé trop de données
+            bonnes: [1]
+            explication: >-
+              Elle excelle sur ce qu'elle a vu et s'effondre ailleurs. C'est l'erreur la plus fréquente
+              et la plus facile à dissimuler derrière un bon score.
+          - question: Qui doit décider de l'arbitrage entre faux positifs et faux négatifs ?
+            options:
+              - La personne qui connaît le métier et le coût réel de chaque erreur
+              - L'ingénieur qui entraîne le modèle
+              - Le fournisseur du logiciel
+              - Personne, le réglage est automatique
+            bonnes: [1]
+            explication: >-
+              Aucun réglage ne réduit les deux erreurs à la fois : on déplace le curseur. Où le placer
+              dépend du coût métier de chaque erreur, donc du métier.
+
+          - question: Dans un dépistage médical, quelle erreur coûte le plus cher ?
+            options:
+              - Le faux négatif, car une maladie réelle n'est pas vue
+              - Le faux positif, car il déclenche des examens inutiles
+              - Les deux exactement autant
+              - Aucune, le taux global suffit à juger
+            bonnes: [1]
+            explication: >-
+              Pour un dépistage on accepte beaucoup de fausses alertes afin de ne rater personne. Pour
+              un filtre anti-spam, l'arbitrage est inverse.
+          - question: Que mesure le rappel ?
+            options:
+              - Parmi les cas qui existaient réellement, la part que la machine a trouvée
+              - Parmi les cas signalés, la part qui l'était vraiment
+              - La part de bonnes réponses sur l'ensemble
+              - Le temps mis pour répondre
+            bonnes: [1]
+            explication: >-
+              La précision répond à l'autre question : parmi les cas signalés, combien l'étaient
+              vraiment. Un dépistage veut un rappel élevé.
+      - num: "07"
+        title: "Biais, échantillon, représentativité : pourquoi une IA se trompe toujours un peu"
+        contenu: >-
+          Le mot biais est partout et presque toujours mal employé. Il ne désigne ni une opinion de la
+          machine ni une malveillance de ses auteurs, mais un décalage mesurable entre ce que les
+          données montrent et ce qu'elles prétendent représenter. Cette séance apprend à le repérer
+          et à en parler sans accuser personne.
+        cours:
+          - titre: Un biais est un décalage, pas une intention
+            texte: >-
+              Quand les données d'entraînement ne ressemblent pas au monde dans lequel la machine va
+              travailler, elle se trompe systématiquement dans la même direction. C'est cela, un biais.
+
+              L'exemple le plus parlant vient de la reconnaissance faciale. Des systèmes entraînés
+              majoritairement sur des visages d'hommes à peau claire se sont révélés nettement moins
+              fiables sur des visages de femmes à peau foncée. Les écarts mesurés par des travaux
+              publiés en 2018 étaient de plusieurs dizaines de points. Personne n'avait voulu ce
+              résultat : les données disponibles reflétaient simplement qui construit ces systèmes et
+              où. L'effet, lui, est bien réel pour les personnes mal reconnues.
+
+              Il faut insister, parce que le malentendu est constant : parler de biais n'est pas
+              accuser quelqu'un. C'est constater un décalage entre un échantillon et une population.
+              Formulé ainsi, le sujet cesse d'être une polémique et devient une question technique
+              qu'on peut mesurer et corriger.
+          - titre: D'où viennent les biais, concrètement
+            texte: >-
+              Le biais d'échantillonnage vient de ce qu'on a collecté : si vos données clients ne
+              contiennent que des citadins, le modèle sera mauvais en zone rurale. Il n'y a rien de
+              mystérieux, et c'est le plus fréquent.
+
+              Le biais historique vient de ce que les données enregistrent des décisions passées. Un
+              modèle entraîné sur dix ans de recrutements reproduira les préférences de ces dix années.
+              Un cas célèbre, abandonné par son entreprise en 2018, pénalisait les candidatures
+              mentionnant des activités féminines, parce que les recrutements passés l'avaient fait.
+
+              Le biais de mesure vient de l'instrument : un capteur mal calibré, un questionnaire dont
+              les questions orientent, une étiquette posée par des annotateurs mal formés.
+
+              Le biais de survie vient de ce qu'on ne voit pas : on analyse les clients restés, pas
+              ceux partis ; les projets terminés, pas ceux abandonnés. C'est le plus difficile à
+              repérer, parce que les données manquantes ne se signalent jamais.
+            tableaux:
+              - titre: Quatre biais, un signe de reconnaissance pour chacun
+                entetes: [Biais, Origine, Question qui le révèle]
+                lignes:
+                  - ["Échantillonnage", "Qui a été collecté", "Qui manque dans ces données ?"]
+                  - ["Historique", "Décisions passées", "Reproduit-on ce qu'on voulait corriger ?"]
+                  - ["Mesure", "Instrument ou annotation", "Qui a posé les étiquettes et comment ?"]
+                  - ["Survie", "Ce qui a disparu", "Que sait-on de ceux qui sont partis ?"]
+          - titre: Ce qu'on peut faire, et ce qu'on ne peut pas
+            texte: >-
+              On peut mesurer. C'est le point de départ : comparer les performances du système groupe
+              par groupe plutôt que globalement. Un chiffre unique cache précisément les écarts qui
+              nous intéressent, et refuser de ventiler est en soi une information.
+
+              On peut compléter les données manquantes, rééquilibrer les groupes sous-représentés,
+              corriger des étiquettes. C'est long, coûteux, et c'est le vrai travail.
+
+              On ne peut pas supprimer tout biais. Un échantillon n'est jamais la population, et il
+              faudra toujours vivre avec un décalage résiduel. L'objectif honnête n'est donc pas un
+              système sans biais, qui n'existe pas, mais un système dont les biais sont mesurés,
+              publiés et jugés acceptables pour l'usage prévu ; ce jugement appartient aux
+              personnes concernées, pas aux auteurs du système.
+
+              Méfiez-vous particulièrement d'une promesse de neutralité. Un fournisseur qui affirme que
+              son système est impartial vous dit, sans le savoir, qu'il ne l'a pas mesuré.
+        travaux_pratiques: >-
+          Travail guidé, environ une heure. Reprenez les données listées à la séance 5. Pour chacune,
+          demandez-vous qui manque : quelle catégorie de personnes ou de cas n'y figure pas ou peu.
+          Rattachez chaque manque à l'un des quatre biais. Terminez par la liste des groupes pour
+          lesquels vous exigeriez une mesure séparée des performances avant toute mise en service.
+        mise_en_situation: >-
+          Un fournisseur vous assure que son outil est neutre et objectif. Expliquez-lui en trois
+          phrases pourquoi cette affirmation vous inquiète plus qu'elle ne vous rassure, et formulez
+          la demande précise qui remplacerait utilement cette promesse.
+        livrable: >-
+          Une page listant les manques identifiés, le biais correspondant pour chacun, et la liste des
+          mesures séparées à exiger.
+        quiz:
+          - question: Qu'est-ce qu'un biais, en apprentissage automatique ?
+            options:
+              - Un décalage entre les données d'entraînement et le monde d'usage
+              - Une opinion politique de la machine
+              - Une faute volontaire des concepteurs
+              - Une panne de l'instrument de mesure
+            bonnes: [1]
+            explication: >-
+              C'est un écart mesurable entre un échantillon et une population. Le constater n'accuse
+              personne et rend le problème traitable.
+          - question: Quel biais est le plus difficile à repérer ?
+            options:
+              - Le biais de survie, parce que les données manquantes ne se signalent pas
+              - Le biais de mesure, parce qu'il est technique
+              - Le biais historique, parce qu'il est ancien
+              - Le biais d'échantillonnage, parce qu'il est fréquent
+            bonnes: [1]
+            explication: >-
+              On analyse les clients restés et non ceux partis : rien dans les données ne signale
+              l'absence de ceux qui ont disparu.
+          - question: Que doit vous inspirer une promesse de neutralité totale ?
+            options:
+              - De la méfiance, car elle indique que les biais n'ont pas été mesurés
+              - De la confiance, car elle engage le fournisseur
+              - De l'indifférence, car c'est une formule d'usage
+              - Du soulagement, car le problème est réglé
+            bonnes: [1]
+            explication: >-
+              Aucun système n'est exempt de biais. Un fournisseur sérieux annonce des écarts mesurés,
+              pas une absence d'écart.
+
+          - question: D'où vient un biais historique ?
+            options:
+              - Des décisions passées enregistrées dans les données
+              - D'un capteur mal calibré
+              - De l'ancienneté du matériel informatique
+              - D'une erreur de programmation
+            bonnes: [1]
+            explication: >-
+              Un modèle entraîné sur dix ans de recrutements reproduit les préférences de ces dix
+              années, y compris celles qu'on voulait corriger.
+          - question: Que faut-il exiger plutôt qu'une absence de biais ?
+            options:
+              - Des performances mesurées et publiées groupe par groupe
+              - Un engagement écrit de neutralité
+              - Un audit annuel du fournisseur
+              - La suppression des données sensibles
+            bonnes: [1]
+            explication: >-
+              Un chiffre global cache les écarts qui intéressent. Refuser de ventiler est en soi une
+              information.
+  - title: "Bloc 3 — Les modèles qui parlent (séances 8 à 11)"
+    modules:
+      - num: "08"
+        title: "Un modèle de langage, expliqué sans mathématiques"
+        contenu: >-
+          Les assistants qui rédigent reposent tous sur le même mécanisme, et ce mécanisme tient en
+          une phrase : deviner le mot suivant. Cette séance explique comment une idée aussi simple
+          produit un résultat aussi impressionnant, et pourquoi elle explique aussi tous les défauts
+          que vous rencontrerez.
+        cours:
+          - titre: Deviner le mot suivant, un milliard de fois
+            texte: >-
+              Vous connaissez déjà le principe sans le savoir : quand votre téléphone propose le mot
+              suivant pendant que vous écrivez un message, il fait exactement cela, en plus petit.
+
+              Un modèle de langage est entraîné en lui montrant d'immenses quantités de texte dont on
+              masque le mot suivant, et en lui demandant de le deviner. Chaque erreur ajuste
+              légèrement ses réglages, comme à la séance 1. Répétez l'opération sur des milliards de
+              passages et quelque chose d'inattendu se produit : pour bien deviner le mot suivant, il
+              faut avoir capté la grammaire, puis le sens courant des mots, puis les tournures d'un
+              raisonnement, puis une quantité de connaissances sur le monde. Ces capacités ne sont pas
+              programmées ; elles apparaissent comme sous-produits de l'exercice de devinette.
+
+              C'est à la fois la grande surprise de la décennie et la clé de tout le reste. Un modèle
+              de langage ne consulte pas une base de connaissances et ne vérifie rien. Il produit le
+              mot le plus plausible compte tenu de ce qui précède. Quand le texte plausible se trouve
+              être vrai, il a raison ; quand il ne l'est pas, il a tort exactement de la même manière,
+              sans rien ressentir de différent.
+          - titre: "Ce que veut dire « grand » dans grand modèle de langage"
+            texte: >-
+              L'expression grand modèle de langage, souvent abrégée en LLM d'après l'anglais, désigne
+              un modèle dont les paramètres se comptent en milliards, ces réglages internes de la
+              séance 1. Les modèles courants aujourd'hui en comptent de quelques milliards à plusieurs
+              centaines de milliards.
+
+              Deux conséquences pratiques. D'abord l'entraînement coûte très cher, en matériel et en
+              électricité, ce qui explique que peu d'organisations en produisent et que les autres les
+              utilisent. Ensuite un modèle entraîné est figé : ses connaissances s'arrêtent à la date
+              de fin de son entraînement, appelée date de coupure. Il ignore ce qui s'est passé depuis,
+              et il l'ignore sans le savoir.
+
+              Vous verrez aussi des modèles dits ouverts, dont les paramètres sont publiés et qu'on
+              peut faire tourner chez soi, et des modèles fermés, accessibles seulement à travers le
+              service de leur propriétaire. La différence compte pour la confidentialité, sujet de la
+              séance 15.
+            tableaux:
+              - titre: Ce que le mécanisme explique
+                entetes: [Observation courante, Explication par le mécanisme]
+                lignes:
+                  - [Le texte est fluide et bien tourné, Deviner le mot suivant exige la grammaire]
+                  - [Il invente des références crédibles, Une référence plausible ressemble à une vraie]
+                  - [Il ignore les événements récents, Ses connaissances s'arrêtent à la date de coupure]
+                  - [Il change de réponse si on reformule, La suite la plus plausible dépend de ce qui précède]
+                  - [Il ne dit jamais spontanément qu'il ignore, Rien dans l'exercice ne l'a entraîné à se taire]
+          - titre: Ce que le modèle ne fait pas, malgré les apparences
+            texte: >-
+              Il ne cherche pas dans une base de données. Sauf si on l'a explicitement équipé pour
+              cela, ce qui est le sujet de la séance 12, il n'interroge rien : il produit du texte.
+
+              Il ne calcule pas, au sens où une calculatrice calcule. Il produit la suite de chiffres
+              la plus plausible, ce qui donne souvent le bon résultat sur des opérations courantes et
+              des erreurs sur des opérations inhabituelles.
+
+              Il ne se souvient pas de vous d'une conversation à l'autre, sauf si le service a été
+              construit pour conserver ces informations, auquel cas c'est le service qui se souvient,
+              pas le modèle.
+
+              Et il n'a pas d'opinion, même lorsqu'il en exprime une. Ce qu'il produit est la suite
+              plausible du texte, compte tenu de ce qu'on lui a demandé et de la manière dont il a été
+              ajusté par ses auteurs. Changez la formulation de la question et l'opinion peut changer,
+              ce qui est le signe le plus clair qu'il ne s'agissait pas d'une opinion.
+        travaux_pratiques: >-
+          Travail guidé, environ une heure. Demandez à un assistant une opération arithmétique
+          inhabituelle à plusieurs chiffres et vérifiez le résultat à la calculatrice. Demandez-lui
+          ensuite un événement survenu le mois dernier et observez ce qu'il répond. Demandez enfin son
+          avis sur un sujet, puis reposez la même question en inversant la formulation. Notez les trois
+          comportements et rattachez chacun à une ligne du tableau de la séance.
+        mise_en_situation: >-
+          Un collègue s'étonne : « il m'a donné une référence de loi qui n'existe pas, alors qu'il est
+          si fort par ailleurs ». Expliquez-lui, à partir du mécanisme de la devinette, pourquoi ces
+          deux faits ne sont pas contradictoires mais sont le même fait.
+        livrable: >-
+          Une page portant les trois expériences, leurs résultats, et le rattachement de chacune au
+          mécanisme.
+        quiz:
+          - question: Sur quel exercice un modèle de langage est-il entraîné ?
+            options:
+              - Deviner le mot suivant dans un texte
+              - Répondre correctement à des questions d'examen
+              - Classer des documents par thème
+              - Mémoriser une base de connaissances
+            bonnes: [1]
+            explication: >-
+              Toutes les capacités apparentes apparaissent comme sous-produits de cet unique exercice
+              de devinette répété sur des milliards de passages.
+          - question: "Que désigne la date de coupure d'un modèle ?"
+            options:
+              - La fin de la période couverte par ses données d'entraînement
+              - La date à laquelle le service sera arrêté
+              - La date de publication du modèle
+              - La limite au-delà de laquelle il refuse de répondre
+            bonnes: [1]
+            explication: >-
+              Un modèle entraîné est figé : il ignore ce qui a suivi cette date, et il l'ignore sans
+              en avoir conscience.
+          - question: Pourquoi un modèle se trompe-t-il parfois sur un calcul simple ?
+            options:
+              - Parce qu'il produit la suite de chiffres la plus plausible au lieu de calculer
+              - Parce que son processeur est trop lent
+              - Parce que les mathématiques ne font pas partie de son entraînement
+              - Parce qu'il arrondit systématiquement
+            bonnes: [1]
+            explication: >-
+              Il n'exécute pas une opération : il produit du texte plausible. Cela tombe souvent juste
+              sur les opérations courantes, et faux sur les inhabituelles.
+
+          - question: Pourquoi un modèle ne dit-il pas spontanément qu'il ignore une réponse ?
+            options:
+              - Parce que rien dans son entraînement ne l'a entraîné à se taire
+              - Parce que ses concepteurs le lui interdisent
+              - Parce qu'il craint de décevoir l'utilisateur
+              - Parce qu'il n'a pas accès à cette information
+            bonnes: [1]
+            explication: >-
+              L'exercice de devinette produit toujours une suite. L'absence de réponse n'est pas une
+              suite plausible, donc elle n'est pas produite.
+          - question: Que change le fait qu'un modèle soit ouvert plutôt que fermé ?
+            options:
+              - On peut le faire tourner soi-même, ce qui change la confidentialité
+              - Il est systématiquement plus performant
+              - Il est gratuit pour tous les usages
+              - Il n'a pas de date de coupure
+            bonnes: [1]
+            explication: >-
+              Ses paramètres sont publiés. L'enjeu est traité à la séance 15 : rien ne sort de chez
+              vous, au prix d'un modèle souvent moins performant.
+      - num: "09"
+        title: "Jeton, contexte, température : les trois mots qui expliquent le reste"
+        contenu: >-
+          Trois termes reviennent dans toutes les documentations et dans toutes les factures. Les
+          comprendre permet de savoir pourquoi un assistant oublie le début d'une longue conversation,
+          pourquoi il coûte ce qu'il coûte, et pourquoi il ne répond jamais deux fois exactement la
+          même chose.
+        cours:
+          - titre: "Le jeton : l'unité dans laquelle tout se compte"
+            texte: >-
+              Un modèle ne manipule pas des mots mais des jetons, en anglais tokens : des morceaux de
+              mots. En français, un jeton correspond en moyenne à un peu moins d'un mot ; les mots
+              courants font un jeton, les mots rares se découpent en plusieurs.
+
+              Ce détail vous concerne pour deux raisons. D'abord parce que tout se facture au jeton,
+              à l'entrée comme à la sortie : quand vous lisez un tarif pour un million de jetons,
+              vous pouvez retenir qu'il s'agit d'environ sept cents mille mots, soit une dizaine de
+              romans. Ensuite parce que le découpage explique certaines bizarreries, comme la
+              difficulté de ces modèles à compter les lettres d'un mot : ils ne voient pas les
+              lettres, ils voient des morceaux.
+          - titre: "La fenêtre de contexte : la mémoire de travail"
+            texte: >-
+              La fenêtre de contexte est la quantité de texte que le modèle peut prendre en compte en
+              une fois : votre question, les documents que vous avez joints, et tout l'échange qui
+              précède. Elle se mesure en jetons, et elle a une limite.
+
+              Comparez-la à un bureau : vous pouvez y étaler un certain nombre de feuilles, et
+              au-delà il faut en retirer. C'est précisément ce qui se passe dans une longue
+              conversation : le début sort de la fenêtre, et l'assistant cesse d'en tenir compte. Il
+              ne vous préviendra pas qu'il a oublié, parce qu'il ne sait pas qu'il a oublié.
+
+              D'où deux habitudes utiles. Dans une longue discussion, rappelez explicitement les
+              éléments importants plutôt que de supposer qu'ils sont encore là. Et pour une tâche
+              nouvelle, ouvrez une conversation neuve : ce qui précède pèse sur ce qui suit, puisque
+              la réponse est la suite plausible de tout ce qui est dans la fenêtre.
+            tableaux:
+              - titre: Trois réglages, trois effets visibles
+                entetes: [Terme, Ce que c'est, Ce que vous observez]
+                lignes:
+                  - [Jeton, Un morceau de mot, La facturation et le comptage de lettres]
+                  - [Fenêtre de contexte, Le texte pris en compte en une fois, L'oubli du début des longues discussions]
+                  - [Température, Le degré de hasard dans le choix du mot, La variation des réponses]
+          - titre: "La température : pourquoi la réponse change"
+            texte: >-
+              À chaque mot produit, le modèle dispose de plusieurs continuations possibles, chacune
+              plus ou moins plausible. La température règle la manière de choisir : basse, il prend
+              presque toujours la plus probable et devient répétitif mais régulier ; haute, il se
+              permet des choix moins attendus et devient plus inventif mais moins fiable.
+
+              C'est pour cela qu'une même question posée deux fois ne donne pas deux fois la même
+              réponse, et ce n'est ni une panne ni un caprice. Pour un travail où la régularité
+              importe (extraire une information d'un document, classer des demandes), on baisse la
+              température. Pour chercher des idées, on la monte.
+
+              Beaucoup d'interfaces grand public ne vous donnent pas ce réglage, mais il existe
+              toujours en arrière-plan. Savoir qu'il existe suffit à ne plus s'étonner de la
+              variabilité, et à exiger, pour un usage professionnel, de pouvoir le fixer.
+        travaux_pratiques: >-
+          Travail guidé, environ une heure. Posez cinq fois de suite la même question factuelle dans
+          cinq conversations neuves et comparez les réponses mot à mot. Puis tenez une conversation
+          d'une vingtaine d'échanges et vérifiez, à la fin, si l'assistant se souvient d'une consigne
+          donnée au tout début. Notez ce que ces deux expériences impliquent pour un usage
+          professionnel régulier.
+        mise_en_situation: >-
+          Votre service veut utiliser un assistant pour extraire chaque jour la même information de
+          documents. Dites quels réglages vous exigeriez, et quelle vérification vous mettriez en place
+          pour détecter le jour où les réponses commencent à varier.
+        livrable: >-
+          Une page portant les cinq réponses comparées, le résultat du test de mémoire, et les
+          exigences retenues pour un usage régulier.
+        quiz:
+          - question: "Qu'est-ce qu'un jeton ?"
+            options:
+              - Un morceau de mot, unité de découpage et de facturation
+              - Un identifiant de session
+              - Un mot entier du dictionnaire
+              - Une unité de temps de calcul
+            bonnes: [1]
+            explication: >-
+              Les modèles manipulent des morceaux de mots. C'est l'unité de facturation, et cela
+              explique leur difficulté à compter des lettres.
+          - question: Pourquoi un assistant oublie-t-il le début d'une longue conversation ?
+            options:
+              - Parce que le début est sorti de la fenêtre de contexte
+              - Parce qu'il efface volontairement pour protéger la vie privée
+              - Parce que sa mémoire est effacée chaque heure
+              - Parce qu'il juge le début moins important
+            bonnes: [1]
+            explication: >-
+              La fenêtre a une taille limitée ; ce qui dépasse n'est plus pris en compte, et le modèle
+              ne signale pas cet oubli puisqu'il ne le perçoit pas.
+          - question: Que règle la température ?
+            options:
+              - Le degré de hasard dans le choix du mot suivant
+              - La vitesse de réponse
+              - La longueur maximale de la réponse
+              - La quantité de données consultées
+            bonnes: [1]
+            explication: >-
+              Basse, les réponses sont régulières et répétitives ; haute, plus inventives et moins
+              fiables. C'est ce réglage qui explique la variabilité d'une réponse à l'autre.
+
+          - question: Pourquoi un assistant a-t-il du mal à compter les lettres d'un mot ?
+            options:
+              - Parce qu'il voit des morceaux de mots, pas des lettres
+              - Parce qu'il ne sait pas compter au-delà de dix
+              - Parce que la question est ambiguë
+              - Parce qu'il n'a pas appris l'alphabet
+            bonnes: [1]
+            explication: >-
+              Le découpage en jetons est l'unité qu'il manipule. Les lettres ne lui sont pas
+              directement accessibles.
+          - question: Quel réglage choisir pour extraire chaque jour la même information d'un document ?
+            options:
+              - Une température basse, pour la régularité
+              - Une température haute, pour l'inventivité
+              - Une fenêtre de contexte réduite
+              - Un modèle plus récent chaque mois
+            bonnes: [1]
+            explication: >-
+              La régularité prime sur l'invention pour ce type de tâche. Une interface grand public ne
+              propose pas toujours ce réglage, mais il existe en arrière-plan.
+      - num: "10"
+        title: "Hallucination : pourquoi la machine invente avec aplomb"
+        contenu: >-
+          Le mot est mal choisi, comme beaucoup dans ce domaine, mais il s'est imposé. Il désigne une
+          réponse fausse produite avec le même ton assuré qu'une réponse juste. Cette séance explique
+          pourquoi ce comportement est inévitable, et donne la seule parade qui fonctionne vraiment.
+        cours:
+          - titre: Ce n'est pas un bogue, c'est le mécanisme
+            texte: >-
+              Reprenez la séance 8 : le modèle produit la suite la plus plausible. Rien dans son
+              entraînement ne distingue une suite plausible et vraie d'une suite plausible et fausse.
+              Un numéro d'article de loi inventé ressemble exactement à un vrai numéro d'article de
+              loi ; c'est même pour cela qu'il est produit.
+
+              Il s'ensuit qu'aucune mise à jour ne supprimera complètement le phénomène. Les modèles
+              récents hallucinent moins que ceux d'il y a deux ans, et ils hallucinent toujours. Un
+              fournisseur qui annonce la fin des hallucinations annonce quelque chose que le mécanisme
+              ne permet pas.
+
+              Notez aussi que le mot hallucination est trompeur : il suggère une défaillance
+              exceptionnelle, comme une fièvre. Il s'agit du fonctionnement normal appliqué à une
+              question dont la réponse ne figurait pas dans ce que le modèle a vu.
+          - titre: Les trois situations où le risque monte
+            texte: >-
+              La première est la question précise sur un fait rare : une référence exacte, une date,
+              un chiffre, le nom d'une personne peu connue. Plus la réponse est précise et vérifiable,
+              plus l'invention est probable et plus elle est dangereuse, parce qu'elle a l'air sérieuse.
+
+              La deuxième est la question sur un domaine peu représenté dans les données : une
+              réglementation locale, une pratique propre à un secteur ou à un pays. Un modèle entraîné
+              surtout sur des textes anglophones sera moins fiable sur le droit ivoirien que sur le
+              droit américain, et il ne vous préviendra pas de cet écart.
+
+              La troisième est la question dont la prémisse est fausse. Si vous demandez d'expliquer
+              une décision qui n'a jamais été prise, le modèle produira volontiers une explication
+              cohérente. Il n'a pas été entraîné à contester votre question, mais à la continuer.
+            tableaux:
+              - titre: Reconnaître le terrain à risque
+                entetes: [Type de demande, Risque, Réflexe]
+                lignes:
+                  - [Référence précise et vérifiable, Élevé, Vérifier à la source avant tout usage]
+                  - [Domaine local ou de niche, Élevé, Demander la source et douter]
+                  - [Question à prémisse fausse, Élevé, Vérifier que la prémisse tient]
+                  - [Reformulation d'un texte fourni, Faible, Comparer à l'original]
+                  - [Génération d'idées à trier, Faible, Le tri est de toute façon le vôtre]
+          - titre: "La seule parade qui tient : déplacer la charge de la preuve"
+            texte: >-
+              Les conseils du type « demandez-lui d'être sûr » ou « dites-lui de ne pas inventer » ne
+              fonctionnent pas de manière fiable, pour une raison simple : le modèle ne sait pas
+              qu'il invente. Lui demander de signaler son incertitude produit une déclaration
+              d'incertitude plausible, ce qui n'est pas la même chose.
+
+              La parade qui fonctionne est organisationnelle : décider à l'avance quelles sorties
+              doivent être vérifiées, par qui, et contre quelle source. Tout fait précis destiné à
+              être repris ailleurs se vérifie à la source. Tout texte destiné à être publié se relit.
+              Toute décision concernant une personne se tranche par un humain.
+
+              Dit autrement, le bon usage consiste à employer la machine là où la vérification est
+              facile ou le risque faible : reformuler un texte que vous avez sous les yeux, proposer
+              un plan que vous allez juger, traduire un passage que vous relirez. Les usages qui
+              tournent mal sont ceux où personne n'est en position de vérifier.
+        travaux_pratiques: >-
+          Travail guidé, environ une heure. Reprenez les notes de la séance 1. Demandez à un assistant
+          une référence précise dans votre domaine (un texte réglementaire, une étude, une date), puis
+          vérifiez-la à la source. Faites-le trois fois. Posez ensuite une question contenant une
+          prémisse fausse et observez. Écrivez enfin la règle de vérification que vous appliqueriez
+          dans votre activité, en nommant qui vérifie quoi.
+        mise_en_situation: >-
+          Dans votre service, quelqu'un a transmis à un client une information obtenue d'un assistant,
+          qui s'est révélée fausse. Proposez la règle écrite qui aurait évité cela, en une phrase, et
+          dites pourquoi une consigne demandant à la machine de ne pas se tromper n'aurait rien changé.
+        livrable: >-
+          Une page portant les trois références vérifiées avec leur verdict, le résultat de la question
+          à prémisse fausse, et la règle de vérification proposée.
+        quiz:
+          - question: Pourquoi les hallucinations ne disparaîtront-elles pas complètement ?
+            options:
+              - Parce que produire une suite plausible ne distingue pas le vrai du faux
+              - Parce que les modèles manquent encore de données
+              - Parce que les fournisseurs ne font pas d'effort
+              - Parce que les utilisateurs posent mal leurs questions
+            bonnes: [1]
+            explication: >-
+              Le mécanisme même produit le texte le plus plausible. Une référence inventée est
+              plausible : c'est pourquoi elle est produite.
+          - question: Quelle demande est la plus à risque d'invention ?
+            options:
+              - Une référence précise et vérifiable dans un domaine de niche
+              - La reformulation d'un texte que vous fournissez
+              - Une liste d'idées à trier ensuite
+              - Un résumé d'un document joint
+            bonnes: [1]
+            explication: >-
+              Plus la réponse est précise, rare et vérifiable, plus l'invention est probable et
+              dangereuse, car elle a l'apparence du sérieux.
+          - question: Quelle parade fonctionne réellement ?
+            options:
+              - Décider à l'avance ce qui est vérifié, par qui et contre quelle source
+              - Demander à la machine de ne pas inventer
+              - Lui demander d'indiquer son niveau de confiance
+              - Utiliser un modèle plus récent
+            bonnes: [1]
+            explication: >-
+              Le modèle ne sait pas qu'il invente ; lui demander de le signaler produit une déclaration
+              plausible. Seule une règle de vérification humaine tient.
+
+          - question: Pourquoi demander à un modèle de signaler son incertitude ne suffit-il pas ?
+            options:
+              - Parce qu'il produit alors une déclaration d'incertitude plausible, pas une mesure
+              - Parce que la consigne est mal comprise
+              - Parce que le modèle refuse ce type de demande
+              - Parce que cela coûte trop de jetons
+            bonnes: [1]
+            explication: >-
+              Le modèle ne sait pas qu'il invente. Sa déclaration d'incertitude est encore du texte
+              plausible, produite par le même mécanisme.
+          - question: Quel type de demande présente le risque d'invention le plus faible ?
+            options:
+              - La reformulation d'un texte que vous fournissez
+              - Une référence réglementaire précise
+              - Une date historique peu connue
+              - Le nom d'une personne peu médiatisée
+            bonnes: [1]
+            explication: >-
+              Vous avez l'original sous les yeux : l'écart se voit immédiatement et ne coûte rien.
+      - num: "11"
+        title: "Prompt, consigne, rôle : parler à la machine pour obtenir ce qu'on veut"
+        contenu: >-
+          Le mot prompt désigne simplement ce que vous écrivez à la machine. Il n'y a là aucune magie
+          ni aucun secret à acheter, mais quelques habitudes qui changent beaucoup le résultat. Cette
+          séance les donne, et démonte au passage le commerce des formules miracles.
+        cours:
+          - titre: Un prompt est une consigne, et une bonne consigne est précise
+            texte: >-
+              Puisque la réponse est la suite plausible de ce qui précède, ce qui précède détermine
+              tout. Une demande vague produit une réponse vague, non parce que la machine est
+              paresseuse mais parce que la suite plausible d'une demande vague est un texte général.
+
+              Quatre éléments améliorent presque toujours un résultat. Le contexte : qui vous êtes, à
+              qui s'adresse le résultat, dans quel cadre. La tâche, formulée en un verbe clair :
+              résumer, comparer, reformuler, lister, traduire. La forme attendue : la longueur, la
+              structure, le registre. Et les limites : ce qu'il ne faut pas faire, ce qu'il faut
+              signaler si l'information manque.
+
+              Comparez. « Parle-moi de la retraite » produit un article d'encyclopédie. « Je conseille
+              une personne de cinquante-cinq ans en Côte d'Ivoire qui me demande comment se calcule sa
+              pension ; liste les éléments qu'il me faut réunir pour lui répondre, en dix points, et
+              signale ceux dont tu n'es pas certain » produit quelque chose d'utilisable. La seconde
+              demande n'est pas plus savante : elle est plus précise.
+          - titre: "Donner un rôle, montrer un exemple, demander les étapes"
+            texte: >-
+              Trois techniques reviennent, et elles méritent leur réputation.
+
+              Donner un rôle (« tu es un formateur qui s'adresse à des débutants ») oriente le
+              registre et le niveau de détail. Ce n'est pas une incantation : cela ajoute du contexte,
+              donc cela déplace la suite plausible.
+
+              Montrer un exemple du résultat attendu est plus efficace que de le décrire. Si vous
+              voulez des fiches dans un certain format, donnez-en une, même imparfaite. Cette méthode
+              est connue sous le nom d'apprentissage par l'exemple, ou few-shot en anglais ; elle
+              n'entraîne rien du tout, elle montre simplement la cible.
+
+              Demander les étapes (« procède point par point ») améliore les tâches qui demandent un
+              enchaînement, parce que le texte intermédiaire produit sert d'appui au texte suivant. La
+              méthode porte le nom de chaîne de pensée, ou chain of thought. Attention toutefois : des
+              étapes affichées ne sont pas une preuve de raisonnement, ce sont encore du texte
+              plausible, et elles peuvent être fausses tout en ayant l'air rigoureuses.
+            tableaux:
+              - titre: Quatre éléments d'une consigne utile
+                entetes: [Élément, Question à laquelle il répond, Exemple court]
+                lignes:
+                  - [Contexte, Pour qui et dans quel cadre, Je m'adresse à des débutants]
+                  - [Tâche, Que dois-je faire, Résume en dix points]
+                  - [Forme, Sous quelle apparence, Un tableau à trois colonnes]
+                  - [Limites, Qu'est-ce qui est interdit, Signale ce dont tu n'es pas sûr]
+          - titre: "Ce qu'on vous vendra, et qui ne vaut pas son prix"
+            texte: >-
+              Vous croiserez des recueils de formules présentées comme des secrets, des formations
+              courtes promettant la maîtrise du prompt, et des listes de mots qui débloqueraient des
+              capacités cachées. Deux remarques suffisent.
+
+              D'abord ces formules vieillissent très vite : chaque nouvelle version de modèle change
+              les comportements, et une astuce de l'an dernier peut n'avoir plus aucun effet. Ensuite
+              elles traitent la symptomatique et non le fond : ce qui manque le plus souvent n'est pas
+              la formule, c'est la clarté sur ce qu'on veut réellement obtenir. Une demande qu'on
+              n'arrive pas à formuler clairement est généralement une demande qu'on n'a pas encore
+              définie, et cela, c'est la résolution de problèmes de la séance 2, la compétence que la
+              machine ne reprend pas.
+
+              L'habitude la plus rentable est banale : écrivez votre demande, lisez la réponse,
+              repérez l'écart avec ce que vous vouliez, et précisez la demande. Trois tours de cette
+              boucle valent mieux que n'importe quel recueil.
+        travaux_pratiques: >-
+          Travail guidé, environ une heure. Prenez une tâche réelle de votre activité. Écrivez-en la
+          demande en une phrase, gardez la réponse. Réécrivez ensuite la demande avec les quatre
+          éléments de la séance, gardez la réponse. Comparez les deux et notez précisément ce qui a
+          changé. Faites enfin un troisième tour en corrigeant l'écart restant, et notez combien de
+          tours ont été nécessaires pour obtenir quelque chose d'utilisable.
+        mise_en_situation: >-
+          Un collègue vous montre une liste de formules magiques achetée en ligne et vous demande si
+          cela vaut le coup. Répondez en trois phrases : ce qui dans ces formules a un effet réel et
+          pourquoi, ce qui vieillira, et l'habitude gratuite qui remplace avantageusement l'achat.
+        livrable: >-
+          Une page portant les trois versions de votre demande, les trois réponses obtenues, et
+          l'analyse de ce qui a changé à chaque tour.
+        quiz:
+          - question: Pourquoi une demande vague produit-elle une réponse vague ?
+            options:
+              - Parce que la suite plausible d'une demande vague est un texte général
+              - Parce que la machine économise ses calculs
+              - Parce qu'elle attend une confirmation
+              - Parce qu'elle ne comprend pas le français
+            bonnes: [1]
+            explication: >-
+              La réponse est la suite plausible de ce qui précède : ce qui précède détermine donc
+              entièrement le registre et la précision du résultat.
+          - question: Que faut-il penser d'étapes de raisonnement affichées par un modèle ?
+            options:
+              - Ce sont du texte plausible, qui peut être faux tout en paraissant rigoureux
+              - Ce sont la preuve que le modèle a raisonné correctement
+              - Ce sont une trace technique interne fiable
+              - Ce sont une obligation réglementaire
+            bonnes: [1]
+            explication: >-
+              La chaîne de pensée améliore souvent le résultat, mais les étapes affichées restent du
+              texte produit, non une preuve de raisonnement.
+          - question: Quelle habitude vaut mieux qu'un recueil de formules ?
+            options:
+              - Écrire, lire l'écart avec ce qu'on voulait, préciser, recommencer
+              - Apprendre par cœur les formules les plus récentes
+              - Utiliser systématiquement le modèle le plus cher
+              - Poser toujours la même question
+            bonnes: [1]
+            explication: >-
+              Les formules vieillissent à chaque version de modèle. La boucle demande, lecture de
+              l'écart, précision ne vieillit pas et travaille sur le vrai manque : la clarté du besoin.
+
+          - question: Pourquoi montrer un exemple vaut-il mieux que décrire le format voulu ?
+            options:
+              - Parce que l'exemple montre la cible et déplace la suite plausible
+              - Parce que cela entraîne le modèle sur votre format
+              - Parce que cela réduit le coût en jetons
+              - Parce que la description est interdite
+            bonnes: [1]
+            explication: >-
+              La méthode est appelée apprentissage par l'exemple. Elle n'entraîne rien : elle ajoute
+              du contexte qui oriente la production.
+          - question: Que manque-t-il le plus souvent à une demande qui donne un mauvais résultat ?
+            options:
+              - La clarté sur ce qu'on veut réellement obtenir
+              - Les mots-clés techniques appropriés
+              - Un modèle plus performant
+              - Une formule d'ouverture polie
+            bonnes: [1]
+            explication: >-
+              Une demande qu'on n'arrive pas à formuler clairement est une demande qu'on n'a pas
+              définie. C'est la résolution de problèmes de la séance 2.
+  - title: "Bloc 4 — L'IA au travail (séances 12 à 14)"
+    modules:
+      - num: "12"
+        title: "RAG, agent, outil : ce que ces mots désignent vraiment"
+        contenu: >-
+          Trois mots qu'on vous servira dans toute discussion commerciale. Ils désignent des
+          dispositifs simples à comprendre une fois qu'on sait ce qu'est un modèle de langage, et ils
+          répondent chacun à une limite précise vue dans le bloc précédent.
+        cours:
+          - titre: "Le RAG : donner à lire avant de répondre"
+            texte: >-
+              Un modèle ignore vos documents internes et s'arrête à sa date de coupure. La parade la
+              plus répandue consiste, avant de lui poser la question, à aller chercher dans vos
+              documents les quelques passages pertinents et à les coller dans la fenêtre de contexte.
+              Le modèle répond alors à partir de ce qu'on vient de lui donner à lire.
+
+              Ce dispositif s'appelle RAG, pour génération augmentée par la recherche. Retenez l'image
+              de l'examen à documents ouverts : on ne change pas la personne, on lui met les bons
+              textes sous les yeux.
+
+              Deux conséquences pratiques. D'abord la qualité dépend d'abord de la recherche : si les
+              bons passages ne sont pas retrouvés, le modèle répondra quand même, avec ce qu'il a.
+              Ensuite c'est le seul dispositif courant qui permet d'exiger des citations vérifiables,
+              puisque les passages fournis existent réellement. Quand un fournisseur parle de RAG,
+              demandez à voir les passages cités sous chaque réponse : s'ils ne sont pas affichés,
+              l'avantage principal est perdu.
+          - titre: "L'outil : laisser la machine appeler un programme"
+            texte: >-
+              Un modèle ne calcule pas et ne consulte rien, on l'a vu. On peut en revanche lui donner
+              la possibilité de demander qu'on exécute un programme pour lui : une calculatrice, une
+              recherche sur le web, une requête dans votre base de données, l'envoi d'un courriel.
+
+              Le modèle produit alors non pas une réponse mais une demande d'appel, le système exécute
+              le programme, et le résultat revient dans la fenêtre de contexte. C'est ce qu'on appelle
+              un outil, ou tool, et l'opération s'appelle un appel d'outil.
+
+              C'est une amélioration considérable de la fiabilité, parce que le calcul est fait par
+              une calculatrice et la recherche par un moteur de recherche. C'est aussi, et il faut le
+              dire clairement, l'endroit où le risque change de nature : un modèle qui peut envoyer un
+              courriel, modifier un dossier ou déclencher un paiement peut le faire à tort. La
+              question à poser devient alors : que peut-il faire sans qu'un humain confirme ?
+          - titre: "L'agent : une boucle, et pourquoi le mot est galvaudé"
+            texte: >-
+              Un agent est un modèle placé dans une boucle : il reçoit un but, choisit une action,
+              observe le résultat, choisit l'action suivante, et ainsi de suite jusqu'à ce qu'il
+              estime avoir fini. Rien de plus. L'intérêt est qu'une tâche en plusieurs étapes n'a plus
+              besoin d'être découpée à l'avance par un humain.
+
+              Le mot est aujourd'hui employé pour à peu près tout, y compris pour de simples
+              assistants qui répondent en un tour. La question qui tranche est simple : le système
+              décide-t-il lui-même de ses étapes suivantes, ou suit-il un enchaînement écrit par
+              quelqu'un ? Les deux sont respectables ; seul le premier est un agent, et seul le
+              premier pose la question du nombre d'étapes et du coût.
+
+              Deux limites valent d'être connues avant toute discussion. Une boucle autonome peut
+              tourner longtemps, donc coûter beaucoup, d'où l'importance d'une borne fixée à l'avance.
+              Et une erreur commise à l'étape trois est reprise comme un fait acquis aux étapes
+              suivantes, ce qui amplifie les écarts au lieu de les corriger.
+            tableaux:
+              - titre: Trois dispositifs, trois limites traitées
+                entetes: [Dispositif, Limite qu'il traite, Question à poser]
+                lignes:
+                  - ["RAG", "Le modèle ignore vos documents", "Les passages cités sont-ils affichés ?"]
+                  - ["Outil", "Le modèle ne calcule ni ne consulte", "Que peut-il faire sans confirmation ?"]
+                  - ["Agent", "La tâche a plusieurs étapes", "Qui décide des étapes et jusqu'où ?"]
+        travaux_pratiques: >-
+          Travail guidé, environ une heure. Choisissez trois tâches de votre activité. Pour chacune,
+          déterminez lequel des trois dispositifs serait utile, et écrivez la raison en une phrase.
+          Pour celle qui appellerait un agent, écrivez la borne que vous fixeriez : nombre d'étapes,
+          budget, et les actions qui exigeraient une confirmation humaine.
+        mise_en_situation: >-
+          Un fournisseur vous propose « un agent IA qui gère vos relances clients de bout en bout ».
+          Posez les trois questions décisives : qui décide des étapes, que peut-il faire sans
+          confirmation, et comment on arrête la boucle si elle dérape.
+        livrable: >-
+          Une page portant les trois tâches avec leur dispositif et sa justification, et les bornes
+          écrites pour le cas de l'agent.
+        quiz:
+          - question: À quelle image correspond le RAG ?
+            options:
+              - Un examen à documents ouverts
+              - Un entraînement supplémentaire du modèle
+              - Une base de données interrogée directement par l'utilisateur
+              - Un filtre appliqué après la réponse
+            bonnes: [1]
+            explication: >-
+              On ne change pas le modèle : on lui met les bons passages sous les yeux avant qu'il
+              réponde. C'est aussi ce qui rend les citations vérifiables possibles.
+          - question: Qu'est-ce qui distingue un agent d'un simple assistant ?
+            options:
+              - L'agent décide lui-même de ses étapes suivantes
+              - L'agent utilise un modèle plus récent
+              - L'agent répond plus vite
+              - L'agent fonctionne sans connexion
+            bonnes: [1]
+            explication: >-
+              Un enchaînement écrit par un humain n'est pas un agent. Seule la décision autonome des
+              étapes pose les questions de borne et de coût.
+          - question: Quel risque nouveau apparaît avec les outils ?
+            options:
+              - Le modèle peut déclencher une action réelle à tort
+              - Le modèle devient plus lent
+              - Le modèle consomme plus de jetons
+              - Le modèle oublie plus vite
+            bonnes: [1]
+            explication: >-
+              Envoyer un courriel, modifier un dossier ou payer sont des actes. La question devient
+              ce qu'il peut faire sans confirmation humaine.
+
+          - question: De quoi dépend d'abord la qualité d'un dispositif RAG ?
+            options:
+              - De la recherche qui retrouve les bons passages
+              - De la taille du modèle employé
+              - De la température choisie
+              - Du nombre d'utilisateurs simultanés
+            bonnes: [1]
+            explication: >-
+              Si les bons passages ne sont pas retrouvés, le modèle répond quand même avec ce qu'il a.
+              D'où l'exigence de voir les passages cités.
+          - question: Pourquoi borner à l'avance le nombre d'étapes d'un agent ?
+            options:
+              - Parce qu'une boucle autonome peut tourner longtemps et coûter beaucoup
+              - Parce que la loi l'impose
+              - Parce que le modèle s'épuise au-delà de dix étapes
+              - Parce que les utilisateurs n'attendent pas
+            bonnes: [1]
+            explication: >-
+              Une erreur commise à l'étape trois est de plus reprise comme un fait acquis aux étapes
+              suivantes, ce qui amplifie les écarts.
+      - num: "13"
+        title: "Ce que l'IA fait bien, ce qu'elle fait mal, ce qu'elle ne fera pas"
+        contenu: >-
+          Une séance de tri, qui rassemble tout ce qui précède en une grille utilisable. L'objectif
+          n'est pas de décider si l'IA est bonne ou mauvaise, question sans réponse, mais de savoir
+          reconnaître, devant une tâche précise, dans laquelle des trois catégories elle tombe.
+        cours:
+          - titre: Ce qu'elle fait bien, et pourquoi
+            texte: >-
+              Elle excelle là où il existe beaucoup d'exemples semblables et où la vérification est
+              facile ou peu coûteuse. Reformuler un texte que vous avez sous les yeux, en changer le
+              registre, le résumer, le traduire. Produire une première version que vous allez de toute
+              façon reprendre. Extraire une information d'un document fourni. Proposer vingt idées dont
+              vous n'en garderez que deux.
+
+              Le point commun de ces tâches est que l'erreur se voit immédiatement et ne coûte rien.
+              Vous avez l'original sous les yeux, vous jugez le résultat, vous corrigez. La machine
+              fait gagner du temps sur la partie mécanique, et le jugement reste là où il était.
+
+              Elle est également très bonne sur un terrain moins cité : rendre accessible. Expliquer
+              un texte administratif à quelqu'un qui n'en a pas le vocabulaire, résumer un document
+              long pour quelqu'un qui n'a pas le temps, traduire pour quelqu'un qui ne lit pas la
+              langue. C'est, pour beaucoup de gens, l'usage le plus utile de tous.
+          - titre: Ce qu'elle fait mal, et où l'on se brûle
+            texte: >-
+              Elle est mauvaise dès que la réponse doit être exacte et vérifiable, et que personne ne
+              vérifiera : une référence, un chiffre, une date, une règle locale. C'est la séance 10.
+
+              Elle est mauvaise sur tout ce qui est rare dans ses données : votre secteur si étroit,
+              votre réglementation nationale, vos pratiques internes. Et elle ne signale pas qu'elle
+              entre en terrain peu connu.
+
+              Elle est mauvaise quand la régularité importe plus que la qualité moyenne : si deux
+              demandes identiques doivent recevoir la même réponse, la variabilité de la séance 9
+              devient un défaut rédhibitoire sans précautions.
+
+              Elle est enfin mauvaise, et c'est le plus coûteux, quand on l'emploie à décider de
+              quelque chose qui concerne une personne. Non pas parce qu'elle serait moins juste qu'un
+              humain, ce qui demanderait à être mesuré, mais parce qu'une décision concernant une
+              personne doit pouvoir être expliquée, contestée et assumée par quelqu'un.
+            tableaux:
+              - titre: La grille de tri
+                entetes: [Catégorie, Signe distinctif, Exemple]
+                lignes:
+                  - [Fait bien, La vérification est facile et immédiate, Reformuler un texte fourni]
+                  - [Fait bien, Le résultat est une proposition à trier, Lister des idées]
+                  - [Fait mal, Le fait doit être exact et personne ne vérifie, Citer une référence légale]
+                  - [Fait mal, La régularité prime, Traiter deux dossiers identiques à l'identique]
+                  - [Ne fera pas, Il faut assumer la décision, Refuser un dossier]
+                  - [Ne fera pas, Il faut connaître le contexte non écrit, Arbitrer entre deux collègues]
+          - titre: Ce qu'elle ne fera pas, et qui n'est pas une question de progrès
+            texte: >-
+              Certaines choses ne relèvent pas d'une version future. Assumer une décision, par exemple :
+              on peut confier un calcul à une machine, on ne peut pas lui confier la responsabilité,
+              parce que la responsabilité est un lien entre des personnes.
+
+              Connaître ce qui n'est écrit nulle part relève de la même catégorie. Vous savez que ce
+              fournisseur-là livre toujours en retard en période de pluie, que cette famille traverse
+              une période difficile, que ce dossier est sensible pour une raison qui n'apparaît dans
+              aucun document. C'est le cercle du savoir métier de la séance 2, et il ne devient pas
+              une donnée.
+
+              Enfin, décider de ce qui compte. Une machine optimise ce qu'on lui a dit d'optimiser.
+              Choisir ce qu'on veut maximiser, et ce qu'on refuse de sacrifier pour cela, est une
+              décision politique au sens propre : elle engage des valeurs et des personnes. La laisser
+              se décider par défaut, parce que c'était le réglage d'usine, reste une décision, prise
+              par quelqu'un d'autre.
+        travaux_pratiques: >-
+          Travail guidé, environ une heure. Listez dix tâches de votre activité ou de votre semaine.
+          Classez chacune dans l'une des trois catégories, avec une ligne de justification. Pour les
+          tâches classées « fait mal », indiquez ce qu'il faudrait ajouter (vérification, source,
+          réglage) pour les faire passer dans la première catégorie. Pour celles classées « ne fera
+          pas », dites ce que la machine pourrait tout de même préparer.
+        mise_en_situation: >-
+          Votre direction envisage d'automatiser le tri des demandes entrantes, dont une partie
+          concerne des personnes en difficulté. En vous appuyant sur la grille, dites ce que vous
+          accepteriez de confier à la machine, ce que vous refuseriez, et la frontière exacte entre
+          les deux.
+        livrable: >-
+          Une page portant les dix tâches classées avec leur justification, les ajouts proposés, et la
+          frontière énoncée pour la mise en situation.
+        quiz:
+          - question: Quel est le point commun des tâches où l'IA est la plus utile ?
+            options:
+              - L'erreur se voit immédiatement et coûte peu
+              - Elles sont techniques
+              - Elles sont répétitives
+              - Elles concernent des documents longs
+            bonnes: [1]
+            explication: >-
+              Reformuler, résumer, proposer des idées : vous avez l'original sous les yeux et le
+              jugement reste là où il était.
+          - question: Pourquoi une décision concernant une personne ne doit-elle pas être confiée à la machine ?
+            options:
+              - Parce qu'elle doit pouvoir être expliquée, contestée et assumée
+              - Parce que la machine est moins juste qu'un humain
+              - Parce que la loi l'interdit partout
+              - Parce que la machine est trop lente
+            bonnes: [1]
+            explication: >-
+              La question n'est pas la justesse, qui se mesurerait, mais la responsabilité, qui est un
+              lien entre des personnes.
+          - question: Que signifie « la machine optimise ce qu'on lui a dit d'optimiser » ?
+            options:
+              - Choisir le critère à maximiser est une décision humaine, jamais technique
+              - La machine améliore toujours ses propres critères
+              - Le réglage d'usine est le meilleur choix
+              - La machine refuse les critères contradictoires
+            bonnes: [1]
+            explication: >-
+              Laisser le critère par défaut reste une décision, simplement prise par quelqu'un
+              d'autre et pour d'autres raisons que les vôtres.
+
+          - question: Quel usage de l'IA est, pour beaucoup de gens, le plus utile de tous ?
+            options:
+              - Rendre accessible un texte administratif, long ou en langue étrangère
+              - Rédiger des contrats
+              - Décider de l'attribution d'une aide
+              - Prédire les ventes d'un commerce
+            bonnes: [1]
+            explication: >-
+              Expliquer, résumer et traduire sont des tâches où l'original reste sous les yeux et où
+              le gain est immédiat pour la personne concernée.
+          - question: Pourquoi la variabilité des réponses devient-elle un défaut rédhibitoire dans certains cas ?
+            options:
+              - Quand deux demandes identiques doivent recevoir la même réponse
+              - Quand on cherche des idées nouvelles
+              - Quand le texte doit être long
+              - Quand plusieurs personnes utilisent le service
+            bonnes: [1]
+            explication: >-
+              La régularité prime alors sur la qualité moyenne, et il faut des précautions
+              particulières, vues à la séance 9.
+      - num: "14"
+        title: "Votre métier dans le diagramme : où l'IA vous rejoint"
+        contenu: >-
+          Retour à la carte de la séance 2, cette fois appliquée à vous. Cette séance ne prédit pas
+          l'avenir de votre métier : elle vous donne la méthode pour l'examiner vous-même, tâche par
+          tâche, et pour distinguer ce qui sera transformé de ce qui disparaîtra.
+        cours:
+          - titre: Un métier n'est pas une tâche
+            texte: >-
+              Les annonces de disparition de métiers reposent presque toujours sur une confusion :
+              elles observent qu'une tâche du métier devient automatisable et en concluent que le
+              métier disparaît. Or un métier est un assemblage de tâches hétérogènes, dont certaines
+              seulement tombent dans la première catégorie de la séance 13.
+
+              Prenez le travail d'un comptable. Saisir des écritures, rapprocher des relevés,
+              produire un état : très automatisable, et d'ailleurs largement automatisé depuis
+              longtemps. Expliquer à un dirigeant pourquoi son résultat n'est pas ce qu'il espérait,
+              arbitrer un traitement douteux, répondre d'un choix devant un contrôleur : pas du tout.
+              Le métier s'est transformé, la profession existe toujours, et la part du temps consacrée
+              au conseil a augmenté.
+
+              Le bon exercice n'est donc jamais « mon métier va-t-il disparaître », question à
+              laquelle personne ne peut répondre honnêtement, mais « lesquelles de mes tâches
+              changent, et vers quoi se déplace la part qui reste ».
+          - titre: La méthode, en quatre colonnes
+            texte: >-
+              Prenez une feuille et faites quatre colonnes. Dans la première, listez vos tâches
+              réelles, celles d'une semaine ordinaire, pas celles de votre fiche de poste. Soyez
+              précis : non pas « gérer les dossiers » mais « vérifier que chaque dossier contient les
+              cinq pièces obligatoires ».
+
+              Dans la deuxième colonne, la part de temps approximative. Vous serez probablement surpris
+              par ce qui occupe réellement vos journées.
+
+              Dans la troisième, la catégorie de la séance 13 : fait bien, fait mal, ne fera pas.
+
+              Dans la quatrième, et c'est la plus importante, ce que vous feriez du temps libéré si la
+              première catégorie était effectivement prise en charge. Cette colonne est celle dont on
+              ne parle jamais, et c'est pourtant la seule qui décrit ce que deviendrait le métier.
+
+              Faites l'exercice honnêtement, y compris si la quatrième colonne reste vide : une case
+              vide est une information précieuse, qui mérite d'être discutée avec quelqu'un plutôt que
+              gardée pour soi.
+            tableaux:
+              - titre: Un exemple de grille remplie
+                entetes: [Tâche, Part du temps, Catégorie, Temps libéré employé à]
+                lignes:
+                  - [Vérifier les pièces d'un dossier, Trente pour cent, Fait bien avec vérification, Traiter les cas douteux]
+                  - [Rédiger un courrier type, Dix pour cent, Fait bien, Recevoir les demandeurs]
+                  - [Expliquer un refus à un demandeur, Quinze pour cent, Ne fera pas, Inchangé]
+                  - [Arbitrer un cas limite, Dix pour cent, Ne fera pas, Inchangé]
+                  - [Chercher une règle applicable, Vingt pour cent, Fait mal sans source vérifiable, Inchangé pour l'instant]
+          - titre: Les deux compétences qui prennent de la valeur
+            texte: >-
+              Revenez une dernière fois aux deux cases à côté des trois cercles : la résolution de
+              problèmes et la communication.
+
+              Quand produire un texte devient rapide et bon marché, ce qui devient rare et cher est de
+              savoir quel texte il fallait produire, pour qui, et ce qu'il fallait taire. Quand
+              obtenir une analyse devient immédiat, ce qui devient rare est de savoir quelle question
+              valait la peine d'être posée et quelles conclusions sont abusives.
+
+              C'est la raison pour laquelle ce parcours ne vous a pas appris à programmer. La
+              compétence qui vous sert ici n'est pas technique. Elle consiste à connaître votre
+              domaine assez bien pour reconnaître une réponse fausse, et à savoir dire clairement ce
+              que vous avez compris et ce dont vous n'êtes pas sûr. Vous la possédez sans doute déjà ;
+              il vous manquait le vocabulaire pour l'exercer sur ce terrain-ci, et c'est fait.
+        travaux_pratiques: >-
+          Travail guidé, environ deux heures. Remplissez la grille à quatre colonnes pour votre propre
+          activité, avec au moins dix tâches. Puis choisissez la tâche où le gain serait le plus grand
+          et décrivez en une demi-page comment vous l'organiseriez concrètement : ce que ferait la
+          machine, ce que vous vérifieriez, à quel moment, et ce qui se passerait en cas d'erreur.
+        mise_en_situation: >-
+          Votre direction vous demande un avis écrit sur l'opportunité d'introduire un assistant dans
+          votre service. Rédigez-le en une page, en vous appuyant sur votre grille : ce que vous
+          recommandez, ce que vous écartez, ce que vous voulez mesurer avant de généraliser.
+        livrable: >-
+          La grille complète à quatre colonnes, la demi-page d'organisation de la tâche choisie, et
+          l'avis écrit d'une page.
+        quiz:
+          - question: Pourquoi la question « mon métier va-t-il disparaître » est-elle mal posée ?
+            options:
+              - Parce qu'un métier est un assemblage de tâches dont certaines seulement changent
+              - Parce que l'avenir est imprévisible par nature
+              - Parce que les métiers ne disparaissent jamais
+              - Parce que la réponse dépend du pays
+            bonnes: [1]
+            explication: >-
+              Observer qu'une tâche devient automatisable ne dit rien du métier entier. La bonne
+              question porte sur les tâches et sur l'emploi du temps libéré.
+          - question: Quelle colonne de la grille est la plus importante ?
+            options:
+              - Ce que vous feriez du temps libéré
+              - La part de temps de chaque tâche
+              - La catégorie de chaque tâche
+              - La liste des tâches
+            bonnes: [1]
+            explication: >-
+              C'est la seule qui décrit ce que deviendrait le métier, et c'est celle dont on ne parle
+              jamais. Une case vide y est une information à discuter.
+          - question: Quelles compétences prennent de la valeur quand produire devient bon marché ?
+            options:
+              - Savoir quelle question poser et dire clairement ce dont on n'est pas sûr
+              - La rapidité d'exécution et la mémoire
+              - La programmation et les statistiques
+              - La connaissance des outils du marché
+            bonnes: [1]
+            explication: >-
+              Ce sont les deux cases placées à côté des trois cercles : la résolution de problèmes et
+              la communication, que la machine ne reprend pas.
+
+          - question: Qu'est-il arrivé au métier de comptable avec l'automatisation ?
+            options:
+              - Il s'est transformé, la part de conseil augmentant
+              - Il a disparu dans la plupart des pays
+              - Il n'a pas changé du tout
+              - Il est devenu entièrement automatique
+            bonnes: [1]
+            explication: >-
+              Les tâches de saisie ont été automatisées, celles d'explication et d'arbitrage non.
+              Transformé et supprimé ne sont pas synonymes.
+          - question: Comment formuler les tâches dans la grille à quatre colonnes ?
+            options:
+              - De façon précise, telles qu'elles sont réellement faites dans la semaine
+              - Telles qu'elles figurent dans la fiche de poste
+              - En les regroupant par grandes missions
+              - En reprenant les intitulés du cours
+            bonnes: [1]
+            explication: >-
+              Non pas « gérer les dossiers » mais « vérifier que chaque dossier contient les cinq
+              pièces obligatoires » : seule cette précision permet de classer.
+  - title: "Bloc 5 — Garder la main (séances 15 et 16)"
+    modules:
+      - num: "15"
+        title: "Vie privée, droits, confidentialité : ce qu'on ne donne pas à une machine"
+        contenu: >-
+          Une séance très concrète. Ce que vous tapez dans un assistant part quelque part, est traité
+          par quelqu'un, et obéit à des règles que peu de gens lisent. Savoir ce qui se passe permet
+          de décider, plutôt que de s'inquiéter vaguement ou de ne pas s'inquiéter du tout.
+        cours:
+          - titre: Où va ce que vous écrivez
+            texte: >-
+              Quand vous utilisez un assistant en ligne gratuit, votre texte est envoyé aux serveurs
+              du fournisseur, souvent situés hors de votre pays. Il y est traité, conservé un certain
+              temps, et selon les conditions acceptées il peut être lu par des humains à des fins
+              d'amélioration du service, voire servir à entraîner de futurs modèles.
+
+              Ce n'est ni un scandale ni un détail : c'est le contrat, et il est écrit. Ce qui pose
+              problème, c'est que presque personne ne le lit, et que l'interface conversationnelle
+              donne l'impression d'une confidence privée alors qu'il s'agit d'un envoi à un tiers.
+
+              Les offres professionnelles payantes proposent généralement un engagement différent :
+              pas d'entraînement sur vos données, conservation limitée, parfois un choix de la région
+              d'hébergement. C'est précisément ce que vous achetez en plus, et c'est ce qu'il faut
+              vérifier noir sur blanc plutôt que de le supposer.
+
+              Une troisième voie existe : faire tourner un modèle ouvert sur une machine que vous
+              contrôlez. Rien ne sort alors, au prix d'un modèle souvent moins performant et d'un
+              travail d'installation.
+            tableaux:
+              - titre: Trois usages, trois niveaux d'exposition
+                entetes: [Usage, Où va le texte, Entraînement sur vos données, À réserver à]
+                lignes:
+                  - [Service gratuit grand public, Chez le fournisseur, Souvent possible, Ce qui pourrait être public]
+                  - [Offre professionnelle, Chez le fournisseur, Normalement exclu par contrat, Les données internes courantes]
+                  - [Modèle sur votre machine, Nulle part, Impossible, Les données sensibles]
+          - titre: La règle simple qui évite presque tous les accidents
+            texte: >-
+              Avant de coller un texte dans un assistant, posez-vous une question unique : serais-je
+              gêné que ce texte soit lu par un inconnu ? Si la réponse est oui, soit vous changez
+              d'outil, soit vous retirez d'abord ce qui pose problème.
+
+              Trois catégories méritent une attention particulière. Les données personnelles
+              d'autrui : nom, adresse, numéro, état de santé, situation familiale. Ce ne sont pas vos
+              données, vous n'avez pas qualité pour décider de leur sort. Les secrets professionnels :
+              un contrat en cours, un dossier sous procédure, une information financière non publiée.
+              Et les identifiants : mot de passe, code d'accès, clé : jamais, sous aucun prétexte, y
+              compris pour demander de l'aide.
+
+              La parade pratique est l'anonymisation : remplacez les noms par des lettres, les
+              montants par des ordres de grandeur, les dates par des durées. Dans la très grande
+              majorité des cas, la demande fonctionne aussi bien, car ce qui vous intéresse est la
+              forme de la réponse, pas l'identité des personnes.
+          - titre: Ce que la loi dit, et ce qu'elle ne dit pas encore
+            texte: >-
+              Le cadre évolue vite et diffère d'un pays à l'autre, ce qui est précisément une raison
+              de ne pas s'en remettre à une règle entendue quelque part. Deux principes tiennent
+              néanmoins partout.
+
+              Le premier : la responsabilité ne se délègue pas à l'outil. Si une décision vous
+              incombe, elle vous incombe, qu'elle ait été préparée par une machine ou non. Aucune
+              juridiction connue n'admet qu'un logiciel soit responsable.
+
+              Le second : les données personnelles d'autrui sont protégées, dans la plupart des pays,
+              par des textes qui exigent un fondement pour les traiter et une information des
+              personnes concernées. En Côte d'Ivoire, la loi n° 2013-450 relative à la protection des
+              données à caractère personnel pose ce cadre. Les transmettre à un service tiers est un
+              traitement, même quand on a le sentiment de simplement poser une question.
+
+              En revanche beaucoup de points restent ouverts : à qui appartient un texte produit par
+              une machine, ce qu'il faut déclarer à un client, ce qu'un employeur peut exiger. Quand
+              on vous affirme une certitude sur ces sujets, demandez la source : la prudence
+              consiste à documenter vos choix, pas à attendre une règle définitive.
+        travaux_pratiques: >-
+          Travail guidé, environ une heure. Trouvez les conditions d'utilisation de l'assistant que
+          vous employez le plus et cherchez trois informations : combien de temps vos échanges sont
+          conservés, s'ils peuvent servir à l'entraînement, et comment demander leur suppression.
+          Notez si vous avez trouvé, ou pas. Prenez ensuite un texte réel de votre activité et
+          produisez-en une version anonymisée utilisable.
+        mise_en_situation: >-
+          Une collègue s'apprête à coller le dossier complet d'un bénéficiaire dans un assistant
+          gratuit pour en obtenir un résumé. Dites-lui en trois phrases ce qui vous gêne, et proposez
+          la manière d'obtenir le même service sans ce risque.
+        livrable: >-
+          Une page portant les trois informations cherchées dans les conditions d'utilisation avec le
+          constat de ce qui n'a pas été trouvé, et le texte anonymisé avec la liste de ce qui a été
+          retiré.
+        quiz:
+          - question: Quelle question simple poser avant de coller un texte dans un assistant ?
+            options:
+              - Serais-je gêné que ce texte soit lu par un inconnu ?
+              - Ce texte est-il assez long pour être utile ?
+              - Le service est-il gratuit ?
+              - Le texte est-il dans la bonne langue ?
+            bonnes: [1]
+            explication: >-
+              L'interface conversationnelle donne l'impression d'une confidence privée alors qu'il
+              s'agit d'un envoi à un tiers. Cette question rétablit la réalité.
+          - question: Que peut-on déléguer à un outil en matière de responsabilité ?
+            options:
+              - Rien, la responsabilité d'une décision reste celle de la personne
+              - La responsabilité technique uniquement
+              - Tout, si le contrat le prévoit
+              - La responsabilité en cas d'erreur manifeste
+            bonnes: [1]
+            explication: >-
+              Aucune juridiction connue n'admet qu'un logiciel soit responsable. Une décision qui vous
+              incombe vous incombe, préparée par une machine ou non.
+          - question: Quelle parade pratique permet d'utiliser un assistant sans exposer des données ?
+            options:
+              - Anonymiser, en remplaçant noms, montants et dates
+              - Écrire en abrégé
+              - Poser la question en plusieurs fois
+              - Effacer la conversation après usage
+            bonnes: [1]
+            explication: >-
+              Ce qui vous intéresse est généralement la forme de la réponse et non l'identité des
+              personnes : la demande fonctionne presque toujours aussi bien anonymisée.
+
+          - question: Que faut-il ne jamais écrire dans un assistant, sous aucun prétexte ?
+            options:
+              - Un mot de passe, un code d'accès ou une clé
+              - Le nom de son employeur
+              - Une question mal formulée
+              - Un texte en langue étrangère
+            bonnes: [1]
+            explication: >-
+              Y compris pour demander de l'aide à leur sujet. Les deux autres catégories sensibles
+              sont les données personnelles d'autrui et les secrets professionnels.
+          - question: Pourquoi les données personnelles d'autrui demandent-elles une attention particulière ?
+            options:
+              - Parce que ce ne sont pas vos données et que leur transmission est un traitement
+              - Parce qu'elles alourdissent la demande
+              - Parce qu'elles réduisent la qualité de la réponse
+              - Parce qu'elles coûtent plus de jetons
+            bonnes: [1]
+            explication: >-
+              Vous n'avez pas qualité pour décider de leur sort. En Côte d'Ivoire, la loi n° 2013-450
+              encadre ce traitement, même quand on a le sentiment de simplement poser une question.
+      - num: "16"
+        title: "Vérifier, décider, assumer : la compétence qui reste la vôtre"
+        contenu: >-
+          Dernière séance. Elle ne contient aucun mot nouveau : elle assemble tout ce qui précède en
+          une manière de travailler, et se conclut par le dossier qui clôt le parcours. L'objectif
+          est que vous repartiez non pas avec des connaissances à retenir, mais avec des réflexes.
+        cours:
+          - titre: Les six questions qui suffisent
+            texte: >-
+              Devant n'importe quel système présenté comme de l'IA, six questions font le tri, et vous
+              savez désormais pourquoi chacune compte.
+
+              Le comportement a-t-il été écrit par quelqu'un ou appris sur des exemples ? Séance 3.
+              Sur quelles données, de quand, produites par qui ? Séance 5. Le score annoncé a-t-il été
+              mesuré sur des cas jamais vus, et comment se répartissent les deux types d'erreurs ?
+              Séance 6. Les performances ont-elles été mesurées groupe par groupe ? Séance 7. Que
+              peut-il faire sans qu'un humain confirme ? Séance 12. Et enfin : qui répond quand il se
+              trompe ? Séance 13.
+
+              Aucune de ces questions n'exige de compétence technique. Toutes exigent de connaître
+              votre domaine, ce qui est votre cas. Un interlocuteur sérieux y répond volontiers et
+              avec des limites ; un interlocuteur embarrassé vous a répondu aussi.
+            tableaux:
+              - titre: Les six questions, et ce qu'une mauvaise réponse révèle
+                entetes: [Question, Ce qu'une réponse évasive signifie]
+                lignes:
+                  - ["Écrit ou appris ?", "On ne sait pas ce qu'il faut vérifier"]
+                  - ["Quelles données ?", "Les erreurs à venir seront inexplicables"]
+                  - ["Mesuré sur quoi ?", "Le chiffre annoncé ne vaut rien"]
+                  - ["Mesuré par groupe ?", "Les écarts n'ont pas été cherchés"]
+                  - ["Que fait-il sans confirmation ?", "Le risque d'action n'a pas été borné"]
+                  - ["Qui répond en cas d'erreur ?", "Personne, et c'est le problème"]
+          - titre: Votre propre lexique, et pourquoi il vaut mieux qu'un glossaire
+            texte: >-
+              Vous avez rencontré une trentaine de termes au long de ce parcours. Un glossaire tout
+              fait s'oublie ; un lexique que vous avez écrit vous-même, avec vos propres exemples,
+              reste.
+
+              La règle d'écriture est simple et exigeante : une définition en une phrase, sans aucun
+              autre terme technique, et un exemple tiré de votre activité. Si vous n'arrivez pas à
+              écrire la phrase sans utiliser un autre mot du lexique, c'est que le terme n'est pas
+              encore clair, et c'est une information utile.
+
+              Ce lexique est aussi ce qui vous permettra d'expliquer à d'autres, ce qui est la
+              deuxième compétence de la carte. Expliquer oblige à comprendre, et vous serez
+              probablement, dans votre entourage, la personne qui sait de quoi il s'agit.
+          - titre: Ce que vous emportez
+            texte: >-
+              Vous ne savez pas programmer un modèle, et ce n'était pas le but. Vous savez ce qu'est
+              un modèle, comment il est fait, sur quoi il se trompe et pourquoi.
+
+              Vous ne saurez pas prédire l'avenir de votre métier, et personne ne le peut
+              honnêtement. Vous savez examiner vos tâches une par une et dire ce qui change.
+
+              Vous ne serez pas à l'abri d'une erreur, et aucun outil ne vous en met à l'abri. Vous
+              savez où la vérification doit être placée pour que l'erreur soit vue avant d'avoir des
+              conséquences.
+
+              Et devant quelqu'un qui emploie ces mots pour impressionner, vous savez lesquels ont un
+              sens précis et lesquels n'en ont pas. C'est, de tout ce parcours, ce qui vous servira le
+              plus souvent.
+        travaux_pratiques: >-
+          Travail final, environ trois heures. Composez votre lexique personnel : trente termes
+          rencontrés dans le parcours, chacun avec une définition d'une phrase sans jargon et un
+          exemple tiré de votre activité. Choisissez ensuite trois usages réels de l'IA que vous avez
+          observés autour de vous, dans la presse ou dans votre organisation, et soumettez chacun aux
+          six questions, en notant les réponses obtenues ou l'impossibilité de les obtenir. Concluez
+          chaque cas par un avis d'une ligne : à encourager, à encadrer, ou à écarter, et pourquoi.
+        mise_en_situation: >-
+          On vous demande d'animer une heure d'information sur l'IA pour des collègues qui n'y
+          connaissent rien. Écrivez le plan de cette heure en cinq points, en choisissant ce que vous
+          garderiez du parcours et ce que vous laisseriez de côté, et dites pour chaque point ce que
+          vous voulez que vos collègues sachent faire en sortant.
+        livrable: >-
+          Le dossier final en trois parties : le lexique de trente termes, l'examen des trois usages
+          avec leur avis motivé, et le plan de l'heure d'information.
+        quiz:
+          - question: Que révèle une réponse évasive à la question sur les données d'entraînement ?
+            options:
+              - Que les erreurs à venir seront inexplicables
+              - Que le fournisseur protège un secret industriel légitime
+              - Que la question était trop technique
+              - Que le système est trop récent pour être documenté
+            bonnes: [1]
+            explication: >-
+              Sans savoir sur quoi un système a été entraîné, personne ne pourra expliquer ses erreurs
+              ni dire si elles étaient prévisibles.
+          - question: Quelle règle d'écriture rend un lexique personnel utile ?
+            options:
+              - Une phrase sans autre terme technique, et un exemple tiré de votre activité
+              - La définition officielle recopiée fidèlement
+              - La traduction anglaise du terme
+              - La date d'apparition du terme
+            bonnes: [1]
+            explication: >-
+              Ne pas pouvoir écrire la phrase sans un autre mot du lexique signale que le terme n'est
+              pas encore clair, ce qui est en soi une information utile.
+          - question: Parmi les six questions, laquelle porte sur la responsabilité ?
+            options:
+              - Qui répond quand le système se trompe ?
+              - Sur quelles données a-t-il été entraîné ?
+              - Le score a-t-il été mesuré sur des cas jamais vus ?
+              - Le comportement est-il écrit ou appris ?
+            bonnes: [1]
+            explication: >-
+              C'est la question finale, et une absence de réponse signifie que personne ne répondra :
+              c'est précisément le problème à régler avant la mise en service.
+
+          - question: Pourquoi un lexique écrit par soi-même vaut-il mieux qu'un glossaire ?
+            options:
+              - Parce qu'il porte vos propres exemples et qu'il reste
+              - Parce qu'il est plus court
+              - Parce qu'il est plus récent
+              - Parce qu'il évite les erreurs de traduction
+            bonnes: [1]
+            explication: >-
+              Un glossaire tout fait s'oublie. Et ne pas réussir à écrire la définition sans un autre
+              terme technique signale précisément ce qui reste flou.
+          - question: Que reste-t-il, au terme du parcours, qu'aucun outil ne remplace ?
+            options:
+              - Connaître son domaine assez bien pour reconnaître une réponse fausse
+              - Savoir programmer un modèle de langage
+              - Connaître les tarifs des principaux fournisseurs
+              - Mémoriser les trente termes du lexique
+            bonnes: [1]
+            explication: >-
+              Cela, et savoir dire clairement ce qu'on a compris et ce dont on n'est pas sûr : les
+              deux compétences placées à côté des trois cercles.
+capstone:
+  titre: "Votre dossier d'initiation : lexique, trois cas jugés, et une heure à transmettre"
+  duree_h: 8
+  niveau: guide
+  contexte: >-
+    Le travail qui clôt le parcours ne demande ni code ni calcul. Il demande de rassembler ce que
+    vous avez compris sous une forme que quelqu'un d'autre pourrait lire et utiliser. Trois pièces :
+    le lexique que vous avez écrit vous-même, l'examen de trois usages réels de l'IA observés autour
+    de vous, et le plan d'une heure d'information que vous seriez capable d'animer pour des
+    collègues ou des proches qui n'y connaissent rien. La troisième pièce est l'épreuve de vérité :
+    on ne transmet bien que ce qu'on a vraiment compris.
+  cours:
+    - titre: Ce qui est évalué, et ce qui ne l'est pas
+      texte: >-
+        On n'évalue pas votre mémoire. Vous avez le droit de rouvrir toutes les séances, et il serait
+        absurde de faire autrement puisque c'est ainsi que vous travaillerez ensuite.
+
+        On évalue trois choses. D'abord la justesse : une définition fausse ou un contresens sur un
+        mécanisme se voit immédiatement et compte davantage qu'une omission. Ensuite l'ancrage : des
+        exemples pris dans votre activité réelle valent mieux que des exemples recopiés du cours, et
+        un lexique sans exemples propres n'est qu'un glossaire. Enfin l'honnêteté du jugement : pour
+        les trois cas examinés, une réponse « le fournisseur n'a pas voulu répondre » vaut mieux
+        qu'une réponse inventée, et sera comptée comme un résultat à part entière.
+
+        Un dossier qui conclurait que les trois cas sont excellents, ou que les trois sont à rejeter,
+        attirera l'attention : les deux sont possibles, mais demandent à être soutenus.
+    - titre: Comment choisir les trois cas
+      texte: >-
+        Prenez des cas réels, observés, pas des exemples de presse internationale. Un outil employé
+        dans votre organisation, une application que vous utilisez, un service proposé par votre
+        banque, votre opérateur ou votre administration, un projet dont un proche vous a parlé.
+
+        Variez-les : un cas où vous êtes utilisateur, un cas où vous êtes concerné par une décision,
+        un cas qu'on vous propose d'acheter ou d'adopter. Ces trois positions ne donnent pas accès aux
+        mêmes informations, et constater ce qu'on ne peut pas savoir depuis sa position fait partie
+        du travail.
+
+        Pour chacun, passez les six questions de la séance 16. Notez la réponse obtenue, ou le fait
+        qu'elle n'a pas pu l'être, et auprès de qui vous avez cherché.
+  objectifs:
+    - Montrer que le vocabulaire de l'IA est devenu utilisable, et pas seulement reconnu
+    - Appliquer les six questions à des situations réelles plutôt qu'à des exemples de cours
+    - Formuler un avis motivé là où l'information est incomplète, sans la combler par de l'invention
+    - Être capable de transmettre l'essentiel à quelqu'un qui part de zéro
+  fonctionnalites:
+    - Un lexique personnel de trente termes, une phrase et un exemple propre pour chacun
+    - Trois cas réels examinés par les six questions, avec les réponses obtenues ou leur absence
+    - Un avis d'une ligne par cas, à encourager, à encadrer ou à écarter, avec sa raison
+    - Le plan en cinq points d'une heure d'information, avec l'objectif de chaque point
+  stack:
+    - Un traitement de texte, ou un carnet et un stylo
+    - Un accès à un assistant conversationnel, pour les vérifications de la séance 10
+    - Les notes prises au long des seize séances
+  criteres_acceptation:
+    - Les trente termes sont définis sans employer d'autre terme technique du lexique
+    - Chaque terme porte un exemple tiré de l'activité réelle de l'auteur, pas du cours
+    - Les trois cas sont réels, observés, et occupent trois positions différentes
+    - Chacune des six questions reçoit une réponse ou la mention explicite de son absence
+    - Chaque avis est motivé par au moins une réponse obtenue, jamais par une impression
+    - Le plan d'heure indique, pour chacun de ses cinq points, ce que l'auditoire saura faire ensuite
+  exigences_specifiques:
+    - Aucun terme technique non défini dans le lexique ne doit apparaître dans le plan d'heure
+    - Les données personnelles des cas examinés sont anonymisées, conformément à la séance 15
+    - Toute référence, chiffre ou citation reprise dans le dossier est vérifiée à sa source
+    - Une pièce manquante est signalée comme telle, jamais remplacée par du remplissage
+  livrables:
+    - Le lexique de trente termes
+    - L'examen des trois cas et leurs trois avis motivés
+    - Le plan de l'heure d'information
