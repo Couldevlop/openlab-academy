@@ -163,8 +163,13 @@ def detecter(source: pathlib.Path, seuil: float, minimum: float) -> str:
     return sortie.stderr
 
 
-def commande_de_rendu(source: pathlib.Path, vers: pathlib.Path, segments) -> list[str]:
+def commande_de_rendu(source: pathlib.Path, vers: pathlib.Path, segments,
+                      ffmpeg: str = "ffmpeg") -> list[str]:
     """La commande de rendu, à part pour qu'un test la lise sans lancer ffmpeg.
+
+    Le binaire est un paramètre, comme dans `habiller.py` : le résoudre ici rendrait la fonction
+    dépendante du PATH, et le test ne tournerait plus là où ffmpeg n'est pas installé — c'est-à-dire
+    sur la chaîne d'intégration, seul endroit qui le dira avant vous.
 
     Le preset n'est pas un réglage de confort. `habiller.py` ouvre ensuite la séance avec le compositeur
     de Remotion, qui réclame une image à une position donnée : sur un fichier sorti en `-preset medium`,
@@ -177,7 +182,7 @@ def commande_de_rendu(source: pathlib.Path, vers: pathlib.Path, segments) -> lis
     séance filmée en partage d'écran, où l'image reste fixe pendant des minutes : le cas de l'académie.
     Le fichier pèse un peu plus lourd à qualité égale ; une séance qu'on ne peut pas habiller ne vaut rien.
     """
-    return [_ffmpeg(), "-hide_banner", "-y", "-i", str(source),
+    return [ffmpeg, "-hide_banner", "-y", "-i", str(source),
             "-filter_complex", filtre_de_montage(segments), "-map", "[v]", "-map", "[a]",
             "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
             # 48 kHz explicite : `loudnorm` travaille en interne à 192 kHz et sort à cette fréquence si on
@@ -188,7 +193,7 @@ def commande_de_rendu(source: pathlib.Path, vers: pathlib.Path, segments) -> lis
 
 def rendre(source: pathlib.Path, vers: pathlib.Path, segments) -> None:
     vers.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(commande_de_rendu(source, vers, segments), check=True)
+    subprocess.run(commande_de_rendu(source, vers, segments, _ffmpeg()), check=True)
 
 
 def charger_reprises(chemin: pathlib.Path | None) -> tuple[float, ...]:
