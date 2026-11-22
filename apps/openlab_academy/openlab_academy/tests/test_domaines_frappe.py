@@ -55,6 +55,12 @@ class TestLaSemence(_Socle):
             with self.subTest(domaine.cle):
                 self.assertIn(domaine.cle, cles)
 
+    def test_une_table_vide_est_resemee(self):
+        """Le seul cas ou la migration ecrit : la table a ete videe, le catalogue serait sans couleur."""
+        frappe.db.delete(DOCTYPE)
+        domaines_frappe.preparer()
+        self.assertEqual(sorted(domaines_frappe.cles()), sorted(d.cle for d in DOMAINES_PAR_DEFAUT))
+
     def test_semer_de_nouveau_ne_touche_a_rien(self):
         """Une migration ne doit ni rétablir un domaine supprimé ni écraser une teinte choisie."""
         frappe.db.set_value(DOCTYPE, "ia", "teinte", "#111111")

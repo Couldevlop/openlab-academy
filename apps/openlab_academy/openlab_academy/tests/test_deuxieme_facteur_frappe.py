@@ -7,7 +7,8 @@ import frappe
 import pyotp
 from frappe.tests.utils import FrappeTestCase
 
-from openlab_academy.domain.deuxieme_facteur import Reglage, SecondFacteurInvalide
+from openlab_academy.domain.deuxieme_facteur import (METHODE_PAR_DEFAUT, ROLES_PAR_DEFAUT, Reglage,
+                                                     SecondFacteurInvalide)
 from openlab_academy.infrastructure import deuxieme_facteur_frappe as second
 
 ROLE = "System Manager"
@@ -157,6 +158,24 @@ class TestLaLectureDuReglage(_Socle):
             second.oublier(compte)
         second.preparer()
         self.assertEqual(frappe.db.get_single_value(second.SYSTEME, "enable_two_factor_auth"), 0)
+
+
+class TestLesValeursPosees(_Socle):
+    """Un réglage neuf, jamais rempli, doit sortir de la migration utilisable."""
+
+    def test_un_reglage_vide_recoit_les_roles_par_defaut(self):
+        frappe.db.set_single_value(second.REGLAGES, "roles_deuxieme_facteur", "   ")
+        frappe.db.set_single_value(second.REGLAGES, "deuxieme_facteur", 0)
+        second.preparer()
+        self.assertEqual(frappe.db.get_single_value(second.REGLAGES, "roles_deuxieme_facteur"),
+                         "\n".join(ROLES_PAR_DEFAUT))
+
+    def test_un_reglage_sans_methode_recoit_la_methode_par_defaut(self):
+        frappe.db.set_single_value(second.REGLAGES, "methode_deuxieme_facteur", "")
+        frappe.db.set_single_value(second.REGLAGES, "deuxieme_facteur", 0)
+        second.preparer()
+        self.assertEqual(frappe.db.get_single_value(second.REGLAGES, "methode_deuxieme_facteur"),
+                         METHODE_PAR_DEFAUT)
 
 
 class TestCeQuiNeNousAppartientPas(_Socle):
