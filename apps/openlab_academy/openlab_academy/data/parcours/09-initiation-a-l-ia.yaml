@@ -12,14 +12,14 @@ description: >-
   affirmation invérifiable. Savoir ce qu'une machine peut faire à votre place, ce qu'elle fera mal,
   et ce qu'elle ne fera jamais. Décider, en connaissance de cause, de ce que vous lui confiez.</p>
   <p><b>Comment c'est construit.</b> Autour d'une carte : l'IA se tient au croisement de trois
-  savoirs — l'informatique, les mathématiques et la connaissance d'un métier. Chaque séance éclaire
+  savoirs : l'informatique, les mathématiques et la connaissance d'un métier. Chaque séance éclaire
   une zone de cette carte et le vocabulaire qui va avec. À la fin vous savez où chaque mot se range,
   et c'est cela qui rend le reste facile.</p>
   <p><b>Ce que ce parcours n'est pas.</b> Une formation pour devenir ingénieur en IA. On ne
   programme pas, on n'entraîne aucun modèle, on ne fait pas de mathématiques. Ce parcours vous rend
-  lucide, pas technicien — et la lucidité manque plus souvent que la technique.</p>
+  lucide, pas technicien, et la lucidité manque plus souvent que la technique.</p>
   <p><b>Format :</b> seize séances d'environ deux heures, chacune avec un travail guidé, une mise en
-  situation tirée de la vie courante et un quiz, puis un dossier final — dix-sept pièces en tout.
+  situation tirée de la vie courante et un quiz, puis un dossier final, soit dix-sept pièces en tout.
   Aucun portfolio, aucun jury.</p>
   <p><b>Évaluation :</b> quiz et travaux de séance, puis un dossier personnel : votre propre lexique
   et le jugement que vous portez sur trois usages réels.</p>
@@ -169,7 +169,7 @@ blocs:
         title: "La carte de l'IA : trois savoirs qui se recoupent"
         contenu: >-
           La séance centrale du parcours. L'IA ne tombe pas du ciel : elle se tient au croisement de
-          trois savoirs qui existaient déjà séparément — l'informatique, les mathématiques et la
+          trois savoirs qui existaient déjà séparément : l'informatique, les mathématiques et la
           connaissance d'un métier. Chaque paire de savoirs porte un nom que vous entendez sans cesse,
           et le centre, là où les trois se rencontrent, c'est l'IA telle qu'elle fonctionne vraiment.
           Une fois cette carte en tête, chaque mot nouveau trouve sa place tout seul.
@@ -202,7 +202,7 @@ blocs:
               Là où l'informatique rencontre le métier, on trouve le développement logiciel ordinaire :
               les applications, les sites, les logiciels de gestion. Pas d'apprentissage ici, mais des
               règles écrites par des humains. Votre logiciel de comptabilité vit dans cette zone, et il
-              n'a rien d'une IA — c'est une distinction qu'on vous fera souvent oublier.
+              n'a rien d'une IA. C'est une distinction qu'on vous fera souvent oublier.
 
               Là où les mathématiques rencontrent le métier, on trouve la recherche classique et les
               statistiques appliquées : les études, les sondages, les essais cliniques. Cette zone a
@@ -332,7 +332,7 @@ blocs:
               d'images fiable, puis la traduction, puis tout le reste.
 
               Et dans celle-là encore, la plus récente : l'IA générative, qui ne se contente pas de
-              classer ou de prédire mais produit du contenu neuf — du texte, une image, une voix. Tout
+              classer ou de prédire mais produit du contenu neuf : du texte, une image, une voix. Tout
               ce dont on parle depuis 2022 vit dans cette dernière poupée.
             tableaux:
               - titre: Les quatre termes, du plus large au plus étroit
@@ -362,7 +362,7 @@ blocs:
         travaux_pratiques: >-
           Travail guidé, environ une heure. Trouvez trois articles de presse récents employant le mot
           intelligence artificielle. Pour chacun, déterminez laquelle des quatre poupées est réellement
-          en cause, ou notez que l'article ne permet pas de le savoir — ce qui est en soi un résultat.
+          en cause, ou notez que l'article ne permet pas de le savoir, ce qui est en soi un résultat.
           Rédigez ensuite, pour un seul des trois, le paragraphe que l'article aurait dû contenir pour
           que son lecteur sache de quoi on parle.
         mise_en_situation: >-
@@ -495,7 +495,7 @@ blocs:
               quatre promesses de la section précédente, qui restent à vérifier une par une.
         travaux_pratiques: >-
           Travail guidé, environ une heure. Cherchez une annonce publique faite entre 2015 et 2020 sur
-          ce que l'IA accomplirait avant 2025 — la voiture entièrement autonome est un bon terrain.
+          ce que l'IA accomplirait avant 2025 (la voiture entièrement autonome est un bon terrain).
           Confrontez l'annonce à la situation réelle aujourd'hui. Classez ensuite l'écart dans l'une
           des quatre promesses de la séance, et écrivez en trois lignes le jalon vérifiable qu'il
           aurait fallu exiger à l'époque.
@@ -602,8 +602,8 @@ blocs:
               Entre les deux se trouvent les données semi-structurées, qui ont une organisation sans
               être un tableau : une page web, un formulaire, un message électronique avec ses champs.
 
-              Retenez surtout que le travail de mise en forme — rassembler, nettoyer, corriger,
-              rapprocher — représente la plus grande part du temps d'un projet. Les praticiens citent
+              Retenez surtout que le travail de mise en forme (rassembler, nettoyer, corriger,
+              rapprocher) représente la plus grande part du temps d'un projet. Les praticiens citent
               couramment la proportion de quatre cinquièmes. Ce n'est pas une anecdote : c'est
               l'essentiel du coût, et c'est la partie dont on ne vous parlera pas en réunion de vente.
             tableaux:
@@ -731,7 +731,7 @@ blocs:
               des examens inutiles et de l'angoisse. Le faux négatif : elle ne voit pas une maladie
               réelle, ce qui peut coûter une vie.
 
-              Ces deux erreurs n'ont pas le même prix, et le prix dépend du métier — donc de vous, pas
+              Ces deux erreurs n'ont pas le même prix, et le prix dépend du métier, donc de vous, pas
               de l'ingénieur. Pour un dépistage, on accepte beaucoup de fausses alertes pour ne rater
               personne. Pour un filtre anti-spam, c'est l'inverse : mieux vaut laisser passer un
               courrier indésirable que supprimer une lettre importante.
@@ -888,7 +888,7 @@ blocs:
               On ne peut pas supprimer tout biais. Un échantillon n'est jamais la population, et il
               faudra toujours vivre avec un décalage résiduel. L'objectif honnête n'est donc pas un
               système sans biais, qui n'existe pas, mais un système dont les biais sont mesurés,
-              publiés et jugés acceptables pour l'usage prévu — un jugement qui appartient aux
+              publiés et jugés acceptables pour l'usage prévu ; ce jugement appartient aux
               personnes concernées, pas aux auteurs du système.
 
               Méfiez-vous particulièrement d'une promesse de neutralité. Un fournisseur qui affirme que
@@ -988,7 +988,7 @@ blocs:
           - titre: "Ce que veut dire « grand » dans grand modèle de langage"
             texte: >-
               L'expression grand modèle de langage, souvent abrégée en LLM d'après l'anglais, désigne
-              un modèle dont les paramètres se comptent en milliards — ces réglages internes de la
+              un modèle dont les paramètres se comptent en milliards, ces réglages internes de la
               séance 1. Les modèles courants aujourd'hui en comptent de quelques milliards à plusieurs
               centaines de milliards.
 
@@ -1021,7 +1021,7 @@ blocs:
               des erreurs sur des opérations inhabituelles.
 
               Il ne se souvient pas de vous d'une conversation à l'autre, sauf si le service a été
-              construit pour conserver ces informations — auquel cas c'est le service qui se souvient,
+              construit pour conserver ces informations, auquel cas c'est le service qui se souvient,
               pas le modèle.
 
               Et il n'a pas d'opinion, même lorsqu'il en exprime une. Ce qu'il produit est la suite
@@ -1144,7 +1144,7 @@ blocs:
 
               C'est pour cela qu'une même question posée deux fois ne donne pas deux fois la même
               réponse, et ce n'est ni une panne ni un caprice. Pour un travail où la régularité
-              importe — extraire une information d'un document, classer des demandes — on baisse la
+              importe (extraire une information d'un document, classer des demandes), on baisse la
               température. Pour chercher des idées, on la monte.
 
               Beaucoup d'interfaces grand public ne vous donnent pas ce réglage, mais il existe
@@ -1278,7 +1278,7 @@ blocs:
               tournent mal sont ceux où personne n'est en position de vérifier.
         travaux_pratiques: >-
           Travail guidé, environ une heure. Reprenez les notes de la séance 1. Demandez à un assistant
-          une référence précise dans votre domaine — un texte réglementaire, une étude, une date — puis
+          une référence précise dans votre domaine (un texte réglementaire, une étude, une date), puis
           vérifiez-la à la source. Faites-le trois fois. Posez ensuite une question contenant une
           prémisse fausse et observez. Écrivez enfin la règle de vérification que vous appliqueriez
           dans votre activité, en nommant qui vérifie quoi.
@@ -1368,7 +1368,7 @@ blocs:
             texte: >-
               Trois techniques reviennent, et elles méritent leur réputation.
 
-              Donner un rôle — « tu es un formateur qui s'adresse à des débutants » — oriente le
+              Donner un rôle (« tu es un formateur qui s'adresse à des débutants ») oriente le
               registre et le niveau de détail. Ce n'est pas une incantation : cela ajoute du contexte,
               donc cela déplace la suite plausible.
 
@@ -1377,7 +1377,7 @@ blocs:
               est connue sous le nom d'apprentissage par l'exemple, ou few-shot en anglais ; elle
               n'entraîne rien du tout, elle montre simplement la cible.
 
-              Demander les étapes — « procède point par point » — améliore les tâches qui demandent un
+              Demander les étapes (« procède point par point ») améliore les tâches qui demandent un
               enchaînement, parce que le texte intermédiaire produit sert d'appui au texte suivant. La
               méthode porte le nom de chaîne de pensée, ou chain of thought. Attention toutefois : des
               étapes affichées ne sont pas une preuve de raisonnement, ce sont encore du texte
@@ -1401,7 +1401,7 @@ blocs:
               elles traitent la symptomatique et non le fond : ce qui manque le plus souvent n'est pas
               la formule, c'est la clarté sur ce qu'on veut réellement obtenir. Une demande qu'on
               n'arrive pas à formuler clairement est généralement une demande qu'on n'a pas encore
-              définie — et cela, c'est la résolution de problèmes de la séance 2, la compétence que la
+              définie, et cela, c'est la résolution de problèmes de la séance 2, la compétence que la
               machine ne reprend pas.
 
               L'habitude la plus rentable est banale : écrivez votre demande, lisez la réponse,
@@ -1666,13 +1666,13 @@ blocs:
               Enfin, décider de ce qui compte. Une machine optimise ce qu'on lui a dit d'optimiser.
               Choisir ce qu'on veut maximiser, et ce qu'on refuse de sacrifier pour cela, est une
               décision politique au sens propre : elle engage des valeurs et des personnes. La laisser
-              se décider par défaut, parce que c'était le réglage d'usine, reste une décision — prise
+              se décider par défaut, parce que c'était le réglage d'usine, reste une décision, prise
               par quelqu'un d'autre.
         travaux_pratiques: >-
           Travail guidé, environ une heure. Listez dix tâches de votre activité ou de votre semaine.
           Classez chacune dans l'une des trois catégories, avec une ligne de justification. Pour les
-          tâches classées « fait mal », indiquez ce qu'il faudrait ajouter — vérification, source,
-          réglage — pour les faire passer dans la première catégorie. Pour celles classées « ne fera
+          tâches classées « fait mal », indiquez ce qu'il faudrait ajouter (vérification, source,
+          réglage) pour les faire passer dans la première catégorie. Pour celles classées « ne fera
           pas », dites ce que la machine pourrait tout de même préparer.
         mise_en_situation: >-
           Votre direction envisage d'automatiser le tri des demandes entrantes, dont une partie
@@ -1910,7 +1910,7 @@ blocs:
               d'autrui : nom, adresse, numéro, état de santé, situation familiale. Ce ne sont pas vos
               données, vous n'avez pas qualité pour décider de leur sort. Les secrets professionnels :
               un contrat en cours, un dossier sous procédure, une information financière non publiée.
-              Et les identifiants : mot de passe, code d'accès, clé — jamais, sous aucun prétexte, y
+              Et les identifiants : mot de passe, code d'accès, clé : jamais, sous aucun prétexte, y
               compris pour demander de l'aide.
 
               La parade pratique est l'anonymisation : remplacez les noms par des lettres, les
