@@ -1,9 +1,10 @@
 # Parcours annoncé : visible au catalogue en « à venir ».
 # Pour le publier complètement, remplacer ce fichier par le modèle docs/modeles/04-cybersecurite-i.modele.yaml une fois rempli (sans la clé statut).
 statut: a_venir
+domaine: cybersecurite
 title: Ingénieur Cybersécurité I
 short_introduction: >-
-  Parcours Cybersécurité I — ouverture prochaine. Inscrivez-vous pour être informé du lancement.
+  Parcours Cybersécurité I — ouverture prochaine. Le programme est en cours de conception.
 description: >-
   <p><b>Prérequis :</b> aisance avec un ordinateur et la ligne de commande.</p>
   <p><b>Format :</b> modules hebdomadaires en labs isolés, un livrable par module, 10 semaines projet

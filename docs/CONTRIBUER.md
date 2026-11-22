@@ -97,6 +97,34 @@ Jamais versionnés, et absents d'un dépôt fraîchement cloné : `credentials-l
 `.env` et dérivés. `.gitignore` les exclut, Gitleaks et Semgrep vérifient l'historique
 à chaque PR. Un identifiant inventé pour un test se déclare dans `.gitleaks.toml`.
 
+## Second facteur d'authentification
+
+Il se règle dans **Réglages OpenLab Academy → Sécurité** : la case, la méthode, et les rôles
+concernés, un par ligne. Le rôle des apprenants y est refusé — il les bloquerait tous sur un
+téléphone sans rien protéger de plus.
+
+L'ordre compte, et le code l'impose. En méthode « OTP App », Frappe envoie le code d'inscription
+**par courriel** au tout premier accès ; sans compte d'envoi en service, ce courriel ne part jamais
+et la porte reste close. On inscrit donc avant d'activer :
+
+```bash
+# 1. affiche le QR à photographier (le secret ne sort que là, dans votre terminal)
+bench --site <site> execute openlab_academy.entrypoints.securite.inscrire_le_second_facteur   --kwargs "{'utilisateur': 'vous@exemple.ci'}"
+
+# 2. vérifie un premier code, ce qui valide l'inscription
+bench --site <site> execute openlab_academy.entrypoints.securite.confirmer_le_second_facteur   --kwargs "{'utilisateur': 'vous@exemple.ci', 'code': '123456'}"
+
+# 3. active. Refusé tant que l'étape 2 n'a pas abouti pour au moins un compte actif
+bench --site <site> execute openlab_academy.entrypoints.securite.activer_le_second_facteur
+
+# en cas de besoin : rouvre la porte, en toute circonstance
+bench --site <site> execute openlab_academy.entrypoints.securite.eteindre_le_second_facteur
+```
+
+Ces commandes ne sont pas exposées en API : le secret TOTP ne doit traverser ni une réponse HTTP,
+ni les journaux d'un navigateur. Une migration n'active jamais le second facteur d'elle-même ; si
+le réglage demandé n'est plus tenable, elle le laisse éteint et le dit.
+
 ## Publier
 
 Le dépôt est autonome depuis le 18 novembre 2026 : un `git push` ordinaire suffit,

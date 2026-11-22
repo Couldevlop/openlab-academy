@@ -154,3 +154,162 @@ class TestEcran(_Socle):
     def test_parcours_inconnu_refuse(self):
         with self.assertRaises(frappe.ValidationError):
             ecran.basculer("parcours-qui-n-existe-pas", self.apprenant, 1)
+
+
+class TestCreationDUnCompteApprenant(_Socle):
+    """Créer un compte apprenant depuis l'administration, pour les tests utilisateurs.
+
+    Frappe sait créer un utilisateur dans son interface, mais le compte né ainsi attend un courriel
+    de bienvenue pour choisir son mot de passe — et les comptes d'envoi de production ne sont pas en
+    service. Un compte d'essai doit donc naître utilisable tout de suite.
+    """
+
+    COURRIEL = "essai.apprenant@example.ci"
+
+    def creer(self, **remplacements):
+        valeurs = {"courriel": self.COURRIEL, "nom": "Essai"}
+        valeurs.update(remplacements)
+        return ecran.creer_apprenant(**valeurs)
+
+    def test_le_compte_nait_actif_et_apprenant(self):
+        reponse = self.creer()
+        self.assertTrue(reponse["cree"])
+        self.assertEqual(reponse["apprenant"], self.COURRIEL)
+        self.assertTrue(frappe.db.get_value("User", self.COURRIEL, "enabled"))
+        self.assertIn("LMS Student", frappe.get_roles(self.COURRIEL))
+
+    def test_aucun_courriel_de_bienvenue_n_est_envoye(self):
+        """Les comptes d'envoi de production ne sont pas en service : un compte qui attendrait son
+        courriel serait inutilisable, et la file d'envoi garderait une trace pour rien."""
+        avant = frappe.db.count("Email Queue")
+        self.creer()
+        self.assertEqual(frappe.db.count("Email Queue"), avant)
+
+    def test_le_mot_de_passe_tire_est_rendu_une_seule_fois(self):
+        reponse = self.creer()
+        self.assertGreaterEqual(len(reponse["mot_de_passe"]), 12)
+        self.assertEqual(self.creer()["mot_de_passe"], "")
+
+    def test_le_mot_de_passe_fourni_n_est_pas_renvoye(self):
+        """Celui qui l'a choisi le connaît déjà ; le renvoyer ne ferait que l'exposer une fois de
+        plus, dans une réponse d'API et dans les journaux du navigateur."""
+        reponse = self.creer(mot_de_passe="un-mot-de-passe-d-essai-1")
+        self.assertTrue(reponse["cree"])
+        self.assertEqual(reponse["mot_de_passe"], "")
+
+    def empreinte(self):
+        """Le mot de passe chiffré, lu sans tri : la table `__Auth` n'a pas de colonne `modified`."""
+        return frappe.db.get_value("__Auth", {"name": self.COURRIEL, "fieldname": "password"},
+                                   "password", order_by=None)
+
+    def test_rejoue_il_ne_reinitialise_pas_le_mot_de_passe(self):
+        """Une réinitialisation silencieuse ferait perdre son accès à quelqu'un."""
+        self.creer(mot_de_passe="un-mot-de-passe-d-essai-1")
+        avant = self.empreinte()
+        self.assertTrue(avant)
+        reponse = self.creer()
+        self.assertFalse(reponse["cree"])
+        self.assertEqual(self.empreinte(), avant)
+
+    def test_le_nom_complet_est_celui_demande(self):
+        self.creer(nom="Koné", prenom="Awa")
+        self.assertEqual(frappe.db.get_value("User", self.COURRIEL, "full_name"), "Awa Koné")
+
+    def test_un_courriel_vide_est_refuse(self):
+        for valeur in ("", "   ", "\t"):
+            with self.subTest(repr(valeur)):
+                with self.assertRaises(frappe.ValidationError):
+                    self.creer(courriel=valeur)
+
+    def test_un_courriel_qui_n_est_pas_du_texte_est_refuse_par_frappe(self):
+        """Frappe contrôle le type des arguments d'une méthode exposée avant qu'elle ne s'exécute :
+        le refus vient de lui, et il vient plus tôt que le nôtre. On l'épingle pour que la garde
+        reste visible si l'annotation disparaissait un jour."""
+        for valeur in (None, 0, [], {"a": 1}):
+            with self.subTest(repr(valeur)):
+                with self.assertRaises(frappe.exceptions.FrappeTypeError):
+                    self.creer(courriel=valeur)
+        self.assertFalse(frappe.db.exists("User", self.COURRIEL))
+
+    def test_un_courriel_mal_forme_est_refuse(self):
+        with self.assertRaises(frappe.ValidationError):
+            self.creer(courriel="pas-une-adresse")
+
+    def test_un_nom_vide_est_refuse(self):
+        with self.assertRaises(frappe.ValidationError):
+            self.creer(nom="  ")
+
+    def test_la_creation_est_reservee_a_l_administration(self):
+        """Les droits sont vérifiés dans le point d'entrée : un appel direct à l'API passe par les
+        mêmes contrôles que l'écran."""
+        frappe.set_user(self.apprenant)
+        try:
+            with self.assertRaises(frappe.PermissionError):
+                self.creer()
+        finally:
+            frappe.set_user("Administrator")
+        self.assertFalse(frappe.db.exists("User", self.COURRIEL))
+
+    def test_le_compte_cree_peut_recevoir_un_parcours_offert(self):
+        """C'est l'enchaînement visé pour un test utilisateur : créer, offrir, inscrire."""
+        self.creer()
+        ecran.basculer(self.cours, self.COURRIEL, 1, "Test utilisateur")
+        ecran.inscrire(self.cours, self.COURRIEL)
+        self.assertTrue(frappe.db.exists("LMS Enrollment",
+                                         {"course": self.cours, "member": self.COURRIEL}))
+
+
+class TestLaSurfaceDAttaqueDeLEcran(_Socle):
+    """Ce que l'écran expose au réseau, indépendamment de ce qu'il affiche.
+
+    Les quatre points d'entrée sont ouverts aux agents ; trois changent l'état et l'un d'eux porte un
+    mot de passe. Un `@frappe.whitelist()` sans verbe déclaré répond aussi à GET, et un GET met ses
+    arguments dans l'URL : le mot de passe finirait dans les journaux du serveur, dans l'historique
+    du navigateur et dans le référent envoyé aux tiers. Déclarer POST ferme aussi la porte aux
+    requêtes forgées depuis un autre site, qui ne savent pas poster avec le jeton de session.
+    """
+
+    def verbes(self, fonction):
+        return frappe.allowed_http_methods_for_whitelisted_func.get(fonction)
+
+    def test_les_points_d_entree_qui_changent_l_etat_n_acceptent_que_post(self):
+        for fonction in (ecran.creer_apprenant, ecran.basculer, ecran.inscrire):
+            with self.subTest(fonction.__name__):
+                self.assertEqual(self.verbes(fonction), ["POST"])
+
+    def test_la_lecture_des_inscrits_reste_ouverte_a_la_lecture(self):
+        """Lire ne change rien : rien à restreindre. Épinglé pour montrer ce que vaut le défaut de
+        Frappe — un `@frappe.whitelist()` nu répond à GET, POST, PUT et DELETE. C'est précisément
+        pourquoi les trois autres doivent déclarer leur verbe."""
+        self.assertIn("GET", self.verbes(ecran.inscrits))
+
+
+class TestLaForceDuMotDePasse(_Socle):
+    """Un compte d'essai reste un compte : il ouvre une session sur le même site que les autres."""
+
+    COURRIEL = "faible.apprenant@example.ci"
+
+    def test_un_mot_de_passe_trivial_est_refuse(self):
+        """Une écriture directe du mot de passe ne vérifie rien ; le passer par le document déclenche
+        la politique du site. Mais cette politique est désactivée par défaut sur une installation
+        Frappe (`minimum_password_score` à zéro), et « 123 » passerait quand même : le plancher est
+        donc tenu dans le point d'entrée. Sans lui, l'écran serait le seul chemin du site par lequel
+        un mot de passe trivial ouvre une session."""
+        for faible in ("123", "azerty", "court1!"):
+            with self.subTest(faible):
+                with self.assertRaises(frappe.ValidationError):
+                    ecran.creer_apprenant(courriel=self.COURRIEL, nom="Essai", mot_de_passe=faible)
+                self.assertFalse(frappe.db.exists("User", self.COURRIEL))
+
+    def test_le_mot_de_passe_tire_passe_la_politique_du_site(self):
+        """Celui que nous tirons doit franchir la même barrière, sinon la création casserait le jour
+        où la politique se durcit."""
+        reponse = ecran.creer_apprenant(courriel=self.COURRIEL, nom="Essai")
+        self.assertTrue(reponse["cree"])
+        self.assertGreaterEqual(len(reponse["mot_de_passe"]), 16)
+
+    def test_le_compte_porte_le_nom_de_son_createur(self):
+        """La trace de qui a créé le compte : Frappe l'inscrit dans `owner`, il n'y a pas de journal
+        à tenir en plus. C'est épinglé ici parce que c'est la seule piste d'audit de ce chemin."""
+        ecran.creer_apprenant(courriel=self.COURRIEL, nom="Essai")
+        self.assertEqual(frappe.db.get_value("User", self.COURRIEL, "owner"), frappe.session.user)

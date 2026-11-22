@@ -17,6 +17,18 @@ from openlab_academy.infrastructure.journal_paiement_frappe import journaliser
 
 ADMINISTRATEUR = "System Manager"
 INTENDANT = "Intendant OpenLab"
+ROLE_APPRENANT = "LMS Student"
+LONGUEUR_MINIMALE = 12
+
+
+def _mot_de_passe_tire() -> str:
+    """Un mot de passe d'essai qui franchit une politique de robustesse exigeante.
+
+    `frappe.generate_hash` ne rend que des caracteres hexadecimaux : long mais pauvre, il peut etre
+    recale par un controle qui reclame plusieurs familles de caracteres, et la creation echouerait
+    alors sans que personne n'ait rien demande de faible. On compose donc explicitement.
+    """
+    return frappe.generate_hash(length=14) + "-Ol9#"
 
 
 def _habilite(utilisateur: str | None = None) -> bool:
@@ -56,7 +68,7 @@ def inscrits(cours: str) -> dict:
             "lignes": lignes}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def inscrire(cours: str, apprenant: str) -> dict:
     """Inscrit une personne à qui le parcours est offert.
 
@@ -73,7 +85,61 @@ def inscrire(cours: str, apprenant: str) -> dict:
     return inscrits(cours)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
+def creer_apprenant(courriel: str, nom: str, prenom: str = "", mot_de_passe: str = "") -> dict:
+    """Crée un compte apprenant utilisable tout de suite. Pour les tests utilisateurs.
+
+    Frappe sait déjà créer un utilisateur dans son interface, mais le compte né ainsi attend un
+    courriel de bienvenue pour choisir son mot de passe — et les comptes d'envoi de production ne
+    sont pas en service. Un compte d'essai doit donc naître actif, avec un mot de passe connu.
+
+    **Rejouable, et sans jamais réinitialiser.** Sur un compte qui existe déjà, il est renvoyé tel
+    quel : une réinitialisation silencieuse ferait perdre son accès à quelqu'un, et ce point
+    d'entrée n'est pas un outil de dépannage de mot de passe.
+
+    Le mot de passe n'est rendu que lorsqu'il a été tiré ici, et une seule fois : celui que
+    l'administrateur a choisi, il le connaît déjà, et le renvoyer ne ferait que l'exposer une fois
+    de plus — réponse d'API, journaux du navigateur, historique. Il n'est jamais journalisé.
+
+    **La suspension des inscriptions publiques ne s'applique pas à ce chemin**, et c'est voulu :
+    elle vit dans le cas d'usage du site (`inscrire_au_parcours`), que l'administration n'emprunte
+    pas. Sans cela, aucun test utilisateur ne serait possible pendant la suspension.
+    """
+    _exiger_le_droit()
+    adresse = (courriel or "").strip() if isinstance(courriel, str) else ""
+    nom_de_famille = (nom or "").strip() if isinstance(nom, str) else ""
+    if not adresse or not nom_de_famille:
+        frappe.throw(_("Un compte demande une adresse électronique et un nom."),
+                     frappe.ValidationError)
+    if frappe.db.exists("User", adresse):
+        return {"apprenant": adresse, "cree": False, "mot_de_passe": ""}
+
+    tire = not (isinstance(mot_de_passe, str) and mot_de_passe.strip())
+    secret = _mot_de_passe_tire() if tire else mot_de_passe.strip()
+    # Le document applique la politique de robustesse du site — mais elle est desactivee par defaut
+    # (`minimum_password_score` a zero), et « 123 » passerait. Ce plancher est donc le notre, tenu
+    # ici : un compte d'essai ouvre une session sur le meme site que les autres.
+    if len(secret) < LONGUEUR_MINIMALE:
+        frappe.throw(_("Un mot de passe de moins de {0} caracteres est refuse.").format(
+            LONGUEUR_MINIMALE), frappe.ValidationError)
+    # Le mot de passe passe par le document, et non par une ecriture directe : seul ce chemin
+    # declenche la politique de robustesse du site. Un compte d'essai ouvre une session comme les
+    # autres ; il ne doit pas etre la seule porte par laquelle « 123 » devient un mot de passe.
+    compte = frappe.get_doc({
+        "doctype": "User", "email": adresse, "first_name": (prenom or "").strip() or nom_de_famille,
+        "last_name": nom_de_famille if (prenom or "").strip() else "",
+        "enabled": 1, "user_type": "Website User", "send_welcome_email": 0,
+        "new_password": secret, "roles": [{"role": ROLE_APPRENANT}]})
+    compte.flags.no_welcome_mail = True
+    # `ignore_permissions` est delibere : l'intendant n'a pas le droit de creer un utilisateur dans
+    # le bureau, et ne doit pas l'avoir. Le droit est tenu plus haut par `_exiger_le_droit`, et le
+    # role accorde est ecrit en dur — ce chemin ne peut donc pas servir a s'elever. Qui a cree le
+    # compte reste lisible : Frappe inscrit l'auteur dans `owner`.
+    compte.insert(ignore_permissions=True)
+    return {"apprenant": adresse, "cree": True, "mot_de_passe": secret if tire else ""}
+
+
+@frappe.whitelist(methods=["POST"])
 def basculer(cours: str, apprenant: str, offert: int | str, motif: str = "") -> dict:
     """Offre le parcours à cet apprenant, ou le lui retire. Rejouable : l'état demandé est l'état obtenu."""
     _exiger_le_droit()

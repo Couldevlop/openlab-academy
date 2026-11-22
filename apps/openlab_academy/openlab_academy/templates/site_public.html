@@ -1,0 +1,73 @@
+{#-
+  Coquille du site public : accueil, catalogue, fiche d'un parcours, parcours fermé.
+
+  Autonome, et non `templates/web.html`. Le gabarit du portail apporte sa barre, son pied de page et
+  sa feuille de style, pensés pour une application où l'on est déjà connecté ; une vitrine a besoin
+  d'autre chose — une barre qui mène au catalogue, un pied qui dit qui nous sommes, et rien d'autre
+  pour détourner l'oeil. L'espace apprenant, lui, continue d'étendre `web.html` : il est dans
+  l'application, et doit lui ressembler.
+
+  Les polices sont chargées ici, en une seule requête, avec `display=swap` : le texte s'affiche
+  immédiatement dans la police de secours plutôt que de laisser une page blanche.
+-#}
+<!doctype html>
+<html lang="{{ frappe.local.lang or 'fr' }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titre %}{{ _("Openlab Academy") }}{% endblock %}</title>
+{%- if metatags %}
+<meta name="description" content="{{ metatags.description | e }}">
+<meta property="og:title" content="{{ metatags.title | e }}">
+<meta property="og:description" content="{{ metatags.description | e }}">
+<meta property="og:type" content="website">
+{%- endif %}
+<link rel="icon" href="/assets/openlab_academy/images/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/assets/openlab_academy/css/openlab.css">
+<link rel="stylesheet" href="/assets/openlab_academy/css/site.css">
+{% block tete %}{% endblock %}
+</head>
+<body class="ol-corps">
+
+<a class="ol-saut" href="#contenu">{{ _("Aller au contenu") }}</a>
+
+<header class="ol-entete">
+  <div class="ol-entete-barre">
+    <a class="ol-marque" href="/accueil">
+      <img src="/assets/openlab_academy/images/logo.svg" alt="" width="34" height="34">
+      <span class="ol-marque-nom">Openlab<strong>Academy</strong></span>
+    </a>
+    <nav class="ol-nav" aria-label="{{ _('Navigation principale') }}">
+      <a href="/parcours">{{ _("Les parcours") }}</a>
+      <a href="/accueil#methode">{{ _("Notre méthode") }}</a>
+      <a class="ol-nav-action" href="/login">{{ _("Se connecter") }}</a>
+    </nav>
+  </div>
+  <div class="ol-entete-filet" aria-hidden="true"></div>
+</header>
+
+<main id="contenu">
+{% block contenu %}{% endblock %}
+</main>
+
+<footer class="ol-pied">
+  <div class="ol-pied-corps">
+    <div class="ol-pied-identite">
+      <img src="/assets/openlab_academy/images/logo.svg" alt="" width="30" height="30">
+      <p>{{ _("Openlab Academy — se former à l'IA et à la data, depuis Abidjan.") }}</p>
+    </div>
+    <nav class="ol-pied-liens" aria-label="{{ _('Liens de bas de page') }}">
+      <a href="/parcours">{{ _("Les parcours") }}</a>
+      <a href="/accueil#methode">{{ _("Notre méthode") }}</a>
+      <a href="/login">{{ _("Se connecter") }}</a>
+    </nav>
+  </div>
+</footer>
+
+{% block script %}{% endblock %}
+</body>
+</html>

@@ -213,3 +213,20 @@ header.header-frame { border-bottom: 3px solid transparent; border-image: var(--
 .image-tool__image img[src*=".png"] {
   max-height: 14rem;
 }
+
+/* Vignette de parcours dans l'application LMS (/lms/).
+ *
+ * Le composant du LMS fige la hauteur a 168 px pour une largeur libre, soit un cadre d'environ
+ * 3,2:1, et cadre l'image en `cover`. Nos couvertures sont en 16:9 : le cadrage en coupait donc
+ * 22 % en haut et 22 % en bas, et emportait la signature de l'academie et le filet, qui vivent
+ * precisement en pied d'image. La marque disparaissait de son propre catalogue.
+ *
+ * On rend au cadre la proportion de l'image plutot que de redessiner huit couvertures : la
+ * contrainte vient du cadre, pas des visuels, et un visuel a l'autre bout du site resterait faux.
+ * La selection porte sur la combinaison de classes du composant, plus specifique que la sienne :
+ * aucun `!important` n'est necessaire.
+ */
+div.bg-cover.bg-center.bg-no-repeat.rounded-t-5 {
+  height: auto;
+  aspect-ratio: 16 / 9;
+}

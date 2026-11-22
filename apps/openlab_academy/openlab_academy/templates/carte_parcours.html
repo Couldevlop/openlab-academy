@@ -1,0 +1,41 @@
+{#-
+  Une carte de parcours, partagée par l'accueil et le catalogue.
+
+  La couverture du parcours tient le haut de la carte. Ce ne sont pas des photographies mais des
+  couvertures de marque — fond de charte, pictogramme propre au parcours, filet — et elles se
+  distinguent donc les unes des autres, ce qu'une banque d'images n'aurait pas fait.
+
+  La famille et le nombre de séances restent posés dessus, sur un voile sombre : la couverture dit
+  de quel parcours il s'agit, ces deux étiquettes disent où il se range et ce qu'il pèse.
+
+  Sans couverture, la bande de couleur de la famille prend le relais. Un parcours neuf est visible
+  le jour même, sans attendre qu'une image soit dessinée, et la carte ne montre jamais de trou.
+
+  Un seul lien par carte, posé sur toute sa surface : deux zones cliquables obligeraient à viser.
+-#}
+<li class="ol-carte" data-domaine="{{ carte.domaine_libelle | e }}" data-etat="{{ carte.etat }}">
+  <a class="ol-carte-lien" href="{{ carte.lien }}">
+    <div class="ol-carte-bande{% if carte.image %} ol-carte-bande--image{% endif %}"
+         {% if carte.domaine_teinte %}style="--teinte: {{ carte.domaine_teinte | e }}"{% endif %}>
+      {% if carte.image %}
+      <img class="ol-carte-image" src="{{ carte.image | e }}" alt="" loading="lazy" decoding="async">
+      {% endif %}
+      <span class="ol-carte-famille">{{ (carte.domaine_libelle or _("Parcours")) | e }}</span>
+      {% if carte.seances %}
+      <span class="ol-carte-taille">{{ carte.seances }}<small>{{ _("séances") }}</small></span>
+      {% endif %}
+    </div>
+    <div class="ol-carte-corps">
+      <h3 class="ol-carte-titre">{{ carte.title | e }}</h3>
+      {% if carte.short_introduction %}
+      <p class="ol-carte-dit">{{ carte.short_introduction | e }}</p>
+      {% endif %}
+    </div>
+    <div class="ol-carte-pied">
+      <span class="ol-pastille ol-pastille--{{ carte.etat }}">{{ carte.etat_libelle }}</span>
+      <span class="ol-carte-prix">
+        {%- if carte.offre.gratuit %}{{ _("Gratuit") }}{% elif carte.prix %}{{ carte.prix }}{% endif -%}
+      </span>
+    </div>
+  </a>
+</li>

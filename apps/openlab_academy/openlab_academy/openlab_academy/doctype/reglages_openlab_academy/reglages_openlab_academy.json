@@ -1,12 +1,9 @@
 {
- "doctype": "DocType",
- "name": "Reglages OpenLab Academy",
- "module": "OpenLab Academy",
+ "creation": "2026-10-16 00:00:00",
  "custom": 0,
- "engine": "InnoDB",
- "issingle": 1,
- "istable": 0,
+ "doctype": "DocType",
  "editable_grid": 0,
+ "engine": "InnoDB",
  "field_order": [
   "section_pedagogie",
   "projets_par_portfolio",
@@ -46,7 +43,13 @@
   "inscriptions_ouvertes",
   "parcours_lancement",
   "ouverture_lancement",
-  "lancement_initialise"
+  "lancement_initialise",
+  "section_securite",
+  "deuxieme_facteur",
+  "methode_deuxieme_facteur",
+  "col_securite",
+  "roles_deuxieme_facteur",
+  "roles_deuxieme_facteur_poses"
  ],
  "fields": [
   {
@@ -55,18 +58,18 @@
    "label": "Pédagogie"
   },
   {
+   "default": "10",
    "fieldname": "projets_par_portfolio",
    "fieldtype": "Int",
    "label": "Projets par portfolio",
-   "reqd": 1,
-   "default": "10"
+   "reqd": 1
   },
   {
+   "default": "8",
    "fieldname": "heures_par_module",
    "fieldtype": "Int",
    "label": "Heures par module",
-   "reqd": 1,
-   "default": "8"
+   "reqd": 1
   },
   {
    "fieldname": "col_pedagogie",
@@ -74,17 +77,17 @@
    "label": ""
   },
   {
+   "default": "2",
    "fieldname": "delai_ouverture_semaines",
    "fieldtype": "Int",
-   "label": "Délai d'ouverture d'une cohorte (semaines)",
-   "default": "2"
+   "label": "Délai d'ouverture d'une cohorte (semaines)"
   },
   {
+   "default": "Lundi",
    "fieldname": "jour_ouverture",
    "fieldtype": "Select",
    "label": "Jour de démarrage des cohortes",
-   "options": "Lundi\nMardi\nMercredi\nJeudi\nVendredi\nSamedi\nDimanche",
-   "default": "Lundi"
+   "options": "Lundi\nMardi\nMercredi\nJeudi\nVendredi\nSamedi\nDimanche"
   },
   {
    "fieldname": "section_exercices",
@@ -92,18 +95,18 @@
    "label": "Exercices de fin de leçon"
   },
   {
+   "default": "5",
    "fieldname": "questions_par_quiz",
    "fieldtype": "Int",
    "label": "Questions par quiz",
-   "reqd": 1,
-   "default": "5"
+   "reqd": 1
   },
   {
+   "default": "3",
    "fieldname": "tentatives_max",
    "fieldtype": "Int",
    "label": "Tentatives maximum",
-   "reqd": 1,
-   "default": "3"
+   "reqd": 1
   },
   {
    "fieldname": "col_exercices",
@@ -111,17 +114,17 @@
    "label": ""
   },
   {
+   "default": "100",
    "fieldname": "score_min",
    "fieldtype": "Int",
    "label": "Score minimal pour valider (%)",
-   "reqd": 1,
-   "default": "100"
+   "reqd": 1
   },
   {
+   "default": "60",
    "fieldname": "delai_exercices_minutes",
    "fieldtype": "Int",
-   "label": "Déblocage des exercices après (minutes)",
-   "default": "60"
+   "label": "Déblocage des exercices après (minutes)"
   },
   {
    "fieldname": "section_bareme",
@@ -162,16 +165,16 @@
    "label": "Séances"
   },
   {
+   "default": "18:30:00",
    "fieldname": "heure_debut",
    "fieldtype": "Time",
-   "label": "Début des séances",
-   "default": "18:30:00"
+   "label": "Début des séances"
   },
   {
+   "default": "20:30:00",
    "fieldname": "heure_fin",
    "fieldtype": "Time",
-   "label": "Fin des séances",
-   "default": "20:30:00"
+   "label": "Fin des séances"
   },
   {
    "fieldname": "col_seances",
@@ -179,10 +182,10 @@
    "label": ""
   },
   {
+   "default": "Africa/Abidjan",
    "fieldname": "fuseau",
    "fieldtype": "Data",
-   "label": "Fuseau horaire",
-   "default": "Africa/Abidjan"
+   "label": "Fuseau horaire"
   },
   {
    "fieldname": "section_cohorte",
@@ -190,17 +193,17 @@
    "label": "Cohorte pilote"
   },
   {
+   "default": "IA agentique : comprendre, concevoir et maîtriser les agents IA",
    "fieldname": "parcours_pilote",
    "fieldtype": "Data",
-   "label": "Titre du parcours pilote",
-   "default": "IA agentique : comprendre, concevoir et maîtriser les agents IA"
+   "label": "Titre du parcours pilote"
   },
   {
+   "default": "Administrator",
    "fieldname": "formateur",
    "fieldtype": "Link",
    "label": "Formateur par défaut",
-   "options": "User",
-   "default": "Administrator"
+   "options": "User"
   },
   {
    "default": "30",
@@ -215,16 +218,16 @@
    "label": "Plateforme"
   },
   {
+   "default": "OpenLab Academy",
    "fieldname": "nom_plateforme",
    "fieldtype": "Data",
-   "label": "Nom",
-   "default": "OpenLab Academy"
+   "label": "Nom"
   },
   {
+   "default": "/assets/openlab_academy/images/logo.svg",
    "fieldname": "logo",
    "fieldtype": "Data",
-   "label": "Logo (URL)",
-   "default": "/assets/openlab_academy/images/logo.svg"
+   "label": "Logo (URL)"
   },
   {
    "fieldname": "col_plateforme",
@@ -232,18 +235,18 @@
    "label": ""
   },
   {
+   "default": "fr",
    "fieldname": "langue",
    "fieldtype": "Link",
    "label": "Langue",
-   "options": "Language",
-   "default": "fr"
+   "options": "Language"
   },
   {
+   "default": "XOF",
    "fieldname": "devise",
    "fieldtype": "Link",
    "label": "Devise",
-   "options": "Currency",
-   "default": "XOF"
+   "options": "Currency"
   },
   {
    "fieldname": "section_lancement",
@@ -251,18 +254,18 @@
    "label": "Lancement"
   },
   {
+   "default": "1",
+   "description": "Cochée : seuls les parcours ci-dessous sont visibles des apprenants et des visiteurs.",
    "fieldname": "phase_lancement",
    "fieldtype": "Check",
-   "label": "Phase de lancement",
-   "default": "1",
-   "description": "Cochée : seuls les parcours ci-dessous sont visibles des apprenants et des visiteurs."
+   "label": "Phase de lancement"
   },
   {
+   "default": "0",
+   "description": "Décochée : le site public ne prend aucune inscription et annonce l'ouverture à venir. Le LMS et l'administration ne sont pas concernés. Décochée par défaut : l'oubli ferme la porte, il ne l'ouvre pas.",
    "fieldname": "inscriptions_ouvertes",
    "fieldtype": "Check",
-   "label": "Inscriptions ouvertes au public",
-   "default": "0",
-   "description": "Décochée : le site public ne prend aucune inscription et annonce l'ouverture à venir. Le LMS et l'administration ne sont pas concernés. Décochée par défaut : l'oubli ferme la porte, il ne l'ouvre pas."
+   "label": "Inscriptions ouvertes au public"
   },
   {
    "fieldname": "parcours_lancement",
@@ -278,24 +281,66 @@
   {
    "fieldname": "lancement_initialise",
    "fieldtype": "Check",
-   "label": "Lancement initialisé",
    "hidden": 1,
+   "label": "Lancement initialisé",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_securite",
+   "fieldtype": "Section Break",
+   "label": "Sécurité"
+  },
+  {
+   "default": "0",
+   "description": "Inscrivez d'abord un second facteur, sinon l'activation est refusée : le code d'inscription part par courriel.",
+   "fieldname": "deuxieme_facteur",
+   "fieldtype": "Check",
+   "label": "Exiger un second facteur"
+  },
+  {
+   "default": "OTP App",
+   "depends_on": "eval:doc.deuxieme_facteur",
+   "fieldname": "methode_deuxieme_facteur",
+   "fieldtype": "Select",
+   "label": "Méthode",
+   "options": "OTP App\nEmail"
+  },
+  {
+   "fieldname": "col_securite",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "System Manager",
+   "description": "Un rôle par ligne. Jamais le rôle des apprenants : il les bloquerait tous sans rien protéger de plus.",
+   "fieldname": "roles_deuxieme_facteur",
+   "fieldtype": "Small Text",
+   "label": "Rôles concernés"
+  },
+  {
+   "description": "Trace de ce que la plateforme a posé elle-même, pour ne jamais retirer un second facteur qu'elle n'a pas mis.",
+   "fieldname": "roles_deuxieme_facteur_poses",
+   "fieldtype": "Small Text",
+   "hidden": 1,
+   "label": "Rôles soumis par la plateforme",
    "read_only": 1
   }
  ],
+ "issingle": 1,
+ "istable": 0,
+ "modified": "2026-11-21 14:53:45.678156",
+ "modified_by": "Administrator",
+ "module": "OpenLab Academy",
+ "name": "Reglages OpenLab Academy",
+ "owner": "Administrator",
  "permissions": [
   {
-   "role": "System Manager",
+   "create": 1,
    "read": 1,
-   "write": 1,
-   "create": 1
+   "role": "System Manager",
+   "write": 1
   }
  ],
- "track_changes": 1,
- "owner": "Administrator",
- "modified_by": "Administrator",
- "creation": "2026-10-16 00:00:00",
- "modified": "2026-11-21 14:53:45.678156",
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "track_changes": 1
 }

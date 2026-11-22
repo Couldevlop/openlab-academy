@@ -1,0 +1,53 @@
+# Parcours annoncé : visible au catalogue en « à venir », avec son plan mais sans contenu ouvert.
+statut: a_venir
+domaine: systeme
+title: Rust pour l'infrastructure de l'IA
+short_introduction: >-
+  Les couches qui font tourner l'IA passent à Rust : moteurs d'inférence, serveurs de modèles,
+  tokeniseurs, bases vectorielles. Ce parcours apprend à les écrire.
+description: >-
+  <p><b>Pourquoi ce parcours.</b> Python reste la langue dans laquelle on décrit un modèle, mais ce
+  n'est plus celle dans laquelle on le sert. Les tokeniseurs de Hugging Face, le moteur d'inférence
+  de vLLM côté ordonnancement, les bases vectorielles comme Qdrant, les runtimes de la chaîne
+  candle : la couche qui tient la charge s'écrit en Rust. Un ingénieur IA qui ne lit pas ce code
+  dépend de quelqu'un d'autre pour chaque problème de latence, de mémoire ou de coût.</p>
+  <p><b>Prérequis :</b> savoir programmer dans un langage quelconque et être à l'aise avec la ligne
+  de commande. Aucune connaissance préalable de Rust ni de C n'est demandée.</p>
+  <p><b>Format :</b> séances hebdomadaires, un livrable par séance, projets intercalés et un
+  capstone : un service d'inférence que l'on mesure, profile et optimise jusqu'à une cible chiffrée.</p>
+  <p><b>Ce que le parcours n'est pas :</b> une formation à l'entraînement de modèles. On ne descend
+  pas de gradient ici — on sert, on mesure et on tient la charge.</p>
+couverture: couverture-rust-pour-l-ia.svg
+tags: [Rust, Systèmes, Infrastructure IA]
+card_gradient: Orange
+programme:
+  - titre: Bloc 1 — Le modèle mémoire de Rust
+    seances:
+      - 01 · Pourquoi un langage sans ramasse-miettes revient dans l'IA
+      - 02 · Possession, emprunt, durées de vie
+      - 03 · Types, motifs et erreurs rendues explicites
+      - 04 · Cargo, modules, tests et bancs de mesure
+  - titre: Bloc 2 — Écrire du Rust que Python appelle
+    seances:
+      - "05 · PyO3 : exposer une fonction Rust à Python"
+      - 06 · Franchir la frontière sans recopier les données
+      - 07 · Construire et distribuer une extension avec maturin
+      - 08 · Mesurer le gain, et reconnaître quand il n'y en a pas
+  - titre: Bloc 3 — Concurrence et services
+    seances:
+      - 09 · Fils d'exécution, envoi entre tâches, partage sûr
+      - 10 · Async, tokio, et ce que « sans blocage » veut dire
+      - "11 · Un serveur HTTP avec axum : routes, état, arrêt propre"
+      - 12 · Traitement par lots et file d'attente sous charge
+  - titre: Bloc 4 — La chaîne d'inférence
+    seances:
+      - 13 · Un tokeniseur, de la chaîne de caractères aux identifiants
+      - 14 · Charger des poids et exécuter un modèle avec candle
+      - "15 · Recherche vectorielle : index, distances, rappel"
+      - "16 · Quantification : ce qu'on gagne et ce qu'on perd"
+  - titre: Bloc 5 — Tenir la charge
+    seances:
+      - "17 · Profiler : trouver le coût avant de le supposer"
+      - 18 · Allocation, copies et pression sur le cache
+      - "19 · Observabilité : traces, métriques, budget de latence"
+      - "20 · Mise en production : image, limites, montée en charge"

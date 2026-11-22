@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-label="Initiation a l'IA, Openlab Academy">
+  <title>Initiation a l'IA, Openlab Academy</title>
+  <rect width="1200" height="675" fill="#001e48"/>
+  <path d="M 660 0 L 1200 0 L 1200 675 L 480 675 Z" fill="#0a2a5c"/>
+  <text x="90" y="186" fill="#ec7623" font-family="Montserrat, Helvetica, Arial, sans-serif" font-size="27" font-weight="600" letter-spacing="7.5">SOCLE &#183; COMPRENDRE L'IA</text>
+  <text x="90" y="330" fill="#ffffff" font-family="Montserrat, Helvetica, Arial, sans-serif" font-size="70" font-weight="800">Initiation</text>
+  <text x="90" y="418" fill="#ffffff" font-family="Montserrat, Helvetica, Arial, sans-serif" font-size="70" font-weight="800">à l'IA</text>
+  <g transform="translate(90 500)">
+    <g transform="scale(0.0463)"><g transform="translate(80 108)">
+    <path d="M 150 24 L 158 46 Q 445 98 573 350 Q 478 62 150 24 Z" fill="#2890C8"/>
+    <path d="M 1050 24 L 1042 46 Q 755 98 627 350 Q 722 62 1050 24 Z" fill="#2890C8"/>
+    <path d="M 98 141 L 104 163 Q 415 186 561 356 Q 410 146 98 141 Z" fill="#2890C8"/>
+    <path d="M 1102 141 L 1096 163 Q 785 186 639 356 Q 790 146 1102 141 Z" fill="#2890C8"/>
+    <path d="M 80 208 Q 345 212 578 352 L 578 1182 Q 345 1000 118 968 Z" fill="#244498"/>
+    <path d="M 113 241 Q 340 246 551 372 L 551 1146 Q 345 990 148 940 Z" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linejoin="round"/>
+    <polyline points="128,322 306,322" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="327" cy="322" r="17" fill="#244498" stroke="#FFFFFF" stroke-width="9"/>
+    <polyline points="128,428 250,428 286,391 434,391" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="455" cy="391" r="17" fill="#244498" stroke="#FFFFFF" stroke-width="9"/>
+    <polyline points="128,462 205,462 245,493 387,493" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="408" cy="493" r="17" fill="#244498" stroke="#FFFFFF" stroke-width="9"/>
+    <polyline points="128,605 250,605 286,568 431,568" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="452" cy="568" r="17" fill="#244498" stroke="#FFFFFF" stroke-width="9"/>
+    <polyline points="128,660 210,660 245,627 387,627" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="408" cy="627" r="17" fill="#244498" stroke="#FFFFFF" stroke-width="9"/>
+    <polyline points="155,732 281,732" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="302" cy="732" r="17" fill="#244498" stroke="#FFFFFF" stroke-width="9"/>
+    <polyline points="268,795 419,795" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="440" cy="795" r="17" fill="#244498" stroke="#FFFFFF" stroke-width="9"/>
+    <path d="M 1120 208 Q 855 212 622 352 L 622 1182 Q 855 1000 1082 968 Z" fill="#EC7623"/>
+    <path d="M 1087 241 Q 860 246 649 372 L 649 1146 Q 855 990 1052 940 Z" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linejoin="round"/>
+    <polyline points="1072,322 894,322" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="873" cy="322" r="17" fill="#EC7623" stroke="#FFFFFF" stroke-width="9"/>
+    <polyline points="1072,428 950,428 914,391 766,391" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="745" cy="391" r="17" fill="#EC7623" stroke="#FFFFFF" stroke-width="9"/>
+    <polyline points="1072,462 995,462 955,493 813,493" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="792" cy="493" r="17" fill="#EC7623" stroke="#FFFFFF" stroke-width="9"/>
+    <polyline points="1072,605 950,605 914,568 769,568" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="748" cy="568" r="17" fill="#EC7623" stroke="#FFFFFF" stroke-width="9"/>
+    <polyline points="1072,660 990,660 955,627 813,627" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="792" cy="627" r="17" fill="#EC7623" stroke="#FFFFFF" stroke-width="9"/>
+    <polyline points="1045,732 919,732" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="898" cy="732" r="17" fill="#EC7623" stroke="#FFFFFF" stroke-width="9"/>
+    <polyline points="932,795 781,795" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="760" cy="795" r="17" fill="#EC7623" stroke="#FFFFFF" stroke-width="9"/>
+    <path d="M 75 465 C 0 645 205 884 600 916 C 1010 948 1385 650 1122 236 C 1300 590 985 868 600 878 C 248 886 58 702 75 465 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="16" stroke-linejoin="round"/>
+    <path d="M 75 465 C 0 645 205 884 600 916 C 1010 948 1385 650 1122 236 C 1300 590 985 868 600 878 C 248 886 58 702 75 465 Z" fill="#FCD80F"/>
+  </g></g>
+    <text x="118" y="42" fill="#ffffff" font-family="Montserrat, Helvetica, Arial, sans-serif" font-size="34" font-weight="500" letter-spacing="6">OPENLAB ACADEMY</text>
+  </g>
+  <g transform="translate(830 230)">
+    <circle cx="-62" cy="-36" r="92" fill="none" stroke="#ec7623" stroke-width="7"/>
+    <circle cx="62" cy="-36" r="92" fill="none" stroke="#ec7623" stroke-width="7"/>
+    <circle cx="0" cy="68" r="92" fill="none" stroke="#ec7623" stroke-width="7"/>
+    <circle cx="0" cy="-1" r="26" fill="#ec7623"/>
+</g>
+  <g>
+    <rect x="0" y="655" width="408" height="20" fill="#244498"/>
+    <rect x="408" y="655" width="192" height="20" fill="#2890c8"/>
+    <rect x="600" y="655" width="408" height="20" fill="#ec7623"/>
+    <rect x="1008" y="655" width="192" height="20" fill="#fcd80f"/>
+  </g>
+</svg>

@@ -7,7 +7,7 @@ import yaml
 from frappe.tests.utils import FrappeTestCase
 
 from openlab_academy.application.publier_parcours import PublierParcours, Statut
-from openlab_academy.domain.parcours import Annonce, ParcoursInvalide
+from openlab_academy.domain.parcours import Annonce, BlocAnnonce, ParcoursInvalide
 from openlab_academy.entrypoints import seed
 from openlab_academy.infrastructure.depot_frappe import DepotFrappe
 from openlab_academy.infrastructure.yaml_source import FormatInvalide, depuis_dict
@@ -96,3 +96,108 @@ class TestAnnonceFrappe(FrappeTestCase):
         for titre in ("Ingénieur Cybersécurité I", "Ingénieur Cybersécurité II"):
             self.assertIn(statuts.get(titre), ("cree", "maj"))
             self.assertEqual(frappe.db.get_value("LMS Course", {"title": titre}, "upcoming"), 1)
+
+
+class TestLeProgrammeAnnonce(unittest.TestCase):
+    """Un parcours en conception ne peut donner à lire qu'un plan. Il doit tenir ce qu'il affiche."""
+
+    def test_sans_programme_une_annonce_reste_valide(self):
+        """Le plan est facultatif : annoncer un parcours n'oblige pas à en avoir déjà écrit le plan."""
+        self.assertEqual(annonce().programme, ())
+        self.assertEqual(annonce().seances, 0)
+
+    def test_les_seances_sont_comptees_et_jamais_estimees(self):
+        a = annonce(programme=(BlocAnnonce("Bloc 1", ("A", "B")), BlocAnnonce("Bloc 2", ("C",))))
+        self.assertEqual(a.seances, 3)
+
+    def test_un_bloc_sans_seance_est_refuse(self):
+        """Un bloc vide se lit comme un oubli, et la page montrerait un titre qui ne mène nulle part."""
+        with self.assertRaises(ParcoursInvalide):
+            BlocAnnonce("Bloc creux", ())
+
+    def test_un_bloc_sans_titre_est_refuse(self):
+        with self.assertRaises(ParcoursInvalide):
+            BlocAnnonce("   ", ("A",))
+
+    def test_une_seance_sans_intitule_est_refusee(self):
+        with self.assertRaises(ParcoursInvalide):
+            BlocAnnonce("Bloc 1", ("A", "  "))
+
+    def test_un_intitule_trop_long_pour_le_lms_est_refuse_des_le_domaine(self):
+        """Le LMS coupe à 140 caractères : mieux vaut un refus lisible qu'un titre tronqué en base."""
+        with self.assertRaises(ParcoursInvalide):
+            BlocAnnonce("Bloc 1", ("x" * 121,))
+
+
+class TestLeProgrammeAnnonceDepuisUnFichier(unittest.TestCase):
+    def test_le_fichier_porte_blocs_et_seances(self):
+        brut = {"statut": "a_venir", "title": TITRE, "short_introduction": "Bientôt",
+                "description": "<p>d</p>", "tags": ["x"],
+                "programme": [{"titre": "Bloc 1 — Fondations", "seances": ["01 · Rust", "02 · Cargo"]},
+                              {"titre": "Bloc 2 — Concurrence", "seances": ["03 · Async"]}]}
+        a = depuis_dict(brut, "essai.yaml")
+        self.assertIsInstance(a, Annonce)
+        self.assertEqual(a.seances, 3)
+        self.assertEqual(a.programme[0].titre, "Bloc 1 — Fondations")
+        self.assertEqual(a.programme[1].seances, ("03 · Async",))
+
+    def test_un_fichier_sans_programme_reste_accepte(self):
+        brut = {"statut": "a_venir", "title": TITRE, "short_introduction": "Bientôt",
+                "description": "<p>d</p>", "tags": ["x"]}
+        self.assertEqual(depuis_dict(brut, "essai.yaml").programme, ())
+
+    def test_un_programme_mal_forme_est_refuse_avec_le_nom_du_fichier(self):
+        """Le refus doit dire quel fichier reprendre : la publication en lit huit d'affilée."""
+        brut = {"statut": "a_venir", "title": TITRE, "short_introduction": "Bientôt",
+                "description": "<p>d</p>", "tags": ["x"], "programme": ["Bloc 1"]}
+        with self.assertRaises(FormatInvalide) as e:
+            depuis_dict(brut, "essai.yaml")
+        self.assertIn("essai.yaml", str(e.exception))
+
+
+class TestLeProgrammeAnnoncePublie(FrappeTestCase):
+    """Le plan doit arriver jusqu'à la fiche, et rien ne doit y être ouvrable."""
+
+    def setUp(self):
+        frappe.set_user("Administrator")
+        self.depot = DepotFrappe(commit=False)
+
+    def tearDown(self):
+        frappe.db.rollback()
+
+    def test_les_blocs_annonces_deviennent_des_chapitres_et_des_seances_sans_contenu(self):
+        a = annonce(title="Annoncé avec plan",
+                    programme=(BlocAnnonce("Bloc 1 — Fondations", ("01 · Rust", "02 · Cargo")),
+                               BlocAnnonce("Bloc 2 — Concurrence", ("03 · Async",))))
+        cours = self.depot.creer(a)
+        chapitres = frappe.get_all("Course Chapter", {"course": cours}, ["name", "title"],
+                                   order_by="creation asc")
+        self.assertEqual([c["title"] for c in chapitres], ["Bloc 1 — Fondations", "Bloc 2 — Concurrence"])
+        lecons = frappe.get_all("Course Lesson", {"course": cours}, ["title", "content"],
+                                order_by="creation asc")
+        self.assertEqual([l["title"] for l in lecons], ["01 · Rust", "02 · Cargo", "03 · Async"])
+        self.assertTrue(all(not (l["content"] or "").strip() for l in lecons),
+                        "une séance annoncée ne porte aucun contenu")
+
+    def test_le_parcours_annonce_reste_marque_a_venir_malgre_son_programme(self):
+        """Un plan publié ne doit pas faire passer le parcours pour ouvert : c'est `upcoming` qui
+        tient la porte, et il ne bouge pas parce que la fiche s'est remplie."""
+        a = annonce(title="Annoncé toujours à venir",
+                    programme=(BlocAnnonce("Bloc 1", ("01 · A",)),))
+        cours = self.depot.creer(a)
+        self.assertEqual(frappe.db.get_value("LMS Course", cours, "upcoming"), 1)
+
+    def test_aucun_exercice_n_est_cree_pour_un_programme_annonce(self):
+        """Un devoir ou un quiz sur un parcours qui n'ouvre pas serait une porte ouverte par erreur."""
+        a = annonce(title="Annoncé sans exercice", programme=(BlocAnnonce("Bloc 1", ("01 · A",)),))
+        cours = self.depot.creer(a)
+        self.assertEqual(frappe.get_all("LMS Assignment", {"course": cours}), [])
+        self.assertEqual(frappe.get_all("LMS Quiz", {"course": cours}), [])
+
+    def test_republier_une_annonce_reecrit_son_programme(self):
+        a = annonce(title="Annoncé réécrit", programme=(BlocAnnonce("Bloc 1", ("01 · A", "02 · B")),))
+        cours = self.depot.creer(a)
+        self.depot.remplacer(cours, annonce(title="Annoncé réécrit",
+                                            programme=(BlocAnnonce("Bloc unique", ("01 · A",)),)))
+        self.assertEqual(frappe.get_all("Course Chapter", {"course": cours}, pluck="title"), ["Bloc unique"])
+        self.assertEqual(frappe.get_all("Course Lesson", {"course": cours}, pluck="title"), ["01 · A"])
