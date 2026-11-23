@@ -21,9 +21,10 @@ Les sous-titres ne sont donc pas une option.
 
 ## Ce qu'il faut installer
 
-Déjà présent sur le poste : Node 22, Python 3.12, et un socle Remotion 4.0.515 éprouvé
-dans `D:\OPENLAB\nexusrh-video` (avec `@remotion/captions` et `whisper.cpp` installé).
-On réutilise ce socle.
+Déjà présent sur le poste : Node 22, Python 3.12, et `ffmpeg` + `whisper.cpp` installés
+en portable dans `D:\OPENLAB\outils-bin\` (avec le modèle `ggml-large-v3-turbo.bin` sous
+`outils-bin\modeles\`). L'habillage porte son propre socle Remotion dans le dépôt
+(`outils/video/habillage/`) et demande un `npm install` une fois.
 
 À installer, une fois :
 
@@ -64,9 +65,12 @@ D:\OPENLAB\studio-academy\
 ├── brut\          captations sorties d'OBS, jamais modifiées
 ├── references\    vidéos regardées pour s'inspirer de leur rythme
 ├── images\        cartes de titre, logos, visuels
-├── sorties\       vidéos finies, prêtes à publier
-└── montage\       le projet Remotion (habillage, sous-titres, rendu)
+└── sorties\       vidéos finies, prêtes à publier
 ```
+
+Le montage, lui, n'est pas là : les trois scripts et le projet Remotion vivent **dans le
+dépôt**, sous [`outils/video/`](../outils/video/LISEZ-MOI.md). Seuls les médias restent
+dehors.
 
 Règle de nommage, qui décide de tout le reste de la chaîne :
 
@@ -94,9 +98,39 @@ C'est ce chemin, exactement, que le YAML du parcours référencera.
 | Fréquence audio | 48 kHz, mono | la voix n'a aucun besoin de stéréo |
 | Micro | gain tel que la voix tape vers −12 dB | au-delà, ça sature et rien ne le répare |
 
-Dans la scène : une source **Capture d'écran** et une source **Micro**. Rien d'autre.
-Taille de police de l'éditeur à **18 pt au minimum** — ce qui est confortable sur ton
-écran est illisible sur un téléphone.
+Dans la scène : une source **Capture d'écran** et une source **Micro**. Taille de police
+de l'éditeur à **18 pt au minimum** — ce qui est confortable sur ton écran est illisible
+sur un téléphone.
+
+### Se filmer, ou non
+
+Deux scènes dans OBS, et on bascule de l'une à l'autre selon le moment :
+
+| Scène | Sources | Quand |
+| --- | --- | --- |
+| **Visage** | Caméra plein cadre + micro | l'intro de séance, et elle seule |
+| **Écran** | Capture d'écran + micro, caméra en vignette ou absente | toutes les démos |
+
+On se filme pour l'intro parce qu'un visage engage : l'apprenant décide en vingt
+secondes s'il reste, et il le décide devant quelqu'un, pas devant une carte de titre. On
+ne se filme pas pendant une démo : la vignette mange un coin de l'écran, et c'est le
+code qu'on doit regarder. Si tu n'as pas de caméra, ou pas envie, l'habillage pose une
+carte de titre à la place — rien ne casse.
+
+Le cadrage, une fois pour toutes :
+
+| | |
+| --- | --- |
+| Hauteur de la caméra | **au niveau des yeux**, pas plus bas — une webcam posée sur le bureau filme par en dessous |
+| Place dans le cadre | les yeux au tiers supérieur, un poing d'air au-dessus de la tête |
+| Distance | à bout de bras : tête et épaules, pas le buste entier |
+| Lumière | **face à toi**, pas derrière — une fenêtre dans le dos fait une silhouette noire |
+| Fond | ce qu'il y a, rangé. Pas de flou artificiel : il bave sur les contours et fatigue |
+| Regard | **l'objectif**, pas ton image à l'écran. Déplace la fenêtre d'aperçu juste sous la caméra |
+
+Le son compte plus que l'image. Un casque-micro à dix centimètres de la bouche bat une
+belle caméra avec le micro de l'écran : on pardonne une image moyenne, jamais un son qui
+oblige à tendre l'oreille.
 
 ### Avant d'appuyer sur enregistrer
 
@@ -166,6 +200,107 @@ La chaîne est en quatre temps, chacun conduit par un script :
    nommage, puis un contrôle relit tous les YAML de parcours et refuse de passer si une
    vidéo référencée est absente — pour qu'aucun apprenant ne tombe sur un lecteur vide.
 
+## Les scripts
+
+Les trois maillons du montage vivent dans [`outils/video/`](../outils/video/LISEZ-MOI.md), avec leur mode
+d'emploi :
+
+| | |
+| --- | --- |
+| `decouper.py` | silences retirés, reprises coupées, son à −16 LUFS, rendu `.mp4` |
+| `sous_titrer.py` | transcription whisper.cpp, `.srt` à corriger, liste de relecture guidée |
+| `habiller.py` | carton, bandeau, sous-titres, plaque de fin, par Remotion |
+
+Chacun s'exécute seul et affiche ce qu'il va faire avant de le faire. Aucun ne décide à votre place :
+`decouper` écrit sa liste de coupes pour que vous la relisiez, `sous_titrer` rend une proposition et la
+liste de ce qu'il faut vérifier, `habiller` montre ses propriétés avant de rendre.
+
+## Une séance, de bout en bout
+
+Les quatre commandes, dans l'ordre, telles qu'elles se lancent sur ce poste. Entre
+chacune il y a une décision à prendre : c'est là que le travail se fait, pas dans les
+commandes.
+
+Prenons la séance 01 du parcours `09-initiation-a-l-ia`, enregistrée sous
+`D:\OPENLAB\studio-academy\brut\s01-intro.mkv`.
+
+**1. Voir ce qui serait coupé, sans rien couper.**
+
+```powershell
+cd D:\OPENLAB\Openlab_Academy
+python outils\video\decouper.py D:\OPENLAB\studio-academy\brut\s01-intro.mkv `
+    --vers D:\OPENLAB\studio-academy\sorties\09-initiation-a-l-ia\s01-intro.mp4 `
+    --sans-rendu
+```
+
+Il annonce ce qu'il garde — « 43,5 s en entrée, 26,1 s gardées en 8 segments » — et écrit
+la liste à côté du brut, en `.coupes.json`.
+
+**La décision : le nombre de segments.** Beaucoup de segments courts veut dire qu'il
+coupe à l'intérieur de tes phrases, dans les respirations d'une énumération ou d'une
+pause d'effet. Remonte alors le seuil et relance l'analyse :
+
+```powershell
+... --silence-min 1.2 --sans-rendu
+```
+
+Vise un nombre de segments proche du nombre d'idées que tu as développées. Si tu as
+marqué des reprises en tapant trois fois sur le micro, relève leurs horodatages sur la
+forme d'onde et passe-les avec `--reprises`. Quand la liste te convient, relance **sans**
+`--sans-rendu` : c'est le rendu, quelques minutes.
+
+**2. Transcrire.**
+
+```powershell
+python outils\video\sous_titrer.py D:\OPENLAB\studio-academy\sorties\09-initiation-a-l-ia\s01-intro.mp4 `
+    --modele D:\OPENLAB\outils-bin\modeles\ggml-large-v3-turbo.bin
+```
+
+Compte à peu près deux fois la durée de la séance. Il écrit le `.srt` **et** un
+`.relire.md`.
+
+**La décision : la relecture.** Ouvre le `.relire.md` : il nomme les passages douteux et,
+pour les mots du domaine, propose la correction — « *Ing-Graph* → LangGraph ? ». Corrige
+le **`.srt`**, jamais le `.relire.md`, qui est réécrit à chaque passage. Relis aussi ce
+qui n'est pas signalé : le modèle se trompe surtout là où il est sûr de lui.
+
+Une fois le `.srt` relu, le script refuse de l'écraser. Si tu enrichis le lexique et
+rejoues l'analyse avec `--depuis-json`, il s'arrête et te le dit ; `--ecraser` passe
+outre, et tu perds ta relecture.
+
+**3. Habiller.**
+
+```powershell
+python outils\video\habiller.py D:\OPENLAB\studio-academy\sorties\09-initiation-a-l-ia\s01-intro.mp4 `
+    --titre "L'IA n'est pas un cerveau" --parcours "Initiation à l'IA" --sans-rendu
+```
+
+Il affiche les propriétés qu'il passera à Remotion. Vérifie le titre, la mention de
+séance et le nombre de répliques lues, puis relance sans `--sans-rendu`.
+
+Si le chemin ne suit pas la règle de nommage, il refuse **avant** de rendre : le dossier
+doit porter le numéro du parcours (`09-initiation-a-l-ia`, pas `initiation-a-l-ia`), tiré
+du nom du fichier YAML. C'est voulu — sinon on habille une vidéo qui ne sera jamais
+publiable, et on s'en aperçoit à la publication.
+
+À la fin, il affiche la ligne à coller dans le YAML.
+
+**4. Déposer, puis publier.**
+
+Le `.habille.mp4` part sur le serveur sous
+`sites/<site>/public/files/videos/09-initiation-a-l-ia/s01-intro.mp4`, **avant** de
+republier : une vidéo référencée mais absente fait échouer la publication de ce parcours,
+exprès. Puis la clé `video:` dans le YAML de la séance, et la republication.
+
+### Si ça coince
+
+| Ce que tu vois | Ce que c'est |
+| --- | --- |
+| `ne suit pas la règle de nommage` | le dossier n'a pas le numéro du parcours |
+| `a été corrigé depuis la transcription` | ta relecture est là et le script la protège : c'est normal |
+| `No frame found at position` au rendu | la séance n'a pas été produite par `decouper.py` — repasse-la par lui |
+| `aucune parole transcrite` | la piste son est muette : vérifie que le micro était bien dans la scène OBS |
+
 ## Rattacher la vidéo à sa séance
 
 Une séance porte sa vidéo par la clé `video:` de son module, dans le YAML du parcours :
@@ -208,8 +343,6 @@ message : inutile de republier une fois par fichier oublié.
 en place d'une publication à l'autre — même règle que les retouches. Dès que la clé est écrite,
 le fichier de parcours reprend la main.
 
-Les scripts vivent dans `studio-academy\montage\scripts\` ; chacun s'exécute seul et
-affiche ce qu'il va faire avant de le faire.
 
 ## Avant de publier, la liste
 
