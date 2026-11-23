@@ -1,0 +1,21 @@
+{
+  "name": "habillage-academy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Habillage des seances de l'academie : carton, bandeau, sous-titres, plaque de fin",
+  "scripts": {
+    "studio": "remotion studio --no-open",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.545",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.545"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}
